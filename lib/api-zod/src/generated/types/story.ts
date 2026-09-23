@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { StoryKind } from './storyKind';
+import type { StoryRecordFamily } from './storyRecordFamily';
 import type { StoryWorkflowStatus } from './storyWorkflowStatus';
 import type { Topic } from './topic';
 import type { VerificationStatus } from './verificationStatus';
@@ -28,6 +29,10 @@ export interface Story {
   tone: string;
   number: number | null;
   sortOrder: number;
+  slug: string;
+  recordFamily: StoryRecordFamily;
+  canonicalPath: string;
+  indexable: boolean;
   workflowStatus: StoryWorkflowStatus;
   verificationStatus: VerificationStatus;
   /** @nullable */

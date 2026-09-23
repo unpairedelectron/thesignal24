@@ -48,6 +48,10 @@ export const GetCurrentIssueResponse = zod.object({
   "tone": zod.string(),
   "number": zod.number().int().nullable(),
   "sortOrder": zod.number().int(),
+  "slug": zod.string(),
+  "recordFamily": zod.enum(['articles', 'policies', 'cases', 'documents', 'states', 'data']),
+  "canonicalPath": zod.string(),
+  "indexable": zod.boolean(),
   "workflowStatus": zod.enum(['draft', 'review', 'scheduled', 'published', 'archived']),
   "verificationStatus": zod.enum(['unverified', 'source-linked', 'verified']),
   "verificationNotes": zod.string().nullable(),
@@ -94,6 +98,10 @@ export const GetEditorialIssueResponse = zod.object({
   "tone": zod.string(),
   "number": zod.number().int().nullable(),
   "sortOrder": zod.number().int(),
+  "slug": zod.string(),
+  "recordFamily": zod.enum(['articles', 'policies', 'cases', 'documents', 'states', 'data']),
+  "canonicalPath": zod.string(),
+  "indexable": zod.boolean(),
   "workflowStatus": zod.enum(['draft', 'review', 'scheduled', 'published', 'archived']),
   "verificationStatus": zod.enum(['unverified', 'source-linked', 'verified']),
   "verificationNotes": zod.string().nullable(),
@@ -144,6 +152,10 @@ export const GetArchiveResponse = zod.object({
   "tone": zod.string(),
   "number": zod.number().int().nullable(),
   "sortOrder": zod.number().int(),
+  "slug": zod.string(),
+  "recordFamily": zod.enum(['articles', 'policies', 'cases', 'documents', 'states', 'data']),
+  "canonicalPath": zod.string(),
+  "indexable": zod.boolean(),
   "workflowStatus": zod.enum(['draft', 'review', 'scheduled', 'published', 'archived']),
   "verificationStatus": zod.enum(['unverified', 'source-linked', 'verified']),
   "verificationNotes": zod.string().nullable(),
@@ -159,6 +171,12 @@ export const GetArchiveResponse = zod.object({
   "kinds": zod.array(zod.enum(['Article', 'Paper note', 'Archive', 'Explainer'])),
   "states": zod.array(zod.string())
 })
+
+
+/**
+ * @summary Get the indexable publication sitemap
+ */
+export const GetPublicationSitemapResponse = zod.unknown()
 
 
 /**
@@ -225,6 +243,10 @@ export const GetStoryResponse = zod.object({
   "tone": zod.string(),
   "number": zod.number().int().nullable(),
   "sortOrder": zod.number().int(),
+  "slug": zod.string(),
+  "recordFamily": zod.enum(['articles', 'policies', 'cases', 'documents', 'states', 'data']),
+  "canonicalPath": zod.string(),
+  "indexable": zod.boolean(),
   "workflowStatus": zod.enum(['draft', 'review', 'scheduled', 'published', 'archived']),
   "verificationStatus": zod.enum(['unverified', 'source-linked', 'verified']),
   "verificationNotes": zod.string().nullable(),
@@ -292,6 +314,10 @@ export const UpdateStoryResponse = zod.object({
   "tone": zod.string(),
   "number": zod.number().int().nullable(),
   "sortOrder": zod.number().int(),
+  "slug": zod.string(),
+  "recordFamily": zod.enum(['articles', 'policies', 'cases', 'documents', 'states', 'data']),
+  "canonicalPath": zod.string(),
+  "indexable": zod.boolean(),
   "workflowStatus": zod.enum(['draft', 'review', 'scheduled', 'published', 'archived']),
   "verificationStatus": zod.enum(['unverified', 'source-linked', 'verified']),
   "verificationNotes": zod.string().nullable(),
@@ -373,6 +399,10 @@ export const CreateStoryResponse = zod.object({
   "tone": zod.string(),
   "number": zod.number().int().nullable(),
   "sortOrder": zod.number().int(),
+  "slug": zod.string(),
+  "recordFamily": zod.enum(['articles', 'policies', 'cases', 'documents', 'states', 'data']),
+  "canonicalPath": zod.string(),
+  "indexable": zod.boolean(),
   "workflowStatus": zod.enum(['draft', 'review', 'scheduled', 'published', 'archived']),
   "verificationStatus": zod.enum(['unverified', 'source-linked', 'verified']),
   "verificationNotes": zod.string().nullable(),

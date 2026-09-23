@@ -1,6 +1,14 @@
+import { useEffect } from 'react';
 import { ArrowLeft, Radio } from 'lucide-react';
 
 export default function NotFound() {
+  useEffect(() => {
+    document.title = 'Page not found — The Signal 24';
+    const robots = document.head.querySelector<HTMLMetaElement>('meta[name="robots"]');
+    if (robots) robots.content = 'noindex, nofollow';
+    document.head.querySelectorAll('link[rel="canonical"]').forEach((element) => element.remove());
+  }, []);
+
   return (
     <main className="signal-page min-h-[100dvh]">
       <div className="signal-container flex min-h-[100dvh] items-center justify-center py-16">

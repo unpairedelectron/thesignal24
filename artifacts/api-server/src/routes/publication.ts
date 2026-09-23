@@ -28,6 +28,15 @@ type Topic = (typeof topicList)[number];
 const kindList = ["Article", "Paper note", "Archive", "Explainer"] as const;
 const kindValues = new Set(kindList);
 type StoryKind = (typeof kindList)[number];
+const recordFamilyList = [
+  "articles",
+  "policies",
+  "cases",
+  "documents",
+  "states",
+  "data",
+] as const;
+type RecordFamily = (typeof recordFamilyList)[number];
 const workflowStatusList = [
   "draft",
   "review",
@@ -61,7 +70,50 @@ function serializeIssue(issue: typeof issuesTable.$inferSelect) {
   };
 }
 
+function slugify(value: string) {
+  return value
+    .normalize("NFKD")
+    .replace(/[^\w\s-]/g, "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function getRecordFamily(story: typeof storiesTable.$inferSelect): RecordFamily {
+  if (story.topic === "States") return "states";
+  if (story.topic === "Data & Notes") return "data";
+  if (story.topic === "Courts & Policy") {
+    return story.kind === "Paper note" ? "cases" : "policies";
+  }
+  if (story.kind === "Archive") return "documents";
+  return "articles";
+}
+
+function getStorySlug(story: typeof storiesTable.$inferSelect) {
+  return `${slugify(story.title) || "record"}-${story.id}`;
+}
+
+function getCanonicalPath(story: typeof storiesTable.$inferSelect) {
+  return `/${getRecordFamily(story)}/${getStorySlug(story)}`;
+}
+
+function isIndexableStory(story: typeof storiesTable.$inferSelect) {
+  const markerText = `${story.source} ${story.title} ${story.dek} ${story.body}`;
+  return Boolean(
+    story.publishedOn &&
+      story.sourceUrl &&
+      story.title.trim().length >= 12 &&
+      story.dek.trim().length >= 40 &&
+      story.body.trim().length >= 240 &&
+      !/(starter|source link pending|placeholder|reporting needed|editorial desk)/i.test(
+        markerText,
+      ),
+  );
+}
+
 function serializeStory(story: typeof storiesTable.$inferSelect) {
+  const recordFamily = getRecordFamily(story);
   return {
     id: story.id,
     issueId: story.issueId,
@@ -84,6 +136,10 @@ function serializeStory(story: typeof storiesTable.$inferSelect) {
     tone: story.tone,
     number: story.number,
     sortOrder: story.sortOrder,
+    slug: getStorySlug(story),
+    recordFamily,
+    canonicalPath: getCanonicalPath(story),
+    indexable: isIndexableStory(story),
     workflowStatus: workflowStatusValues.has(story.workflowStatus as WorkflowStatus)
       ? (story.workflowStatus as WorkflowStatus)
       : "draft",
@@ -147,6 +203,25 @@ async function getIssuePayload(
 
 function queryString(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
+}
+
+function xmlEscape(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
+function requestOrigin(req: {
+  protocol: string;
+  get(name: string): string | undefined;
+}) {
+  const forwardedProtocol = req.get("x-forwarded-proto")?.split(",")[0]?.trim();
+  const protocol = forwardedProtocol || req.protocol || "https";
+  const host = req.get("host") || "signal24.example";
+  return `${protocol}://${host}`.replace(/\/$/, "");
 }
 
 router.get("/issues/current", async (_req, res, next) => {
@@ -247,6 +322,48 @@ router.get("/archive", async (req, res, next) => {
       kinds: [...new Set(serializedStories.map((story) => story.kind))],
       states: [...new Set(serializedStories.map((story) => story.state).filter(Boolean))],
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/sitemap.xml", async (req, res, next) => {
+  try {
+    const results = await db
+      .select({ story: storiesTable })
+      .from(storiesTable)
+      .innerJoin(issuesTable, eq(storiesTable.issueId, issuesTable.id))
+      .where(
+        and(
+          eq(issuesTable.status, "published"),
+          eq(storiesTable.workflowStatus, "published"),
+        ),
+      )
+      .orderBy(desc(storiesTable.updatedAt), asc(storiesTable.id));
+    const origin = requestOrigin(req);
+    const staticPaths = [
+      "/",
+      "/archive",
+      "/about",
+      "/editorial-standards",
+      "/methodology",
+      "/authors/signal-24",
+    ];
+    const urls = [
+      ...staticPaths.map(
+        (path) => `<url><loc>${xmlEscape(`${origin}${path}`)}</loc></url>`,
+      ),
+      ...results
+        .map(({ story }) => story)
+        .filter(isIndexableStory)
+        .map(
+          (story) =>
+            `<url><loc>${xmlEscape(`${origin}${getCanonicalPath(story)}`)}</loc><lastmod>${story.updatedAt.toISOString()}</lastmod></url>`,
+        ),
+    ].join("");
+    res.type("application/xml").send(
+      `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls}</urlset>`,
+    );
   } catch (error) {
     next(error);
   }

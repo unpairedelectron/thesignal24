@@ -19,6 +19,7 @@ export * from './newsletterStatus';
 export * from './story';
 export * from './storyInput';
 export * from './storyKind';
+export * from './storyRecordFamily';
 export * from './storyRevision';
 export * from './storyRevisions';
 export * from './storyRevisionSnapshot';

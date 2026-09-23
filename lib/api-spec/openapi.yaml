@@ -97,6 +97,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ArchiveResult"
+  /sitemap.xml:
+    get:
+      operationId: getPublicationSitemap
+      tags: [publication]
+      summary: Get the indexable publication sitemap
+      responses:
+        "200":
+          description: XML sitemap containing only meaningful published records
+          content:
+            application/xml:
+              schema:
+                type: string
   /issues:
     post:
       operationId: createIssue
@@ -355,6 +367,15 @@ components:
           nullable: true
         sortOrder:
           type: integer
+        slug:
+          type: string
+        recordFamily:
+          type: string
+          enum: [articles, policies, cases, documents, states, data]
+        canonicalPath:
+          type: string
+        indexable:
+          type: boolean
         workflowStatus:
           $ref: "#/components/schemas/StoryWorkflowStatus"
         verificationStatus:
@@ -380,7 +401,7 @@ components:
           type: ["string", "null"]
         correctionNote:
           type: ["string", "null"]
-      required: [id, issueId, topic, kind, state, source, sourceUrl, publishedOn, eyebrow, title, dek, body, time, read, tone, number, sortOrder, workflowStatus, verificationStatus, verificationNotes, sourcePublishedOn, sourceRetrievedOn, lastVerifiedAt, reviewedAt, scheduledFor, aiDisclosure, correctionNote]
+      required: [id, issueId, topic, kind, state, source, sourceUrl, publishedOn, eyebrow, title, dek, body, time, read, tone, number, sortOrder, slug, recordFamily, canonicalPath, indexable, workflowStatus, verificationStatus, verificationNotes, sourcePublishedOn, sourceRetrievedOn, lastVerifiedAt, reviewedAt, scheduledFor, aiDisclosure, correctionNote]
     StoryInput:
       type: object
       properties:

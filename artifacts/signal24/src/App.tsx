@@ -34,6 +34,7 @@ import {
   getGetCurrentIssueQueryKey,
   getGetStoryRevisionsQueryOptions,
   getGetNewsletterStatusQueryKey,
+  getGetStoryQueryKey,
   useCreateIssue,
   useCreateStory,
   useGetArchive,
@@ -68,6 +69,14 @@ function formatDate(value?: string | null) {
   return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
+type SeoConfig = {
+  title: string;
+  description: string;
+  canonicalPath?: string;
+  robots?: string;
+  type?: string;
+  structuredData?: unknown;
+};
 function BrandMark() {
   return <span className="signal-mark shrink-0" aria-label="Signal 24 mark"><span className="sr-only">Signal 24</span></span>;
 }
@@ -165,8 +174,8 @@ function SourceLine({ story, detail = false }: { story: Story; detail?: boolean 
 
 function StoryCard({ story, compact = false }: { story: Story; compact?: boolean }) {
   return <article className={`story-hover group ${compact ? 'grid grid-cols-[112px_1fr] gap-4 border-b border-foreground/15 py-5 last:border-0 sm:grid-cols-[145px_1fr]' : ''}`} data-testid={`card-story-${story.id}`}>
-    <Link href={`/stories/${story.id}`} className={compact ? 'block h-[112px] sm:h-[145px]' : 'block w-full'} data-testid={`link-story-art-${story.id}`}><StoryArt story={story} compact={compact} /></Link>
-    <div className={compact ? 'flex min-w-0 flex-col justify-between' : 'pt-5'}><div><p className="signal-kicker text-accent">{story.topic} / {story.kind}</p><Link href={`/stories/${story.id}`} className="mt-2 block" data-testid={`link-story-${story.id}`}><h3 className={`${compact ? 'text-[1.12rem] sm:text-[1.3rem]' : 'text-[2rem] sm:text-[2.7rem]'} font-display leading-[1.02] tracking-[-.025em] transition-colors group-hover:text-accent`}>{story.title}</h3></Link><p className={`mt-3 ${compact ? 'line-clamp-2 text-[.84rem]' : 'max-w-xl text-[1rem]'} leading-relaxed text-muted-foreground`}>{story.dek}</p></div><div className="mt-4"><SourceLine story={story} /></div></div>
+    <Link href={storyPath(story)} className={compact ? 'block h-[112px] sm:h-[145px]' : 'block w-full'} data-testid={`link-story-art-${story.id}`}><StoryArt story={story} compact={compact} /></Link>
+    <div className={compact ? 'flex min-w-0 flex-col justify-between' : 'pt-5'}><div><p className="signal-kicker text-accent">{story.topic} / {story.kind}</p><Link href={storyPath(story)} className="mt-2 block" data-testid={`link-story-${story.id}`}><h3 className={`${compact ? 'text-[1.12rem] sm:text-[1.3rem]' : 'text-[2rem] sm:text-[2.7rem]'} font-display leading-[1.02] tracking-[-.025em] transition-colors group-hover:text-accent`}>{story.title}</h3></Link><p className={`mt-3 ${compact ? 'line-clamp-2 text-[.84rem]' : 'max-w-xl text-[1rem]'} leading-relaxed text-muted-foreground`}>{story.dek}</p></div><div className="mt-4"><SourceLine story={story} /></div></div>
   </article>;
 }
 
@@ -204,21 +213,21 @@ function RecordCollections({ stories }: { stories: Story[] }) {
   const explainer = stories.find((story) => story.kind === 'Explainer');
   return <>
     <section id="courtroom" className="signal-container pt-24 sm:pt-36">
-      <div className="grid gap-8 border-y border-foreground/20 py-8 lg:grid-cols-[.65fr_1.35fr] lg:gap-16"><div><div className="flex items-center gap-3"><Scale size={17} className="text-accent" /><p className="signal-kicker text-accent">05 / Courtroom</p></div><h2 className="mt-3 max-w-sm font-display text-4xl leading-[.98] tracking-[-.04em] sm:text-5xl">The case file,<br /><em className="font-normal text-accent">carefully read.</em></h2><p className="mt-5 max-w-sm text-sm leading-relaxed text-muted-foreground">Judgments and orders need their own context. This section keeps the legal record distinct from reporting about it.</p></div><div className="grid gap-6 sm:grid-cols-2">{courtRecords.map((story) => <Link href={`/stories/${story.id}`} key={story.id} className="group border-b border-foreground/15 pb-6 sm:border-b-0 sm:border-l sm:pl-6"><p className="signal-kicker text-accent">{story.kind} · {formatDate(story.publishedOn)}</p><h3 className="mt-3 font-display text-2xl leading-tight group-hover:text-accent">{story.title}</h3><p className="mt-3 text-sm leading-relaxed text-muted-foreground">{story.dek}</p><p className="mt-4 signal-kicker text-muted-foreground">{story.source}</p></Link>)}</div></div>
+      <div className="grid gap-8 border-y border-foreground/20 py-8 lg:grid-cols-[.65fr_1.35fr] lg:gap-16"><div><div className="flex items-center gap-3"><Scale size={17} className="text-accent" /><p className="signal-kicker text-accent">05 / Courtroom</p></div><h2 className="mt-3 max-w-sm font-display text-4xl leading-[.98] tracking-[-.04em] sm:text-5xl">The case file,<br /><em className="font-normal text-accent">carefully read.</em></h2><p className="mt-5 max-w-sm text-sm leading-relaxed text-muted-foreground">Judgments and orders need their own context. This section keeps the legal record distinct from reporting about it.</p></div><div className="grid gap-6 sm:grid-cols-2">{courtRecords.map((story) => <Link href={storyPath(story)} key={story.id} className="group border-b border-foreground/15 pb-6 sm:border-b-0 sm:border-l sm:pl-6"><p className="signal-kicker text-accent">{story.kind} · {formatDate(story.publishedOn)}</p><h3 className="mt-3 font-display text-2xl leading-tight group-hover:text-accent">{story.title}</h3><p className="mt-3 text-sm leading-relaxed text-muted-foreground">{story.dek}</p><p className="mt-4 signal-kicker text-muted-foreground">{story.source}</p></Link>)}</div></div>
     </section>
     <section id="states" className="signal-container pt-24 sm:pt-36">
       <div className="flex flex-col justify-between gap-6 border-b border-foreground/20 pb-5 sm:flex-row sm:items-end"><div><div className="flex items-center gap-3"><MapPin size={17} className="text-accent" /><p className="signal-kicker text-accent">06 / States</p></div><h2 className="mt-3 font-display text-4xl leading-none tracking-[-.04em] sm:text-5xl">One country,<br /><em className="font-normal text-accent">many frameworks.</em></h2></div><p className="max-w-sm text-sm leading-relaxed text-muted-foreground">State records are not interchangeable. Each one needs its own source, date, legal basis and history.</p></div>
-      <div className="grid gap-6 py-8 sm:grid-cols-3">{stateRecords.length ? stateRecords.map((story) => <Link href={`/stories/${story.id}`} key={story.id} className="group border-b border-foreground/15 pb-5 sm:border-b-0 sm:border-r sm:pr-6 last:border-0"><p className="signal-kicker text-accent">{story.state ?? 'State record'}</p><h3 className="mt-3 font-display text-2xl leading-tight group-hover:text-accent">{story.title}</h3><p className="mt-3 text-sm leading-relaxed text-muted-foreground">{story.dek}</p><p className="mt-4 signal-kicker text-muted-foreground">{story.kind} · {formatDate(story.publishedOn)}</p></Link>) : <EmptyState title="No state records yet." text="The state desk will grow as verified records are added." />}</div>
+      <div className="grid gap-6 py-8 sm:grid-cols-3">{stateRecords.length ? stateRecords.map((story) => <Link href={storyPath(story)} key={story.id} className="group border-b border-foreground/15 pb-5 sm:border-b-0 sm:border-r sm:pr-6 last:border-0"><p className="signal-kicker text-accent">{story.state ?? 'State record'}</p><h3 className="mt-3 font-display text-2xl leading-tight group-hover:text-accent">{story.title}</h3><p className="mt-3 text-sm leading-relaxed text-muted-foreground">{story.dek}</p><p className="mt-4 signal-kicker text-muted-foreground">{story.kind} · {formatDate(story.publishedOn)}</p></Link>) : <EmptyState title="No state records yet." text="The state desk will grow as verified records are added." />}</div>
     </section>
     <section id="data" className="signal-container pt-24 sm:pt-36">
       <div className="grid gap-8 border-y border-foreground/20 py-8 lg:grid-cols-[.65fr_1.35fr] lg:gap-16"><div><div className="flex items-center gap-3"><Database size={17} className="text-accent" /><p className="signal-kicker text-accent">07 / Data room</p></div><h2 className="mt-3 max-w-sm font-display text-4xl leading-[.98] tracking-[-.04em] sm:text-5xl">Numbers need<br /><em className="font-normal text-accent">a denominator.</em></h2><p className="mt-5 max-w-sm text-sm leading-relaxed text-muted-foreground">We will not force a comparison where the public record uses different definitions.</p></div><div className="flex items-center border border-dashed border-foreground/25 bg-card p-6 sm:p-8"><div className="flex items-start gap-4"><CircleAlert className="mt-1 shrink-0 text-accent" size={18} /><div><p className="font-display text-2xl">Public data is currently insufficient for a reliable comparison.</p><p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">When a dataset arrives, this room will show the value, unit, year, geography, definition, source and last verified date beside every chart.</p><Link href="/archive" className="mt-5 inline-flex items-center gap-2 signal-kicker text-accent hover:underline">Read the methodology in the record <ArrowUpRight size={13} /></Link></div></div></div></div>
     </section>
     <section id="documents" className="signal-container pt-24 sm:pt-36">
       <div className="flex flex-col justify-between gap-6 border-b border-foreground/20 pb-5 sm:flex-row sm:items-end"><div><div className="flex items-center gap-3"><FileText size={17} className="text-accent" /><p className="signal-kicker text-accent">08 / Document vault</p></div><h2 className="mt-3 font-display text-4xl leading-none tracking-[-.04em] sm:text-5xl">The sources<br /><em className="font-normal text-accent">behind the story.</em></h2></div><p className="max-w-sm text-sm leading-relaxed text-muted-foreground">Primary documents, court records and research notes should be findable long after a headline moves on.</p></div>
-      <div className="grid gap-4 py-8 sm:grid-cols-2 lg:grid-cols-4">{documents.map((story) => <Link href={`/stories/${story.id}`} key={story.id} className="group border border-foreground/15 bg-card p-5 hover:border-accent"><p className="signal-kicker text-accent">Source card</p><h3 className="mt-4 font-display text-xl leading-tight group-hover:text-accent">{story.source}</h3><p className="mt-4 signal-kicker text-muted-foreground">{story.kind} · {formatDate(story.publishedOn)}</p></Link>)}</div>
+      <div className="grid gap-4 py-8 sm:grid-cols-2 lg:grid-cols-4">{documents.map((story) => <Link href={storyPath(story)} key={story.id} className="group border border-foreground/15 bg-card p-5 hover:border-accent"><p className="signal-kicker text-accent">Source card</p><h3 className="mt-4 font-display text-xl leading-tight group-hover:text-accent">{story.source}</h3><p className="mt-4 signal-kicker text-muted-foreground">{story.kind} · {formatDate(story.publishedOn)}</p></Link>)}</div>
     </section>
     <section id="explainers" className="signal-container pt-24 sm:pt-36">
-      <div className="grid gap-8 border-y border-foreground/20 py-8 lg:grid-cols-[.65fr_1.35fr] lg:gap-16"><div><div className="flex items-center gap-3"><BookOpen size={17} className="text-accent" /><p className="signal-kicker text-accent">09 / Explainers</p></div><h2 className="mt-3 max-w-sm font-display text-4xl leading-[.98] tracking-[-.04em] sm:text-5xl">Start with<br /><em className="font-normal text-accent">the terms.</em></h2><p className="mt-5 max-w-sm text-sm leading-relaxed text-muted-foreground">Evergreen context belongs beside the news, not buried underneath it.</p></div>{explainer ? <Link href={`/stories/${explainer.id}`} className="group border-l-2 border-accent bg-card p-6 sm:p-8"><p className="signal-kicker text-accent">Explainer / {formatDate(explainer.publishedOn)}</p><h3 className="mt-4 max-w-2xl font-display text-3xl leading-tight group-hover:text-accent sm:text-4xl">{explainer.title}</h3><p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground">{explainer.dek}</p><span className="mt-6 inline-flex items-center gap-2 signal-kicker text-accent">Read the explainer <ArrowUpRight size={13} /></span></Link> : <EmptyState title="No explainer published yet." />}</div>
+      <div className="grid gap-8 border-y border-foreground/20 py-8 lg:grid-cols-[.65fr_1.35fr] lg:gap-16"><div><div className="flex items-center gap-3"><BookOpen size={17} className="text-accent" /><p className="signal-kicker text-accent">09 / Explainers</p></div><h2 className="mt-3 max-w-sm font-display text-4xl leading-[.98] tracking-[-.04em] sm:text-5xl">Start with<br /><em className="font-normal text-accent">the terms.</em></h2><p className="mt-5 max-w-sm text-sm leading-relaxed text-muted-foreground">Evergreen context belongs beside the news, not buried underneath it.</p></div>{explainer ? <Link href={storyPath(explainer)} className="group border-l-2 border-accent bg-card p-6 sm:p-8"><p className="signal-kicker text-accent">Explainer / {formatDate(explainer.publishedOn)}</p><h3 className="mt-4 max-w-2xl font-display text-3xl leading-tight group-hover:text-accent sm:text-4xl">{explainer.title}</h3><p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground">{explainer.dek}</p><span className="mt-6 inline-flex items-center gap-2 signal-kicker text-accent">Read the explainer <ArrowUpRight size={13} /></span></Link> : <EmptyState title="No explainer published yet." />}</div>
     </section>
   </>;
 }
@@ -264,15 +273,32 @@ function InfoPage({ page }: { page: 'about' | 'standards' | 'methodology' }) {
     },
   }[page];
 
-  useEffect(() => { document.title = `${content.eyebrow.split(' / ')[1]} — The Signal 24`; }, [content.eyebrow]);
-  return <main className="signal-page"><Header /><section className="signal-container pt-14 sm:pt-24"><p className="signal-kicker text-accent">{content.eyebrow}</p><h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">{content.title}</h1><p className="mt-8 max-w-2xl text-lg leading-relaxed text-muted-foreground">{content.intro}</p></section><section className="signal-container mt-16 border-t border-foreground/20 sm:mt-24"><div className="grid divide-y divide-foreground/15 lg:grid-cols-2 lg:divide-x lg:divide-y-0">{content.sections.map(([title, text], index) => <article id={title === 'Corrections and AI' ? 'corrections' : undefined} key={title} className={`py-8 lg:px-8 ${index % 2 === 0 ? 'lg:pl-0' : 'lg:pr-0'}`}><p className="signal-kicker text-accent">0{index + 1}</p><h2 className="mt-3 font-display text-3xl leading-tight">{title}</h2><p className="mt-4 max-w-xl text-sm leading-[1.8] text-muted-foreground">{text}</p></article>)}</div></section><footer className="signal-container flex flex-wrap justify-between gap-6 border-t border-foreground/20 py-8"><Link href="/" className="signal-kicker signal-link inline-flex items-center gap-2"><ArrowLeft size={13} /> Current edition</Link><div className="flex gap-5 signal-kicker text-muted-foreground"><Link href="/about" className="signal-link">About</Link><Link href="/editorial-standards" className="signal-link">Standards</Link><Link href="/methodology" className="signal-link">Methodology</Link></div></footer></main>;
+  useSeo({
+    title: `${content.eyebrow.split(' / ')[1]} — The Signal 24`,
+    description: content.intro,
+    canonicalPath: `/${page === 'standards' ? 'editorial-standards' : page}`,
+    structuredData: {
+      '@context': 'https://schema.org',
+      '@graph': [
+        { '@type': 'WebPage', name: content.eyebrow, description: content.intro },
+        organizationSchema,
+        { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'The Signal 24', item: '/' }, { '@type': 'ListItem', position: 2, name: content.eyebrow.split(' / ')[1], item: `/${page === 'standards' ? 'editorial-standards' : page}` }] },
+      ],
+    },
+  });
+  return <main className="signal-page"><Header /><section className="signal-container pt-14 sm:pt-24"><p className="signal-kicker text-accent">{content.eyebrow}</p><h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">{content.title}</h1><p className="mt-8 max-w-2xl text-lg leading-relaxed text-muted-foreground">{content.intro}</p></section><section className="signal-container mt-16 border-t border-foreground/20 sm:mt-24"><div className="grid divide-y divide-foreground/15 lg:grid-cols-2 lg:divide-x lg:divide-y-0">{content.sections.map(([title, text], index) => <article key={title} className={`py-8 lg:px-8 ${index % 2 === 0 ? 'lg:pl-0' : 'lg:pr-0'}`}><p className="signal-kicker text-accent">0{index + 1}</p><h2 className="mt-3 font-display text-3xl leading-tight">{title}</h2><p className="mt-4 max-w-xl text-sm leading-[1.8] text-muted-foreground">{text}</p></article>)}</div></section><footer className="signal-container flex flex-wrap justify-between gap-6 border-t border-foreground/20 py-8"><Link href="/" className="signal-kicker signal-link inline-flex items-center gap-2"><ArrowLeft size={13} /> Current edition</Link><div className="flex gap-5 signal-kicker text-muted-foreground"><Link href="/about" className="signal-link">About</Link><Link href="/editorial-standards" className="signal-link">Standards</Link><Link href="/methodology" className="signal-link">Methodology</Link></div></footer></main>;
 }
 
 function Home() {
   const { data, isLoading, isError, refetch } = useGetCurrentIssue();
   const [activeTopic, setActiveTopic] = useState<Topic | 'All'>('All');
   const [search, setSearch] = useState('');
-  useEffect(() => { document.title = data?.issue.title ? `${data.issue.title} — The Signal 24` : 'The Signal 24 — Reservation archive'; }, [data?.issue.title]);
+  useSeo({
+    title: data?.issue.title ? `${data.issue.title} — The Signal 24` : 'The Signal 24 — Reservation archive',
+    description: data?.issue.intro ?? 'A source-first public-interest publication and research archive on reservation and representation in India.',
+    canonicalPath: '/',
+    structuredData: { '@context': 'https://schema.org', '@graph': [organizationSchema, { '@type': 'WebSite', name: 'The Signal 24', url: '/' }] },
+  });
   const stories = useMemo(() => {
     if (!data) return [];
     const q = search.trim().toLowerCase();
@@ -292,7 +318,7 @@ function Home() {
     <PolicyLedger stories={data.stories} />
     <RecordCollections stories={data.stories} />
     <TrustNote />
-    <section className="signal-container pt-24 sm:pt-36"><div className="flex items-end justify-between border-b border-foreground/20 pb-5"><div><p className="signal-kicker text-accent">11 / The larger record</p><h2 className="mt-2 font-display text-4xl leading-none tracking-[-.04em] sm:text-5xl">Keep following.</h2></div><Link href="/archive" className="hidden items-center gap-2 text-[.68rem] font-bold uppercase tracking-[.13em] hover:text-accent sm:flex" data-testid="link-explore-archive">Explore all records <ChevronRight size={14} /></Link></div><div className="grid gap-7 py-8 sm:grid-cols-3">{data.stories.slice(4, 7).map((story, index) => <Link href={`/stories/${story.id}`} key={story.id} className="group border-b border-foreground/15 pb-6 sm:border-b-0 sm:border-r sm:pr-6 last:border-0" data-testid={`link-follow-story-${story.id}`}><p className="signal-kicker text-accent">{story.topic} / 0{index + 1}</p><h3 className="mt-3 font-display text-2xl leading-[1.02] tracking-[-.03em] group-hover:text-accent">{story.title}</h3><p className="mt-3 text-sm leading-relaxed text-muted-foreground">{story.dek}</p><span className="mt-5 block signal-kicker text-muted-foreground">{story.kind} <ArrowUpRight size={12} className="ml-1 inline" /></span></Link>)}</div></section>
+    <section className="signal-container pt-24 sm:pt-36"><div className="flex items-end justify-between border-b border-foreground/20 pb-5"><div><p className="signal-kicker text-accent">11 / The larger record</p><h2 className="mt-2 font-display text-4xl leading-none tracking-[-.04em] sm:text-5xl">Keep following.</h2></div><Link href="/archive" className="hidden items-center gap-2 text-[.68rem] font-bold uppercase tracking-[.13em] hover:text-accent sm:flex" data-testid="link-explore-archive">Explore all records <ChevronRight size={14} /></Link></div><div className="grid gap-7 py-8 sm:grid-cols-3">{data.stories.slice(4, 7).map((story, index) => <Link href={storyPath(story)} key={story.id} className="group border-b border-foreground/15 pb-6 sm:border-b-0 sm:border-r sm:pr-6 last:border-0" data-testid={`link-follow-story-${story.id}`}><p className="signal-kicker text-accent">{story.topic} / 0{index + 1}</p><h3 className="mt-3 font-display text-2xl leading-[1.02] tracking-[-.03em] group-hover:text-accent">{story.title}</h3><p className="mt-3 text-sm leading-relaxed text-muted-foreground">{story.dek}</p><span className="mt-5 block signal-kicker text-muted-foreground">{story.kind} <ArrowUpRight size={12} className="ml-1 inline" /></span></Link>)}</div></section>
     <NewsletterSignup /><footer className="signal-container flex flex-col justify-between gap-8 py-10 sm:flex-row sm:items-end"><div><Link href="/" className="signal-link flex items-center gap-3"><BrandMark /><span className="font-display text-xl">The Signal <span className="text-accent">24</span></span></Link><p className="mt-3 max-w-xs text-xs leading-relaxed text-muted-foreground">A source-first publication for understanding reservation in India.</p></div><div className="flex flex-wrap gap-x-5 gap-y-2 signal-kicker text-[9px] text-muted-foreground"><Link href="/archive" className="signal-link">Archive</Link><Link href="/about" className="signal-link">About</Link><Link href="/editorial-standards" className="signal-link">Standards</Link><Link href="/methodology" className="signal-link">Methodology</Link><Link href="/editor" className="signal-link">Editorial desk</Link><span>© Signal 24</span></div></footer>
   </main>;
 }
@@ -306,7 +332,12 @@ function ArchivePage() {
   const [filtersOpen, setFiltersOpen] = useState(true);
   const params = useMemo(() => ({ ...(query ? { q: query } : {}), ...(topic ? { topic: topic as Topic } : {}), ...(kind ? { kind: kind as StoryKind } : {}), ...(state ? { state } : {}), limit: 100 }), [kind, query, state, topic]);
   const { data, isLoading, isError, refetch } = useGetArchive(params, { query: { queryKey: getGetArchiveQueryKey(params) } });
-  useEffect(() => { document.title = 'The archive — The Signal 24'; }, []);
+  useSeo({
+    title: 'The archive — The Signal 24',
+    description: 'Search published reporting, court and policy developments, historical documents, research notes and state context.',
+    canonicalPath: '/archive',
+    structuredData: { '@context': 'https://schema.org', '@graph': [organizationSchema, { '@type': 'CollectionPage', name: 'The Signal 24 archive', description: 'Published reservation reporting and research.' }, { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'The Signal 24', item: '/' }, { '@type': 'ListItem', position: 2, name: 'Archive', item: '/archive' }] }] },
+  });
   const clear = () => { setQuery(''); setTopic(''); setKind(''); setState(''); setYear(''); };
   if (isLoading) return <div className="signal-page"><Header /><LoadingBlock label="Indexing records and sources…" /></div>;
   if (isError) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message="The search index could not be reached." onRetry={() => void refetch()} /></div></div>;
@@ -324,10 +355,57 @@ function SelectFilter({ label, value, options, onChange, testId }: { label: stri
 }
 
 function StoryDetail() {
-  const params = useParams<{ id: string }>();
-  const storyId = Number(params.id);
-  const { data: story, isLoading, isError, refetch } = useGetStory(storyId);
-  useEffect(() => { document.title = story ? `${story.title} — The Signal 24` : 'Record — The Signal 24'; }, [story]);
+  const params = useParams<{ id?: string; family?: string; slug?: string }>();
+  const slugId = Number(params.slug?.match(/-(\d+)$/)?.[1]);
+  const storyId = Number(params.id ?? slugId);
+  const { data: story, isLoading, isError, refetch } = useGetStory(storyId, { query: { enabled: Number.isFinite(storyId), queryKey: getGetStoryQueryKey(storyId) } });
+  const recordPath = story ? storyPath(story) : undefined;
+  const structuredData = useMemo(() => {
+    if (!story) return null;
+    const url = new URL(recordPath ?? '/', window.location.origin).href;
+    const isDataset = story.recordFamily === 'data';
+    const recordSchema = story.indexable ? {
+      '@type': story.kind === 'Article' ? 'NewsArticle' : 'Article',
+      '@id': `${url}#record`,
+      headline: story.title,
+      description: story.dek,
+      datePublished: story.publishedOn ?? undefined,
+      dateModified: story.publishedOn ?? undefined,
+      mainEntityOfPage: url,
+      author: { '@type': 'Person', name: 'The Signal 24 editorial desk', url: `${window.location.origin}/authors/signal-24` },
+      publisher: { ...organizationSchema, url: window.location.origin },
+    } : {
+      '@type': 'WebPage',
+      '@id': `${url}#record`,
+      name: story.title,
+      description: story.dek,
+    };
+    return {
+      '@context': 'https://schema.org',
+      '@graph': [
+        recordSchema,
+        {
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'The Signal 24', item: window.location.origin },
+            { '@type': 'ListItem', position: 2, name: 'Archive', item: `${window.location.origin}/archive` },
+            { '@type': 'ListItem', position: 3, name: story.title, item: url },
+          ],
+        },
+        { ...organizationSchema, url: window.location.origin },
+        { '@type': 'Person', name: 'The Signal 24 editorial desk', url: `${window.location.origin}/authors/signal-24` },
+        ...(isDataset ? [{ '@type': 'Dataset', name: story.title, description: story.dek, url, creator: { '@type': 'Organization', name: 'The Signal 24' }, isAccessibleForFree: true }] : []),
+      ],
+    };
+  }, [recordPath, story]);
+  useSeo({
+    title: story ? `${story.title} — The Signal 24` : 'Record — The Signal 24',
+    description: story?.dek ?? 'A source record from The Signal 24 reservation archive.',
+    canonicalPath: story?.indexable ? recordPath : undefined,
+    robots: story?.indexable ? 'index, follow' : 'noindex, follow',
+    type: story?.indexable ? 'article' : 'website',
+    structuredData,
+  });
   if (!Number.isFinite(storyId)) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message="That record address is not valid." /></div></div>;
   if (isLoading) return <div className="signal-page"><Header /><LoadingBlock label="Opening the source record…" /></div>;
   if (isError || !story) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message="This record may have moved or is not published yet." onRetry={() => void refetch()} /></div></div>;
@@ -355,7 +433,11 @@ function Editor() {
   const [notice, setNotice] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const hydrated = useRef(false);
   useEffect(() => { if (data && !hydrated.current) { hydrated.current = true; setWorkingIssue(data.issue); setStories(data.stories); setIssueForm({ issueDate: data.issue.issueDate, issueNumber: data.issue.issueNumber, title: data.issue.title, intro: data.issue.intro }); } }, [data]);
-  useEffect(() => { document.title = 'Editorial desk — The Signal 24'; }, []);
+  useSeo({
+    title: 'Editorial desk — The Signal 24',
+    description: 'Private editorial workspace for preparing source-aware Signal 24 records.',
+    robots: 'noindex, nofollow',
+  });
   if (isLoading) return <div className="signal-page"><Header editor /><LoadingBlock label="Loading the editorial desk…" /></div>;
   if (isError) return <div className="signal-page"><Header editor /><div className="py-20"><ErrorState message="The editorial workspace could not be loaded." onRetry={() => void refetch()} /></div></div>;
   const updateIssue = (field: keyof IssueInput, value: string) => setIssueForm((current) => ({ ...current, [field]: field === 'issueNumber' ? Number(value) : value }));
@@ -488,8 +570,25 @@ function MethodologyPage() {
   return <InfoPage page="methodology" />;
 }
 
+function AuthorPage() {
+  const path = '/authors/signal-24';
+  useSeo({
+    title: 'The Signal 24 editorial desk — The Signal 24',
+    description: 'Meet the editorial desk behind The Signal 24, a source-first publication and research archive on reservation in India.',
+    canonicalPath: path,
+    structuredData: {
+      '@context': 'https://schema.org',
+      '@graph': [
+        { '@type': 'Person', name: 'The Signal 24 editorial desk', description: 'The editorial desk responsible for sourcing, reviewing and presenting The Signal 24 archive.', url: path, worksFor: organizationSchema },
+        organizationSchema,
+        { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'The Signal 24', item: '/' }, { '@type': 'ListItem', position: 2, name: 'Authors', item: path }] },
+      ],
+    },
+  });
+  return <main className="signal-page"><Header /><section className="signal-container pt-14 sm:pt-24"><p className="signal-kicker text-accent">The Signal 24 / author</p><h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">The editorial<br /><em className="font-normal text-accent">desk.</em></h1><p className="mt-8 max-w-2xl text-lg leading-relaxed text-muted-foreground">The Signal 24 editorial desk keeps reporting, documents, analysis and opinion distinct, and names the source and date behind each published record.</p></section><section className="signal-container mt-16 border-y border-foreground/20 py-10 sm:mt-24 sm:py-14"><div className="grid gap-8 lg:grid-cols-[.7fr_1.3fr]"><div><p className="signal-kicker text-accent">Source first / always</p><h2 className="mt-3 font-display text-4xl leading-none">A byline with a responsibility.</h2></div><p className="max-w-2xl text-base leading-relaxed text-muted-foreground">The desk is a publication identity rather than a claim that every record has one author. Individual bylines, disclosures and corrections belong on the record when they are available.</p></div></section><footer className="signal-container flex justify-between gap-6 border-t border-foreground/20 py-8"><Link href="/archive" className="signal-kicker signal-link">Browse the archive</Link><Link href="/editorial-standards" className="signal-kicker signal-link">Editorial standards</Link></footer></main>;
+}
 function AppRoutes() {
-  return <Switch><Route path="/" component={Home} /><Route path="/archive" component={ArchivePage} /><Route path="/stories/:id" component={StoryDetail} /><Route path="/editor" component={EditorialDesk} /><Route path="/about" component={AboutPage} /><Route path="/editorial-standards" component={StandardsPage} /><Route path="/methodology" component={MethodologyPage} /><Route component={NotFound} /></Switch>;
+  return <Switch><Route path="/" component={Home} /><Route path="/archive" component={ArchivePage} /><Route path="/authors/:slug" component={AuthorPage} /><Route path="/data" component={DataIndexPage} /><Route path="/stories/:id" component={StoryDetail} /><Route path="/editor" component={EditorialDesk} /><Route path="/about" component={AboutPage} /><Route path="/editorial-standards" component={StandardsPage} /><Route path="/methodology" component={MethodologyPage} /><Route path="/:family/:slug" component={StoryDetail} /><Route component={NotFound} /></Switch>;
 }
 
 function App() {
@@ -497,3 +596,89 @@ function App() {
 }
 
 export default App;
+
+function useSeo({ title, description, canonicalPath, robots = 'index, follow', type = 'website', structuredData }: SeoConfig) {
+  const structuredDataText = JSON.stringify(structuredData ?? null);
+  useEffect(() => {
+    document.title = title;
+    const upsertMeta = (attribute: 'name' | 'property', key: string, content: string) => {
+      let element = document.head.querySelector<HTMLMetaElement>(`meta[${attribute}="${key}"]`);
+      if (!element) {
+        element = document.createElement('meta');
+        element.setAttribute(attribute, key);
+        element.dataset.signalSeo = 'true';
+        document.head.appendChild(element);
+      }
+      element.content = content;
+    };
+
+    upsertMeta('name', 'description', description);
+    upsertMeta('name', 'robots', robots);
+    upsertMeta('property', 'og:title', title);
+    upsertMeta('property', 'og:description', description);
+    upsertMeta('property', 'og:type', type);
+    upsertMeta('property', 'og:url', canonicalPath ? new URL(canonicalPath, window.location.origin).href : window.location.href);
+    upsertMeta('name', 'twitter:title', title);
+    upsertMeta('name', 'twitter:description', description);
+
+    document.head.querySelectorAll('link[rel="canonical"]').forEach((element) => element.remove());
+    if (canonicalPath && robots.startsWith('index')) {
+      const canonical = document.createElement('link');
+      canonical.rel = 'canonical';
+      canonical.href = new URL(canonicalPath, window.location.origin).href;
+      canonical.dataset.signalSeo = 'true';
+      document.head.appendChild(canonical);
+    }
+
+    document.head.querySelectorAll('script[data-signal-seo]').forEach((element) => element.remove());
+    if (structuredDataText !== 'null') {
+      const script = document.createElement('script');
+      script.type = 'application/ld+json';
+      script.dataset.signalSeo = 'true';
+      script.textContent = structuredDataText;
+      document.head.appendChild(script);
+    }
+  }, [canonicalPath, description, robots, structuredDataText, title, type]);
+}
+
+function storyPath(story: Story) {
+  return story.canonicalPath || `/${recordFamilyForStory(story)}/${story.slug || `${slugify(story.title) || 'record'}-${story.id}`}`;
+}
+
+function slugify(value: string) {
+  return value.normalize('NFKD').replace(/[^\w\s-]/g, '').trim().toLowerCase().replace(/[\s_-]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
+const organizationSchema = {
+  '@type': 'Organization',
+  name: 'The Signal 24',
+  description: 'A source-first public-interest publication and research archive on reservation and representation in India.',
+  url: '/',
+};
+
+function recordFamilyForStory(story: Story) {
+  if (story.recordFamily) return story.recordFamily;
+  if (story.topic === 'States') return 'states';
+  if (story.topic === 'Data & Notes') return 'data';
+  if (story.topic === 'Courts & Policy') return story.kind === 'Paper note' ? 'cases' : 'policies';
+  if (story.kind === 'Archive') return 'documents';
+  return 'articles';
+}
+
+function DataIndexPage() {
+  const path = '/data';
+  useSeo({
+    title: 'Data room — The Signal 24',
+    description: 'A source-linked data room for understanding reservation and representation in India.',
+    canonicalPath: path,
+    structuredData: {
+      '@context': 'https://schema.org',
+      '@graph': [
+        { '@type': 'Dataset', name: 'The Signal 24 data room', description: 'Source-linked datasets and methodology notes on reservation and representation in India.', url: path, creator: organizationSchema, isAccessibleForFree: true },
+        organizationSchema,
+        { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'The Signal 24', item: '/' }, { '@type': 'ListItem', position: 2, name: 'Data', item: path }] },
+      ],
+    },
+  });
+  return <main className="signal-page"><Header /><section className="signal-container pt-14 sm:pt-24"><p className="signal-kicker text-accent">The Signal 24 / data room</p><h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">Numbers need<br /><em className="font-normal text-accent">a denominator.</em></h1><p className="mt-8 max-w-2xl text-lg leading-relaxed text-muted-foreground">Published data records show the value, unit, year, geography, definition, source and last verified date beside every comparison.</p></section><section className="signal-container mt-16 border-y border-dashed border-foreground/25 py-12 sm:mt-24 sm:py-16"><p className="signal-kicker text-accent">Data room / awaiting verified releases</p><p className="mt-4 max-w-2xl font-display text-3xl leading-tight">No standalone dataset has been published yet.</p><p className="mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground">When a dataset is ready, it will receive its own durable data record and source documentation. Starter notes are not included in the public sitemap.</p><Link href="/archive?kind=Paper%20note" className="mt-7 inline-flex items-center gap-2 signal-kicker text-accent hover:underline">Read methodology notes <ArrowUpRight size={13} /></Link></section></main>;
+}

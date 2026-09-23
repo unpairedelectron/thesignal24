@@ -135,10 +135,6 @@ export function useHealthCheck<TData = Awaited<ReturnType<typeof healthCheck>>, 
 
 
 
-
-
-
-
 export const getGetCurrentIssueUrl = () => {
 
 
@@ -365,6 +361,83 @@ export function useGetArchive<TData = Awaited<ReturnType<typeof getArchive>>, TE
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetArchiveQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetPublicationSitemapUrl = () => {
+
+
+
+
+  return `/api/sitemap.xml`
+}
+
+/**
+ * @summary Get the indexable publication sitemap
+ */
+export const getPublicationSitemap = async ( options?: Parameters<typeof customFetch>[1]): Promise<string> => {
+
+  return customFetch<string>(getGetPublicationSitemapUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPublicationSitemapQueryKey = () => {
+    return [
+    `/api/sitemap.xml`
+    ] as const;
+    }
+
+
+export const getGetPublicationSitemapQueryOptions = <TData = Awaited<ReturnType<typeof getPublicationSitemap>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPublicationSitemap>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPublicationSitemapQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPublicationSitemap>>> = ({ signal }) => getPublicationSitemap({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPublicationSitemap>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPublicationSitemapQueryResult = NonNullable<Awaited<ReturnType<typeof getPublicationSitemap>>>
+export type GetPublicationSitemapQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get the indexable publication sitemap
+ */
+
+export function useGetPublicationSitemap<TData = Awaited<ReturnType<typeof getPublicationSitemap>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPublicationSitemap>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPublicationSitemapQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -1035,10 +1108,5 @@ export function useGetNewsletterStatus<TData = Awaited<ReturnType<typeof getNews
 
   return withQueryKey(query, queryOptions.queryKey);
 }
-
-
-
-
-
 
 

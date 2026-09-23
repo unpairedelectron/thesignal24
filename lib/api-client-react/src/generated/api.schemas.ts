@@ -76,6 +76,18 @@ export interface IssueInput {
   intro: string;
 }
 
+export type StoryRecordFamily = typeof StoryRecordFamily[keyof typeof StoryRecordFamily];
+
+
+export const StoryRecordFamily = {
+  articles: 'articles',
+  policies: 'policies',
+  cases: 'cases',
+  documents: 'documents',
+  states: 'states',
+  data: 'data',
+} as const;
+
 export interface Story {
   id: number;
   issueId: number;
@@ -94,6 +106,10 @@ export interface Story {
   tone: string;
   number: number | null;
   sortOrder: number;
+  slug: string;
+  recordFamily: StoryRecordFamily;
+  canonicalPath: string;
+  indexable: boolean;
   workflowStatus: StoryWorkflowStatus;
   verificationStatus: VerificationStatus;
   /** @nullable */
@@ -202,4 +218,3 @@ limit?: number;
 export type GetNewsletterStatusParams = {
 email: string;
 };
-

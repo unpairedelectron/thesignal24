@@ -1,3 +1,4 @@
 - [Reservation archive editorial rule](reservation-archive-editorial.md) — keep the publication source-first, neutral, and explicit about record type, date, and verification status.
 - [Drizzle Zod compatibility](drizzle-zod-compatibility.md) — Drizzle-Zod schemas use the Zod v4 subpath while generated API schemas use the workspace’s root Zod entrypoint.
 - [Public archive imagery](public-archive-imagery.md) — use identifiable public-archive images with visible provenance instead of anonymous or misleading editorial visuals.
+- [Vite static canonical handling](vite-static-canonical.md) — a literal root canonical link in index.html is treated as a directory asset during Vite builds; set canonicals at runtime for this app.
