@@ -10,6 +10,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { z } from "zod/v4";
+export * from "./policies";
 
 export const issuesTable = pgTable(
   "publication_issues",

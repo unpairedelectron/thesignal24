@@ -194,6 +194,46 @@ export interface ArchiveResult {
   states: string[];
 }
 
+export interface PolicySource {
+  id: number;
+  title: string;
+  sourceType: string;
+  publisher: string;
+  url: string;
+  /** @nullable */
+  publishedOn: string | null;
+  retrievedOn: string;
+  isPrimary: boolean;
+}
+
+export interface PolicyRecord {
+  id: number;
+  slug: string;
+  canonicalPath: string;
+  title: string;
+  summary: string;
+  /** @nullable */
+  state: string | null;
+  sector: string;
+  status: string;
+  authority: string;
+  previousFramework: string;
+  newFramework: string;
+  legalBasis: string;
+  courtStatus: string;
+  /** @nullable */
+  effectiveDate: string | null;
+  publishedOn: string;
+  sources: PolicySource[];
+}
+
+export interface PolicyListResult {
+  records: PolicyRecord[];
+  states: string[];
+  sectors: string[];
+  statuses: string[];
+}
+
 export type LiveUpdateTopic = typeof LiveUpdateTopic[keyof typeof LiveUpdateTopic];
 
 
@@ -259,6 +299,20 @@ q?: string;
 topic?: Topic;
 kind?: StoryKind;
 state?: string;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
+};
+
+export type GetPoliciesParams = {
+q?: string;
+state?: string;
+sector?: string;
+status?: string;
+effectiveFrom?: string;
+effectiveTo?: string;
 /**
  * @minimum 1
  * @maximum 100

@@ -2,6 +2,8 @@ import { asc, eq, inArray } from "drizzle-orm";
 import {
   db,
   issuesTable,
+  policyRecordsTable,
+  policySourcesTable,
   storiesTable,
   storyRevisionsTable,
 } from "@workspace/db";
@@ -191,7 +193,63 @@ const starterEditorialMetadata = {
   correctionNote: null,
 } as const;
 
+async function ensurePolicyLedgerData() {
+  const [existing] = await db
+    .select({ id: policyRecordsTable.id })
+    .from(policyRecordsTable)
+    .limit(1);
+  if (existing) return;
+
+  const [policy] = await db
+    .insert(policyRecordsTable)
+    .values({
+      slug: "103rd-constitutional-amendment-ews-reservation",
+      title: "The 103rd Amendment added an EWS reservation framework",
+      summary:
+        "The constitutional amendment created a separate framework for economically weaker sections in education and public employment, followed by a Supreme Court challenge.",
+      state: "National",
+      sector: "Education and public employment",
+      status: "current",
+      authority: "Parliament of India",
+      previousFramework:
+        "Articles 15 and 16 did not contain an express economically weaker sections reservation provision.",
+      newFramework:
+        "Articles 15(6) and 16(6) permit special provisions, including up to 10% reservation, for economically weaker sections subject to the constitutional framework.",
+      legalBasis: "Constitution (One Hundred and Third Amendment) Act, 2019",
+      courtStatus:
+        "Upheld by the Supreme Court of India in Janhit Abhiyan v. Union of India (2022).",
+      effectiveDate: "2019-01-14",
+      publishedOn: "2026-09-23",
+      workflowStatus: "published",
+    })
+    .returning();
+
+  await db.insert(policySourcesTable).values([
+    {
+      policyRecordId: policy.id,
+      title: "Constitution of India",
+      sourceType: "constitutional text",
+      publisher: "Legislative Department, Government of India",
+      url: "https://legislative.gov.in/constitution-of-india/",
+      publishedOn: null,
+      retrievedOn: "2026-09-23",
+      isPrimary: true,
+    },
+    {
+      policyRecordId: policy.id,
+      title: "Janhit Abhiyan v. Union of India judgment",
+      sourceType: "court judgment",
+      publisher: "Supreme Court of India",
+      url: "https://main.sci.gov.in/supremecourt/2022/20936/20936_2022_1_1501_39685_Judgement_07-Nov-2022.pdf",
+      publishedOn: "2022-11-07",
+      retrievedOn: "2026-09-23",
+      isPrimary: true,
+    },
+  ]);
+}
+
 export async function ensureSeedData() {
+  await ensurePolicyLedgerData();
   const existingIssues = await db
     .select({ id: issuesTable.id, title: issuesTable.title })
     .from(issuesTable)

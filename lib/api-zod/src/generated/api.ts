@@ -200,6 +200,94 @@ export const GetArchiveResponse = zod.object({
 
 
 /**
+ * @summary Search the source-linked policy ledger
+ */
+export const getPoliciesQueryLimitDefault = 50;
+export const getPoliciesQueryLimitMax = 100;
+
+
+
+export const GetPoliciesQueryParams = zod.object({
+  "q": zod.coerce.string().optional(),
+  "state": zod.coerce.string().optional(),
+  "sector": zod.coerce.string().optional(),
+  "status": zod.coerce.string().optional(),
+  "effectiveFrom": zod.date().optional(),
+  "effectiveTo": zod.date().optional(),
+  "limit": zod.coerce.number().int().min(1).max(getPoliciesQueryLimitMax).default(getPoliciesQueryLimitDefault)
+})
+
+export const GetPoliciesResponse = zod.object({
+  "records": zod.array(zod.object({
+  "id": zod.number().int(),
+  "slug": zod.string(),
+  "canonicalPath": zod.string(),
+  "title": zod.string(),
+  "summary": zod.string(),
+  "state": zod.string().nullable(),
+  "sector": zod.string(),
+  "status": zod.string(),
+  "authority": zod.string(),
+  "previousFramework": zod.string(),
+  "newFramework": zod.string(),
+  "legalBasis": zod.string(),
+  "courtStatus": zod.string(),
+  "effectiveDate": zod.coerce.date().nullable(),
+  "publishedOn": zod.coerce.date(),
+  "sources": zod.array(zod.object({
+  "id": zod.number().int(),
+  "title": zod.string(),
+  "sourceType": zod.string(),
+  "publisher": zod.string(),
+  "url": zod.string().url(),
+  "publishedOn": zod.coerce.date().nullable(),
+  "retrievedOn": zod.coerce.date(),
+  "isPrimary": zod.boolean()
+}))
+})),
+  "states": zod.array(zod.string()),
+  "sectors": zod.array(zod.string()),
+  "statuses": zod.array(zod.string())
+})
+
+
+/**
+ * @summary Get a policy ledger record by permanent slug
+ */
+export const GetPolicyParams = zod.object({
+  "slug": zod.coerce.string()
+})
+
+export const GetPolicyResponse = zod.object({
+  "id": zod.number().int(),
+  "slug": zod.string(),
+  "canonicalPath": zod.string(),
+  "title": zod.string(),
+  "summary": zod.string(),
+  "state": zod.string().nullable(),
+  "sector": zod.string(),
+  "status": zod.string(),
+  "authority": zod.string(),
+  "previousFramework": zod.string(),
+  "newFramework": zod.string(),
+  "legalBasis": zod.string(),
+  "courtStatus": zod.string(),
+  "effectiveDate": zod.coerce.date().nullable(),
+  "publishedOn": zod.coerce.date(),
+  "sources": zod.array(zod.object({
+  "id": zod.number().int(),
+  "title": zod.string(),
+  "sourceType": zod.string(),
+  "publisher": zod.string(),
+  "url": zod.string().url(),
+  "publishedOn": zod.coerce.date().nullable(),
+  "retrievedOn": zod.coerce.date(),
+  "isPrimary": zod.boolean()
+}))
+})
+
+
+/**
  * @summary Get the indexable publication sitemap
  */
 export const GetPublicationSitemapResponse = zod.unknown()

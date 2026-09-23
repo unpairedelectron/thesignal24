@@ -1,14 +1,20 @@
 import { Router, type IRouter } from "express";
-import { and, asc, desc, eq, inArray, like, or } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, like, lte, or } from "drizzle-orm";
 import {
   db,
   issuesTable,
+  policyRecordsTable,
+  policySourcesTable,
   storiesTable,
   storyRevisionsTable,
 } from "@workspace/db";
 import {
   CreateIssueBody,
   CreateStoryBody,
+  GetPoliciesQueryParams,
+  GetPoliciesResponse,
+  GetPolicyParams,
+  GetPolicyResponse,
   GetStoryRevisionsResponse,
   UpdateStoryBody,
 } from "@workspace/api-zod";
@@ -206,6 +212,18 @@ function queryString(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function serializePolicySource(source: typeof policySourcesTable.$inferSelect) {
+  return {
+    id: source.id,
+    title: source.title,
+    sourceType: source.sourceType,
+    publisher: source.publisher,
+    url: source.url,
+    publishedOn: source.publishedOn,
+    retrievedOn: source.retrievedOn,
+    isPrimary: source.isPrimary,
+  };
+}
 function xmlEscape(value: string) {
   return value
     .replace(/&/g, "&amp;")
@@ -230,8 +248,7 @@ router.get("/issues/current", async (_req, res, next) => {
     const [issue] = await db
       .select()
       .from(issuesTable)
-      .where(eq(issuesTable.status, "published"))
-      .orderBy(desc(issuesTable.issueDate))
+      .where(eq(issuesTable.id, issueId))
       .limit(1);
 
     if (!issue) {
@@ -258,8 +275,7 @@ router.get("/editor/issues/current", async (_req, res, next) => {
     const [issue] = await db
       .select()
       .from(issuesTable)
-      .where(eq(issuesTable.status, "published"))
-      .orderBy(desc(issuesTable.issueDate))
+      .where(eq(issuesTable.id, issueId))
       .limit(1);
 
     if (!issue) {
@@ -285,21 +301,17 @@ router.get("/archive", async (req, res, next) => {
       : 50;
 
     const conditions = [
-      eq(issuesTable.status, "published"),
-      eq(storiesTable.workflowStatus, "published"),
-      inArray(storiesTable.topic, [...topicList]),
+      eq(policyRecordsTable.workflowStatus, "published"),
     ];
-    if (topicValues.has(topic as Topic)) {
-      conditions.push(eq(storiesTable.topic, topic));
-    }
-    if (kindValues.has(kind as StoryKind)) {
-      conditions.push(eq(storiesTable.kind, kind));
-    }
-    if (state) {
-      conditions.push(eq(storiesTable.state, state));
-    }
-    if (q) {
-      const search = `%${q}%`;
+    if (parsed.q) {
+      const search = `%${parsed.q}%`;
+
+    const policies = await db
+      .select()
+      .from(policyRecordsTable)
+      .where(and(...conditions))
+      .orderBy(desc(policyRecordsTable.effectiveDate), desc(policyRecordsTable.publishedOn))
+      .limit(parsed.limit);
       conditions.push(
         or(
           like(storiesTable.title, search),
@@ -315,29 +327,22 @@ router.get("/archive", async (req, res, next) => {
       .select({ story: storiesTable })
       .from(storiesTable)
       .innerJoin(issuesTable, eq(storiesTable.issueId, issuesTable.id))
-      .where(and(...conditions))
-      .orderBy(
-        desc(storiesTable.publishedOn),
-        desc(issuesTable.issueDate),
-        asc(storiesTable.sortOrder),
-        asc(storiesTable.id),
+      .where(
+        and(
+          eq(issuesTable.status, "published"),
+          eq(storiesTable.workflowStatus, "published"),
+        ),
       )
-      .limit(limit);
+      .orderBy(desc(storiesTable.updatedAt), asc(storiesTable.id));
+
+    const policyResults = await db
+      .select()
+      .from(policyRecordsTable)
+      .where(eq(policyRecordsTable.workflowStatus, "published"))
+      .orderBy(desc(policyRecordsTable.updatedAt), asc(policyRecordsTable.id));
     const serializedStories = results.map(({ story }) => serializeStory(story));
 
-    res.json({
-      stories: serializedStories,
-      topics: [...new Set(serializedStories.map((story) => story.topic))],
-      kinds: [...new Set(serializedStories.map((story) => story.kind))],
-      states: [...new Set(serializedStories.map((story) => story.state).filter(Boolean))],
-    });
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.get("/sitemap.xml", async (req, res, next) => {
-  try {
+    const rawEffectiveFrom = queryString(req.query.effectiveFrom);
     const results = await db
       .select({ story: storiesTable })
       .from(storiesTable)
@@ -349,10 +354,17 @@ router.get("/sitemap.xml", async (req, res, next) => {
         ),
       )
       .orderBy(desc(storiesTable.updatedAt), asc(storiesTable.id));
+
+    const policyResults = await db
+      .select()
+      .from(policyRecordsTable)
+      .where(eq(policyRecordsTable.workflowStatus, "published"))
+      .orderBy(desc(policyRecordsTable.updatedAt), asc(policyRecordsTable.id));
     const origin = requestOrigin(req);
     const staticPaths = [
       "/",
       "/archive",
+      "/policies",
       "/about",
       "/editorial-standards",
       "/methodology",
@@ -369,6 +381,10 @@ router.get("/sitemap.xml", async (req, res, next) => {
           (story) =>
             `<url><loc>${xmlEscape(`${origin}${getCanonicalPath(story)}`)}</loc><lastmod>${story.updatedAt.toISOString()}</lastmod></url>`,
         ),
+      ...policyResults.map(
+        (policy) =>
+          `<url><loc>${xmlEscape(`${origin}/policies/${policy.slug}`)}</loc><lastmod>${policy.updatedAt.toISOString()}</lastmod></url>`,
+      ),
     ].join("");
     res.type("application/xml").send(
       `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls}</urlset>`,
@@ -381,14 +397,12 @@ router.get("/sitemap.xml", async (req, res, next) => {
 router.post("/issues", async (req, res, next) => {
   try {
     const parsed = CreateIssueBody.parse(req.body);
-    const input = {
-      ...parsed,
-      issueDate: parsed.issueDate.toISOString().slice(0, 10),
-    };
+    const input = UpdateStoryBody.parse(req.body);
     const [issue] = await db
-      .insert(issuesTable)
-      .values(input)
-      .returning();
+      .select()
+      .from(issuesTable)
+      .where(eq(issuesTable.id, issueId))
+      .limit(1);
     res.status(201).json(serializeIssue(issue));
   } catch (error) {
     next(error);
@@ -471,28 +485,69 @@ router.get("/stories/:storyId", async (req, res, next) => {
     }
 
     const [story] = await db
-      .select({ story: storiesTable })
-      .from(storiesTable)
-      .innerJoin(issuesTable, eq(storiesTable.issueId, issuesTable.id))
-      .where(
-        and(
-          eq(storiesTable.id, storyId),
-          eq(issuesTable.status, "published"),
-          eq(storiesTable.workflowStatus, "published"),
-        ),
-      )
-      .limit(1);
-    if (!story) {
-      res.status(404).json({ message: "Story not found" });
-      return;
-    }
-    res.json(serializeStory(story.story));
+      .update(storiesTable)
+      .set({
+        ...storyInput,
+        state: input.state === undefined ? existing.state : input.state,
+        sourceUrl:
+          input.sourceUrl === undefined ? existing.sourceUrl : input.sourceUrl,
+        publishedOn:
+          publishedOn === undefined
+            ? existing.publishedOn
+            : dateOnly(publishedOn),
+        number: input.number ?? null,
+        workflowStatus,
+        verificationStatus,
+        verificationNotes:
+          input.verificationNotes === undefined
+            ? existing.verificationNotes
+            : input.verificationNotes,
+        sourcePublishedOn:
+          input.sourcePublishedOn === undefined
+            ? existing.sourcePublishedOn
+            : dateOnly(input.sourcePublishedOn),
+        sourceRetrievedOn:
+          input.sourceRetrievedOn === undefined
+            ? existing.sourceRetrievedOn
+            : dateOnly(input.sourceRetrievedOn),
+        lastVerifiedAt:
+          verificationStatus === "verified"
+            ? existing.lastVerifiedAt ?? new Date()
+            : verificationStatus === "unverified"
+              ? null
+              : existing.lastVerifiedAt,
+        reviewedAt:
+          workflowStatus === "review"
+            ? existing.reviewedAt ?? new Date()
+            : workflowStatus === "draft"
+              ? null
+              : existing.reviewedAt,
+        scheduledFor:
+          scheduledFor === undefined
+            ? existing.scheduledFor
+            : scheduledFor
+              ? new Date(scheduledFor)
+              : null,
+        aiDisclosure:
+          input.aiDisclosure === undefined
+            ? existing.aiDisclosure
+            : input.aiDisclosure,
+        correctionNote:
+          input.correctionNote === undefined
+            ? existing.correctionNote
+            : input.correctionNote,
+        updatedAt: new Date(),
+      })
+      .where(eq(storiesTable.id, storyId))
+      .returning();
+    await recordRevision(story, revisionNote ?? "Created record");
+    res.status(201).json(serializeStory(story));
   } catch (error) {
     next(error);
   }
 });
 
-router.get("/stories/:storyId/revisions", async (req, res, next) => {
+router.put("/stories/:storyId", async (req, res, next) => {
   try {
     const storyId = parseId(req.params.storyId);
     if (!storyId) {
@@ -501,10 +556,61 @@ router.get("/stories/:storyId/revisions", async (req, res, next) => {
     }
 
     const [story] = await db
-      .select({ id: storiesTable.id })
-      .from(storiesTable)
+      .update(storiesTable)
+      .set({
+        ...storyInput,
+        state: input.state === undefined ? existing.state : input.state,
+        sourceUrl:
+          input.sourceUrl === undefined ? existing.sourceUrl : input.sourceUrl,
+        publishedOn:
+          publishedOn === undefined
+            ? existing.publishedOn
+            : dateOnly(publishedOn),
+        number: input.number ?? null,
+        workflowStatus,
+        verificationStatus,
+        verificationNotes:
+          input.verificationNotes === undefined
+            ? existing.verificationNotes
+            : input.verificationNotes,
+        sourcePublishedOn:
+          input.sourcePublishedOn === undefined
+            ? existing.sourcePublishedOn
+            : dateOnly(input.sourcePublishedOn),
+        sourceRetrievedOn:
+          input.sourceRetrievedOn === undefined
+            ? existing.sourceRetrievedOn
+            : dateOnly(input.sourceRetrievedOn),
+        lastVerifiedAt:
+          verificationStatus === "verified"
+            ? existing.lastVerifiedAt ?? new Date()
+            : verificationStatus === "unverified"
+              ? null
+              : existing.lastVerifiedAt,
+        reviewedAt:
+          workflowStatus === "review"
+            ? existing.reviewedAt ?? new Date()
+            : workflowStatus === "draft"
+              ? null
+              : existing.reviewedAt,
+        scheduledFor:
+          scheduledFor === undefined
+            ? existing.scheduledFor
+            : scheduledFor
+              ? new Date(scheduledFor)
+              : null,
+        aiDisclosure:
+          input.aiDisclosure === undefined
+            ? existing.aiDisclosure
+            : input.aiDisclosure,
+        correctionNote:
+          input.correctionNote === undefined
+            ? existing.correctionNote
+            : input.correctionNote,
+        updatedAt: new Date(),
+      })
       .where(eq(storiesTable.id, storyId))
-      .limit(1);
+      .returning();
     if (!story) {
       res.status(404).json({ message: "Story not found" });
       return;
@@ -539,8 +645,8 @@ function dateOnly(value: Date | string | null | undefined): string | null {
 
 router.post("/stories", async (req, res, next) => {
   try {
-    const input = CreateStoryBody.parse(req.body);
-    const workflowStatus = input.workflowStatus ?? "draft";
+    const input = UpdateStoryBody.parse(req.body);
+    const workflowStatus = input.workflowStatus ?? existing.workflowStatus;
     if (!["draft", "review"].includes(workflowStatus)) {
       res.status(400).json({
         message: "New records must start as drafts or enter editorial review.",
@@ -549,36 +655,60 @@ router.post("/stories", async (req, res, next) => {
     }
     const { publishedOn, scheduledFor, revisionNote } = input;
     const [story] = await db
-      .insert(storiesTable)
-      .values({
-        issueId: input.issueId,
-        topic: input.topic,
-        kind: input.kind,
-        state: input.state ?? null,
-        source: input.source,
-        sourceUrl: input.sourceUrl ?? null,
-        publishedOn: dateOnly(publishedOn),
-        eyebrow: input.eyebrow,
-        title: input.title,
-        dek: input.dek,
-        body: input.body,
-        time: input.time,
-        read: input.read,
-        tone: input.tone,
+      .update(storiesTable)
+      .set({
+        ...storyInput,
+        state: input.state === undefined ? existing.state : input.state,
+        sourceUrl:
+          input.sourceUrl === undefined ? existing.sourceUrl : input.sourceUrl,
+        publishedOn:
+          publishedOn === undefined
+            ? existing.publishedOn
+            : dateOnly(publishedOn),
         number: input.number ?? null,
-        sortOrder: input.sortOrder,
         workflowStatus,
-        verificationStatus: input.verificationStatus ?? "unverified",
-        verificationNotes: input.verificationNotes ?? null,
-        sourcePublishedOn: dateOnly(input.sourcePublishedOn),
-        sourceRetrievedOn: dateOnly(input.sourceRetrievedOn),
+        verificationStatus,
+        verificationNotes:
+          input.verificationNotes === undefined
+            ? existing.verificationNotes
+            : input.verificationNotes,
+        sourcePublishedOn:
+          input.sourcePublishedOn === undefined
+            ? existing.sourcePublishedOn
+            : dateOnly(input.sourcePublishedOn),
+        sourceRetrievedOn:
+          input.sourceRetrievedOn === undefined
+            ? existing.sourceRetrievedOn
+            : dateOnly(input.sourceRetrievedOn),
         lastVerifiedAt:
-          input.verificationStatus === "verified" ? new Date() : null,
-        reviewedAt: workflowStatus === "review" ? new Date() : null,
-        scheduledFor: scheduledFor ? new Date(scheduledFor) : null,
-        aiDisclosure: input.aiDisclosure ?? null,
-        correctionNote: input.correctionNote ?? null,
+          verificationStatus === "verified"
+            ? existing.lastVerifiedAt ?? new Date()
+            : verificationStatus === "unverified"
+              ? null
+              : existing.lastVerifiedAt,
+        reviewedAt:
+          workflowStatus === "review"
+            ? existing.reviewedAt ?? new Date()
+            : workflowStatus === "draft"
+              ? null
+              : existing.reviewedAt,
+        scheduledFor:
+          scheduledFor === undefined
+            ? existing.scheduledFor
+            : scheduledFor
+              ? new Date(scheduledFor)
+              : null,
+        aiDisclosure:
+          input.aiDisclosure === undefined
+            ? existing.aiDisclosure
+            : input.aiDisclosure,
+        correctionNote:
+          input.correctionNote === undefined
+            ? existing.correctionNote
+            : input.correctionNote,
+        updatedAt: new Date(),
       })
+      .where(eq(storiesTable.id, storyId))
       .returning();
     await recordRevision(story, revisionNote ?? "Created record");
     res.status(201).json(serializeStory(story));
@@ -701,3 +831,65 @@ router.put("/stories/:storyId", async (req, res, next) => {
 });
 
 export default router;
+
+    const sources = await db
+      .select()
+      .from(policySourcesTable)
+      .where(eq(policySourcesTable.policyRecordId, policy.id))
+      .orderBy(desc(policySourcesTable.isPrimary), asc(policySourcesTable.id));
+
+function serializePolicy(
+  policy: typeof policyRecordsTable.$inferSelect,
+  sources: typeof policySourcesTable.$inferSelect[],
+) {
+  return {
+    id: policy.id,
+    slug: policy.slug,
+    canonicalPath: `/policies/${policy.slug}`,
+    title: policy.title,
+    summary: policy.summary,
+    state: policy.state,
+    sector: policy.sector,
+    status: policy.status,
+    authority: policy.authority,
+    previousFramework: policy.previousFramework,
+    newFramework: policy.newFramework,
+    legalBasis: policy.legalBasis,
+    courtStatus: policy.courtStatus,
+    effectiveDate: policy.effectiveDate,
+    publishedOn: policy.publishedOn,
+    sources: sources.map(serializePolicySource),
+  };
+}
+
+    const records = policies.map((policy) =>
+      serializePolicy(policy, sourcesByPolicy.get(policy.id) ?? []),
+    );
+
+      const existing = sourcesByPolicy.get(source.policyRecordId) ?? [];
+
+    const rawEffectiveTo = queryString(req.query.effectiveTo);
+
+    const facets = await db
+      .select({
+        state: policyRecordsTable.state,
+        sector: policyRecordsTable.sector,
+        status: policyRecordsTable.status,
+      })
+      .from(policyRecordsTable)
+      .where(eq(policyRecordsTable.workflowStatus, "published"));
+
+    const [policy] = await db
+      .select()
+      .from(policyRecordsTable)
+      .where(
+        and(
+          eq(policyRecordsTable.slug, slug),
+          eq(policyRecordsTable.workflowStatus, "published"),
+        ),
+      )
+      .limit(1);
+
+    const sourcesByPolicy = new Map<number, typeof sources>();
+
+    const { slug } = GetPolicyParams.parse(req.params);

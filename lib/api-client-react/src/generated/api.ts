@@ -24,12 +24,15 @@ import type {
   CurrentIssue,
   GetArchiveParams,
   GetNewsletterStatusParams,
+  GetPoliciesParams,
   HealthStatus,
   Issue,
   IssueInput,
   LiveUpdatesResult,
   NewsletterInput,
   NewsletterStatus,
+  PolicyListResult,
+  PolicyRecord,
   Story,
   StoryInput,
   StoryRevisions
@@ -444,6 +447,167 @@ export function useGetArchive<TData = Awaited<ReturnType<typeof getArchive>>, TE
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetArchiveQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetPoliciesUrl = (params?: GetPoliciesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/policies?${stringifiedParams}` : `/api/policies`
+}
+
+/**
+ * @summary Search the source-linked policy ledger
+ */
+export const getPolicies = async (params?: GetPoliciesParams, options?: Parameters<typeof customFetch>[1]): Promise<PolicyListResult> => {
+
+  return customFetch<PolicyListResult>(getGetPoliciesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPoliciesQueryKey = (params?: GetPoliciesParams,) => {
+    return [
+    `/api/policies`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetPoliciesQueryOptions = <TData = Awaited<ReturnType<typeof getPolicies>>, TError = ErrorType<unknown>>(params?: GetPoliciesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPolicies>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPoliciesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPolicies>>> = ({ signal }) => getPolicies(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPolicies>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPoliciesQueryResult = NonNullable<Awaited<ReturnType<typeof getPolicies>>>
+export type GetPoliciesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Search the source-linked policy ledger
+ */
+
+export function useGetPolicies<TData = Awaited<ReturnType<typeof getPolicies>>, TError = ErrorType<unknown>>(
+ params?: GetPoliciesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPolicies>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPoliciesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetPolicyUrl = (slug: string,) => {
+
+
+
+
+  return `/api/policies/${slug}`
+}
+
+/**
+ * @summary Get a policy ledger record by permanent slug
+ */
+export const getPolicy = async (slug: string, options?: Parameters<typeof customFetch>[1]): Promise<PolicyRecord> => {
+
+  return customFetch<PolicyRecord>(getGetPolicyUrl(slug),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPolicyQueryKey = (slug: string,) => {
+    return [
+    `/api/policies/${slug}`
+    ] as const;
+    }
+
+
+export const getGetPolicyQueryOptions = <TData = Awaited<ReturnType<typeof getPolicy>>, TError = ErrorType<void>>(slug: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPolicy>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPolicyQueryKey(slug);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPolicy>>> = ({ signal }) => getPolicy(slug, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: slug !== null && slug !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPolicy>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPolicyQueryResult = NonNullable<Awaited<ReturnType<typeof getPolicy>>>
+export type GetPolicyQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get a policy ledger record by permanent slug
+ */
+
+export function useGetPolicy<TData = Awaited<ReturnType<typeof getPolicy>>, TError = ErrorType<void>>(
+ slug: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPolicy>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPolicyQueryOptions(slug,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
