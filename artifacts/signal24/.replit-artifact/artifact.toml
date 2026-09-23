@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "The Signal 24"
+description = "A focused daily news briefing that filters the most important stories across world events, technology, business, and culture into a fast, readable signal for busy people."
+version = "1.0.0"
+id = "artifacts/signal24"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 22481
+
+[services.development]
+run = "pnpm --filter @workspace/signal24 run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/signal24", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/signal24/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22481"
+BASE_PATH = "/"
