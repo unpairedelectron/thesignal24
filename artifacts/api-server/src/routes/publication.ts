@@ -12,6 +12,7 @@ import {
   GetStoryRevisionsResponse,
   UpdateStoryBody,
 } from "@workspace/api-zod";
+import { getLiveUpdates } from "../lib/live-feed";
 
 const router: IRouter = Router();
 
@@ -239,6 +240,14 @@ router.get("/issues/current", async (_req, res, next) => {
     }
 
     res.json(await getIssuePayload(issue, false));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/updates/live", async (_req, res, next) => {
+  try {
+    res.json(await getLiveUpdates());
   } catch (error) {
     next(error);
   }

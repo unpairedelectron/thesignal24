@@ -68,6 +68,32 @@ export const GetCurrentIssueResponse = zod.object({
 
 
 /**
+ * Returns recent external feed items for monitoring. These are not published Signal 24 records and require editorial review before publication.
+ * @summary Get the current source monitoring feed
+ */
+export const GetLiveUpdatesResponse = zod.object({
+  "updates": zod.array(zod.object({
+  "id": zod.string(),
+  "headline": zod.string(),
+  "summary": zod.string(),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url(),
+  "publishedAt": zod.coerce.date().nullable(),
+  "observedAt": zod.coerce.date(),
+  "topic": zod.enum(['Latest', 'Courts & Policy', 'States', 'Ground Reports']),
+  "status": zod.enum(['monitoring']),
+  "reviewRequired": zod.literal(true)
+})),
+  "feeds": zod.array(zod.object({
+  "id": zod.string(),
+  "label": zod.string(),
+  "status": zod.enum(['ok', 'unavailable'])
+})),
+  "observedAt": zod.coerce.date()
+})
+
+
+/**
  * @summary Get the current issue with editorial workflow fields
  */
 export const GetEditorialIssueResponse = zod.object({

@@ -27,6 +27,7 @@ import type {
   HealthStatus,
   Issue,
   IssueInput,
+  LiveUpdatesResult,
   NewsletterInput,
   NewsletterStatus,
   Story,
@@ -135,6 +136,10 @@ export function useHealthCheck<TData = Awaited<ReturnType<typeof healthCheck>>, 
 
 
 
+
+
+
+
 export const getGetCurrentIssueUrl = () => {
 
 
@@ -200,6 +205,84 @@ export function useGetCurrentIssue<TData = Awaited<ReturnType<typeof getCurrentI
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetCurrentIssueQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetLiveUpdatesUrl = () => {
+
+
+
+
+  return `/api/updates/live`
+}
+
+/**
+ * Returns recent external feed items for monitoring. These are not published Signal 24 records and require editorial review before publication.
+ * @summary Get the current source monitoring feed
+ */
+export const getLiveUpdates = async ( options?: Parameters<typeof customFetch>[1]): Promise<LiveUpdatesResult> => {
+
+  return customFetch<LiveUpdatesResult>(getGetLiveUpdatesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetLiveUpdatesQueryKey = () => {
+    return [
+    `/api/updates/live`
+    ] as const;
+    }
+
+
+export const getGetLiveUpdatesQueryOptions = <TData = Awaited<ReturnType<typeof getLiveUpdates>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLiveUpdates>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetLiveUpdatesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getLiveUpdates>>> = ({ signal }) => getLiveUpdates({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getLiveUpdates>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetLiveUpdatesQueryResult = NonNullable<Awaited<ReturnType<typeof getLiveUpdates>>>
+export type GetLiveUpdatesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get the current source monitoring feed
+ */
+
+export function useGetLiveUpdates<TData = Awaited<ReturnType<typeof getLiveUpdates>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLiveUpdates>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetLiveUpdatesQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -1108,5 +1191,10 @@ export function useGetNewsletterStatus<TData = Awaited<ReturnType<typeof getNews
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
+
+
+
+
 
 

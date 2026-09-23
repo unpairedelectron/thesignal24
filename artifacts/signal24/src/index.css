@@ -145,6 +145,8 @@
 .broadcast-bars span:nth-child(6) { height: 70%; animation-delay: -1.4s; }
 .broadcast-bars span:nth-child(7) { height: 30%; animation-delay: -.1s; }
 @keyframes bars { 0%,100% { transform: scaleY(.7); } 50% { transform: scaleY(1); } }
+.live-pulse { animation: live-pulse 1.8s ease-in-out infinite; box-shadow: 0 0 0 0 hsl(var(--accent) / .45); }
+@keyframes live-pulse { 0%,100% { opacity: .55; box-shadow: 0 0 0 0 hsl(var(--accent) / .4); } 50% { opacity: 1; box-shadow: 0 0 0 6px hsl(var(--accent) / 0); } }
 
 .hero-grid {
   background-image: linear-gradient(hsl(var(--foreground) / .08) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--foreground) / .08) 1px, transparent 1px);

@@ -194,6 +194,57 @@ export interface ArchiveResult {
   states: string[];
 }
 
+export type LiveUpdateTopic = typeof LiveUpdateTopic[keyof typeof LiveUpdateTopic];
+
+
+export const LiveUpdateTopic = {
+  Latest: 'Latest',
+  'Courts_&_Policy': 'Courts & Policy',
+  States: 'States',
+  Ground_Reports: 'Ground Reports',
+} as const;
+
+export type LiveUpdateStatus = typeof LiveUpdateStatus[keyof typeof LiveUpdateStatus];
+
+
+export const LiveUpdateStatus = {
+  monitoring: 'monitoring',
+} as const;
+
+export interface LiveUpdate {
+  id: string;
+  headline: string;
+  summary: string;
+  source: string;
+  sourceUrl: string;
+  /** @nullable */
+  publishedAt: string | null;
+  observedAt: string;
+  topic: LiveUpdateTopic;
+  status: LiveUpdateStatus;
+  reviewRequired: true;
+}
+
+export type LiveFeedStatus = typeof LiveFeedStatus[keyof typeof LiveFeedStatus];
+
+
+export const LiveFeedStatus = {
+  ok: 'ok',
+  unavailable: 'unavailable',
+} as const;
+
+export interface LiveFeed {
+  id: string;
+  label: string;
+  status: LiveFeedStatus;
+}
+
+export interface LiveUpdatesResult {
+  updates: LiveUpdate[];
+  feeds: LiveFeed[];
+  observedAt: string;
+}
+
 export interface NewsletterInput {
   email: string;
 }
@@ -218,3 +269,4 @@ limit?: number;
 export type GetNewsletterStatusParams = {
 email: string;
 };
+

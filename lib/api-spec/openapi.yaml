@@ -14,6 +14,8 @@ tags:
     description: Daily issue and story operations
   - name: newsletter
     description: Newsletter subscription operations
+  - name: live desk
+    description: Curated external monitoring feed
 paths:
   /healthz:
     get:
@@ -42,6 +44,19 @@ paths:
                 $ref: "#/components/schemas/CurrentIssue"
         "404":
           description: No published issue exists
+  /updates/live:
+    get:
+      operationId: getLiveUpdates
+      tags: [live desk]
+      summary: Get the current source monitoring feed
+      description: Returns recent external feed items for monitoring. These are not published Signal 24 records and require editorial review before publication.
+      responses:
+        "200":
+          description: Current monitoring items and feed health
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LiveUpdatesResult"
   /editor/issues/current:
     get:
       operationId: getEditorialIssue
@@ -524,6 +539,62 @@ components:
           items:
             type: string
       required: [stories, topics, kinds, states]
+    LiveUpdate:
+      type: object
+      properties:
+        id:
+          type: string
+        headline:
+          type: string
+        summary:
+          type: string
+        source:
+          type: string
+        sourceUrl:
+          type: string
+          format: uri
+        publishedAt:
+          type: ["string", "null"]
+          format: date-time
+        observedAt:
+          type: string
+          format: date-time
+        topic:
+          type: string
+          enum: [Latest, Courts & Policy, States, Ground Reports]
+        status:
+          type: string
+          enum: [monitoring]
+        reviewRequired:
+          type: boolean
+          enum: [true]
+      required: [id, headline, summary, source, sourceUrl, publishedAt, observedAt, topic, status, reviewRequired]
+    LiveFeed:
+      type: object
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        status:
+          type: string
+          enum: [ok, unavailable]
+      required: [id, label, status]
+    LiveUpdatesResult:
+      type: object
+      properties:
+        updates:
+          type: array
+          items:
+            $ref: "#/components/schemas/LiveUpdate"
+        feeds:
+          type: array
+          items:
+            $ref: "#/components/schemas/LiveFeed"
+        observedAt:
+          type: string
+          format: date-time
+      required: [updates, feeds, observedAt]
     NewsletterInput:
       type: object
       properties:
