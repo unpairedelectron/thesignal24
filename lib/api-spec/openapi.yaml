@@ -10,6 +10,10 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: publication
+    description: Daily issue and story operations
+  - name: newsletter
+    description: Newsletter subscription operations
 paths:
   /healthz:
     get:
@@ -24,7 +28,162 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /issues/current:
+    get:
+      operationId: getCurrentIssue
+      tags: [publication]
+      summary: Get the current published issue
+      responses:
+        "200":
+          description: Current published issue
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentIssue"
+        "404":
+          description: No published issue exists
+  /issues:
+    post:
+      operationId: createIssue
+      tags: [publication]
+      summary: Create a daily issue
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IssueInput"
+      responses:
+        "201":
+          description: Created issue
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Issue"
+  /issues/{issueId}/publish:
+    post:
+      operationId: publishIssue
+      tags: [publication]
+      summary: Publish an issue
+      parameters:
+        - $ref: "#/components/parameters/IssueId"
+      responses:
+        "200":
+          description: Published issue
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Issue"
+        "404":
+          description: Issue not found
+  /stories/{storyId}:
+    get:
+      operationId: getStory
+      tags: [publication]
+      summary: Get a story by id
+      parameters:
+        - $ref: "#/components/parameters/StoryId"
+      responses:
+        "200":
+          description: Story details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Story"
+        "404":
+          description: Story not found
+    put:
+      operationId: updateStory
+      tags: [publication]
+      summary: Update a story
+      parameters:
+        - $ref: "#/components/parameters/StoryId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StoryInput"
+      responses:
+        "200":
+          description: Updated story
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Story"
+        "404":
+          description: Story not found
+  /stories:
+    post:
+      operationId: createStory
+      tags: [publication]
+      summary: Add a story to an issue
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StoryInput"
+      responses:
+        "201":
+          description: Created story
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Story"
+  /newsletter:
+    post:
+      operationId: subscribeToNewsletter
+      tags: [newsletter]
+      summary: Subscribe an email address
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewsletterInput"
+      responses:
+        "201":
+          description: Newsletter subscription saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NewsletterStatus"
+  /newsletter/status:
+    get:
+      operationId: getNewsletterStatus
+      tags: [newsletter]
+      summary: Check whether an email is subscribed
+      parameters:
+        - name: email
+          in: query
+          required: true
+          schema:
+            type: string
+            format: email
+      responses:
+        "200":
+          description: Newsletter subscription status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NewsletterStatus"
 components:
+  parameters:
+    IssueId:
+      name: issueId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int32
+    StoryId:
+      name: storyId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int32
   schemas:
     HealthStatus:
       type: object
@@ -33,4 +192,128 @@ components:
           type: string
       required:
         - status
+    Topic:
+      type: string
+      enum: [World, Technology, Business, Culture]
+    Issue:
+      type: object
+      properties:
+        id:
+          type: integer
+        issueDate:
+          type: string
+          format: date
+        issueNumber:
+          type: integer
+        status:
+          type: string
+          enum: [draft, published]
+        title:
+          type: string
+        intro:
+          type: string
+        publishedAt:
+          type: string
+          format: date-time
+          nullable: true
+      required: [id, issueDate, issueNumber, status, title, intro, publishedAt]
+    IssueInput:
+      type: object
+      properties:
+        issueDate:
+          type: string
+          format: date
+        issueNumber:
+          type: integer
+        title:
+          type: string
+        intro:
+          type: string
+      required: [issueDate, issueNumber, title, intro]
+    Story:
+      type: object
+      properties:
+        id:
+          type: integer
+        issueId:
+          type: integer
+        topic:
+          $ref: "#/components/schemas/Topic"
+        eyebrow:
+          type: string
+        title:
+          type: string
+        dek:
+          type: string
+        body:
+          type: string
+        time:
+          type: string
+        read:
+          type: integer
+        tone:
+          type: string
+        number:
+          type: integer
+          nullable: true
+        sortOrder:
+          type: integer
+      required: [id, issueId, topic, eyebrow, title, dek, body, time, read, tone, number, sortOrder]
+    StoryInput:
+      type: object
+      properties:
+        issueId:
+          type: integer
+        topic:
+          $ref: "#/components/schemas/Topic"
+        eyebrow:
+          type: string
+        title:
+          type: string
+        dek:
+          type: string
+        body:
+          type: string
+        time:
+          type: string
+        read:
+          type: integer
+        tone:
+          type: string
+        number:
+          type: integer
+          nullable: true
+        sortOrder:
+          type: integer
+      required: [issueId, topic, eyebrow, title, dek, body, time, read, tone, sortOrder]
+    CurrentIssue:
+      type: object
+      properties:
+        issue:
+          $ref: "#/components/schemas/Issue"
+        stories:
+          type: array
+          items:
+            $ref: "#/components/schemas/Story"
+        topics:
+          type: array
+          items:
+            $ref: "#/components/schemas/Topic"
+      required: [issue, stories, topics]
+    NewsletterInput:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+      required: [email]
+    NewsletterStatus:
+      type: object
+      properties:
+        subscribed:
+          type: boolean
+        email:
+          type: string
+          format: email
+      required: [subscribed, email]
 

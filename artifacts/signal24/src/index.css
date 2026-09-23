@@ -150,6 +150,20 @@
 .search-drawer { animation: drawer-in .25s ease both; }
 @keyframes drawer-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
 
+.editor-input {
+  width: 100%;
+  border: 1px solid hsl(var(--foreground) / .18);
+  border-radius: 2px;
+  background: hsl(var(--background) / .58);
+  padding: .75rem .85rem;
+  color: hsl(var(--foreground));
+  font-size: .9rem;
+  outline: none;
+  transition: border-color .2s ease, background-color .2s ease;
+}
+.editor-input:focus { border-color: hsl(var(--accent)); background: hsl(var(--background)); }
+.editor-input::placeholder { color: hsl(var(--muted-foreground) / .65); }
+
 @media (max-width: 767px) {
   .signal-container { width: min(100% - 28px, 600px); }
   .signal-mark { width: 27px; height: 27px; }

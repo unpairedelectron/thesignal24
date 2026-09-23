@@ -1,0 +1,1 @@
+- [Drizzle Zod compatibility](drizzle-zod-compatibility.md) — Drizzle-Zod schemas use the Zod v4 subpath while generated API schemas use the workspace’s root Zod entrypoint.
