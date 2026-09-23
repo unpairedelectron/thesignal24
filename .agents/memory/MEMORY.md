@@ -5,3 +5,4 @@
 - [Artifact build environment](artifact-build-environment.md) — standalone Vite builds for this artifact need the workflow-injected PORT and BASE_PATH values.
 - [Policy ledger record model](policy-ledger-model.md) — policy changes use dedicated records with independently traceable source rows, not story-only fields.
 - [Community contribution boundary](community-contribution-boundary.md) — participant posts stay separate from verified editorial records and need explicit contribution framing.
+- [Situation-room evidence boundary](situation-room-evidence-boundary.md) — connect current events to decision pressure, but expose missing migration evidence instead of inventing trends.

@@ -214,12 +214,15 @@
 .signal-home-panel:hover { border-color: hsl(var(--accent) / .76); }
 .home-index {
   display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   border-top: 1px solid hsl(var(--foreground) / .22);
   border-bottom: 1px solid hsl(var(--foreground) / .22);
 }
 .home-index > * { border-right: 1px solid hsl(var(--foreground) / .18); }
 .home-index > *:last-child { border-right: 0; }
+@media (min-width: 640px) {
+  .home-index { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
 .home-scanline {
   position: relative;
   overflow: hidden;
