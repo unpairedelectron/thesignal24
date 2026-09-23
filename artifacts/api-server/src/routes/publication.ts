@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { and, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, like, or } from "drizzle-orm";
 import { db, issuesTable, storiesTable } from "@workspace/db";
 import {
   CreateIssueBody,
@@ -9,8 +9,19 @@ import {
 
 const router: IRouter = Router();
 
-const topicValues = new Set(["World", "Technology", "Business", "Culture"]);
-type Topic = "World" | "Technology" | "Business" | "Culture";
+const topicList = [
+  "Latest",
+  "Courts & Policy",
+  "States",
+  "History",
+  "Ground Reports",
+  "Data & Notes",
+] as const;
+const topicValues = new Set(topicList);
+type Topic = (typeof topicList)[number];
+const kindList = ["Article", "Paper note", "Archive", "Explainer"] as const;
+const kindValues = new Set(kindList);
+type StoryKind = (typeof kindList)[number];
 
 function parseId(value: string) {
   const id = Number(value);
@@ -36,9 +47,16 @@ function serializeStory(story: typeof storiesTable.$inferSelect) {
   return {
     id: story.id,
     issueId: story.issueId,
-    topic: topicValues.has(story.topic)
+    topic: topicValues.has(story.topic as Topic)
       ? (story.topic as Topic)
-      : "World",
+      : "Latest",
+    kind: kindValues.has(story.kind as StoryKind)
+      ? (story.kind as StoryKind)
+      : "Article",
+    state: story.state,
+    source: story.source,
+    sourceUrl: story.sourceUrl,
+    publishedOn: story.publishedOn,
     eyebrow: story.eyebrow,
     title: story.title,
     dek: story.dek,
@@ -49,6 +67,10 @@ function serializeStory(story: typeof storiesTable.$inferSelect) {
     number: story.number,
     sortOrder: story.sortOrder,
   };
+}
+
+function queryString(value: unknown) {
+  return typeof value === "string" ? value.trim() : "";
 }
 
 router.get("/issues/current", async (_req, res, next) => {
@@ -76,6 +98,68 @@ router.get("/issues/current", async (_req, res, next) => {
       issue: serializeIssue(issue),
       stories: serializedStories,
       topics: [...new Set(serializedStories.map((story) => story.topic))],
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/archive", async (req, res, next) => {
+  try {
+    const q = queryString(req.query.q);
+    const topic = queryString(req.query.topic);
+    const kind = queryString(req.query.kind);
+    const state = queryString(req.query.state);
+    const parsedLimit = Number(req.query.limit);
+    const limit = Number.isInteger(parsedLimit)
+      ? Math.min(Math.max(parsedLimit, 1), 100)
+      : 50;
+
+    const conditions = [
+      eq(issuesTable.status, "published"),
+      inArray(storiesTable.topic, [...topicList]),
+    ];
+    if (topicValues.has(topic as Topic)) {
+      conditions.push(eq(storiesTable.topic, topic));
+    }
+    if (kindValues.has(kind as StoryKind)) {
+      conditions.push(eq(storiesTable.kind, kind));
+    }
+    if (state) {
+      conditions.push(eq(storiesTable.state, state));
+    }
+    if (q) {
+      const search = `%${q}%`;
+      conditions.push(
+        or(
+          like(storiesTable.title, search),
+          like(storiesTable.dek, search),
+          like(storiesTable.body, search),
+          like(storiesTable.source, search),
+          like(storiesTable.state, search),
+        )!,
+      );
+    }
+
+    const results = await db
+      .select({ story: storiesTable })
+      .from(storiesTable)
+      .innerJoin(issuesTable, eq(storiesTable.issueId, issuesTable.id))
+      .where(and(...conditions))
+      .orderBy(
+        desc(storiesTable.publishedOn),
+        desc(issuesTable.issueDate),
+        asc(storiesTable.sortOrder),
+        asc(storiesTable.id),
+      )
+      .limit(limit);
+    const serializedStories = results.map(({ story }) => serializeStory(story));
+
+    res.json({
+      stories: serializedStories,
+      topics: [...new Set(serializedStories.map((story) => story.topic))],
+      kinds: [...new Set(serializedStories.map((story) => story.kind))],
+      states: [...new Set(serializedStories.map((story) => story.state).filter(Boolean))],
     });
   } catch (error) {
     next(error);
@@ -165,10 +249,14 @@ router.get("/stories/:storyId", async (req, res, next) => {
 router.post("/stories", async (req, res, next) => {
   try {
     const input = CreateStoryBody.parse(req.body);
+    const { publishedOn, ...storyInput } = input;
     const [story] = await db
       .insert(storiesTable)
       .values({
-        ...input,
+        ...storyInput,
+        publishedOn: publishedOn
+          ? new Date(publishedOn).toISOString().slice(0, 10)
+          : null,
         number: input.number ?? null,
       })
       .returning();
@@ -186,9 +274,17 @@ router.put("/stories/:storyId", async (req, res, next) => {
       return;
     }
     const input = UpdateStoryBody.parse(req.body);
+    const { publishedOn, ...storyInput } = input;
     const [story] = await db
       .update(storiesTable)
-      .set({ ...input, number: input.number ?? null, updatedAt: new Date() })
+      .set({
+        ...storyInput,
+        publishedOn: publishedOn
+          ? new Date(publishedOn).toISOString().slice(0, 10)
+          : null,
+        number: input.number ?? null,
+        updatedAt: new Date(),
+      })
       .where(eq(storiesTable.id, storyId))
       .returning();
     if (!story) {

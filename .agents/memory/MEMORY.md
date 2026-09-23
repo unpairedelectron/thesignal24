@@ -1,1 +1,2 @@
+- [Reservation archive editorial rule](reservation-archive-editorial.md) — keep the publication source-first, neutral, and explicit about record type, date, and verification status.
 - [Drizzle Zod compatibility](drizzle-zod-compatibility.md) — Drizzle-Zod schemas use the Zod v4 subpath while generated API schemas use the workspace’s root Zod entrypoint.

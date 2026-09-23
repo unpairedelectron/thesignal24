@@ -37,6 +37,11 @@ export const storiesTable = pgTable("publication_stories", {
     .notNull()
     .references(() => issuesTable.id, { onDelete: "cascade" }),
   topic: text("topic").notNull(),
+  kind: text("kind").notNull().default("Article"),
+  state: text("state"),
+  source: text("source").notNull().default("Editorial desk"),
+  sourceUrl: text("source_url"),
+  publishedOn: date("published_on"),
   eyebrow: text("eyebrow").notNull(),
   title: text("title").notNull(),
   dek: text("dek").notNull(),
