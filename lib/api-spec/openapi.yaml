@@ -42,6 +42,47 @@ paths:
                 $ref: "#/components/schemas/CurrentIssue"
         "404":
           description: No published issue exists
+  /archive:
+    get:
+      operationId: getArchive
+      tags: [publication]
+      summary: Browse the reservation archive
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: topic
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/Topic"
+        - name: kind
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/StoryKind"
+        - name: state
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+      responses:
+        "200":
+          description: Published reservation reporting and research archive
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArchiveResult"
   /issues:
     post:
       operationId: createIssue
@@ -194,7 +235,10 @@ components:
         - status
     Topic:
       type: string
-      enum: [World, Technology, Business, Culture]
+      enum: [Latest, Courts & Policy, States, History, Ground Reports, Data & Notes]
+    StoryKind:
+      type: string
+      enum: [Article, Paper note, Archive, Explainer]
     Issue:
       type: object
       properties:
@@ -239,6 +283,21 @@ components:
           type: integer
         topic:
           $ref: "#/components/schemas/Topic"
+        kind:
+          $ref: "#/components/schemas/StoryKind"
+        state:
+          type: string
+          nullable: true
+        source:
+          type: string
+        sourceUrl:
+          type: string
+          format: uri
+          nullable: true
+        publishedOn:
+          type: string
+          format: date
+          nullable: true
         eyebrow:
           type: string
         title:
@@ -258,7 +317,7 @@ components:
           nullable: true
         sortOrder:
           type: integer
-      required: [id, issueId, topic, eyebrow, title, dek, body, time, read, tone, number, sortOrder]
+      required: [id, issueId, topic, kind, state, source, sourceUrl, publishedOn, eyebrow, title, dek, body, time, read, tone, number, sortOrder]
     StoryInput:
       type: object
       properties:
@@ -266,6 +325,21 @@ components:
           type: integer
         topic:
           $ref: "#/components/schemas/Topic"
+        kind:
+          $ref: "#/components/schemas/StoryKind"
+        state:
+          type: string
+          nullable: true
+        source:
+          type: string
+        sourceUrl:
+          type: string
+          format: uri
+          nullable: true
+        publishedOn:
+          type: string
+          format: date
+          nullable: true
         eyebrow:
           type: string
         title:
@@ -285,7 +359,7 @@ components:
           nullable: true
         sortOrder:
           type: integer
-      required: [issueId, topic, eyebrow, title, dek, body, time, read, tone, sortOrder]
+      required: [issueId, topic, kind, source, eyebrow, title, dek, body, time, read, tone, sortOrder]
     CurrentIssue:
       type: object
       properties:
@@ -300,6 +374,26 @@ components:
           items:
             $ref: "#/components/schemas/Topic"
       required: [issue, stories, topics]
+    ArchiveResult:
+      type: object
+      properties:
+        stories:
+          type: array
+          items:
+            $ref: "#/components/schemas/Story"
+        topics:
+          type: array
+          items:
+            $ref: "#/components/schemas/Topic"
+        kinds:
+          type: array
+          items:
+            $ref: "#/components/schemas/StoryKind"
+        states:
+          type: array
+          items:
+            type: string
+      required: [stories, topics, kinds, states]
     NewsletterInput:
       type: object
       properties:

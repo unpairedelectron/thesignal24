@@ -20,7 +20,9 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  ArchiveResult,
   CurrentIssue,
+  GetArchiveParams,
   GetNewsletterStatusParams,
   HealthStatus,
   Issue,
@@ -129,6 +131,13 @@ export function useHealthCheck<TData = Awaited<ReturnType<typeof healthCheck>>, 
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
+
+
+
+
+
+
 export const getGetCurrentIssueUrl = () => {
 
 
@@ -199,6 +208,97 @@ export function useGetCurrentIssue<TData = Awaited<ReturnType<typeof getCurrentI
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
+
+
+
+
+
+
+export const getGetArchiveUrl = (params?: GetArchiveParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/archive?${stringifiedParams}` : `/api/archive`
+}
+
+/**
+ * @summary Browse the reservation archive
+ */
+export const getArchive = async (params?: GetArchiveParams, options?: Parameters<typeof customFetch>[1]): Promise<ArchiveResult> => {
+
+  return customFetch<ArchiveResult>(getGetArchiveUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetArchiveQueryKey = (params?: GetArchiveParams,) => {
+    return [
+    `/api/archive`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetArchiveQueryOptions = <TData = Awaited<ReturnType<typeof getArchive>>, TError = ErrorType<unknown>>(params?: GetArchiveParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getArchive>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetArchiveQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getArchive>>> = ({ signal }) => getArchive(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getArchive>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetArchiveQueryResult = NonNullable<Awaited<ReturnType<typeof getArchive>>>
+export type GetArchiveQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Browse the reservation archive
+ */
+
+export function useGetArchive<TData = Awaited<ReturnType<typeof getArchive>>, TError = ErrorType<unknown>>(
+ params?: GetArchiveParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getArchive>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetArchiveQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export const getCreateIssueUrl = () => {
 
 
@@ -431,6 +531,12 @@ export function useGetStory<TData = Awaited<ReturnType<typeof getStory>>, TError
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
+
+
+
+
+
 
 export const getUpdateStoryUrl = (storyId: number,) => {
 
@@ -774,4 +880,10 @@ export function useGetNewsletterStatus<TData = Awaited<ReturnType<typeof getNews
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
+
+
+
+
+
 

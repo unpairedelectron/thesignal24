@@ -5,11 +5,17 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { StoryKind } from './storyKind';
 import type { Topic } from './topic';
 
 export interface StoryInput {
   issueId: number;
   topic: Topic;
+  kind: StoryKind;
+  state?: string | null;
+  source: string;
+  sourceUrl?: string | null;
+  publishedOn?: Date | null;
   eyebrow: string;
   title: string;
   dek: string;

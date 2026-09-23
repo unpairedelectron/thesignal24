@@ -6,7 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './archiveResult';
 export * from './currentIssue';
+export * from './getArchiveParams';
 export * from './getNewsletterStatusParams';
 export * from './healthStatus';
 export * from './issue';
@@ -16,4 +18,5 @@ export * from './newsletterInput';
 export * from './newsletterStatus';
 export * from './story';
 export * from './storyInput';
+export * from './storyKind';
 export * from './topic';

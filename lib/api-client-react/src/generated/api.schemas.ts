@@ -13,10 +13,22 @@ export type Topic = typeof Topic[keyof typeof Topic];
 
 
 export const Topic = {
-  World: 'World',
-  Technology: 'Technology',
-  Business: 'Business',
-  Culture: 'Culture',
+  Latest: 'Latest',
+  'Courts_&_Policy': 'Courts & Policy',
+  States: 'States',
+  History: 'History',
+  Ground_Reports: 'Ground Reports',
+  'Data_&_Notes': 'Data & Notes',
+} as const;
+
+export type StoryKind = typeof StoryKind[keyof typeof StoryKind];
+
+
+export const StoryKind = {
+  Article: 'Article',
+  Paper_note: 'Paper note',
+  Archive: 'Archive',
+  Explainer: 'Explainer',
 } as const;
 
 export type IssueStatus = typeof IssueStatus[keyof typeof IssueStatus];
@@ -48,6 +60,11 @@ export interface Story {
   id: number;
   issueId: number;
   topic: Topic;
+  kind: StoryKind;
+  state: string | null;
+  source: string;
+  sourceUrl: string | null;
+  publishedOn: string | null;
   eyebrow: string;
   title: string;
   dek: string;
@@ -62,6 +79,11 @@ export interface Story {
 export interface StoryInput {
   issueId: number;
   topic: Topic;
+  kind: StoryKind;
+  state?: string | null;
+  source: string;
+  sourceUrl?: string | null;
+  publishedOn?: string | null;
   eyebrow: string;
   title: string;
   dek: string;
@@ -79,6 +101,13 @@ export interface CurrentIssue {
   topics: Topic[];
 }
 
+export interface ArchiveResult {
+  stories: Story[];
+  topics: Topic[];
+  kinds: StoryKind[];
+  states: string[];
+}
+
 export interface NewsletterInput {
   email: string;
 }
@@ -88,6 +117,19 @@ export interface NewsletterStatus {
   email: string;
 }
 
+export type GetArchiveParams = {
+q?: string;
+topic?: Topic;
+kind?: StoryKind;
+state?: string;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
+};
+
 export type GetNewsletterStatusParams = {
 email: string;
 };
+

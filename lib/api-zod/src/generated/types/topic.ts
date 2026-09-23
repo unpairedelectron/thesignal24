@@ -10,8 +10,10 @@ export type Topic = typeof Topic[keyof typeof Topic];
 
 
 export const Topic = {
-  World: 'World',
-  Technology: 'Technology',
-  Business: 'Business',
-  Culture: 'Culture',
+  Latest: 'Latest',
+  'Courts_&_Policy': 'Courts & Policy',
+  States: 'States',
+  History: 'History',
+  Ground_Reports: 'Ground Reports',
+  'Data_&_Notes': 'Data & Notes',
 } as const;

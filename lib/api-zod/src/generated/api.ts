@@ -33,7 +33,12 @@ export const GetCurrentIssueResponse = zod.object({
   "stories": zod.array(zod.object({
   "id": zod.number().int(),
   "issueId": zod.number().int(),
-  "topic": zod.enum(['World', 'Technology', 'Business', 'Culture']),
+  "topic": zod.enum(['Latest', 'Courts & Policy', 'States', 'History', 'Ground Reports', 'Data & Notes']),
+  "kind": zod.enum(['Article', 'Paper note', 'Archive', 'Explainer']),
+  "state": zod.string().nullable(),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().nullable(),
+  "publishedOn": zod.coerce.date().nullable(),
   "eyebrow": zod.string(),
   "title": zod.string(),
   "dek": zod.string(),
@@ -44,7 +49,49 @@ export const GetCurrentIssueResponse = zod.object({
   "number": zod.number().int().nullable(),
   "sortOrder": zod.number().int()
 })),
-  "topics": zod.array(zod.enum(['World', 'Technology', 'Business', 'Culture']))
+  "topics": zod.array(zod.enum(['Latest', 'Courts & Policy', 'States', 'History', 'Ground Reports', 'Data & Notes']))
+})
+
+
+/**
+ * @summary Browse the reservation archive
+ */
+export const getArchiveQueryLimitDefault = 50;
+export const getArchiveQueryLimitMax = 100;
+
+
+
+export const GetArchiveQueryParams = zod.object({
+  "q": zod.coerce.string().optional(),
+  "topic": zod.enum(['Latest', 'Courts & Policy', 'States', 'History', 'Ground Reports', 'Data & Notes']).optional(),
+  "kind": zod.enum(['Article', 'Paper note', 'Archive', 'Explainer']).optional(),
+  "state": zod.coerce.string().optional(),
+  "limit": zod.coerce.number().int().min(1).max(getArchiveQueryLimitMax).default(getArchiveQueryLimitDefault)
+})
+
+export const GetArchiveResponse = zod.object({
+  "stories": zod.array(zod.object({
+  "id": zod.number().int(),
+  "issueId": zod.number().int(),
+  "topic": zod.enum(['Latest', 'Courts & Policy', 'States', 'History', 'Ground Reports', 'Data & Notes']),
+  "kind": zod.enum(['Article', 'Paper note', 'Archive', 'Explainer']),
+  "state": zod.string().nullable(),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().nullable(),
+  "publishedOn": zod.coerce.date().nullable(),
+  "eyebrow": zod.string(),
+  "title": zod.string(),
+  "dek": zod.string(),
+  "body": zod.string(),
+  "time": zod.string(),
+  "read": zod.number().int(),
+  "tone": zod.string(),
+  "number": zod.number().int().nullable(),
+  "sortOrder": zod.number().int()
+})),
+  "topics": zod.array(zod.enum(['Latest', 'Courts & Policy', 'States', 'History', 'Ground Reports', 'Data & Notes'])),
+  "kinds": zod.array(zod.enum(['Article', 'Paper note', 'Archive', 'Explainer'])),
+  "states": zod.array(zod.string())
 })
 
 
@@ -97,7 +144,12 @@ export const GetStoryParams = zod.object({
 export const GetStoryResponse = zod.object({
   "id": zod.number().int(),
   "issueId": zod.number().int(),
-  "topic": zod.enum(['World', 'Technology', 'Business', 'Culture']),
+  "topic": zod.enum(['Latest', 'Courts & Policy', 'States', 'History', 'Ground Reports', 'Data & Notes']),
+  "kind": zod.enum(['Article', 'Paper note', 'Archive', 'Explainer']),
+  "state": zod.string().nullable(),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().nullable(),
+  "publishedOn": zod.coerce.date().nullable(),
   "eyebrow": zod.string(),
   "title": zod.string(),
   "dek": zod.string(),
@@ -119,7 +171,12 @@ export const UpdateStoryParams = zod.object({
 
 export const UpdateStoryBody = zod.object({
   "issueId": zod.number().int(),
-  "topic": zod.enum(['World', 'Technology', 'Business', 'Culture']),
+  "topic": zod.enum(['Latest', 'Courts & Policy', 'States', 'History', 'Ground Reports', 'Data & Notes']),
+  "kind": zod.enum(['Article', 'Paper note', 'Archive', 'Explainer']),
+  "state": zod.string().nullish(),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().nullish(),
+  "publishedOn": zod.coerce.date().nullish(),
   "eyebrow": zod.string(),
   "title": zod.string(),
   "dek": zod.string(),
@@ -134,7 +191,12 @@ export const UpdateStoryBody = zod.object({
 export const UpdateStoryResponse = zod.object({
   "id": zod.number().int(),
   "issueId": zod.number().int(),
-  "topic": zod.enum(['World', 'Technology', 'Business', 'Culture']),
+  "topic": zod.enum(['Latest', 'Courts & Policy', 'States', 'History', 'Ground Reports', 'Data & Notes']),
+  "kind": zod.enum(['Article', 'Paper note', 'Archive', 'Explainer']),
+  "state": zod.string().nullable(),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().nullable(),
+  "publishedOn": zod.coerce.date().nullable(),
   "eyebrow": zod.string(),
   "title": zod.string(),
   "dek": zod.string(),
@@ -152,7 +214,12 @@ export const UpdateStoryResponse = zod.object({
  */
 export const CreateStoryBody = zod.object({
   "issueId": zod.number().int(),
-  "topic": zod.enum(['World', 'Technology', 'Business', 'Culture']),
+  "topic": zod.enum(['Latest', 'Courts & Policy', 'States', 'History', 'Ground Reports', 'Data & Notes']),
+  "kind": zod.enum(['Article', 'Paper note', 'Archive', 'Explainer']),
+  "state": zod.string().nullish(),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().nullish(),
+  "publishedOn": zod.coerce.date().nullish(),
   "eyebrow": zod.string(),
   "title": zod.string(),
   "dek": zod.string(),
@@ -167,7 +234,12 @@ export const CreateStoryBody = zod.object({
 export const CreateStoryResponse = zod.object({
   "id": zod.number().int(),
   "issueId": zod.number().int(),
-  "topic": zod.enum(['World', 'Technology', 'Business', 'Culture']),
+  "topic": zod.enum(['Latest', 'Courts & Policy', 'States', 'History', 'Ground Reports', 'Data & Notes']),
+  "kind": zod.enum(['Article', 'Paper note', 'Archive', 'Explainer']),
+  "state": zod.string().nullable(),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().nullable(),
+  "publishedOn": zod.coerce.date().nullable(),
   "eyebrow": zod.string(),
   "title": zod.string(),
   "dek": zod.string(),
@@ -204,3 +276,5 @@ export const GetNewsletterStatusResponse = zod.object({
   "subscribed": zod.boolean(),
   "email": zod.string().email()
 })
+
+
