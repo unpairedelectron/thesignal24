@@ -13,7 +13,10 @@ import {
   Database,
   ExternalLink,
   FileText,
+  Heart,
+  Link2,
   Menu,
+  MessageCircle,
   MapPin,
   Pencil,
   Plus,
@@ -51,11 +54,18 @@ import {
   useGetNewsletterStatus,
   useGetStoryRevisions,
   useGetStory,
+  getGetCommunityPostsQueryKey,
+  getGetCommunityPostQueryKey,
+  useGetCommunityPosts,
+  useGetCommunityPost,
+  useCreateCommunityPost,
+  useCreateCommunityReply,
+  useToggleCommunityPostLike,
   usePublishIssue,
   useSubscribeToNewsletter,
   useUpdateStory,
 } from '@workspace/api-client-react';
-import type { GetPoliciesParams, Issue, IssueInput, LiveUpdate, PolicyRecord, PolicySource, Story, StoryInput, StoryKind, StoryWorkflowStatus, Topic, VerificationStatus } from '@workspace/api-client-react';
+import type { CommunityPost, CommunityReply, CommunityPostInput, CommunityPostKind, CommunityTopic, GetCommunityPostsParams, GetCommunityPostsSort, GetPoliciesParams, Issue, IssueInput, LiveUpdate, PolicyRecord, PolicySource, Story, StoryInput, StoryKind, StoryWorkflowStatus, Topic, VerificationStatus } from '@workspace/api-client-react';
 import NotFound from '@/pages/not-found';
 
 const queryClient = new QueryClient();
@@ -120,6 +130,7 @@ function Header({ editor = false }: { editor?: boolean }) {
               <a href="/#courtroom" className="signal-kicker signal-link" data-testid="link-courtroom">Courtroom</a>
               <a href="/#data" className="signal-kicker signal-link" data-testid="link-data">Data</a>
               <Link href="/archive" className="signal-kicker signal-link" data-testid="link-archive">Archive</Link>
+              <Link href="/community" className="signal-kicker signal-link" data-testid="link-community">Community</Link>
             </>
           )}
         </nav>
@@ -140,6 +151,7 @@ function Header({ editor = false }: { editor?: boolean }) {
                 <a href="/#courtroom" onClick={close} className="signal-kicker signal-link">Courtroom</a>
                 <a href="/#data" onClick={close} className="signal-kicker signal-link">Data</a>
                 <Link href="/archive" onClick={close} className="signal-kicker signal-link">Archive</Link>
+                 <Link href="/community" onClick={close} className="signal-kicker signal-link" data-testid="link-community-mobile">Community</Link>
                 <a href="/#documents" onClick={close} className="signal-kicker signal-link">Documents</a>
                 <Link href="/editorial-standards" onClick={close} className="signal-kicker signal-link">Standards</Link>
               </>}
@@ -798,8 +810,166 @@ function AuthorPage() {
   });
   return <main className="signal-page"><Header /><section className="signal-container pt-14 sm:pt-24"><p className="signal-kicker text-accent">The Signal 24 / author</p><h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">The editorial<br /><em className="font-normal text-accent">desk.</em></h1><p className="mt-8 max-w-2xl text-lg leading-relaxed text-muted-foreground">The Signal 24 editorial desk keeps reporting, documents, analysis and opinion distinct, and names the source and date behind each published record.</p></section><section className="signal-container mt-16 border-y border-foreground/20 py-10 sm:mt-24 sm:py-14"><div className="grid gap-8 lg:grid-cols-[.7fr_1.3fr]"><div><p className="signal-kicker text-accent">Source first / always</p><h2 className="mt-3 font-display text-4xl leading-none">A byline with a responsibility.</h2></div><p className="max-w-2xl text-base leading-relaxed text-muted-foreground">The desk is a publication identity rather than a claim that every record has one author. Individual bylines, disclosures and corrections belong on the record when they are available.</p></div></section><footer className="signal-container flex justify-between gap-6 border-t border-foreground/20 py-8"><Link href="/archive" className="signal-kicker signal-link">Browse the archive</Link><Link href="/editorial-standards" className="signal-kicker signal-link">Editorial standards</Link></footer></main>;
 }
+
+const COMMUNITY_TOPICS = ['general', 'caste', 'policy', 'representation', 'migration', 'violence', 'work', 'education', 'culture'] as CommunityTopic[];
+const COMMUNITY_KINDS = ['thought', 'article', 'piece'] as CommunityPostKind[];
+const COMMUNITY_STATES = ['Andhra Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Delhi', 'Gujarat', 'Haryana', 'Jharkhand', 'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Odisha', 'Punjab', 'Rajasthan', 'Tamil Nadu', 'Telangana', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal'];
+
+function communityDate(value: string) {
+  return formatDate(value);
+}
+
+function CommunityPostCard({ post }: { post: CommunityPost }) {
+  const queryClient = useQueryClient();
+  const likeMutation = useToggleCommunityPostLike();
+  const [likeError, setLikeError] = useState(false);
+  function toggleLike() {
+    setLikeError(false);
+    likeMutation.mutate({ postId: post.id }, {
+      onSuccess: () => {
+        void queryClient.invalidateQueries({ queryKey: getGetCommunityPostsQueryKey() });
+        void queryClient.invalidateQueries({ queryKey: getGetCommunityPostQueryKey(post.id) });
+      },
+      onError: () => setLikeError(true),
+    });
+  }
+  return <article className="community-card border border-foreground/15 bg-card p-5 sm:p-7" data-testid={`card-community-post-${post.id}`}>
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="signal-kicker text-accent">{post.kind}</span>
+        <span className="text-muted-foreground">/</span>
+        <span className="signal-kicker text-muted-foreground">{post.topic}</span>
+        {post.state && <><span className="text-muted-foreground">/</span><span className="signal-kicker text-muted-foreground">{post.state}</span></>}
+      </div>
+      <time className="signal-kicker text-[9px] text-muted-foreground" dateTime={post.createdAt}>{communityDate(post.createdAt)}</time>
+    </div>
+    <Link href={`/community/${post.id}`} className="group mt-5 block" data-testid={`link-community-post-${post.id}`}>
+      <h2 className="font-display text-3xl leading-[.98] tracking-[-.03em] group-hover:text-accent sm:text-4xl">{post.title}</h2>
+    </Link>
+    <p className="mt-4 line-clamp-4 whitespace-pre-line text-sm leading-relaxed text-muted-foreground" data-testid={`text-community-post-body-${post.id}`}>{post.body}</p>
+    <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-foreground/15 pt-4">
+      <p className="signal-kicker text-muted-foreground">Shared by <span className="text-foreground">{post.authorName}</span></p>
+      <div className="flex items-center gap-4">
+        <button type="button" onClick={toggleLike} disabled={likeMutation.isPending} className={`inline-flex items-center gap-2 signal-kicker transition-colors hover:text-accent disabled:opacity-50 ${post.likedByViewer ? 'text-accent' : 'text-muted-foreground'}`} aria-label={post.likedByViewer ? `Unlike ${post.title}` : `Like ${post.title}`} data-testid={`button-like-community-post-${post.id}`}>
+          <Heart size={15} fill={post.likedByViewer ? 'currentColor' : 'none'} /> {post.likeCount}
+        </button>
+        <Link href={`/community/${post.id}`} className="inline-flex items-center gap-2 signal-kicker text-muted-foreground hover:text-accent" data-testid={`link-replies-community-post-${post.id}`}>
+          <MessageCircle size={15} /> {post.replyCount}
+        </Link>
+      </div>
+    </div>
+    {likeError && <p className="mt-3 text-xs text-destructive" role="alert">That reaction could not be saved. Try again.</p>}
+  </article>;
+}
+
+function CommunityComposer({ onClose }: { onClose: () => void }) {
+  const queryClient = useQueryClient();
+  const createMutation = useCreateCommunityPost();
+  const initial: CommunityPostInput = { authorName: '', kind: 'thought', topic: 'general', state: null, title: '', body: '', linkUrl: null };
+  const [form, setForm] = useState<CommunityPostInput>(initial);
+  const [error, setError] = useState(false);
+  function update(field: keyof CommunityPostInput, value: string) {
+    setForm((current) => ({ ...current, [field]: value }));
+  }
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(false);
+    const payload: CommunityPostInput = { ...form, state: form.state?.trim() || null, linkUrl: form.linkUrl?.trim() || null };
+    createMutation.mutate({ data: payload }, {
+      onSuccess: () => {
+        void queryClient.invalidateQueries({ queryKey: getGetCommunityPostsQueryKey() });
+        onClose();
+      },
+      onError: () => setError(true),
+    });
+  }
+  return <section className="community-composer border-2 border-primary bg-card p-5 sm:p-8" aria-labelledby="community-composer-title">
+    <div className="flex items-start justify-between gap-5">
+      <div><p className="signal-kicker text-accent">Share with the noticeboard</p><h2 id="community-composer-title" className="mt-2 font-display text-3xl leading-none sm:text-4xl">Put something in the room.</h2><p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">Use your name. Add context. Links are welcome. This is a public participant contribution, not an automatic Signal 24 report.</p></div>
+      <button type="button" onClick={onClose} className="grid h-9 w-9 shrink-0 place-items-center border border-foreground/20 text-muted-foreground hover:border-accent hover:text-accent" aria-label="Close share form" data-testid="button-close-community-composer"><X size={17} /></button>
+    </div>
+    <form onSubmit={submit} className="mt-7 grid gap-5">
+      <div className="grid gap-5 sm:grid-cols-2">
+        <Field label="Your name"><input required minLength={2} maxLength={80} value={form.authorName} onChange={(event) => update('authorName', event.target.value)} className="editor-input" placeholder="Name shown with your contribution" data-testid="input-community-author" /></Field>
+        <Field label="Contribution type"><select value={form.kind} onChange={(event) => update('kind', event.target.value)} className="editor-input" data-testid="select-community-kind">{COMMUNITY_KINDS.map((kind) => <option key={kind} value={kind}>{kind}</option>)}</select></Field>
+        <Field label="Topic"><select value={form.topic} onChange={(event) => update('topic', event.target.value)} className="editor-input" data-testid="select-community-topic">{COMMUNITY_TOPICS.map((topic) => <option key={topic} value={topic}>{topic}</option>)}</select></Field>
+        <Field label="State / territory"><select value={form.state ?? ''} onChange={(event) => update('state', event.target.value)} className="editor-input" data-testid="select-community-state"><option value="">National / not specified</option>{COMMUNITY_STATES.map((state) => <option key={state} value={state}>{state}</option>)}</select></Field>
+      </div>
+      <Field label="Title"><input required minLength={4} maxLength={180} value={form.title} onChange={(event) => update('title', event.target.value)} className="editor-input text-lg" placeholder="What should people understand first?" data-testid="input-community-title" /></Field>
+      <Field label="Your contribution"><textarea required minLength={10} maxLength={10000} value={form.body} onChange={(event) => update('body', event.target.value)} className="editor-input min-h-40 resize-y leading-relaxed" placeholder="Share the experience, argument, source or creative work." data-testid="textarea-community-body" /></Field>
+      <Field label="Link, if relevant"><input type="url" value={form.linkUrl ?? ''} onChange={(event) => update('linkUrl', event.target.value)} className="editor-input" placeholder="https://" data-testid="input-community-link" /></Field>
+      {error && <p className="border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive" role="alert">Your contribution could not be shared. Check the fields and try again.</p>}
+      <div className="flex flex-wrap items-center gap-4"><button type="submit" disabled={createMutation.isPending} className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-3 signal-kicker text-primary-foreground disabled:opacity-50" data-testid="button-submit-community-post">{createMutation.isPending ? 'Sharing…' : 'Share publicly'} <Send size={14} /></button><p className="signal-kicker text-[9px] text-muted-foreground">Public participant contribution / not verified reporting</p></div>
+    </form>
+  </section>;
+}
+
+function CommunityPage() {
+  const [topic, setTopic] = useState('');
+  const [state, setState] = useState('');
+  const [sort, setSort] = useState<GetCommunityPostsSort>('recent');
+  const [composerOpen, setComposerOpen] = useState(false);
+  const params = useMemo<GetCommunityPostsParams>(() => ({ topic: topic ? topic as CommunityTopic : undefined, state: state || undefined, sort, limit: 50 }), [topic, state, sort]);
+  const { data, isLoading, isError, refetch, isFetching } = useGetCommunityPosts(params, { query: { queryKey: getGetCommunityPostsQueryKey(params) } });
+  const posts = data?.posts ?? [];
+  useSeo({ title: 'Community noticeboard — The Signal 24', description: 'A public discussion space for lived thoughts, articles, links and creative pieces from across India.', canonicalPath: '/community' });
+  return <main className="signal-page"><Header /><section className="signal-container pt-12 sm:pt-20">
+    <div className="grid gap-8 border-b-2 border-primary pb-10 lg:grid-cols-[1fr_.58fr] lg:items-end">
+      <div><p className="signal-kicker text-accent">The Signal 24 / community</p><h1 className="mt-4 max-w-4xl font-display text-6xl leading-[.88] tracking-[-.065em] sm:text-8xl">The national<br /><em className="font-normal text-accent">noticeboard.</em></h1><p className="mt-7 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">A separate public room for lived thoughts, articles, links and creative pieces. Read across disagreement, geography and experience.</p></div>
+      <div className="border-l-2 border-accent pl-5"><p className="signal-kicker text-accent">Important distinction</p><p className="mt-3 text-sm leading-relaxed">These are public participant contributions. They are not automatically Signal 24 reporting, and they do not carry the archive’s source verification.</p><button type="button" onClick={() => setComposerOpen((open) => !open)} className="mt-6 inline-flex items-center gap-2 rounded-full bg-accent px-5 py-3 signal-kicker text-accent-foreground" data-testid="button-open-community-composer">{composerOpen ? 'Close share form' : 'Share a thought'} <Plus size={14} /></button></div>
+    </div>
+    {composerOpen && <div className="mt-8"><CommunityComposer onClose={() => setComposerOpen(false)} /></div>}
+  </section>
+  <section className="signal-container py-10 sm:py-14">
+    <div className="flex flex-col justify-between gap-5 border-y border-foreground/20 py-5 sm:flex-row sm:items-end"><div><p className="signal-kicker text-accent">Browse the room</p><h2 className="mt-2 font-display text-4xl leading-none sm:text-5xl">Many voices. More context.</h2></div><button type="button" onClick={() => void refetch()} disabled={isFetching} className="inline-flex items-center gap-2 signal-kicker text-accent disabled:opacity-50" data-testid="button-refresh-community"><RefreshCw size={13} className={isFetching ? 'animate-spin' : ''} /> {isFetching ? 'Refreshing' : 'Refresh posts'}</button></div>
+    <div className="mt-6 grid gap-3 border border-foreground/15 bg-card p-3 sm:grid-cols-[1fr_1fr_auto] sm:p-4"><label className="border-b border-foreground/15 px-2 py-2 sm:border-b-0 sm:border-r"><span className="signal-kicker block text-[9px] text-muted-foreground">Topic</span><select value={topic} onChange={(event) => setTopic(event.target.value)} className="w-full bg-transparent pt-1 text-sm outline-none" data-testid="select-community-filter-topic"><option value="">All topics</option>{COMMUNITY_TOPICS.map((item) => <option key={item} value={item}>{item}</option>)}</select></label><label className="border-b border-foreground/15 px-2 py-2 sm:border-b-0 sm:border-r"><span className="signal-kicker block text-[9px] text-muted-foreground">State</span><select value={state} onChange={(event) => setState(event.target.value)} className="w-full bg-transparent pt-1 text-sm outline-none" data-testid="select-community-filter-state"><option value="">All states</option>{(data?.states?.length ? data.states : COMMUNITY_STATES).map((item) => <option key={item} value={item}>{item}</option>)}</select></label><label className="px-2 py-2"><span className="signal-kicker block text-[9px] text-muted-foreground">Sort by</span><select value={sort} onChange={(event) => setSort(event.target.value as GetCommunityPostsSort)} className="w-full bg-transparent pt-1 text-sm outline-none" data-testid="select-community-sort"><option value="recent">Most recent</option><option value="popular">Most liked</option></select></label></div>
+    {isLoading ? <div className="mt-8 grid gap-5 md:grid-cols-2" role="status" aria-label="Loading community posts"><div className="h-64 animate-pulse bg-muted" /><div className="h-64 animate-pulse bg-muted" /><div className="h-64 animate-pulse bg-muted" /></div> : isError ? <div className="mt-8"><ErrorState message="The community noticeboard could not be loaded." onRetry={() => void refetch()} /></div> : posts.length === 0 ? <div className="mt-8"><EmptyState title="The noticeboard is quiet here." text="Try another topic or state, or be the first person to share a contribution." /></div> : <div className="mt-8 grid gap-5 md:grid-cols-2">{posts.map((post) => <CommunityPostCard key={post.id} post={post} />)}</div>}
+  </section>
+  <footer className="signal-container border-t border-foreground/20 py-8"><div className="flex flex-wrap justify-between gap-4"><p className="signal-kicker text-muted-foreground">Community / public participant contributions</p><Link href="/editorial-standards" className="signal-kicker text-accent hover:underline" data-testid="link-community-standards">Read editorial standards</Link></div></footer>
+  </main>;
+}
+
+function CommunityDetailPage() {
+  const params = useParams<{ id?: string }>();
+  const postId = Number(params.id);
+  const queryClient = useQueryClient();
+  const { data, isLoading, isError, refetch } = useGetCommunityPost(postId, { query: { enabled: Number.isFinite(postId), queryKey: getGetCommunityPostQueryKey(postId) } });
+  const likeMutation = useToggleCommunityPostLike();
+  const replyMutation = useCreateCommunityReply();
+  const [authorName, setAuthorName] = useState('');
+  const [replyBody, setReplyBody] = useState('');
+  const [replyError, setReplyError] = useState(false);
+  useSeo({ title: data?.post ? `${data.post.title} — Community — The Signal 24` : 'Community post — The Signal 24', description: data?.post?.body.slice(0, 155) ?? 'A public participant contribution in The Signal 24 community.', robots: 'index, follow' });
+  function like() {
+    if (!data?.post) return;
+    likeMutation.mutate({ postId }, { onSuccess: () => { void queryClient.invalidateQueries({ queryKey: getGetCommunityPostsQueryKey() }); void queryClient.invalidateQueries({ queryKey: getGetCommunityPostQueryKey(postId) }); } });
+  }
+  function reply(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setReplyError(false);
+    replyMutation.mutate({ postId, data: { authorName, body: replyBody } }, {
+      onSuccess: () => { setAuthorName(''); setReplyBody(''); void queryClient.invalidateQueries({ queryKey: getGetCommunityPostsQueryKey() }); void queryClient.invalidateQueries({ queryKey: getGetCommunityPostQueryKey(postId) }); },
+      onError: () => setReplyError(true),
+    });
+  }
+  if (!Number.isFinite(postId)) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message="That community post address is not valid." /></div></div>;
+  if (isLoading) return <div className="signal-page"><Header /><LoadingBlock label="Opening the community contribution…" /></div>;
+  if (isError || !data?.post) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message="This community contribution could not be opened." onRetry={() => void refetch()} /></div></div>;
+  const post = data.post;
+  return <main className="signal-page"><Header /><article className="signal-container py-12 sm:py-20">
+    <Link href="/community" className="signal-kicker inline-flex items-center gap-2 text-muted-foreground hover:text-accent" data-testid="link-back-community"><ArrowLeft size={13} /> Back to community</Link>
+    <div className="mt-12 grid gap-10 lg:grid-cols-[1fr_.48fr]"><div><div className="flex flex-wrap items-center gap-2"><span className="signal-kicker text-accent">{post.kind}</span><span className="text-muted-foreground">/</span><span className="signal-kicker text-muted-foreground">{post.topic}</span>{post.state && <><span className="text-muted-foreground">/</span><span className="signal-kicker text-muted-foreground">{post.state}</span></>}</div><h1 className="mt-5 max-w-4xl font-display text-5xl leading-[.92] tracking-[-.055em] sm:text-7xl" data-testid="heading-community-post">{post.title}</h1><p className="mt-6 signal-kicker text-muted-foreground">Shared by {post.authorName} · {communityDate(post.createdAt)}</p></div><aside className="border-l-2 border-accent pl-5"><p className="signal-kicker text-accent">Community record</p><p className="mt-3 text-sm leading-relaxed text-muted-foreground">A public participant contribution. It is not automatically Signal 24 reporting or a verified archive record.</p><button type="button" onClick={like} disabled={likeMutation.isPending} className={`mt-6 inline-flex items-center gap-2 rounded-full border px-4 py-2 signal-kicker hover:border-accent hover:text-accent disabled:opacity-50 ${post.likedByViewer ? 'border-accent text-accent' : 'border-foreground/25'}`} data-testid="button-like-community-detail"><Heart size={14} fill={post.likedByViewer ? 'currentColor' : 'none'} /> {post.likedByViewer ? 'Liked' : 'Like'} · {post.likeCount}</button></aside></div>
+    <div className="story-body mt-12 max-w-3xl whitespace-pre-line text-[1.08rem] leading-[1.85] text-foreground/85" data-testid="text-community-detail-body">{post.body}</div>
+    {post.linkUrl && <a href={post.linkUrl} target="_blank" rel="noreferrer" className="mt-8 inline-flex items-center gap-2 border-b border-accent pb-1 signal-kicker text-accent hover:border-primary hover:text-primary" data-testid="link-community-external"><Link2 size={14} /> Open shared link <ExternalLink size={13} /></a>}
+    <section className="mt-16 border-t-2 border-primary pt-8" aria-labelledby="community-replies-title"><div className="flex items-end justify-between gap-4"><div><p className="signal-kicker text-accent">Responses</p><h2 id="community-replies-title" className="mt-2 font-display text-4xl">The reply line.</h2></div><span className="signal-kicker text-muted-foreground">{data.replies.length} replies</span></div>
+      {data.replies.length ? <div className="mt-7 divide-y divide-foreground/15 border-y border-foreground/15">{data.replies.map((item: CommunityReply) => <article key={item.id} className="py-5" data-testid={`card-community-reply-${item.id}`}><div className="flex flex-wrap justify-between gap-3"><p className="signal-kicker text-accent">{item.authorName}</p><time className="signal-kicker text-[9px] text-muted-foreground" dateTime={item.createdAt}>{communityDate(item.createdAt)}</time></div><p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{item.body}</p></article>)}</div> : <p className="mt-7 border border-dashed border-foreground/25 px-5 py-8 text-sm text-muted-foreground">No replies yet. Disagreement is welcome when it brings context.</p>}
+      <form onSubmit={reply} className="mt-8 grid gap-4 border border-foreground/15 bg-card p-5 sm:p-7"><p className="font-display text-2xl">Add your context.</p><div className="grid gap-4 sm:grid-cols-2"><Field label="Your name"><input required minLength={2} maxLength={80} value={authorName} onChange={(event) => setAuthorName(event.target.value)} className="editor-input" data-testid="input-community-reply-author" /></Field><Field label="Your reply"><textarea required minLength={2} maxLength={5000} value={replyBody} onChange={(event) => setReplyBody(event.target.value)} className="editor-input min-h-24 resize-y" data-testid="textarea-community-reply" /></Field></div>{replyError && <p className="text-sm text-destructive" role="alert">Your reply could not be posted. Please try again.</p>}<button type="submit" disabled={replyMutation.isPending} className="w-fit rounded-full bg-primary px-5 py-3 signal-kicker text-primary-foreground disabled:opacity-50" data-testid="button-submit-community-reply">{replyMutation.isPending ? 'Posting…' : 'Post reply'}</button></form>
+    </section>
+  </article></main>;
+}
+
 function AppRoutes() {
-  return <Switch><Route path="/" component={Home} /><Route path="/policies" component={PoliciesPage} /><Route path="/policies/:slug" component={PolicyDetail} /><Route path="/archive" component={ArchivePage} /><Route path="/authors/:slug" component={AuthorPage} /><Route path="/data" component={DataIndexPage} /><Route path="/stories/:id" component={StoryDetail} /><Route path="/editor" component={EditorialDesk} /><Route path="/about" component={AboutPage} /><Route path="/editorial-standards" component={StandardsPage} /><Route path="/methodology" component={MethodologyPage} /><Route path="/:family/:slug" component={StoryDetail} /><Route component={NotFound} /></Switch>;
+  return <Switch><Route path="/" component={Home} /><Route path="/community" component={CommunityPage} /><Route path="/community/:id" component={CommunityDetailPage} /><Route path="/policies" component={PoliciesPage} /><Route path="/policies/:slug" component={PolicyDetail} /><Route path="/archive" component={ArchivePage} /><Route path="/authors/:slug" component={AuthorPage} /><Route path="/data" component={DataIndexPage} /><Route path="/stories/:id" component={StoryDetail} /><Route path="/editor" component={EditorialDesk} /><Route path="/about" component={AboutPage} /><Route path="/editorial-standards" component={StandardsPage} /><Route path="/methodology" component={MethodologyPage} /><Route path="/:family/:slug" component={StoryDetail} /><Route component={NotFound} /></Switch>;
 }
 
 function App() {

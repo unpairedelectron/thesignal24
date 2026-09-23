@@ -7,8 +7,19 @@
  */
 
 export * from './archiveResult';
+export * from './communityLikeResponse';
+export * from './communityPost';
+export * from './communityPostDetail';
+export * from './communityPostInput';
+export * from './communityPostKind';
+export * from './communityPostList';
+export * from './communityReply';
+export * from './communityReplyInput';
+export * from './communityTopic';
 export * from './currentIssue';
 export * from './getArchiveParams';
+export * from './getCommunityPostsParams';
+export * from './getCommunityPostsSort';
 export * from './getNewsletterStatusParams';
 export * from './getPoliciesParams';
 export * from './healthStatus';

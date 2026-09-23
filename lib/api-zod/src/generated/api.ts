@@ -94,6 +94,216 @@ export const GetLiveUpdatesResponse = zod.object({
 
 
 /**
+ * @summary Browse public community posts
+ */
+export const getCommunityPostsQuerySortDefault = `recent`;
+export const getCommunityPostsQueryLimitDefault = 20;
+export const getCommunityPostsQueryLimitMax = 50;
+
+
+
+export const GetCommunityPostsQueryParams = zod.object({
+  "topic": zod.enum(['general', 'caste', 'policy', 'representation', 'migration', 'violence', 'work', 'education', 'culture']).optional(),
+  "state": zod.coerce.string().optional(),
+  "sort": zod.enum(['recent', 'popular']).default(getCommunityPostsQuerySortDefault),
+  "limit": zod.coerce.number().int().min(1).max(getCommunityPostsQueryLimitMax).default(getCommunityPostsQueryLimitDefault)
+})
+
+export const getCommunityPostsResponsePostsItemOneAuthorNameMin = 2;
+export const getCommunityPostsResponsePostsItemOneAuthorNameMax = 80;
+
+export const getCommunityPostsResponsePostsItemOneStateMax = 80;
+
+export const getCommunityPostsResponsePostsItemOneTitleMin = 4;
+export const getCommunityPostsResponsePostsItemOneTitleMax = 180;
+
+export const getCommunityPostsResponsePostsItemOneBodyMin = 10;
+export const getCommunityPostsResponsePostsItemOneBodyMax = 10000;
+
+
+
+export const GetCommunityPostsResponse = zod.object({
+  "posts": zod.array(zod.object({
+  "authorName": zod.string().min(getCommunityPostsResponsePostsItemOneAuthorNameMin).max(getCommunityPostsResponsePostsItemOneAuthorNameMax),
+  "kind": zod.enum(['thought', 'article', 'piece']),
+  "topic": zod.enum(['general', 'caste', 'policy', 'representation', 'migration', 'violence', 'work', 'education', 'culture']),
+  "state": zod.string().max(getCommunityPostsResponsePostsItemOneStateMax).nullish(),
+  "title": zod.string().min(getCommunityPostsResponsePostsItemOneTitleMin).max(getCommunityPostsResponsePostsItemOneTitleMax),
+  "body": zod.string().min(getCommunityPostsResponsePostsItemOneBodyMin).max(getCommunityPostsResponsePostsItemOneBodyMax),
+  "linkUrl": zod.string().url().nullish()
+}).and(zod.object({
+  "id": zod.number().int(),
+  "likeCount": zod.number().int(),
+  "replyCount": zod.number().int(),
+  "likedByViewer": zod.boolean(),
+  "createdAt": zod.coerce.date()
+}))),
+  "topics": zod.array(zod.enum(['general', 'caste', 'policy', 'representation', 'migration', 'violence', 'work', 'education', 'culture'])),
+  "states": zod.array(zod.string())
+})
+
+
+/**
+ * @summary Share a thought, article, or other piece
+ */
+export const createCommunityPostBodyAuthorNameMin = 2;
+export const createCommunityPostBodyAuthorNameMax = 80;
+
+export const createCommunityPostBodyStateMax = 80;
+
+export const createCommunityPostBodyTitleMin = 4;
+export const createCommunityPostBodyTitleMax = 180;
+
+export const createCommunityPostBodyBodyMin = 10;
+export const createCommunityPostBodyBodyMax = 10000;
+
+
+
+export const CreateCommunityPostBody = zod.object({
+  "authorName": zod.string().min(createCommunityPostBodyAuthorNameMin).max(createCommunityPostBodyAuthorNameMax),
+  "kind": zod.enum(['thought', 'article', 'piece']),
+  "topic": zod.enum(['general', 'caste', 'policy', 'representation', 'migration', 'violence', 'work', 'education', 'culture']),
+  "state": zod.string().max(createCommunityPostBodyStateMax).nullish(),
+  "title": zod.string().min(createCommunityPostBodyTitleMin).max(createCommunityPostBodyTitleMax),
+  "body": zod.string().min(createCommunityPostBodyBodyMin).max(createCommunityPostBodyBodyMax),
+  "linkUrl": zod.string().url().nullish()
+})
+
+export const createCommunityPostResponseOneAuthorNameMin = 2;
+export const createCommunityPostResponseOneAuthorNameMax = 80;
+
+export const createCommunityPostResponseOneStateMax = 80;
+
+export const createCommunityPostResponseOneTitleMin = 4;
+export const createCommunityPostResponseOneTitleMax = 180;
+
+export const createCommunityPostResponseOneBodyMin = 10;
+export const createCommunityPostResponseOneBodyMax = 10000;
+
+
+
+export const CreateCommunityPostResponse = zod.object({
+  "authorName": zod.string().min(createCommunityPostResponseOneAuthorNameMin).max(createCommunityPostResponseOneAuthorNameMax),
+  "kind": zod.enum(['thought', 'article', 'piece']),
+  "topic": zod.enum(['general', 'caste', 'policy', 'representation', 'migration', 'violence', 'work', 'education', 'culture']),
+  "state": zod.string().max(createCommunityPostResponseOneStateMax).nullish(),
+  "title": zod.string().min(createCommunityPostResponseOneTitleMin).max(createCommunityPostResponseOneTitleMax),
+  "body": zod.string().min(createCommunityPostResponseOneBodyMin).max(createCommunityPostResponseOneBodyMax),
+  "linkUrl": zod.string().url().nullish()
+}).and(zod.object({
+  "id": zod.number().int(),
+  "likeCount": zod.number().int(),
+  "replyCount": zod.number().int(),
+  "likedByViewer": zod.boolean(),
+  "createdAt": zod.coerce.date()
+}))
+
+
+/**
+ * @summary Get a community post with replies
+ */
+export const GetCommunityPostParams = zod.object({
+  "postId": zod.coerce.number().int()
+})
+
+export const getCommunityPostResponsePostOneAuthorNameMin = 2;
+export const getCommunityPostResponsePostOneAuthorNameMax = 80;
+
+export const getCommunityPostResponsePostOneStateMax = 80;
+
+export const getCommunityPostResponsePostOneTitleMin = 4;
+export const getCommunityPostResponsePostOneTitleMax = 180;
+
+export const getCommunityPostResponsePostOneBodyMin = 10;
+export const getCommunityPostResponsePostOneBodyMax = 10000;
+
+export const getCommunityPostResponseRepliesItemOneAuthorNameMin = 2;
+export const getCommunityPostResponseRepliesItemOneAuthorNameMax = 80;
+
+export const getCommunityPostResponseRepliesItemOneBodyMin = 2;
+export const getCommunityPostResponseRepliesItemOneBodyMax = 5000;
+
+
+
+export const GetCommunityPostResponse = zod.object({
+  "post": zod.object({
+  "authorName": zod.string().min(getCommunityPostResponsePostOneAuthorNameMin).max(getCommunityPostResponsePostOneAuthorNameMax),
+  "kind": zod.enum(['thought', 'article', 'piece']),
+  "topic": zod.enum(['general', 'caste', 'policy', 'representation', 'migration', 'violence', 'work', 'education', 'culture']),
+  "state": zod.string().max(getCommunityPostResponsePostOneStateMax).nullish(),
+  "title": zod.string().min(getCommunityPostResponsePostOneTitleMin).max(getCommunityPostResponsePostOneTitleMax),
+  "body": zod.string().min(getCommunityPostResponsePostOneBodyMin).max(getCommunityPostResponsePostOneBodyMax),
+  "linkUrl": zod.string().url().nullish()
+}).and(zod.object({
+  "id": zod.number().int(),
+  "likeCount": zod.number().int(),
+  "replyCount": zod.number().int(),
+  "likedByViewer": zod.boolean(),
+  "createdAt": zod.coerce.date()
+})),
+  "replies": zod.array(zod.object({
+  "authorName": zod.string().min(getCommunityPostResponseRepliesItemOneAuthorNameMin).max(getCommunityPostResponseRepliesItemOneAuthorNameMax),
+  "body": zod.string().min(getCommunityPostResponseRepliesItemOneBodyMin).max(getCommunityPostResponseRepliesItemOneBodyMax)
+}).and(zod.object({
+  "id": zod.number().int(),
+  "postId": zod.number().int(),
+  "createdAt": zod.coerce.date()
+})))
+})
+
+
+/**
+ * @summary Reply to a community post
+ */
+export const CreateCommunityReplyParams = zod.object({
+  "postId": zod.coerce.number().int()
+})
+
+export const createCommunityReplyBodyAuthorNameMin = 2;
+export const createCommunityReplyBodyAuthorNameMax = 80;
+
+export const createCommunityReplyBodyBodyMin = 2;
+export const createCommunityReplyBodyBodyMax = 5000;
+
+
+
+export const CreateCommunityReplyBody = zod.object({
+  "authorName": zod.string().min(createCommunityReplyBodyAuthorNameMin).max(createCommunityReplyBodyAuthorNameMax),
+  "body": zod.string().min(createCommunityReplyBodyBodyMin).max(createCommunityReplyBodyBodyMax)
+})
+
+export const createCommunityReplyResponseOneAuthorNameMin = 2;
+export const createCommunityReplyResponseOneAuthorNameMax = 80;
+
+export const createCommunityReplyResponseOneBodyMin = 2;
+export const createCommunityReplyResponseOneBodyMax = 5000;
+
+
+
+export const CreateCommunityReplyResponse = zod.object({
+  "authorName": zod.string().min(createCommunityReplyResponseOneAuthorNameMin).max(createCommunityReplyResponseOneAuthorNameMax),
+  "body": zod.string().min(createCommunityReplyResponseOneBodyMin).max(createCommunityReplyResponseOneBodyMax)
+}).and(zod.object({
+  "id": zod.number().int(),
+  "postId": zod.number().int(),
+  "createdAt": zod.coerce.date()
+}))
+
+
+/**
+ * @summary Like or unlike a community post
+ */
+export const ToggleCommunityPostLikeParams = zod.object({
+  "postId": zod.coerce.number().int()
+})
+
+export const ToggleCommunityPostLikeResponse = zod.object({
+  "liked": zod.boolean(),
+  "likeCount": zod.number().int()
+})
+
+
+/**
  * @summary Get the current issue with editorial workflow fields
  */
 export const GetEditorialIssueResponse = zod.object({

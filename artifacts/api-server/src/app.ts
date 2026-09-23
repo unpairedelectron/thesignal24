@@ -1,5 +1,6 @@
-import express, { type Express } from "express";
+import express, { type ErrorRequestHandler, type Express } from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
@@ -25,10 +26,25 @@ app.use(
     },
   }),
 );
-app.use(cors());
+app.use(cors({ credentials: true, origin: true }));
+app.use(cookieParser(process.env.SESSION_SECRET));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api", router);
+
+const errorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
+  if (error?.name === "ZodError") {
+    res.status(400).json({
+      message: "The request contains invalid fields.",
+      issues: error.issues,
+    });
+    return;
+  }
+  logger.error({ err: error }, "request failed");
+  res.status(500).json({ message: "The request could not be completed." });
+};
+
+app.use(errorHandler);
 
 export default app;

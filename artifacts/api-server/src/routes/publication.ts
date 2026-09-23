@@ -248,7 +248,8 @@ router.get("/issues/current", async (_req, res, next) => {
     const [issue] = await db
       .select()
       .from(issuesTable)
-      .where(eq(issuesTable.id, issueId))
+      .where(eq(issuesTable.status, "published"))
+      .orderBy(desc(issuesTable.issueDate))
       .limit(1);
 
     if (!issue) {
@@ -275,7 +276,8 @@ router.get("/editor/issues/current", async (_req, res, next) => {
     const [issue] = await db
       .select()
       .from(issuesTable)
-      .where(eq(issuesTable.id, issueId))
+      .where(eq(issuesTable.status, "published"))
+      .orderBy(desc(issuesTable.issueDate))
       .limit(1);
 
     if (!issue) {
@@ -299,19 +301,16 @@ router.get("/archive", async (req, res, next) => {
     const limit = Number.isInteger(parsedLimit)
       ? Math.min(Math.max(parsedLimit, 1), 100)
       : 50;
-
     const conditions = [
-      eq(policyRecordsTable.workflowStatus, "published"),
+      eq(issuesTable.status, "published"),
+      eq(storiesTable.workflowStatus, "published"),
+      inArray(storiesTable.topic, [...topicList]),
     ];
-    if (parsed.q) {
-      const search = `%${parsed.q}%`;
-
-    const policies = await db
-      .select()
-      .from(policyRecordsTable)
-      .where(and(...conditions))
-      .orderBy(desc(policyRecordsTable.effectiveDate), desc(policyRecordsTable.publishedOn))
-      .limit(parsed.limit);
+    if (topicValues.has(topic as Topic)) conditions.push(eq(storiesTable.topic, topic));
+    if (kindValues.has(kind as StoryKind)) conditions.push(eq(storiesTable.kind, kind));
+    if (state) conditions.push(eq(storiesTable.state, state));
+    if (q) {
+      const search = `%${q}%`;
       conditions.push(
         or(
           like(storiesTable.title, search),
@@ -322,27 +321,32 @@ router.get("/archive", async (req, res, next) => {
         )!,
       );
     }
-
     const results = await db
       .select({ story: storiesTable })
       .from(storiesTable)
       .innerJoin(issuesTable, eq(storiesTable.issueId, issuesTable.id))
-      .where(
-        and(
-          eq(issuesTable.status, "published"),
-          eq(storiesTable.workflowStatus, "published"),
-        ),
+      .where(and(...conditions))
+      .orderBy(
+        desc(storiesTable.publishedOn),
+        desc(issuesTable.issueDate),
+        asc(storiesTable.sortOrder),
+        asc(storiesTable.id),
       )
-      .orderBy(desc(storiesTable.updatedAt), asc(storiesTable.id));
-
-    const policyResults = await db
-      .select()
-      .from(policyRecordsTable)
-      .where(eq(policyRecordsTable.workflowStatus, "published"))
-      .orderBy(desc(policyRecordsTable.updatedAt), asc(policyRecordsTable.id));
+      .limit(limit);
     const serializedStories = results.map(({ story }) => serializeStory(story));
+    res.json({
+      stories: serializedStories,
+      topics: [...new Set(serializedStories.map((story) => story.topic))],
+      kinds: [...new Set(serializedStories.map((story) => story.kind))],
+      states: [...new Set(serializedStories.map((story) => story.state).filter(Boolean))],
+    });
+  } catch (error) {
+    next(error);
+  }
+});
 
-    const rawEffectiveFrom = queryString(req.query.effectiveFrom);
+router.get("/sitemap.xml", async (req, res, next) => {
+  try {
     const results = await db
       .select({ story: storiesTable })
       .from(storiesTable)
@@ -354,7 +358,6 @@ router.get("/archive", async (req, res, next) => {
         ),
       )
       .orderBy(desc(storiesTable.updatedAt), asc(storiesTable.id));
-
     const policyResults = await db
       .select()
       .from(policyRecordsTable)
@@ -397,12 +400,14 @@ router.get("/archive", async (req, res, next) => {
 router.post("/issues", async (req, res, next) => {
   try {
     const parsed = CreateIssueBody.parse(req.body);
-    const input = UpdateStoryBody.parse(req.body);
+    const input = {
+      ...parsed,
+      issueDate: parsed.issueDate.toISOString().slice(0, 10),
+    };
     const [issue] = await db
-      .select()
-      .from(issuesTable)
-      .where(eq(issuesTable.id, issueId))
-      .limit(1);
+      .insert(issuesTable)
+      .values(input)
+      .returning();
     res.status(201).json(serializeIssue(issue));
   } catch (error) {
     next(error);
@@ -483,139 +488,44 @@ router.get("/stories/:storyId", async (req, res, next) => {
       res.status(400).json({ message: "Invalid story id" });
       return;
     }
-
     const [story] = await db
-      .update(storiesTable)
-      .set({
-        ...storyInput,
-        state: input.state === undefined ? existing.state : input.state,
-        sourceUrl:
-          input.sourceUrl === undefined ? existing.sourceUrl : input.sourceUrl,
-        publishedOn:
-          publishedOn === undefined
-            ? existing.publishedOn
-            : dateOnly(publishedOn),
-        number: input.number ?? null,
-        workflowStatus,
-        verificationStatus,
-        verificationNotes:
-          input.verificationNotes === undefined
-            ? existing.verificationNotes
-            : input.verificationNotes,
-        sourcePublishedOn:
-          input.sourcePublishedOn === undefined
-            ? existing.sourcePublishedOn
-            : dateOnly(input.sourcePublishedOn),
-        sourceRetrievedOn:
-          input.sourceRetrievedOn === undefined
-            ? existing.sourceRetrievedOn
-            : dateOnly(input.sourceRetrievedOn),
-        lastVerifiedAt:
-          verificationStatus === "verified"
-            ? existing.lastVerifiedAt ?? new Date()
-            : verificationStatus === "unverified"
-              ? null
-              : existing.lastVerifiedAt,
-        reviewedAt:
-          workflowStatus === "review"
-            ? existing.reviewedAt ?? new Date()
-            : workflowStatus === "draft"
-              ? null
-              : existing.reviewedAt,
-        scheduledFor:
-          scheduledFor === undefined
-            ? existing.scheduledFor
-            : scheduledFor
-              ? new Date(scheduledFor)
-              : null,
-        aiDisclosure:
-          input.aiDisclosure === undefined
-            ? existing.aiDisclosure
-            : input.aiDisclosure,
-        correctionNote:
-          input.correctionNote === undefined
-            ? existing.correctionNote
-            : input.correctionNote,
-        updatedAt: new Date(),
-      })
-      .where(eq(storiesTable.id, storyId))
-      .returning();
-    await recordRevision(story, revisionNote ?? "Created record");
-    res.status(201).json(serializeStory(story));
+      .select({ story: storiesTable })
+      .from(storiesTable)
+      .innerJoin(issuesTable, eq(storiesTable.issueId, issuesTable.id))
+      .where(
+        and(
+          eq(storiesTable.id, storyId),
+          eq(issuesTable.status, "published"),
+          eq(storiesTable.workflowStatus, "published"),
+        ),
+      )
+      .limit(1);
+    if (!story) {
+      res.status(404).json({ message: "Story not found" });
+      return;
+    }
+    res.json(serializeStory(story.story));
   } catch (error) {
     next(error);
   }
 });
 
-router.put("/stories/:storyId", async (req, res, next) => {
+router.get("/stories/:storyId/revisions", async (req, res, next) => {
   try {
     const storyId = parseId(req.params.storyId);
     if (!storyId) {
       res.status(400).json({ message: "Invalid story id" });
       return;
     }
-
     const [story] = await db
-      .update(storiesTable)
-      .set({
-        ...storyInput,
-        state: input.state === undefined ? existing.state : input.state,
-        sourceUrl:
-          input.sourceUrl === undefined ? existing.sourceUrl : input.sourceUrl,
-        publishedOn:
-          publishedOn === undefined
-            ? existing.publishedOn
-            : dateOnly(publishedOn),
-        number: input.number ?? null,
-        workflowStatus,
-        verificationStatus,
-        verificationNotes:
-          input.verificationNotes === undefined
-            ? existing.verificationNotes
-            : input.verificationNotes,
-        sourcePublishedOn:
-          input.sourcePublishedOn === undefined
-            ? existing.sourcePublishedOn
-            : dateOnly(input.sourcePublishedOn),
-        sourceRetrievedOn:
-          input.sourceRetrievedOn === undefined
-            ? existing.sourceRetrievedOn
-            : dateOnly(input.sourceRetrievedOn),
-        lastVerifiedAt:
-          verificationStatus === "verified"
-            ? existing.lastVerifiedAt ?? new Date()
-            : verificationStatus === "unverified"
-              ? null
-              : existing.lastVerifiedAt,
-        reviewedAt:
-          workflowStatus === "review"
-            ? existing.reviewedAt ?? new Date()
-            : workflowStatus === "draft"
-              ? null
-              : existing.reviewedAt,
-        scheduledFor:
-          scheduledFor === undefined
-            ? existing.scheduledFor
-            : scheduledFor
-              ? new Date(scheduledFor)
-              : null,
-        aiDisclosure:
-          input.aiDisclosure === undefined
-            ? existing.aiDisclosure
-            : input.aiDisclosure,
-        correctionNote:
-          input.correctionNote === undefined
-            ? existing.correctionNote
-            : input.correctionNote,
-        updatedAt: new Date(),
-      })
+      .select({ id: storiesTable.id })
+      .from(storiesTable)
       .where(eq(storiesTable.id, storyId))
-      .returning();
+      .limit(1);
     if (!story) {
       res.status(404).json({ message: "Story not found" });
       return;
     }
-
     const revisions = await db
       .select()
       .from(storyRevisionsTable)
@@ -645,72 +555,46 @@ function dateOnly(value: Date | string | null | undefined): string | null {
 
 router.post("/stories", async (req, res, next) => {
   try {
-    const input = UpdateStoryBody.parse(req.body);
-    const workflowStatus = input.workflowStatus ?? existing.workflowStatus;
+    const input = CreateStoryBody.parse(req.body);
+    const workflowStatus = input.workflowStatus ?? "draft";
     if (!["draft", "review"].includes(workflowStatus)) {
       res.status(400).json({
         message: "New records must start as drafts or enter editorial review.",
       });
       return;
     }
-    const { publishedOn, scheduledFor, revisionNote } = input;
     const [story] = await db
-      .update(storiesTable)
-      .set({
-        ...storyInput,
-        state: input.state === undefined ? existing.state : input.state,
-        sourceUrl:
-          input.sourceUrl === undefined ? existing.sourceUrl : input.sourceUrl,
-        publishedOn:
-          publishedOn === undefined
-            ? existing.publishedOn
-            : dateOnly(publishedOn),
+      .insert(storiesTable)
+      .values({
+        issueId: input.issueId,
+        topic: input.topic,
+        kind: input.kind,
+        state: input.state ?? null,
+        source: input.source,
+        sourceUrl: input.sourceUrl ?? null,
+        publishedOn: dateOnly(input.publishedOn),
+        eyebrow: input.eyebrow,
+        title: input.title,
+        dek: input.dek,
+        body: input.body,
+        time: input.time,
+        read: input.read,
+        tone: input.tone,
         number: input.number ?? null,
+        sortOrder: input.sortOrder,
         workflowStatus,
-        verificationStatus,
-        verificationNotes:
-          input.verificationNotes === undefined
-            ? existing.verificationNotes
-            : input.verificationNotes,
-        sourcePublishedOn:
-          input.sourcePublishedOn === undefined
-            ? existing.sourcePublishedOn
-            : dateOnly(input.sourcePublishedOn),
-        sourceRetrievedOn:
-          input.sourceRetrievedOn === undefined
-            ? existing.sourceRetrievedOn
-            : dateOnly(input.sourceRetrievedOn),
-        lastVerifiedAt:
-          verificationStatus === "verified"
-            ? existing.lastVerifiedAt ?? new Date()
-            : verificationStatus === "unverified"
-              ? null
-              : existing.lastVerifiedAt,
-        reviewedAt:
-          workflowStatus === "review"
-            ? existing.reviewedAt ?? new Date()
-            : workflowStatus === "draft"
-              ? null
-              : existing.reviewedAt,
-        scheduledFor:
-          scheduledFor === undefined
-            ? existing.scheduledFor
-            : scheduledFor
-              ? new Date(scheduledFor)
-              : null,
-        aiDisclosure:
-          input.aiDisclosure === undefined
-            ? existing.aiDisclosure
-            : input.aiDisclosure,
-        correctionNote:
-          input.correctionNote === undefined
-            ? existing.correctionNote
-            : input.correctionNote,
-        updatedAt: new Date(),
+        verificationStatus: input.verificationStatus ?? "unverified",
+        verificationNotes: input.verificationNotes ?? null,
+        sourcePublishedOn: dateOnly(input.sourcePublishedOn),
+        sourceRetrievedOn: dateOnly(input.sourceRetrievedOn),
+        lastVerifiedAt: input.verificationStatus === "verified" ? new Date() : null,
+        reviewedAt: workflowStatus === "review" ? new Date() : null,
+        scheduledFor: input.scheduledFor ? new Date(input.scheduledFor) : null,
+        aiDisclosure: input.aiDisclosure ?? null,
+        correctionNote: input.correctionNote ?? null,
       })
-      .where(eq(storiesTable.id, storyId))
       .returning();
-    await recordRevision(story, revisionNote ?? "Created record");
+    await recordRevision(story, input.revisionNote ?? "Created record");
     res.status(201).json(serializeStory(story));
   } catch (error) {
     next(error);
@@ -830,14 +714,6 @@ router.put("/stories/:storyId", async (req, res, next) => {
   }
 });
 
-export default router;
-
-    const sources = await db
-      .select()
-      .from(policySourcesTable)
-      .where(eq(policySourcesTable.policyRecordId, policy.id))
-      .orderBy(desc(policySourcesTable.isPrimary), asc(policySourcesTable.id));
-
 function serializePolicy(
   policy: typeof policyRecordsTable.$inferSelect,
   sources: typeof policySourcesTable.$inferSelect[],
@@ -862,23 +738,87 @@ function serializePolicy(
   };
 }
 
-    const records = policies.map((policy) =>
-      serializePolicy(policy, sourcesByPolicy.get(policy.id) ?? []),
-    );
-
+router.get("/policies", async (req, res, next) => {
+  try {
+    const parsed = GetPoliciesQueryParams.parse({
+      ...req.query,
+      effectiveFrom: req.query.effectiveFrom
+        ? new Date(String(req.query.effectiveFrom))
+        : undefined,
+      effectiveTo: req.query.effectiveTo
+        ? new Date(String(req.query.effectiveTo))
+        : undefined,
+    });
+    const conditions = [eq(policyRecordsTable.workflowStatus, "published")];
+    if (parsed.q) {
+      const search = `%${parsed.q}%`;
+      conditions.push(
+        or(
+          like(policyRecordsTable.title, search),
+          like(policyRecordsTable.summary, search),
+          like(policyRecordsTable.state, search),
+          like(policyRecordsTable.sector, search),
+          like(policyRecordsTable.authority, search),
+        )!,
+      );
+    }
+    if (parsed.state) conditions.push(eq(policyRecordsTable.state, parsed.state));
+    if (parsed.sector) conditions.push(eq(policyRecordsTable.sector, parsed.sector));
+    if (parsed.status) conditions.push(eq(policyRecordsTable.status, parsed.status));
+    if (parsed.effectiveFrom) {
+      conditions.push(
+        gte(policyRecordsTable.effectiveDate, parsed.effectiveFrom.toISOString().slice(0, 10)),
+      );
+    }
+    if (parsed.effectiveTo) {
+      conditions.push(
+        lte(policyRecordsTable.effectiveDate, parsed.effectiveTo.toISOString().slice(0, 10)),
+      );
+    }
+    const [policies, sources, facets] = await Promise.all([
+      db
+        .select()
+        .from(policyRecordsTable)
+        .where(and(...conditions))
+        .orderBy(desc(policyRecordsTable.effectiveDate), desc(policyRecordsTable.publishedOn))
+        .limit(parsed.limit),
+      db
+        .select()
+        .from(policySourcesTable)
+        .orderBy(desc(policySourcesTable.isPrimary), asc(policySourcesTable.id)),
+      db
+        .select({
+          state: policyRecordsTable.state,
+          sector: policyRecordsTable.sector,
+          status: policyRecordsTable.status,
+        })
+        .from(policyRecordsTable)
+        .where(eq(policyRecordsTable.workflowStatus, "published")),
+    ]);
+    const sourcesByPolicy = new Map<number, typeof sources>();
+    for (const source of sources) {
       const existing = sourcesByPolicy.get(source.policyRecordId) ?? [];
+      existing.push(source);
+      sourcesByPolicy.set(source.policyRecordId, existing);
+    }
+    res.json(
+      GetPoliciesResponse.parse({
+        records: policies.map((policy) =>
+          serializePolicy(policy, sourcesByPolicy.get(policy.id) ?? []),
+        ),
+        states: [...new Set(facets.map((facet) => facet.state).filter(Boolean))],
+        sectors: [...new Set(facets.map((facet) => facet.sector))],
+        statuses: [...new Set(facets.map((facet) => facet.status))],
+      }),
+    );
+  } catch (error) {
+    next(error);
+  }
+});
 
-    const rawEffectiveTo = queryString(req.query.effectiveTo);
-
-    const facets = await db
-      .select({
-        state: policyRecordsTable.state,
-        sector: policyRecordsTable.sector,
-        status: policyRecordsTable.status,
-      })
-      .from(policyRecordsTable)
-      .where(eq(policyRecordsTable.workflowStatus, "published"));
-
+router.get("/policies/:slug", async (req, res, next) => {
+  try {
+    const { slug } = GetPolicyParams.parse(req.params);
     const [policy] = await db
       .select()
       .from(policyRecordsTable)
@@ -889,7 +829,19 @@ function serializePolicy(
         ),
       )
       .limit(1);
+    if (!policy) {
+      res.status(404).json({ message: "Policy record not found" });
+      return;
+    }
+    const sources = await db
+      .select()
+      .from(policySourcesTable)
+      .where(eq(policySourcesTable.policyRecordId, policy.id))
+      .orderBy(desc(policySourcesTable.isPrimary), asc(policySourcesTable.id));
+    res.json(GetPolicyResponse.parse(serializePolicy(policy, sources)));
+  } catch (error) {
+    next(error);
+  }
+});
 
-    const sourcesByPolicy = new Map<number, typeof sources>();
-
-    const { slug } = GetPolicyParams.parse(req.params);
+export default router;

@@ -285,6 +285,100 @@ export interface LiveUpdatesResult {
   observedAt: string;
 }
 
+export type CommunityTopic = typeof CommunityTopic[keyof typeof CommunityTopic];
+
+
+export const CommunityTopic = {
+  general: 'general',
+  caste: 'caste',
+  policy: 'policy',
+  representation: 'representation',
+  migration: 'migration',
+  violence: 'violence',
+  work: 'work',
+  education: 'education',
+  culture: 'culture',
+} as const;
+
+export type CommunityPostKind = typeof CommunityPostKind[keyof typeof CommunityPostKind];
+
+
+export const CommunityPostKind = {
+  thought: 'thought',
+  article: 'article',
+  piece: 'piece',
+} as const;
+
+export interface CommunityPostInput {
+  /**
+     * @minLength 2
+     * @maxLength 80
+     */
+  authorName: string;
+  kind: CommunityPostKind;
+  topic: CommunityTopic;
+  /**
+     * @maxLength 80
+     * @nullable
+     */
+  state?: string | null;
+  /**
+     * @minLength 4
+     * @maxLength 180
+     */
+  title: string;
+  /**
+     * @minLength 10
+     * @maxLength 10000
+     */
+  body: string;
+  /** @nullable */
+  linkUrl?: string | null;
+}
+
+export type CommunityPost = CommunityPostInput & {
+  id: number;
+  likeCount: number;
+  replyCount: number;
+  likedByViewer: boolean;
+  createdAt: string;
+};
+
+export interface CommunityReplyInput {
+  /**
+     * @minLength 2
+     * @maxLength 80
+     */
+  authorName: string;
+  /**
+     * @minLength 2
+     * @maxLength 5000
+     */
+  body: string;
+}
+
+export type CommunityReply = CommunityReplyInput & {
+  id: number;
+  postId: number;
+  createdAt: string;
+};
+
+export interface CommunityPostList {
+  posts: CommunityPost[];
+  topics: CommunityTopic[];
+  states: string[];
+}
+
+export interface CommunityPostDetail {
+  post: CommunityPost;
+  replies: CommunityReply[];
+}
+
+export interface CommunityLikeResponse {
+  liked: boolean;
+  likeCount: number;
+}
+
 export interface NewsletterInput {
   email: string;
 }
@@ -293,6 +387,25 @@ export interface NewsletterStatus {
   subscribed: boolean;
   email: string;
 }
+
+export type GetCommunityPostsParams = {
+topic?: CommunityTopic;
+state?: string;
+sort?: GetCommunityPostsSort;
+/**
+ * @minimum 1
+ * @maximum 50
+ */
+limit?: number;
+};
+
+export type GetCommunityPostsSort = typeof GetCommunityPostsSort[keyof typeof GetCommunityPostsSort];
+
+
+export const GetCommunityPostsSort = {
+  recent: 'recent',
+  popular: 'popular',
+} as const;
 
 export type GetArchiveParams = {
 q?: string;

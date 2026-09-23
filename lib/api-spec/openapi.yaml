@@ -16,6 +16,8 @@ tags:
     description: Newsletter subscription operations
   - name: live desk
     description: Curated external monitoring feed
+  - name: community
+    description: India-wide public discussion space
 paths:
   /healthz:
     get:
@@ -57,6 +59,111 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/LiveUpdatesResult"
+  /community/posts:
+    get:
+      operationId: getCommunityPosts
+      tags: [community]
+      summary: Browse public community posts
+      parameters:
+        - name: topic
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/CommunityTopic"
+        - name: state
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: sort
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [recent, popular]
+            default: recent
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+      responses:
+        "200":
+          description: Public community posts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommunityPostList"
+    post:
+      operationId: createCommunityPost
+      tags: [community]
+      summary: Share a thought, article, or other piece
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CommunityPostInput"
+      responses:
+        "201":
+          description: Community post created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommunityPost"
+  /community/posts/{postId}:
+    get:
+      operationId: getCommunityPost
+      tags: [community]
+      summary: Get a community post with replies
+      parameters:
+        - $ref: "#/components/parameters/CommunityPostId"
+      responses:
+        "200":
+          description: Community post and replies
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommunityPostDetail"
+        "404":
+          description: Community post not found
+  /community/posts/{postId}/replies:
+    post:
+      operationId: createCommunityReply
+      tags: [community]
+      summary: Reply to a community post
+      parameters:
+        - $ref: "#/components/parameters/CommunityPostId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CommunityReplyInput"
+      responses:
+        "201":
+          description: Reply created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommunityReply"
+  /community/posts/{postId}/like:
+    post:
+      operationId: toggleCommunityPostLike
+      tags: [community]
+      summary: Like or unlike a community post
+      parameters:
+        - $ref: "#/components/parameters/CommunityPostId"
+      responses:
+        "200":
+          description: Updated like state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommunityLikeResponse"
   /editor/issues/current:
     get:
       operationId: getEditorialIssue
@@ -352,6 +459,13 @@ components:
         format: int32
     StoryId:
       name: storyId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int32
+    CommunityPostId:
+      name: postId
       in: path
       required: true
       schema:
@@ -751,6 +865,114 @@ components:
           type: string
           format: date-time
       required: [updates, feeds, observedAt]
+    CommunityTopic:
+      type: string
+      enum: [general, caste, policy, representation, migration, violence, work, education, culture]
+    CommunityPostKind:
+      type: string
+      enum: [thought, article, piece]
+    CommunityPostInput:
+      type: object
+      properties:
+        authorName:
+          type: string
+          minLength: 2
+          maxLength: 80
+        kind:
+          $ref: "#/components/schemas/CommunityPostKind"
+        topic:
+          $ref: "#/components/schemas/CommunityTopic"
+        state:
+          type: ["string", "null"]
+          maxLength: 80
+        title:
+          type: string
+          minLength: 4
+          maxLength: 180
+        body:
+          type: string
+          minLength: 10
+          maxLength: 10000
+        linkUrl:
+          type: ["string", "null"]
+          format: uri
+      required: [authorName, kind, topic, title, body]
+    CommunityPost:
+      allOf:
+        - $ref: "#/components/schemas/CommunityPostInput"
+        - type: object
+          properties:
+            id:
+              type: integer
+            likeCount:
+              type: integer
+            replyCount:
+              type: integer
+            likedByViewer:
+              type: boolean
+            createdAt:
+              type: string
+              format: date-time
+          required: [id, likeCount, replyCount, likedByViewer, createdAt]
+    CommunityReplyInput:
+      type: object
+      properties:
+        authorName:
+          type: string
+          minLength: 2
+          maxLength: 80
+        body:
+          type: string
+          minLength: 2
+          maxLength: 5000
+      required: [authorName, body]
+    CommunityReply:
+      allOf:
+        - $ref: "#/components/schemas/CommunityReplyInput"
+        - type: object
+          properties:
+            id:
+              type: integer
+            postId:
+              type: integer
+            createdAt:
+              type: string
+              format: date-time
+          required: [id, postId, createdAt]
+    CommunityPostList:
+      type: object
+      properties:
+        posts:
+          type: array
+          items:
+            $ref: "#/components/schemas/CommunityPost"
+        topics:
+          type: array
+          items:
+            $ref: "#/components/schemas/CommunityTopic"
+        states:
+          type: array
+          items:
+            type: string
+      required: [posts, topics, states]
+    CommunityPostDetail:
+      type: object
+      properties:
+        post:
+          $ref: "#/components/schemas/CommunityPost"
+        replies:
+          type: array
+          items:
+            $ref: "#/components/schemas/CommunityReply"
+      required: [post, replies]
+    CommunityLikeResponse:
+      type: object
+      properties:
+        liked:
+          type: boolean
+        likeCount:
+          type: integer
+      required: [liked, likeCount]
     NewsletterInput:
       type: object
       properties:
