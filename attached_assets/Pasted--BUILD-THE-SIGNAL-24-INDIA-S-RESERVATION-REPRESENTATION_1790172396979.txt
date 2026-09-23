@@ -1,0 +1,1823 @@
+# BUILD THE SIGNAL 24 — INDIA'S RESERVATION & REPRESENTATION MONITOR
+
+Build a production-grade, premium, editorial + data platform for:
+
+**Domain:** https://thesignal24.com
+**Brand:** The Signal 24
+**Descriptor:** India's Reservation & Representation Monitor
+**Core tagline:** **The record behind the debate.**
+
+---
+
+# 1. PRODUCT VISION
+
+The Signal 24 is a public-interest digital publication and research/archive platform focused exclusively on:
+
+* caste-based reservation
+* affirmative action
+* reservation policy
+* representation
+* government recruitment reservation
+* educational reservation
+* promotions and reservation
+* constitutional amendments
+* parliamentary developments
+* Supreme Court and High Court cases
+* commissions and committee reports
+* government notifications and gazette documents
+* reservation-related protests and movements
+* historical developments
+* statistical evidence
+* implementation outcomes
+* policy criticism and analysis
+
+The goal is NOT to become another generic news website.
+
+The goal is to create a **permanent, searchable, authoritative record of India's reservation debate**.
+
+The site should feel like a combination of:
+
+* premium investigative publication
+* data journalism platform
+* legal/policy archive
+* searchable research database
+* modern Indian digital magazine
+
+The product should be visually iconic, extremely fast, mobile-first and credible.
+
+---
+
+# 2. EDITORIAL PRINCIPLE
+
+The site must be:
+
+**evidence-first, government-independent, source-first and transparent.**
+
+Do NOT design the editorial system around supporting or opposing any political party, caste group or reservation policy.
+
+The publication may strongly criticize policies, decisions, implementation failures, contradictions or political claims, but criticism must be based on documented evidence.
+
+Never present an allegation as an established fact.
+
+Never manufacture statistics.
+
+Never infer motives without reliable sourcing.
+
+Never fabricate quotations, government statements, court observations or research findings.
+
+Political parties and governments must be treated under the same editorial framework.
+
+The site should be able to critically investigate:
+
+* BJP
+* Congress
+* regional parties
+* central government
+* state governments
+* courts
+* commissions
+* universities
+* recruiting bodies
+* political movements
+* public institutions
+
+without changing the underlying editorial standard.
+
+Clearly distinguish:
+
+**REPORTING**
+What happened.
+
+**DOCUMENT**
+What the original source says.
+
+**ANALYSIS**
+What the available evidence suggests.
+
+**OPINION**
+A clearly labelled editorial viewpoint.
+
+Do not blur these categories.
+
+---
+
+# 3. VISUAL DIRECTION
+
+DO NOT create a generic AI-generated news website.
+
+Avoid:
+
+* excessive rounded cards
+* excessive gradients
+* generic glassmorphism
+* giant AI-generated hero illustrations
+* random colorful category cards
+* repetitive article grids
+* cheap breaking-news aesthetics
+* excessive animations
+* cluttered ad-heavy layouts
+
+The design should feel:
+
+**premium + serious + editorial + institutional + modern + Indian**
+
+Design references should be closer in spirit to:
+
+* Reuters
+* Financial Times
+* Bloomberg
+* The Economist
+* premium investigative magazines
+* modern data-journalism publications
+* serious legal/research portals
+
+but DO NOT copy any individual site's design.
+
+### Visual language
+
+Use:
+
+* strong typography
+* large editorial headlines
+* restrained color palette
+* off-white / white backgrounds for reading surfaces
+* deep charcoal / black for navigation and data sections
+* one distinctive "signal" accent color
+* subtle borders
+* editorial photography
+* document imagery
+* timelines
+* maps
+* data visualizations
+* charts
+* generous whitespace
+
+Typography must feel premium and highly legible.
+
+Use the original selected fonts consistently throughout the entire product.
+
+---
+
+# 4. BRAND
+
+Primary logo treatment:
+
+**THE SIGNAL 24**
+
+Possible lockup:
+
+THE SIGNAL 24
+INDIA'S RESERVATION & REPRESENTATION MONITOR
+
+Primary tagline:
+
+**THE RECORD BEHIND THE DEBATE.**
+
+Alternative supporting line:
+
+**Every claim has a source. Every policy has a history. Every number has a document.**
+
+The logo should be simple enough to work as:
+
+* desktop masthead
+* mobile header
+* favicon
+* social profile
+* newsletter identity
+
+Create a recognizable "signal" visual motif that can be reused throughout charts, timelines and UI.
+
+---
+
+# 5. PRIMARY NAVIGATION
+
+Desktop navigation:
+
+HOME
+LATEST
+STATES
+POLICY LEDGER
+COURTROOM
+DATA
+ARCHIVE
+DOCUMENTS
+EXPLAINERS
+OPINION
+
+Secondary utilities:
+
+Search
+Newsletter
+About
+Editorial Standards
+
+Mobile navigation must be extremely clean.
+
+---
+
+# 6. HOMEPAGE
+
+The homepage should immediately communicate that this is NOT a generic news portal.
+
+## HERO
+
+Large headline:
+
+**INDIA'S RESERVATION DEBATE, DOCUMENTED.**
+
+Supporting copy:
+
+Track policy changes, court cases, legislation, government decisions, historical developments, data and the documents behind them.
+
+Primary CTA:
+
+**EXPLORE THE POLICY LEDGER**
+
+Secondary CTA:
+
+**VIEW TODAY'S SIGNAL**
+
+---
+
+# 7. HOMEPAGE SECTION: TODAY'S SIGNAL
+
+Create a premium daily briefing module.
+
+Heading:
+
+**TODAY'S SIGNAL**
+
+Subheading:
+
+The developments that matter today.
+
+Each item should show:
+
+* category
+* headline
+* date/time
+* state/location
+* source count
+* status
+* reading time
+
+Possible status labels:
+
+DEVELOPING
+CONFIRMED
+UNDER REVIEW
+COURT PROCEEDING
+POLICY CHANGE
+HISTORICAL CONTEXT
+
+Avoid sensational "BREAKING" labels unless the story truly qualifies.
+
+---
+
+# 8. HOMEPAGE SECTION: WHAT CHANGED?
+
+Create a visual policy-change panel.
+
+Each change shows:
+
+**BEFORE → AFTER**
+
+Example structure:
+
+Policy / Rule
+Previous position
+New position
+Effective date
+Authority
+Who is affected
+Primary document
+
+Create a visual "policy delta" component.
+
+This should become one of the site's signature UI components.
+
+---
+
+# 9. INDIA RESERVATION MAP
+
+Create an interactive India map.
+
+Users can select a state.
+
+On selection show:
+
+* major reservation categories
+* current reported reservation framework
+* education policies
+* recruitment policies
+* major recent changes
+* pending legislation
+* court challenges
+* important historical milestones
+* last updated date
+* source documents
+
+Do NOT hardcode controversial numbers without source metadata.
+
+Every data point must contain:
+
+* value
+* source
+* source date
+* applicability
+* legal basis
+* status
+* last verified date
+
+Clearly distinguish:
+
+ACTIVE
+PROPOSED
+CHALLENGED
+STAYED
+STRUCK DOWN
+PENDING
+HISTORICAL
+
+---
+
+# 10. POLICY LEDGER
+
+This is the central product.
+
+Create a searchable database of major reservation-related policy developments.
+
+Each policy page should contain:
+
+## Overview
+
+What changed?
+
+## Authority
+
+Who introduced or implemented it?
+
+## Date
+
+When?
+
+## Scope
+
+Employment / education / promotion / local government / admissions / etc.
+
+## Previous framework
+
+What existed before?
+
+## New framework
+
+What changed?
+
+## Legal basis
+
+Relevant legislation / constitutional provision / government notification.
+
+## Government position
+
+What does the government officially say?
+
+## Objections / challenges
+
+Clearly attributed arguments from petitioners, opposition parties, academics, organizations or other documented sources.
+
+## Court status
+
+Pending / upheld / challenged / stayed / struck down / etc.
+
+## Evidence
+
+Relevant statistics and research.
+
+## Documents
+
+Original documents.
+
+## Timeline
+
+Chronological history.
+
+## Related stories
+
+Internal links.
+
+---
+
+# 11. THE 50% / RESERVATION CEILING TRACKER
+
+Create a dedicated data page for reservation-ceiling developments.
+
+Do not simplify complex constitutional law into one binary rule.
+
+For each state or policy record:
+
+* reported percentage
+* categories included
+* applicable sector
+* legal basis
+* constitutional/legal status
+* whether challenged
+* court case
+* current status
+* source
+* verification date
+
+Provide a clear methodology explaining how percentages are calculated.
+
+Where different government sources use different definitions, preserve the distinction instead of forcing a single number.
+
+---
+
+# 12. COURTROOM
+
+Create a dedicated legal tracker.
+
+Categories:
+
+SUPREME COURT
+HIGH COURTS
+CONSTITUTION BENCH
+OTHER COURTS / TRIBUNALS where relevant
+
+Every case gets a permanent page.
+
+Structure:
+
+### CASE TITLE
+
+Case number
+Court
+Bench
+Parties
+Subject
+State
+Current status
+Last hearing
+Next known event/date if available
+
+### ISSUE
+
+What legal question is being considered?
+
+### BACKGROUND
+
+Relevant history.
+
+### GOVERNMENT POSITION
+
+Official documented position.
+
+### PETITIONER POSITION
+
+Documented position.
+
+### OTHER POSITIONS
+
+Only when sourced.
+
+### COURT RECORD
+
+Orders
+Judgments
+Observations
+Directions
+
+### LEGAL TIMELINE
+
+Chronological sequence.
+
+### PRIMARY DOCUMENTS
+
+Links/uploads to official PDFs.
+
+### RELATED POLICY
+
+Link to Policy Ledger.
+
+IMPORTANT:
+
+Do not paraphrase court judgments carelessly.
+
+Where the precise legal language matters, link directly to the original judgment/order and provide a short accurate summary.
+
+---
+
+# 13. DOCUMENT VAULT
+
+This should be one of the site's most important assets.
+
+Create a searchable repository for:
+
+* Acts
+* Bills
+* Government Orders
+* Gazettes
+* Notifications
+* Circulars
+* Court judgments
+* Court orders
+* Commission reports
+* Parliamentary documents
+* Research papers
+* Official statistics
+* Recruitment rules
+* Educational admission rules
+* Historical documents
+
+Each document page must contain:
+
+Title
+Document type
+Issuing authority
+Date
+State
+Category
+Topic
+Source URL
+Uploaded copy if legally permissible
+Summary
+Related policies
+Related cases
+Related articles
+
+Add PDF preview.
+
+Add download/view buttons where appropriate.
+
+---
+
+# 14. ARCHIVE
+
+Build a historical archive covering the reservation debate across India.
+
+Primary timeline:
+
+**1950 → PRESENT**
+
+Allow users to filter by:
+
+* decade
+* state
+* category
+* government
+* legal development
+* education
+* employment
+* court case
+* constitutional amendment
+* commission
+* social movement
+
+Each historical event should have:
+
+date
+event
+description
+source
+related documents
+related articles
+
+The archive must prioritize historical accuracy over article volume.
+
+---
+
+# 15. DATA ROOM
+
+Build a serious data-journalism area.
+
+Potential datasets:
+
+* reservation percentages
+* recruitment representation
+* vacancies
+* admissions
+* category-wise cutoffs where reliable data exists
+* government employment representation
+* educational representation
+* state comparisons
+* policy changes over time
+* demographic/contextual statistics
+
+Every chart must display:
+
+**Source**
+**Date**
+**Methodology**
+**Definition**
+**Last updated**
+
+Never create a chart simply because it looks impressive.
+
+If reliable data does not exist, explicitly say:
+
+**Data unavailable / insufficient public data.**
+
+---
+
+# 16. "WHO GETS WHAT?" TOOL
+
+Create an interactive comparison tool.
+
+Allow the user to select:
+
+State
+Sector
+Year
+Reservation category
+
+Then display:
+
+Population/contextual data where available
+Policy allocation
+Applications where available
+Selections where available
+Representation where available
+Vacancies where available
+
+Important:
+
+Never imply that population share automatically determines a legally required reservation percentage.
+
+Clearly separate:
+
+* demographic data
+* legal entitlement
+* policy allocation
+* actual representation
+
+---
+
+# 17. EXPLAINERS
+
+Create evergreen explainers.
+
+Examples:
+
+What is caste-based reservation?
+How did India's reservation system develop?
+What did Mandal change?
+What does the Constitution provide?
+What is horizontal reservation?
+What is vertical reservation?
+What is sub-classification?
+What is the difference between reservation and affirmative action?
+How do state and central reservation policies differ?
+How does reservation work in education?
+How does reservation work in government recruitment?
+What happens when a reservation law is challenged in court?
+
+Explainers should remain updated when law changes.
+
+Display:
+
+**Last reviewed:** date
+
+---
+
+# 18. OPINION
+
+Create a separate opinion section.
+
+This must be visibly distinct from reporting.
+
+Every opinion article should show:
+
+**OPINION**
+
+Author
+Author bio
+Disclosure if relevant
+
+Opinion content should never be presented as neutral reporting.
+
+---
+
+# 19. ARTICLE TEMPLATE
+
+Build a highly premium article template.
+
+Top:
+
+Category
+Headline
+Subheadline
+Author
+Published date
+Updated date
+Reading time
+
+Hero image
+
+Then:
+
+## THE SIGNAL
+
+A concise factual summary.
+
+## WHAT HAPPENED
+
+Chronology.
+
+## WHY IT MATTERS
+
+Context and implications.
+
+## WHAT THE RECORD SHOWS
+
+Evidence/data/documents.
+
+## WHAT EACH SIDE SAYS
+
+Clearly attributed perspectives.
+
+## WHAT HAPPENS NEXT
+
+Known next steps only.
+
+## PRIMARY SOURCES
+
+Official documents.
+
+Then:
+
+Related stories
+Related court cases
+Related policies
+Timeline
+
+---
+
+# 20. SOURCE-FIRST SYSTEM
+
+Create a first-class source model in the database.
+
+Source types:
+
+Government
+Supreme Court
+High Court
+Parliament
+Commission
+University
+Research institution
+News organization
+Civil society organization
+Other
+
+Each source should have:
+
+name
+url
+source type
+publication date
+retrieval date
+authority level
+document type
+
+Articles should be able to reference multiple sources.
+
+Create source cards.
+
+Example:
+
+**PRIMARY SOURCE**
+
+Government Gazette
+Published: 12 March 2026
+[Open document]
+
+---
+
+# 21. SOURCE HIERARCHY
+
+Internally rank sources by reliability for factual claims.
+
+Preferred:
+
+1. Primary government documents
+2. Supreme Court / High Court records
+3. Constitutional / statutory texts
+4. Official statistical releases
+5. Parliamentary records
+6. Commission reports
+7. Academic research
+8. Reputable news organizations
+9. Other secondary sources
+
+This is not a public "quality score" for political viewpoints.
+
+It is an editorial sourcing hierarchy.
+
+---
+
+# 22. ARTICLE INGESTION ENGINE
+
+Build the backend so articles can be collected from RSS feeds / APIs / approved sources.
+
+Pipeline:
+
+DISCOVER
+↓
+FETCH
+↓
+DEDUPLICATE
+↓
+CLASSIFY
+↓
+EXTRACT ENTITIES
+↓
+MATCH TO EXISTING POLICY / CASE / STATE
+↓
+GENERATE DRAFT BRIEF
+↓
+EDITORIAL REVIEW
+↓
+PUBLISH
+
+Do not automatically publish politically sensitive material solely from an LLM.
+
+AI may assist with:
+
+* categorization
+* summarization
+* duplicate detection
+* metadata generation
+* entity extraction
+* source linking
+* timeline extraction
+
+Human/editorial verification should remain available before publication.
+
+---
+
+# 23. ENTITY SYSTEM
+
+Create structured entities for:
+
+* State
+* Political party
+* Government
+* Leader/public official
+* Court
+* Judge
+* Case
+* Policy
+* Legislation
+* Commission
+* Organization
+* University
+* Reservation category
+* Document
+* Article
+
+This allows automatic internal linking.
+
+Example:
+
+A Maharashtra reservation article should automatically connect to:
+
+Maharashtra
+Maratha reservation policy
+related court cases
+historical events
+documents
+older articles
+
+---
+
+# 24. SEARCH
+
+Build powerful global search.
+
+Search across:
+
+Articles
+Policies
+Cases
+Documents
+States
+People
+Organizations
+Timeline events
+
+Filters:
+
+Date
+State
+Category
+Content type
+Court
+Status
+
+Search must be extremely fast.
+
+---
+
+# 25. SEO ARCHITECTURE
+
+The site must be built for long-term organic discovery.
+
+Every important policy should have a permanent canonical URL.
+
+Suggested structures:
+
+/news/[slug]
+
+/analysis/[slug]
+
+/explainers/[slug]
+
+/policy/[slug]
+
+/states/[state]
+
+/cases/[slug]
+
+/documents/[slug]
+
+/data/[slug]
+
+/timeline/[slug]
+
+/authors/[slug]
+
+Use:
+
+* canonical URLs
+* XML sitemap
+* image sitemap where appropriate
+* robots.txt
+* Open Graph
+* Twitter/X cards
+* NewsArticle schema where appropriate
+* Article schema
+* BreadcrumbList
+* Organization schema
+* Person/Author schema
+* Dataset schema where appropriate
+* WebSite/SearchAction
+* datePublished
+* dateModified
+
+Do NOT create thousands of thin programmatic pages.
+
+Only index pages that provide meaningful unique value.
+
+---
+
+# 26. E-E-A-T / TRUST
+
+Create:
+
+/about
+
+/editorial-standards
+
+/corrections
+
+/sources
+
+/methodology
+
+/authors
+
+/contact
+
+Each article author should have a real profile.
+
+The Editorial Standards page should explain:
+
+* sourcing
+* corrections
+* conflicts of interest
+* AI usage
+* political neutrality
+* opinion labeling
+* document handling
+* data methodology
+
+Create a visible:
+
+**Correction / Report an error**
+
+link on articles.
+
+---
+
+# 27. NEWSLETTER
+
+Create:
+
+## THE DAILY SIGNAL
+
+Positioning:
+
+**The important reservation developments in India, without the noise.**
+
+Capture:
+
+email
+optional state interest
+optional topic interest
+
+Possible preferences:
+
+India-wide
+Your state
+Employment
+Education
+Courts
+Policy
+Data
+
+Integrate with a newsletter provider/API.
+
+Do not spam.
+
+---
+
+# 28. ADMIN / CMS
+
+Create a secure editorial dashboard.
+
+Dashboard widgets:
+
+Articles today
+Pending drafts
+Pending review
+Recently updated cases
+Policy changes
+New source documents
+Broken source links
+Corrections
+Newsletter subscribers
+
+CMS should support:
+
+Create
+Edit
+Draft
+Review
+Schedule
+Publish
+Unpublish
+Archive
+
+Add revision history.
+
+Every policy/case/document should also have revision history.
+
+---
+
+# 29. ADMIN DATA MODELS
+
+Design a normalized database.
+
+Core tables:
+
+users
+authors
+articles
+article_sources
+sources
+states
+policies
+policy_events
+cases
+case_events
+documents
+timeline_events
+datasets
+dataset_sources
+categories
+tags
+organizations
+political_entities
+newsletter_subscribers
+
+Use relationships rather than duplicating content.
+
+---
+
+# 30. TECHNOLOGY STACK
+
+Use:
+
+**Next.js**
+App Router
+TypeScript
+
+**Database / backend:**
+Supabase / PostgreSQL
+
+**Styling:**
+Tailwind CSS
+
+**Hosting:**
+Vercel
+
+**Charts:**
+Recharts or another lightweight production-grade charting library
+
+**Maps:**
+A performant India map solution compatible with Next.js
+
+**Search:**
+Postgres full-text search initially, structured so it can later move to Algolia / Typesense / Meilisearch if required.
+
+Keep the architecture modular.
+
+---
+
+# 31. PERFORMANCE
+
+Performance is critical.
+
+Targets:
+
+LCP < 2.5 seconds
+CLS < 0.1
+INP < 200ms
+
+Use:
+
+* server-side rendering where appropriate
+* static generation for evergreen pages
+* incremental regeneration
+* image optimization
+* lazy loading below the fold
+* minimal client JavaScript
+* streaming only where useful
+* caching
+* efficient database queries
+* pagination
+* optimized fonts
+
+Do not wrap the primary hero/LCP content in unnecessary Suspense boundaries.
+
+The homepage must load extremely quickly on mobile Indian networks.
+
+---
+
+# 32. MOBILE EXPERIENCE
+
+Design mobile-first.
+
+The mobile site should feel like a native editorial product.
+
+Prioritize:
+
+headline readability
+fast navigation
+timeline usability
+maps
+search
+documents
+charts
+
+Avoid tiny text and horizontal overflow.
+
+---
+
+# 33. ADVERTISING
+
+The site may eventually monetize through AdSense / programmatic advertising.
+
+However:
+
+Do NOT allow advertising to destroy the editorial experience.
+
+Reserve logical placements:
+
+Top
+Between content blocks
+Sidebar desktop
+After article
+Newsletter modules
+
+Never place ads in a way that makes the content look deceptive.
+
+Do not place ads between a headline and its immediate context.
+
+Build reusable ad slots with fixed minimum dimensions to protect CLS.
+
+---
+
+# 34. HOMEPAGE INFORMATION ARCHITECTURE
+
+Final homepage order:
+
+1. Header
+2. Hero / brand statement
+3. Today's Signal
+4. What Changed?
+5. Major developing stories
+6. India reservation map
+7. Policy Ledger
+8. Courtroom
+9. Data Room
+10. Featured Explainers
+11. Document Vault
+12. Newsletter
+13. Footer
+
+Do not make the homepage infinitely long.
+
+Use editorial hierarchy.
+
+---
+
+# 35. SIGNATURE UI COMPONENTS
+
+Create distinctive reusable components:
+
+SignalBadge
+PolicyDelta
+ReservationMap
+CaseStatus
+Timeline
+SourceCard
+DocumentCard
+PolicyCard
+CourtCard
+DataChart
+EvidenceBox
+ExplainerCard
+CorrectionBadge
+LastVerified
+FactContextBox
+
+These components should create a visual language unique to The Signal 24.
+
+---
+
+# 36. FACT-CHECK / EVIDENCE LABELS
+
+Potential labels:
+
+PRIMARY SOURCE
+OFFICIAL DATA
+COURT RECORD
+RESEARCH
+REPORTED
+ANALYSIS
+OPINION
+UNVERIFIED
+
+Do not use labels as decorative badges.
+
+They must communicate actual source status.
+
+---
+
+# 37. AI DISCLOSURE
+
+Because AI may be used internally:
+
+Add an editorial policy stating that AI can assist with:
+
+research organization
+summarization
+classification
+metadata
+drafting
+
+but facts must be checked against source material before publication.
+
+Where appropriate, display:
+
+**AI-assisted drafting; editorially reviewed**
+
+Never claim human reporting occurred when it did not.
+
+---
+
+# 38. SOCIAL / DISTRIBUTION
+
+Every article should generate excellent social cards.
+
+Create templates for:
+
+X
+Facebook
+LinkedIn
+WhatsApp
+Instagram
+
+Card design:
+
+THE SIGNAL 24
+Large headline
+Topic/category
+Source/date
+
+Avoid sensational imagery.
+
+---
+
+# 39. INTERNAL LINKING
+
+Every article should automatically surface:
+
+Related policy
+Related court case
+Previous developments
+Next developments
+Relevant documents
+State page
+Explainer
+
+This should create a deep knowledge graph.
+
+Example:
+
+Article
+↓
+Policy
+↓
+Court case
+↓
+Judgment
+↓
+Timeline
+↓
+Data
+↓
+Related article
+
+This is one of the most important SEO and user-retention mechanisms.
+
+---
+
+# 40. CONTENT QUALITY RULE
+
+Do NOT optimize for article count.
+
+Optimize for:
+
+**information density + usefulness + source quality + historical continuity.**
+
+A single excellent policy page with:
+
+20 linked documents
+10 historical events
+5 court records
+15 related articles
+3 datasets
+
+is more valuable than 50 generic news stories.
+
+---
+
+# 41. INITIAL CONTENT STRATEGY
+
+At launch, create a strong foundation instead of trying to publish hundreds of stories.
+
+Create:
+
+30–50 foundational explainers
+20–30 major policy pages
+20+ major legal/court pages
+a national reservation timeline
+state landing pages
+a document archive
+several high-quality data visualizations
+
+Then connect new daily news to those permanent resources.
+
+---
+
+# 42. STATE PAGES
+
+Create state-level landing pages.
+
+Example:
+
+/states/maharashtra
+
+Page includes:
+
+Latest developments
+Current policy framework
+Major communities/categories involved in documented policy disputes
+Court cases
+Historical timeline
+Government documents
+Data
+Explainers
+
+Repeat for every Indian state and union territory, but do not create thin pages.
+
+Every state page must contain meaningful content/data.
+
+---
+
+# 43. POLITICAL ACCOUNTABILITY
+
+Create a neutral "Policy Record" view.
+
+For every major government or institution:
+
+What was proposed?
+What was enacted?
+When?
+What changed?
+What did the official document say?
+What legal challenge followed?
+What happened next?
+
+Do not give governments a "score."
+
+Do not rank parties.
+
+Do not create "best/worst government" rankings.
+
+The purpose is to preserve the factual record so readers can evaluate it themselves.
+
+---
+
+# 44. "CLAIM VS RECORD" FEATURE
+
+Create one of the site's signature editorial formats:
+
+## CLAIM
+
+A politician / government / organization makes a public claim.
+
+## RECORD
+
+Show the underlying documents and available evidence.
+
+## CONTEXT
+
+Explain what is known and unknown.
+
+## STATUS
+
+Supported
+Partially supported
+Disputed
+Unsupported
+Insufficient evidence
+
+Do not use the status label unless the evidence criteria are explicitly defined in the methodology.
+
+---
+
+# 45. DATA INTEGRITY
+
+For every important number:
+
+Store:
+
+value
+unit
+year
+geography
+definition
+source
+source URL
+source date
+collection method
+last verified
+
+Never mix:
+
+population percentage
+reservation percentage
+representation percentage
+selection percentage
+
+without explicitly identifying which is which.
+
+---
+
+# 46. LEGAL / COPYRIGHT SAFETY
+
+Do not scrape and republish copyrighted articles in full.
+
+Store:
+
+headline
+summary
+source metadata
+link to original source
+
+For government/public documents, follow applicable legal rules and source conditions.
+
+For news articles, link to the original publisher.
+
+The objective is to build an evidence ecosystem, not copy other publications.
+
+---
+
+# 47. DATABASE STATUS ENUMS
+
+Create controlled values rather than arbitrary text.
+
+Policy status:
+
+PROPOSED
+INTRODUCED
+ENACTED
+ACTIVE
+CHALLENGED
+STAYED
+STRUCK_DOWN
+REPEALED
+REPLACED
+HISTORICAL
+
+Case status:
+
+FILED
+HEARING
+ORDERED
+RESERVED_FOR_JUDGMENT
+JUDGMENT_DELIVERED
+APPEAL
+CLOSED
+
+Source status:
+
+ACTIVE
+BROKEN
+ARCHIVED
+
+---
+
+# 48. ANALYTICS
+
+Track:
+
+pageviews
+unique visitors
+returning visitors
+newsletter conversion
+article engagement
+scroll depth
+search usage
+document views
+policy-page views
+case-page views
+state-page views
+top acquisition pages
+internal-link clicks
+
+Create internal analytics dashboard.
+
+The goal is to learn:
+
+**What information are readers actually returning to?**
+
+---
+
+# 49. SEO CONTENT ENGINE
+
+Build topic clusters around:
+
+Reservation
+Caste reservation
+SC reservation
+ST reservation
+OBC reservation
+EWS reservation
+Reservation in government jobs
+Reservation in education
+State reservation policies
+Supreme Court reservation cases
+Reservation constitutional amendments
+Reservation ceiling
+Sub-categorisation
+Creamy layer
+Maratha reservation
+Jat reservation
+Patidars / Patels reservation
+Gujjar reservation
+Regional reservation movements
+
+But do not generate pages solely for keywords.
+
+Each page needs genuine information value.
+
+---
+
+# 50. HOMEPAGE COPY STYLE
+
+Avoid:
+
+"SHOCKING!"
+"BIGGEST EVER!"
+"YOU WON'T BELIEVE..."
+"Government DESTROYS..."
+"Massive controversy!"
+
+Use:
+
+precise
+calm
+specific
+documented
+high-information headlines.
+
+Examples:
+
+Weak:
+
+**Government SHOCKS India With Huge Reservation Move**
+
+Strong:
+
+**New Reservation Rule Changes Eligibility for State Recruitment**
+
+Weak:
+
+**Another Massive Quota Crisis Explodes**
+
+Strong:
+
+**What the New State Reservation Proposal Actually Changes**
+
+---
+
+# 51. ERROR / EMPTY STATES
+
+Never show broken UI.
+
+Example:
+
+No case data:
+
+**No verified court record is currently available.**
+
+No dataset:
+
+**Public data is currently insufficient for a reliable comparison.**
+
+Broken source:
+
+**Source unavailable — last verified on [date].**
+
+This strengthens trust.
+
+---
+
+# 52. SECURITY
+
+Use:
+
+Supabase Row Level Security
+secure admin authentication
+server-side validation
+rate limiting
+protected admin routes
+input sanitization
+secure file handling
+
+Never expose service-role keys client-side.
+
+---
+
+# 53. ARCHITECTURE FOR FUTURE SCALE
+
+Design so the platform can eventually support:
+
+100,000+ articles
+10,000+ documents
+thousands of policy records
+thousands of court events
+large datasets
+
+Use indexing and pagination from the beginning.
+
+Do not load entire datasets into the browser.
+
+---
+
+# 54. FIRST RELEASE
+
+Build the following first:
+
+### PHASE 1
+
+Premium shell
+Homepage
+Navigation
+Article system
+Categories
+Search
+Supabase schema
+CMS
+Authors
+SEO foundation
+Newsletter
+
+### PHASE 2
+
+Policy Ledger
+Courtroom
+State pages
+Timeline
+Documents
+
+### PHASE 3
+
+India map
+Data Room
+Who Gets What
+Claim vs Record
+Advanced search
+
+### PHASE 4
+
+Automated ingestion
+Source monitoring
+AI-assisted editorial workflow
+Advanced analytics
+
+Do NOT attempt to build everything as one giant fragile implementation.
+
+---
+
+# 55. CRITICAL PRODUCT REQUIREMENT
+
+The finished website must NOT look like an automatically generated political blog.
+
+A visitor should immediately think:
+
+**"This is a serious research and journalism platform."**
+
+The UI, copy, typography, information architecture, source presentation and data model should all communicate that.
+
+---
+
+# 56. DELIVERABLE
+
+Build a working production-quality website with:
+
+* responsive desktop/mobile interface
+* premium visual design
+* functional navigation
+* Supabase database schema
+* CMS
+* article pages
+* policy pages
+* case pages
+* state pages
+* documents
+* timeline
+* search
+* newsletter capture
+* SEO metadata
+* schema markup
+* sitemap
+* robots.txt
+* Open Graph
+* analytics-ready architecture
+* scalable database relationships
+* clean reusable components
+
+Do not stop at a static mockup.
+
+Use realistic sample content and data structures to demonstrate how the platform works, but clearly label sample/demo content so it can never be mistaken for real reporting.
+
+---
+
+# 57. FINAL QUALITY BAR
+
+Before considering the implementation complete, ask:
+
+1. Does this look like a serious national publication?
+2. Can a reader trace a major claim to a source?
+3. Can a reader understand what changed historically?
+4. Can a reader find relevant court cases?
+5. Can a reader find the original government document?
+6. Can a reader compare states?
+7. Can a reader distinguish reporting from opinion?
+8. Can a reader identify what is confirmed versus disputed?
+9. Is the site extremely fast on mobile?
+10. Does the site provide substantially more value than a normal news search?
+
+If the answer to any of these is no, continue improving the implementation.
+
+Do not optimize for visual novelty at the expense of information architecture.
+
+Do not optimize for content volume at the expense of credibility.
+
+Do not optimize for political engagement at the expense of accuracy.
+
+Build **The Signal 24** as a long-term public information infrastructure project.
+
+# FINAL BRAND POSITIONING
+
+**THE SIGNAL 24**
+
+### THE RECORD BEHIND THE DEBATE.
+
+**India's Reservation & Representation Monitor**
+
+A permanent record of the laws, policies, court decisions, data, documents and events shaping reservation in India.
