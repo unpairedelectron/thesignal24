@@ -42,6 +42,20 @@ paths:
                 $ref: "#/components/schemas/CurrentIssue"
         "404":
           description: No published issue exists
+  /editor/issues/current:
+    get:
+      operationId: getEditorialIssue
+      tags: [publication]
+      summary: Get the current issue with editorial workflow fields
+      responses:
+        "200":
+          description: Current issue for the editorial desk
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentIssue"
+        "404":
+          description: No issue exists
   /archive:
     get:
       operationId: getArchive
@@ -117,6 +131,8 @@ paths:
                 $ref: "#/components/schemas/Issue"
         "404":
           description: Issue not found
+        "409":
+          description: Issue contains records that have not passed editorial review
   /stories/{storyId}:
     get:
       operationId: getStory
@@ -152,6 +168,22 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Story"
+        "404":
+          description: Story not found
+  /stories/{storyId}/revisions:
+    get:
+      operationId: getStoryRevisions
+      tags: [publication]
+      summary: Get the revision history for a story
+      parameters:
+        - $ref: "#/components/parameters/StoryId"
+      responses:
+        "200":
+          description: Revision history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StoryRevisions"
         "404":
           description: Story not found
   /stories:
@@ -239,6 +271,12 @@ components:
     StoryKind:
       type: string
       enum: [Article, Paper note, Archive, Explainer]
+    StoryWorkflowStatus:
+      type: string
+      enum: [draft, review, scheduled, published, archived]
+    VerificationStatus:
+      type: string
+      enum: [unverified, source-linked, verified]
     Issue:
       type: object
       properties:
@@ -317,7 +355,32 @@ components:
           nullable: true
         sortOrder:
           type: integer
-      required: [id, issueId, topic, kind, state, source, sourceUrl, publishedOn, eyebrow, title, dek, body, time, read, tone, number, sortOrder]
+        workflowStatus:
+          $ref: "#/components/schemas/StoryWorkflowStatus"
+        verificationStatus:
+          $ref: "#/components/schemas/VerificationStatus"
+        verificationNotes:
+          type: ["string", "null"]
+        sourcePublishedOn:
+          type: ["string", "null"]
+          format: date
+        sourceRetrievedOn:
+          type: ["string", "null"]
+          format: date
+        lastVerifiedAt:
+          type: ["string", "null"]
+          format: date-time
+        reviewedAt:
+          type: ["string", "null"]
+          format: date-time
+        scheduledFor:
+          type: ["string", "null"]
+          format: date-time
+        aiDisclosure:
+          type: ["string", "null"]
+        correctionNote:
+          type: ["string", "null"]
+      required: [id, issueId, topic, kind, state, source, sourceUrl, publishedOn, eyebrow, title, dek, body, time, read, tone, number, sortOrder, workflowStatus, verificationStatus, verificationNotes, sourcePublishedOn, sourceRetrievedOn, lastVerifiedAt, reviewedAt, scheduledFor, aiDisclosure, correctionNote]
     StoryInput:
       type: object
       properties:
@@ -359,7 +422,53 @@ components:
           nullable: true
         sortOrder:
           type: integer
+        workflowStatus:
+          $ref: "#/components/schemas/StoryWorkflowStatus"
+        verificationStatus:
+          $ref: "#/components/schemas/VerificationStatus"
+        verificationNotes:
+          type: ["string", "null"]
+        sourcePublishedOn:
+          type: ["string", "null"]
+          format: date
+        sourceRetrievedOn:
+          type: ["string", "null"]
+          format: date
+        lastVerifiedAt:
+          type: ["string", "null"]
+          format: date-time
+        scheduledFor:
+          type: ["string", "null"]
+          format: date-time
+        aiDisclosure:
+          type: ["string", "null"]
+        correctionNote:
+          type: ["string", "null"]
+        revisionNote:
+          type: ["string", "null"]
       required: [issueId, topic, kind, source, eyebrow, title, dek, body, time, read, tone, sortOrder]
+    StoryRevision:
+      type: object
+      properties:
+        id:
+          type: integer
+        storyId:
+          type: integer
+        revisionNumber:
+          type: integer
+        changeNote:
+          type: ["string", "null"]
+        snapshot:
+          type: object
+          additionalProperties: true
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, storyId, revisionNumber, changeNote, snapshot, createdAt]
+    StoryRevisions:
+      type: array
+      items:
+        $ref: "#/components/schemas/StoryRevision"
     CurrentIssue:
       type: object
       properties:

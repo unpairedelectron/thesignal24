@@ -47,7 +47,63 @@ export const GetCurrentIssueResponse = zod.object({
   "read": zod.number().int(),
   "tone": zod.string(),
   "number": zod.number().int().nullable(),
-  "sortOrder": zod.number().int()
+  "sortOrder": zod.number().int(),
+  "workflowStatus": zod.enum(['draft', 'review', 'scheduled', 'published', 'archived']),
+  "verificationStatus": zod.enum(['unverified', 'source-linked', 'verified']),
+  "verificationNotes": zod.string().nullable(),
+  "sourcePublishedOn": zod.coerce.date().nullable(),
+  "sourceRetrievedOn": zod.coerce.date().nullable(),
+  "lastVerifiedAt": zod.coerce.date().nullable(),
+  "reviewedAt": zod.coerce.date().nullable(),
+  "scheduledFor": zod.coerce.date().nullable(),
+  "aiDisclosure": zod.string().nullable(),
+  "correctionNote": zod.string().nullable()
+})),
+  "topics": zod.array(zod.enum(['Latest', 'Courts & Policy', 'States', 'History', 'Ground Reports', 'Data & Notes']))
+})
+
+
+/**
+ * @summary Get the current issue with editorial workflow fields
+ */
+export const GetEditorialIssueResponse = zod.object({
+  "issue": zod.object({
+  "id": zod.number().int(),
+  "issueDate": zod.coerce.date(),
+  "issueNumber": zod.number().int(),
+  "status": zod.enum(['draft', 'published']),
+  "title": zod.string(),
+  "intro": zod.string(),
+  "publishedAt": zod.coerce.date().nullable()
+}),
+  "stories": zod.array(zod.object({
+  "id": zod.number().int(),
+  "issueId": zod.number().int(),
+  "topic": zod.enum(['Latest', 'Courts & Policy', 'States', 'History', 'Ground Reports', 'Data & Notes']),
+  "kind": zod.enum(['Article', 'Paper note', 'Archive', 'Explainer']),
+  "state": zod.string().nullable(),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().nullable(),
+  "publishedOn": zod.coerce.date().nullable(),
+  "eyebrow": zod.string(),
+  "title": zod.string(),
+  "dek": zod.string(),
+  "body": zod.string(),
+  "time": zod.string(),
+  "read": zod.number().int(),
+  "tone": zod.string(),
+  "number": zod.number().int().nullable(),
+  "sortOrder": zod.number().int(),
+  "workflowStatus": zod.enum(['draft', 'review', 'scheduled', 'published', 'archived']),
+  "verificationStatus": zod.enum(['unverified', 'source-linked', 'verified']),
+  "verificationNotes": zod.string().nullable(),
+  "sourcePublishedOn": zod.coerce.date().nullable(),
+  "sourceRetrievedOn": zod.coerce.date().nullable(),
+  "lastVerifiedAt": zod.coerce.date().nullable(),
+  "reviewedAt": zod.coerce.date().nullable(),
+  "scheduledFor": zod.coerce.date().nullable(),
+  "aiDisclosure": zod.string().nullable(),
+  "correctionNote": zod.string().nullable()
 })),
   "topics": zod.array(zod.enum(['Latest', 'Courts & Policy', 'States', 'History', 'Ground Reports', 'Data & Notes']))
 })
@@ -87,7 +143,17 @@ export const GetArchiveResponse = zod.object({
   "read": zod.number().int(),
   "tone": zod.string(),
   "number": zod.number().int().nullable(),
-  "sortOrder": zod.number().int()
+  "sortOrder": zod.number().int(),
+  "workflowStatus": zod.enum(['draft', 'review', 'scheduled', 'published', 'archived']),
+  "verificationStatus": zod.enum(['unverified', 'source-linked', 'verified']),
+  "verificationNotes": zod.string().nullable(),
+  "sourcePublishedOn": zod.coerce.date().nullable(),
+  "sourceRetrievedOn": zod.coerce.date().nullable(),
+  "lastVerifiedAt": zod.coerce.date().nullable(),
+  "reviewedAt": zod.coerce.date().nullable(),
+  "scheduledFor": zod.coerce.date().nullable(),
+  "aiDisclosure": zod.string().nullable(),
+  "correctionNote": zod.string().nullable()
 })),
   "topics": zod.array(zod.enum(['Latest', 'Courts & Policy', 'States', 'History', 'Ground Reports', 'Data & Notes'])),
   "kinds": zod.array(zod.enum(['Article', 'Paper note', 'Archive', 'Explainer'])),
@@ -158,7 +224,17 @@ export const GetStoryResponse = zod.object({
   "read": zod.number().int(),
   "tone": zod.string(),
   "number": zod.number().int().nullable(),
-  "sortOrder": zod.number().int()
+  "sortOrder": zod.number().int(),
+  "workflowStatus": zod.enum(['draft', 'review', 'scheduled', 'published', 'archived']),
+  "verificationStatus": zod.enum(['unverified', 'source-linked', 'verified']),
+  "verificationNotes": zod.string().nullable(),
+  "sourcePublishedOn": zod.coerce.date().nullable(),
+  "sourceRetrievedOn": zod.coerce.date().nullable(),
+  "lastVerifiedAt": zod.coerce.date().nullable(),
+  "reviewedAt": zod.coerce.date().nullable(),
+  "scheduledFor": zod.coerce.date().nullable(),
+  "aiDisclosure": zod.string().nullable(),
+  "correctionNote": zod.string().nullable()
 })
 
 
@@ -185,7 +261,17 @@ export const UpdateStoryBody = zod.object({
   "read": zod.number().int(),
   "tone": zod.string(),
   "number": zod.number().int().nullish(),
-  "sortOrder": zod.number().int()
+  "sortOrder": zod.number().int(),
+  "workflowStatus": zod.enum(['draft', 'review', 'scheduled', 'published', 'archived']).optional(),
+  "verificationStatus": zod.enum(['unverified', 'source-linked', 'verified']).optional(),
+  "verificationNotes": zod.string().nullish(),
+  "sourcePublishedOn": zod.coerce.date().nullish(),
+  "sourceRetrievedOn": zod.coerce.date().nullish(),
+  "lastVerifiedAt": zod.coerce.date().nullish(),
+  "scheduledFor": zod.coerce.date().nullish(),
+  "aiDisclosure": zod.string().nullish(),
+  "correctionNote": zod.string().nullish(),
+  "revisionNote": zod.string().nullish()
 })
 
 export const UpdateStoryResponse = zod.object({
@@ -205,8 +291,36 @@ export const UpdateStoryResponse = zod.object({
   "read": zod.number().int(),
   "tone": zod.string(),
   "number": zod.number().int().nullable(),
-  "sortOrder": zod.number().int()
+  "sortOrder": zod.number().int(),
+  "workflowStatus": zod.enum(['draft', 'review', 'scheduled', 'published', 'archived']),
+  "verificationStatus": zod.enum(['unverified', 'source-linked', 'verified']),
+  "verificationNotes": zod.string().nullable(),
+  "sourcePublishedOn": zod.coerce.date().nullable(),
+  "sourceRetrievedOn": zod.coerce.date().nullable(),
+  "lastVerifiedAt": zod.coerce.date().nullable(),
+  "reviewedAt": zod.coerce.date().nullable(),
+  "scheduledFor": zod.coerce.date().nullable(),
+  "aiDisclosure": zod.string().nullable(),
+  "correctionNote": zod.string().nullable()
 })
+
+
+/**
+ * @summary Get the revision history for a story
+ */
+export const GetStoryRevisionsParams = zod.object({
+  "storyId": zod.coerce.number().int()
+})
+
+export const GetStoryRevisionsResponseItem = zod.object({
+  "id": zod.number().int(),
+  "storyId": zod.number().int(),
+  "revisionNumber": zod.number().int(),
+  "changeNote": zod.string().nullable(),
+  "snapshot": zod.record(zod.string(), zod.unknown()),
+  "createdAt": zod.coerce.date()
+})
+export const GetStoryRevisionsResponse = zod.array(GetStoryRevisionsResponseItem)
 
 
 /**
@@ -228,7 +342,17 @@ export const CreateStoryBody = zod.object({
   "read": zod.number().int(),
   "tone": zod.string(),
   "number": zod.number().int().nullish(),
-  "sortOrder": zod.number().int()
+  "sortOrder": zod.number().int(),
+  "workflowStatus": zod.enum(['draft', 'review', 'scheduled', 'published', 'archived']).optional(),
+  "verificationStatus": zod.enum(['unverified', 'source-linked', 'verified']).optional(),
+  "verificationNotes": zod.string().nullish(),
+  "sourcePublishedOn": zod.coerce.date().nullish(),
+  "sourceRetrievedOn": zod.coerce.date().nullish(),
+  "lastVerifiedAt": zod.coerce.date().nullish(),
+  "scheduledFor": zod.coerce.date().nullish(),
+  "aiDisclosure": zod.string().nullish(),
+  "correctionNote": zod.string().nullish(),
+  "revisionNote": zod.string().nullish()
 })
 
 export const CreateStoryResponse = zod.object({
@@ -248,7 +372,17 @@ export const CreateStoryResponse = zod.object({
   "read": zod.number().int(),
   "tone": zod.string(),
   "number": zod.number().int().nullable(),
-  "sortOrder": zod.number().int()
+  "sortOrder": zod.number().int(),
+  "workflowStatus": zod.enum(['draft', 'review', 'scheduled', 'published', 'archived']),
+  "verificationStatus": zod.enum(['unverified', 'source-linked', 'verified']),
+  "verificationNotes": zod.string().nullable(),
+  "sourcePublishedOn": zod.coerce.date().nullable(),
+  "sourceRetrievedOn": zod.coerce.date().nullable(),
+  "lastVerifiedAt": zod.coerce.date().nullable(),
+  "reviewedAt": zod.coerce.date().nullable(),
+  "scheduledFor": zod.coerce.date().nullable(),
+  "aiDisclosure": zod.string().nullable(),
+  "correctionNote": zod.string().nullable()
 })
 
 

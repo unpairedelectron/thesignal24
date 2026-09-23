@@ -30,7 +30,8 @@ import type {
   NewsletterInput,
   NewsletterStatus,
   Story,
-  StoryInput
+  StoryInput,
+  StoryRevisions
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -203,6 +204,83 @@ export function useGetCurrentIssue<TData = Awaited<ReturnType<typeof getCurrentI
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetCurrentIssueQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetEditorialIssueUrl = () => {
+
+
+
+
+  return `/api/editor/issues/current`
+}
+
+/**
+ * @summary Get the current issue with editorial workflow fields
+ */
+export const getEditorialIssue = async ( options?: Parameters<typeof customFetch>[1]): Promise<CurrentIssue> => {
+
+  return customFetch<CurrentIssue>(getGetEditorialIssueUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetEditorialIssueQueryKey = () => {
+    return [
+    `/api/editor/issues/current`
+    ] as const;
+    }
+
+
+export const getGetEditorialIssueQueryOptions = <TData = Awaited<ReturnType<typeof getEditorialIssue>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getEditorialIssue>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetEditorialIssueQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getEditorialIssue>>> = ({ signal }) => getEditorialIssue({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getEditorialIssue>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetEditorialIssueQueryResult = NonNullable<Awaited<ReturnType<typeof getEditorialIssue>>>
+export type GetEditorialIssueQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get the current issue with editorial workflow fields
+ */
+
+export function useGetEditorialIssue<TData = Awaited<ReturnType<typeof getEditorialIssue>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getEditorialIssue>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetEditorialIssueQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -626,6 +704,83 @@ export const useUpdateStory = <TError = ErrorType<void>,
       > => {
       return useMutation(getUpdateStoryMutationOptions(options));
     }
+
+export const getGetStoryRevisionsUrl = (storyId: number,) => {
+
+
+
+
+  return `/api/stories/${storyId}/revisions`
+}
+
+/**
+ * @summary Get the revision history for a story
+ */
+export const getStoryRevisions = async (storyId: number, options?: Parameters<typeof customFetch>[1]): Promise<StoryRevisions> => {
+
+  return customFetch<StoryRevisions>(getGetStoryRevisionsUrl(storyId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetStoryRevisionsQueryKey = (storyId: number,) => {
+    return [
+    `/api/stories/${storyId}/revisions`
+    ] as const;
+    }
+
+
+export const getGetStoryRevisionsQueryOptions = <TData = Awaited<ReturnType<typeof getStoryRevisions>>, TError = ErrorType<void>>(storyId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStoryRevisions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetStoryRevisionsQueryKey(storyId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getStoryRevisions>>> = ({ signal }) => getStoryRevisions(storyId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: storyId !== null && storyId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getStoryRevisions>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetStoryRevisionsQueryResult = NonNullable<Awaited<ReturnType<typeof getStoryRevisions>>>
+export type GetStoryRevisionsQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get the revision history for a story
+ */
+
+export function useGetStoryRevisions<TData = Awaited<ReturnType<typeof getStoryRevisions>>, TError = ErrorType<void>>(
+ storyId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStoryRevisions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetStoryRevisionsQueryOptions(storyId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getCreateStoryUrl = () => {
 

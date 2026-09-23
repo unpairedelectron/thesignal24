@@ -6,7 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { StoryKind } from './storyKind';
+import type { StoryWorkflowStatus } from './storyWorkflowStatus';
 import type { Topic } from './topic';
+import type { VerificationStatus } from './verificationStatus';
 
 export interface StoryInput {
   issueId: number;
@@ -25,4 +27,22 @@ export interface StoryInput {
   tone: string;
   number?: number | null;
   sortOrder: number;
+  workflowStatus?: StoryWorkflowStatus;
+  verificationStatus?: VerificationStatus;
+  /** @nullable */
+  verificationNotes?: string | null;
+  /** @nullable */
+  sourcePublishedOn?: Date | null;
+  /** @nullable */
+  sourceRetrievedOn?: Date | null;
+  /** @nullable */
+  lastVerifiedAt?: Date | null;
+  /** @nullable */
+  scheduledFor?: Date | null;
+  /** @nullable */
+  aiDisclosure?: string | null;
+  /** @nullable */
+  correctionNote?: string | null;
+  /** @nullable */
+  revisionNote?: string | null;
 }

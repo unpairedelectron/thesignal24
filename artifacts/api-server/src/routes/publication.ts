@@ -1,9 +1,15 @@
 import { Router, type IRouter } from "express";
 import { and, asc, desc, eq, inArray, like, or } from "drizzle-orm";
-import { db, issuesTable, storiesTable } from "@workspace/db";
+import {
+  db,
+  issuesTable,
+  storiesTable,
+  storyRevisionsTable,
+} from "@workspace/db";
 import {
   CreateIssueBody,
   CreateStoryBody,
+  GetStoryRevisionsResponse,
   UpdateStoryBody,
 } from "@workspace/api-zod";
 
@@ -22,6 +28,18 @@ type Topic = (typeof topicList)[number];
 const kindList = ["Article", "Paper note", "Archive", "Explainer"] as const;
 const kindValues = new Set(kindList);
 type StoryKind = (typeof kindList)[number];
+const workflowStatusList = [
+  "draft",
+  "review",
+  "scheduled",
+  "published",
+  "archived",
+] as const;
+const workflowStatusValues = new Set(workflowStatusList);
+type WorkflowStatus = (typeof workflowStatusList)[number];
+const verificationStatusList = ["unverified", "source-linked", "verified"] as const;
+const verificationStatusValues = new Set(verificationStatusList);
+type VerificationStatus = (typeof verificationStatusList)[number];
 
 function parseId(value: string) {
   const id = Number(value);
@@ -66,6 +84,64 @@ function serializeStory(story: typeof storiesTable.$inferSelect) {
     tone: story.tone,
     number: story.number,
     sortOrder: story.sortOrder,
+    workflowStatus: workflowStatusValues.has(story.workflowStatus as WorkflowStatus)
+      ? (story.workflowStatus as WorkflowStatus)
+      : "draft",
+    verificationStatus: verificationStatusValues.has(
+      story.verificationStatus as VerificationStatus,
+    )
+      ? (story.verificationStatus as VerificationStatus)
+      : "unverified",
+    verificationNotes: story.verificationNotes,
+    sourcePublishedOn: story.sourcePublishedOn,
+    sourceRetrievedOn: story.sourceRetrievedOn,
+    lastVerifiedAt: story.lastVerifiedAt?.toISOString() ?? null,
+    reviewedAt: story.reviewedAt?.toISOString() ?? null,
+    scheduledFor: story.scheduledFor?.toISOString() ?? null,
+    aiDisclosure: story.aiDisclosure,
+    correctionNote: story.correctionNote,
+  };
+}
+
+async function recordRevision(
+  story: typeof storiesTable.$inferSelect,
+  changeNote?: string | null,
+) {
+  const [latest] = await db
+    .select({ revisionNumber: storyRevisionsTable.revisionNumber })
+    .from(storyRevisionsTable)
+    .where(eq(storyRevisionsTable.storyId, story.id))
+    .orderBy(desc(storyRevisionsTable.revisionNumber))
+    .limit(1);
+  await db.insert(storyRevisionsTable).values({
+    storyId: story.id,
+    revisionNumber: (latest?.revisionNumber ?? 0) + 1,
+    changeNote: changeNote ?? null,
+    snapshot: serializeStory(story),
+  });
+}
+
+async function getIssuePayload(
+  issue: typeof issuesTable.$inferSelect,
+  includeUnpublished: boolean,
+) {
+  const stories = await db
+    .select()
+    .from(storiesTable)
+    .where(
+      includeUnpublished
+        ? eq(storiesTable.issueId, issue.id)
+        : and(
+            eq(storiesTable.issueId, issue.id),
+            eq(storiesTable.workflowStatus, "published"),
+          ),
+    )
+    .orderBy(storiesTable.sortOrder, storiesTable.id);
+  const serializedStories = stories.map(serializeStory);
+  return {
+    issue: serializeIssue(issue),
+    stories: serializedStories,
+    topics: [...new Set(serializedStories.map((story) => story.topic))],
   };
 }
 
@@ -87,18 +163,27 @@ router.get("/issues/current", async (_req, res, next) => {
       return;
     }
 
-    const stories = await db
-      .select()
-      .from(storiesTable)
-      .where(eq(storiesTable.issueId, issue.id))
-      .orderBy(storiesTable.sortOrder, storiesTable.id);
-    const serializedStories = stories.map(serializeStory);
+    res.json(await getIssuePayload(issue, false));
+  } catch (error) {
+    next(error);
+  }
+});
 
-    res.json({
-      issue: serializeIssue(issue),
-      stories: serializedStories,
-      topics: [...new Set(serializedStories.map((story) => story.topic))],
-    });
+router.get("/editor/issues/current", async (_req, res, next) => {
+  try {
+    const [issue] = await db
+      .select()
+      .from(issuesTable)
+      .where(eq(issuesTable.status, "published"))
+      .orderBy(desc(issuesTable.issueDate))
+      .limit(1);
+
+    if (!issue) {
+      res.status(404).json({ message: "No issue exists" });
+      return;
+    }
+
+    res.json(await getIssuePayload(issue, true));
   } catch (error) {
     next(error);
   }
@@ -117,6 +202,7 @@ router.get("/archive", async (req, res, next) => {
 
     const conditions = [
       eq(issuesTable.status, "published"),
+      eq(storiesTable.workflowStatus, "published"),
       inArray(storiesTable.topic, [...topicList]),
     ];
     if (topicValues.has(topic as Topic)) {
@@ -201,6 +287,24 @@ router.post("/issues/:issueId/publish", async (req, res, next) => {
       return;
     }
 
+    const issueStories = await db
+      .select()
+      .from(storiesTable)
+      .where(eq(storiesTable.issueId, issueId));
+    const blockedStories = issueStories.filter(
+      (story) =>
+        !story.reviewedAt ||
+        !["review", "published"].includes(story.workflowStatus),
+    );
+    if (blockedStories.length > 0) {
+      res.status(409).json({
+        message:
+          "Every record must pass editorial review before the issue can be published.",
+        blockedStoryIds: blockedStories.map((story) => story.id),
+      });
+      return;
+    }
+
     await db.transaction(async (tx) => {
       await tx
         .update(issuesTable)
@@ -210,6 +314,15 @@ router.post("/issues/:issueId/publish", async (req, res, next) => {
         .update(issuesTable)
         .set({ status: "published", publishedAt: new Date() })
         .where(eq(issuesTable.id, issueId));
+      await tx
+        .update(storiesTable)
+        .set({ workflowStatus: "published", updatedAt: new Date() })
+        .where(
+          and(
+            eq(storiesTable.issueId, issueId),
+            inArray(storiesTable.workflowStatus, ["review", "published"]),
+          ),
+        );
     });
 
     const [publishedIssue] = await db
@@ -232,7 +345,37 @@ router.get("/stories/:storyId", async (req, res, next) => {
     }
 
     const [story] = await db
-      .select()
+      .select({ story: storiesTable })
+      .from(storiesTable)
+      .innerJoin(issuesTable, eq(storiesTable.issueId, issuesTable.id))
+      .where(
+        and(
+          eq(storiesTable.id, storyId),
+          eq(issuesTable.status, "published"),
+          eq(storiesTable.workflowStatus, "published"),
+        ),
+      )
+      .limit(1);
+    if (!story) {
+      res.status(404).json({ message: "Story not found" });
+      return;
+    }
+    res.json(serializeStory(story.story));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/stories/:storyId/revisions", async (req, res, next) => {
+  try {
+    const storyId = parseId(req.params.storyId);
+    if (!storyId) {
+      res.status(400).json({ message: "Invalid story id" });
+      return;
+    }
+
+    const [story] = await db
+      .select({ id: storiesTable.id })
       .from(storiesTable)
       .where(eq(storiesTable.id, storyId))
       .limit(1);
@@ -240,26 +383,78 @@ router.get("/stories/:storyId", async (req, res, next) => {
       res.status(404).json({ message: "Story not found" });
       return;
     }
-    res.json(serializeStory(story));
+
+    const revisions = await db
+      .select()
+      .from(storyRevisionsTable)
+      .where(eq(storyRevisionsTable.storyId, storyId))
+      .orderBy(desc(storyRevisionsTable.revisionNumber));
+    res.json(
+      GetStoryRevisionsResponse.parse(
+        revisions.map((revision) => ({
+          id: revision.id,
+          storyId: revision.storyId,
+          revisionNumber: revision.revisionNumber,
+          changeNote: revision.changeNote,
+          snapshot: revision.snapshot,
+          createdAt: revision.createdAt.toISOString(),
+        })),
+      ),
+    );
   } catch (error) {
     next(error);
   }
 });
 
+function dateOnly(value: Date | string | null | undefined): string | null {
+  if (!value) return null;
+  return value instanceof Date ? value.toISOString().slice(0, 10) : value;
+}
+
 router.post("/stories", async (req, res, next) => {
   try {
     const input = CreateStoryBody.parse(req.body);
-    const { publishedOn, ...storyInput } = input;
+    const workflowStatus = input.workflowStatus ?? "draft";
+    if (!["draft", "review"].includes(workflowStatus)) {
+      res.status(400).json({
+        message: "New records must start as drafts or enter editorial review.",
+      });
+      return;
+    }
+    const { publishedOn, scheduledFor, revisionNote } = input;
     const [story] = await db
       .insert(storiesTable)
       .values({
-        ...storyInput,
-        publishedOn: publishedOn
-          ? new Date(publishedOn).toISOString().slice(0, 10)
-          : null,
+        issueId: input.issueId,
+        topic: input.topic,
+        kind: input.kind,
+        state: input.state ?? null,
+        source: input.source,
+        sourceUrl: input.sourceUrl ?? null,
+        publishedOn: dateOnly(publishedOn),
+        eyebrow: input.eyebrow,
+        title: input.title,
+        dek: input.dek,
+        body: input.body,
+        time: input.time,
+        read: input.read,
+        tone: input.tone,
         number: input.number ?? null,
+        sortOrder: input.sortOrder,
+        workflowStatus,
+        verificationStatus: input.verificationStatus ?? "unverified",
+        verificationNotes: input.verificationNotes ?? null,
+        sourcePublishedOn: dateOnly(input.sourcePublishedOn),
+        sourceRetrievedOn: dateOnly(input.sourceRetrievedOn),
+        lastVerifiedAt:
+          input.verificationStatus === "verified" ? new Date() : null,
+        reviewedAt: workflowStatus === "review" ? new Date() : null,
+        scheduledFor: scheduledFor ? new Date(scheduledFor) : null,
+        aiDisclosure: input.aiDisclosure ?? null,
+        correctionNote: input.correctionNote ?? null,
       })
       .returning();
+    await recordRevision(story, revisionNote ?? "Created record");
     res.status(201).json(serializeStory(story));
   } catch (error) {
     next(error);
@@ -274,23 +469,105 @@ router.put("/stories/:storyId", async (req, res, next) => {
       return;
     }
     const input = UpdateStoryBody.parse(req.body);
-    const { publishedOn, ...storyInput } = input;
+    const [existing] = await db
+      .select()
+      .from(storiesTable)
+      .where(eq(storiesTable.id, storyId))
+      .limit(1);
+    if (!existing) {
+      res.status(404).json({ message: "Story not found" });
+      return;
+    }
+
+    const workflowStatus = input.workflowStatus ?? existing.workflowStatus;
+    if (
+      workflowStatus === "published" &&
+      (!existing.reviewedAt || existing.workflowStatus === "published")
+    ) {
+      res.status(400).json({
+        message:
+          "Published records must pass review and be moved to draft before editorial changes.",
+      });
+      return;
+    }
+    if (workflowStatus === "scheduled" && !existing.reviewedAt) {
+      res.status(400).json({
+        message: "Scheduled records must first pass editorial review.",
+      });
+      return;
+    }
+    if (workflowStatus === "scheduled" && !input.scheduledFor) {
+      res.status(400).json({
+        message: "Scheduled records need a publication date and time.",
+      });
+      return;
+    }
+
+    const {
+      publishedOn,
+      scheduledFor,
+      revisionNote,
+      ...storyInput
+    } = input;
+    const verificationStatus =
+      input.verificationStatus ?? existing.verificationStatus;
     const [story] = await db
       .update(storiesTable)
       .set({
         ...storyInput,
-        publishedOn: publishedOn
-          ? new Date(publishedOn).toISOString().slice(0, 10)
-          : null,
+        state: input.state === undefined ? existing.state : input.state,
+        sourceUrl:
+          input.sourceUrl === undefined ? existing.sourceUrl : input.sourceUrl,
+        publishedOn:
+          publishedOn === undefined
+            ? existing.publishedOn
+            : dateOnly(publishedOn),
         number: input.number ?? null,
+        workflowStatus,
+        verificationStatus,
+        verificationNotes:
+          input.verificationNotes === undefined
+            ? existing.verificationNotes
+            : input.verificationNotes,
+        sourcePublishedOn:
+          input.sourcePublishedOn === undefined
+            ? existing.sourcePublishedOn
+            : dateOnly(input.sourcePublishedOn),
+        sourceRetrievedOn:
+          input.sourceRetrievedOn === undefined
+            ? existing.sourceRetrievedOn
+            : dateOnly(input.sourceRetrievedOn),
+        lastVerifiedAt:
+          verificationStatus === "verified"
+            ? existing.lastVerifiedAt ?? new Date()
+            : verificationStatus === "unverified"
+              ? null
+              : existing.lastVerifiedAt,
+        reviewedAt:
+          workflowStatus === "review"
+            ? existing.reviewedAt ?? new Date()
+            : workflowStatus === "draft"
+              ? null
+              : existing.reviewedAt,
+        scheduledFor:
+          scheduledFor === undefined
+            ? existing.scheduledFor
+            : scheduledFor
+              ? new Date(scheduledFor)
+              : null,
+        aiDisclosure:
+          input.aiDisclosure === undefined
+            ? existing.aiDisclosure
+            : input.aiDisclosure,
+        correctionNote:
+          input.correctionNote === undefined
+            ? existing.correctionNote
+            : input.correctionNote,
         updatedAt: new Date(),
       })
       .where(eq(storiesTable.id, storyId))
       .returning();
-    if (!story) {
-      res.status(404).json({ message: "Story not found" });
-      return;
-    }
+    await recordRevision(story, revisionNote ?? "Updated record");
     res.json(serializeStory(story));
   } catch (error) {
     next(error);

@@ -1,5 +1,10 @@
-import { asc } from "drizzle-orm";
-import { db, issuesTable, storiesTable } from "@workspace/db";
+import { asc, eq, inArray } from "drizzle-orm";
+import {
+  db,
+  issuesTable,
+  storiesTable,
+  storyRevisionsTable,
+} from "@workspace/db";
 
 const reservationStories = [
   {
@@ -174,13 +179,83 @@ const reservationStories = [
   },
 ] as const;
 
+const starterEditorialMetadata = {
+  workflowStatus: "published",
+  verificationStatus: "unverified",
+  verificationNotes:
+    "Starter record; editorially reviewed for context, not presented as live verified reporting.",
+  lastVerifiedAt: null,
+  reviewedAt: new Date(),
+  scheduledFor: null,
+  aiDisclosure: null,
+  correctionNote: null,
+} as const;
+
 export async function ensureSeedData() {
   const existingIssues = await db
     .select({ id: issuesTable.id, title: issuesTable.title })
     .from(issuesTable)
     .orderBy(asc(issuesTable.id));
 
-  if (existingIssues.some((issue) => issue.title.toLowerCase().includes("reservation"))) {
+  const reservationIssue = existingIssues.find((issue) =>
+    issue.title.toLowerCase().includes("reservation"),
+  );
+  if (reservationIssue) {
+    const existingStories = await db
+      .select()
+      .from(storiesTable)
+      .where(eq(storiesTable.issueId, reservationIssue.id));
+    const needsWorkflowBackfill = existingStories.some(
+      (story) => story.workflowStatus === "draft" && story.reviewedAt === null,
+    );
+    if (needsWorkflowBackfill) {
+      await db
+        .update(storiesTable)
+        .set({
+          ...starterEditorialMetadata,
+          updatedAt: new Date(),
+        })
+        .where(eq(storiesTable.issueId, reservationIssue.id));
+    }
+    const revisionStories = needsWorkflowBackfill
+      ? await db
+          .select()
+          .from(storiesTable)
+          .where(eq(storiesTable.issueId, reservationIssue.id))
+      : existingStories.filter((story) => story.workflowStatus !== "draft");
+    if (revisionStories.length > 0) {
+      const existingRevisions = await db
+        .select({ storyId: storyRevisionsTable.storyId })
+        .from(storyRevisionsTable)
+        .where(
+          inArray(
+            storyRevisionsTable.storyId,
+            revisionStories.map((story) => story.id),
+          ),
+        );
+      const revisionIds = new Set(
+        existingRevisions.map((revision) => revision.storyId),
+      );
+      const storiesWithoutRevisions = revisionStories.filter(
+        (story) => !revisionIds.has(story.id),
+      );
+      if (storiesWithoutRevisions.length > 0) {
+        await db.insert(storyRevisionsTable).values(
+          storiesWithoutRevisions.map((story) => ({
+            storyId: story.id,
+            revisionNumber: 1,
+            changeNote: "Initial publication record",
+            snapshot: {
+              title: story.title,
+              workflowStatus: story.workflowStatus,
+              verificationStatus: story.verificationStatus,
+              source: story.source,
+              sourceUrl: story.sourceUrl,
+            },
+          })),
+        );
+      }
+    }
     return;
   }
 
@@ -198,10 +273,25 @@ export async function ensureSeedData() {
     })
     .returning();
 
-  await db.insert(storiesTable).values(
+  const insertedStories = await db.insert(storiesTable).values(
     reservationStories.map((story) => ({
       ...story,
       issueId: issue.id,
+      ...starterEditorialMetadata,
+    })),
+  ).returning();
+  await db.insert(storyRevisionsTable).values(
+    insertedStories.map((story) => ({
+      storyId: story.id,
+      revisionNumber: 1,
+      changeNote: "Initial publication record",
+      snapshot: {
+        title: story.title,
+        workflowStatus: story.workflowStatus,
+        verificationStatus: story.verificationStatus,
+        source: story.source,
+        sourceUrl: story.sourceUrl,
+      },
     })),
   );
 }

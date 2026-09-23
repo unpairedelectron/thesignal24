@@ -31,6 +31,26 @@ export const StoryKind = {
   Explainer: 'Explainer',
 } as const;
 
+export type StoryWorkflowStatus = typeof StoryWorkflowStatus[keyof typeof StoryWorkflowStatus];
+
+
+export const StoryWorkflowStatus = {
+  draft: 'draft',
+  review: 'review',
+  scheduled: 'scheduled',
+  published: 'published',
+  archived: 'archived',
+} as const;
+
+export type VerificationStatus = typeof VerificationStatus[keyof typeof VerificationStatus];
+
+
+export const VerificationStatus = {
+  unverified: 'unverified',
+  'source-linked': 'source-linked',
+  verified: 'verified',
+} as const;
+
 export type IssueStatus = typeof IssueStatus[keyof typeof IssueStatus];
 
 
@@ -74,6 +94,24 @@ export interface Story {
   tone: string;
   number: number | null;
   sortOrder: number;
+  workflowStatus: StoryWorkflowStatus;
+  verificationStatus: VerificationStatus;
+  /** @nullable */
+  verificationNotes: string | null;
+  /** @nullable */
+  sourcePublishedOn: string | null;
+  /** @nullable */
+  sourceRetrievedOn: string | null;
+  /** @nullable */
+  lastVerifiedAt: string | null;
+  /** @nullable */
+  reviewedAt: string | null;
+  /** @nullable */
+  scheduledFor: string | null;
+  /** @nullable */
+  aiDisclosure: string | null;
+  /** @nullable */
+  correctionNote: string | null;
 }
 
 export interface StoryInput {
@@ -93,7 +131,39 @@ export interface StoryInput {
   tone: string;
   number?: number | null;
   sortOrder: number;
+  workflowStatus?: StoryWorkflowStatus;
+  verificationStatus?: VerificationStatus;
+  /** @nullable */
+  verificationNotes?: string | null;
+  /** @nullable */
+  sourcePublishedOn?: string | null;
+  /** @nullable */
+  sourceRetrievedOn?: string | null;
+  /** @nullable */
+  lastVerifiedAt?: string | null;
+  /** @nullable */
+  scheduledFor?: string | null;
+  /** @nullable */
+  aiDisclosure?: string | null;
+  /** @nullable */
+  correctionNote?: string | null;
+  /** @nullable */
+  revisionNote?: string | null;
 }
+
+export type StoryRevisionSnapshot = { [key: string]: unknown };
+
+export interface StoryRevision {
+  id: number;
+  storyId: number;
+  revisionNumber: number;
+  /** @nullable */
+  changeNote: string | null;
+  snapshot: StoryRevisionSnapshot;
+  createdAt: string;
+}
+
+export type StoryRevisions = StoryRevision[];
 
 export interface CurrentIssue {
   issue: Issue;
