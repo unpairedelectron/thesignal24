@@ -31,30 +31,30 @@
 }
 
 :root {
-  --background: 42 44% 94%;
-  --foreground: 225 34% 18%;
-  --border: 225 20% 74%;
-  --input: 225 20% 74%;
-  --ring: 8 68% 48%;
-  --card: 43 48% 97%;
-  --card-foreground: 225 34% 18%;
-  --card-border: 225 20% 74%;
-  --primary: 225 34% 18%;
-  --primary-foreground: 42 44% 94%;
-  --secondary: 157 26% 61%;
-  --secondary-foreground: 225 34% 18%;
-  --muted: 39 24% 87%;
-  --muted-foreground: 225 14% 40%;
-  --accent: 8 68% 48%;
-  --accent-foreground: 43 48% 97%;
+  --background: 38 36% 91%;
+  --foreground: 222 35% 15%;
+  --border: 220 19% 68%;
+  --input: 220 19% 68%;
+  --ring: 4 78% 47%;
+  --card: 40 42% 95%;
+  --card-foreground: 222 35% 15%;
+  --card-border: 220 19% 68%;
+  --primary: 222 35% 15%;
+  --primary-foreground: 38 36% 91%;
+  --secondary: 164 27% 53%;
+  --secondary-foreground: 222 35% 15%;
+  --muted: 37 22% 84%;
+  --muted-foreground: 220 16% 37%;
+  --accent: 4 78% 47%;
+  --accent-foreground: 40 42% 95%;
   --destructive: 0 72% 51%;
   --destructive-foreground: 38 35% 95%;
   --app-font-sans: 'DM Sans', sans-serif;
   --app-font-serif: 'Fraunces', serif;
   --app-font-mono: 'DM Mono', monospace;
   --radius: 0.75rem;
-  --shadow-sm: 0 2px 0 hsl(218 41% 16% / .08), 0 6px 16px hsl(218 41% 16% / .04);
-  --shadow-md: 0 3px 0 hsl(218 41% 16% / .1), 0 16px 34px hsl(218 41% 16% / .08);
+  --shadow-sm: 4px 4px 0 hsl(222 35% 15% / .12);
+  --shadow-md: 8px 8px 0 hsl(222 35% 15% / .14);
 }
 
 .dark {
@@ -93,8 +93,7 @@
 .signal-page {
   min-height: 100dvh;
   background:
-    radial-gradient(circle at 90% 5%, hsl(157 26% 61% / .22), transparent 26rem),
-    linear-gradient(hsl(var(--background) / .91), hsl(var(--background) / .97)),
+    linear-gradient(hsl(var(--background) / .93), hsl(var(--background) / .97)),
     url('/images/doctors-movement.jpg') center / cover fixed,
     hsl(var(--background));
   overflow-x: hidden;
@@ -150,8 +149,8 @@
 
 .hero-grid {
   background-image: linear-gradient(hsl(var(--foreground) / .08) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--foreground) / .08) 1px, transparent 1px);
-  background-size: 42px 42px;
-  background-color: hsl(var(--background) / .82);
+  background-size: 36px 36px;
+  background-color: hsl(var(--background) / .78);
 }
 .hero-documentary { box-shadow: 10px 10px 0 hsl(var(--foreground) / .12); }
 .hero-documentary img { filter: grayscale(1) contrast(1.15); }
@@ -187,6 +186,87 @@
 .story-body a { color: hsl(var(--accent)); text-decoration: underline; text-underline-offset: 3px; }
 .editor-panel { box-shadow: 8px 8px 0 hsl(var(--foreground) / .08); }
 .focus-ring:focus-visible { outline: 2px solid hsl(var(--accent)); outline-offset: 3px; }
+
+/* Home / situation-room system */
+.situation-hero {
+  position: relative;
+  isolation: isolate;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  box-shadow: 10px 10px 0 hsl(var(--accent) / .86);
+}
+.situation-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: .25;
+  background-image: linear-gradient(90deg, transparent 49%, hsl(var(--primary-foreground) / .16) 50%, transparent 51%), linear-gradient(transparent 49%, hsl(var(--primary-foreground) / .16) 50%, transparent 51%);
+  background-size: 28px 28px;
+  pointer-events: none;
+}
+.situation-hero-title { text-wrap: balance; }
+.signal-home-panel {
+  border: 1px solid hsl(var(--foreground) / .22);
+  background: hsl(var(--card) / .84);
+  box-shadow: 5px 5px 0 hsl(var(--foreground) / .08);
+}
+.signal-home-panel:hover { border-color: hsl(var(--accent) / .76); }
+.home-index {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  border-top: 1px solid hsl(var(--foreground) / .22);
+  border-bottom: 1px solid hsl(var(--foreground) / .22);
+}
+.home-index > * { border-right: 1px solid hsl(var(--foreground) / .18); }
+.home-index > *:last-child { border-right: 0; }
+.home-scanline {
+  position: relative;
+  overflow: hidden;
+}
+.home-scanline::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -2px;
+  height: 1px;
+  background: hsl(var(--accent));
+  opacity: .7;
+  animation: scanline 4.5s ease-in-out infinite;
+}
+@keyframes scanline {
+  0%, 100% { transform: translateY(0); opacity: .1; }
+  45%, 55% { transform: translateY(160px); opacity: .75; }
+}
+.home-marquee {
+  overflow: hidden;
+  white-space: nowrap;
+  border-bottom: 1px solid hsl(var(--foreground) / .2);
+}
+.home-marquee span {
+  display: inline-block;
+  padding-right: 2rem;
+  animation: marquee 22s linear infinite;
+}
+@keyframes marquee { to { transform: translateX(-50%); } }
+.home-number {
+  font-family: var(--app-font-mono);
+  font-size: clamp(2.8rem, 8vw, 6rem);
+  letter-spacing: -.09em;
+  line-height: .8;
+}
+.home-gap {
+  background:
+    linear-gradient(135deg, hsl(var(--accent) / .13) 25%, transparent 25%) 0 0 / 14px 14px,
+    hsl(var(--card));
+}
+.home-topic-card { transition: transform .25s ease, border-color .25s ease; }
+.home-topic-card:hover { transform: translateY(-4px); }
+
+@media (prefers-reduced-motion: reduce) {
+  .home-marquee span, .home-scanline::after, .live-pulse, .broadcast-bars span { animation: none; }
+}
 
 @media (max-width: 767px) {
   .signal-container { width: min(100% - 28px, 600px); }
