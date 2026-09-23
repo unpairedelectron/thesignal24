@@ -94,6 +94,8 @@
   min-height: 100dvh;
   background:
     radial-gradient(circle at 90% 5%, hsl(157 26% 61% / .22), transparent 26rem),
+    linear-gradient(hsl(var(--background) / .91), hsl(var(--background) / .97)),
+    url('/images/doctors-movement.jpg') center / cover fixed,
     hsl(var(--background));
   overflow-x: hidden;
 }
@@ -116,6 +118,8 @@
 .story-hover { transition: transform .3s ease, background-color .3s ease; }
 .story-hover:hover { transform: translateY(-4px); }
 .story-hover:hover .story-arrow { transform: translateX(4px); }
+.story-art-image { filter: grayscale(1) contrast(1.08) saturate(.65); transition: transform .7s ease, filter .7s ease; }
+.story-hover:hover .story-art-image { transform: scale(1.04); filter: grayscale(.8) contrast(1.15) saturate(.9); }
 .story-arrow { transition: transform .25s ease; }
 .reveal { animation: reveal-up .75s both cubic-bezier(.2,.7,.2,1); }
 .reveal-delay-1 { animation-delay: .1s; }
@@ -145,7 +149,10 @@
 .hero-grid {
   background-image: linear-gradient(hsl(var(--foreground) / .08) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--foreground) / .08) 1px, transparent 1px);
   background-size: 42px 42px;
+  background-color: hsl(var(--background) / .82);
 }
+.hero-documentary { box-shadow: 10px 10px 0 hsl(var(--foreground) / .12); }
+.hero-documentary img { filter: grayscale(1) contrast(1.15); }
 
 .search-drawer { animation: drawer-in .25s ease both; }
 @keyframes drawer-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
