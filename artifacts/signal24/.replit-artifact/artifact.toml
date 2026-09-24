@@ -1,7 +1,7 @@
 kind = "web"
 previewPath = "/"
 title = "The Signal 24"
-description = "A focused daily news briefing that filters the most important stories across world events, technology, business, and culture into a fast, readable signal for busy people."
+description = "An editorial news and policy desk tracking Indian court proceedings, UGC equity regulations, open-category competition, EWS eligibility, and state reservation rules. It links to primary records and sourced external reporting without presenting unreviewed leads as Signal 24 reporting."
 version = "1.0.0"
 id = "artifacts/signal24"
 router = "path"
