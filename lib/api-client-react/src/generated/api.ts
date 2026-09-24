@@ -37,7 +37,6 @@ import type {
   GetArchiveParams,
   GetCommunityPostsParams,
   GetDecisionImpactsParams,
-  GetNewsletterStatusParams,
   GetPoliciesParams,
   HealthStatus,
   Issue,
@@ -2119,88 +2118,4 @@ export const useSubscribeToNewsletter = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getSubscribeToNewsletterMutationOptions(options));
     }
-
-export const getGetNewsletterStatusUrl = (params: GetNewsletterStatusParams,) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : String(value))
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0 ? `/api/newsletter/status?${stringifiedParams}` : `/api/newsletter/status`
-}
-
-/**
- * @summary Check whether an email is subscribed
- */
-export const getNewsletterStatus = async (params: GetNewsletterStatusParams, options?: Parameters<typeof customFetch>[1]): Promise<NewsletterStatus> => {
-
-  return customFetch<NewsletterStatus>(getGetNewsletterStatusUrl(params),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getGetNewsletterStatusQueryKey = (params?: GetNewsletterStatusParams,) => {
-    return [
-    `/api/newsletter/status`, ...(params ? [params] : [])
-    ] as const;
-    }
-
-
-export const getGetNewsletterStatusQueryOptions = <TData = Awaited<ReturnType<typeof getNewsletterStatus>>, TError = ErrorType<unknown>>(params: GetNewsletterStatusParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getNewsletterStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getGetNewsletterStatusQueryKey(params);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getNewsletterStatus>>> = ({ signal }) => getNewsletterStatus(params, { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getNewsletterStatus>>, TError, TData> & { queryKey: QueryKey }
-}
-
-export type GetNewsletterStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getNewsletterStatus>>>
-export type GetNewsletterStatusQueryError = ErrorType<unknown>
-
-
-/**
- * @summary Check whether an email is subscribed
- */
-
-export function useGetNewsletterStatus<TData = Awaited<ReturnType<typeof getNewsletterStatus>>, TError = ErrorType<unknown>>(
- params: GetNewsletterStatusParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getNewsletterStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
-
- ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-
-  const queryOptions = getGetNewsletterStatusQueryOptions(params,options)
-
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
-
-  return withQueryKey(query, queryOptions.queryKey);
-}
-
-
-
-
-
-
 

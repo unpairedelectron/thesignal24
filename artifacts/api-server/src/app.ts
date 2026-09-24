@@ -34,7 +34,9 @@ app.use(
   }),
 );
 app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
-app.use(cors({ credentials: true, origin: true }));
+// The web app and API are published under the same origin. Do not reflect
+// arbitrary origins; same-origin browser requests do not require CORS headers.
+app.use(cors({ credentials: true, origin: false }));
 app.use(cookieParser(process.env.SESSION_SECRET));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

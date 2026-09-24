@@ -583,25 +583,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/NewsletterStatus"
-  /newsletter/status:
-    get:
-      operationId: getNewsletterStatus
-      tags: [newsletter]
-      summary: Check whether an email is subscribed
-      parameters:
-        - name: email
-          in: query
-          required: true
-          schema:
-            type: string
-            format: email
-      responses:
-        "200":
-          description: Newsletter subscription status
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/NewsletterStatus"
 components:
   parameters:
     IssueId:
@@ -1236,6 +1217,7 @@ components:
         linkUrl:
           type: ["string", "null"]
           format: uri
+          pattern: '^(http|https):[/][/]'
       required: [authorName, kind, topic, title, body]
     CommunityPost:
       allOf:

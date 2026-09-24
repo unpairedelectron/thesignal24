@@ -31,6 +31,9 @@ export interface CommunityPostInput {
      * @maxLength 10000
      */
   body: string;
-  /** @nullable */
+  /**
+     * @nullable
+     * @pattern ^(http|https):[/][/]
+     */
   linkUrl?: string | null;
 }

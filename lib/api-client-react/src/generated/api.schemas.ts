@@ -442,7 +442,10 @@ export interface CommunityPostInput {
      * @maxLength 10000
      */
   body: string;
-  /** @nullable */
+  /**
+     * @nullable
+     * @pattern ^(http|https):[/][/]
+     */
   linkUrl?: string | null;
 }
 
@@ -553,9 +556,5 @@ includeUnpublished?: boolean;
  * @maximum 100
  */
 limit?: number;
-};
-
-export type GetNewsletterStatusParams = {
-email: string;
 };
 

@@ -49,7 +49,6 @@ import {
   getGetPoliciesQueryKey,
   getGetPolicyQueryKey,
   getGetStoryRevisionsQueryOptions,
-  getGetNewsletterStatusQueryKey,
   getGetStoryQueryKey,
   useCreateIssue,
   useCreateStory,
@@ -61,7 +60,6 @@ import {
   useGetLiveUpdates,
   useGetPolicies,
   useGetPolicy,
-  useGetNewsletterStatus,
   useGetStoryRevisions,
   useGetStory,
   getGetCommunityPostsQueryKey,
@@ -84,6 +82,21 @@ import NotFound from '@/pages/not-found';
 const queryClient = new QueryClient();
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
+function absoluteSiteUrl(path = '/') {
+  const internalPath = path.startsWith('/') && !path.startsWith('//') ? path : `/${path}`;
+  return new URL(`${basePath}${internalPath}` || '/', window.location.origin).href;
+}
+
+function absoluteStructuredData(value: unknown): unknown {
+  if (typeof value === 'string') {
+    return value.startsWith('/') && !value.startsWith('//') ? absoluteSiteUrl(value) : value;
+  }
+  if (Array.isArray(value)) return value.map(absoluteStructuredData);
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, absoluteStructuredData(item)]));
+  }
+  return value;
+}
 const TOPICS = ['Latest', 'Courts & Policy', 'States', 'History', 'Ground Reports', 'Data & Notes'] as Topic[];
 const KINDS = ['Article', 'Paper note', 'Archive', 'Explainer'] as StoryKind[];
 const WORKFLOW_STATUSES = ['draft', 'review', 'scheduled', 'published', 'archived'] as StoryWorkflowStatus[];
@@ -134,6 +147,7 @@ function BrandMark() {
 
 function Header({ editor = false }: { editor?: boolean }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const mobileToggleRef = useRef<HTMLButtonElement>(null);
   const close = () => setMobileOpen(false);
   return (
     <>
@@ -143,7 +157,12 @@ function Header({ editor = false }: { editor?: boolean }) {
           <p className="hidden signal-kicker opacity-60 sm:block">The Signal 24 / source desk</p>
         </div>
       </div>
-      <header className="signal-container relative z-30 flex items-center justify-between border-b border-foreground/20 py-5">
+      <header className="signal-container relative z-30 flex items-center justify-between border-b border-foreground/20 py-5" onKeyDown={(event) => {
+        if (event.key === 'Escape' && mobileOpen) {
+          close();
+          mobileToggleRef.current?.focus();
+        }
+      }}>
         <Link href="/" onClick={close} className="signal-link flex items-center gap-3" data-testid="link-brand">
           <BrandMark />
           <span className="font-display text-[1.4rem] font-semibold leading-none tracking-[-.045em]">The Signal <span className="text-accent">24</span></span>
@@ -169,12 +188,11 @@ function Header({ editor = false }: { editor?: boolean }) {
         </nav>
         <div className="flex items-center gap-2">
           {!editor && <Link href="/policies" className="hidden rounded-full bg-accent px-4 py-2 text-[.65rem] font-bold uppercase tracking-[.12em] text-accent-foreground transition-transform hover:-translate-y-0.5 sm:inline-block" data-testid="button-browse-archive">Explore the ledger</Link>}
-          <button type="button" className="grid h-9 w-9 place-items-center md:hidden" aria-label={mobileOpen ? 'Close navigation' : 'Open navigation'} onClick={() => setMobileOpen((value) => !value)} data-testid="button-mobile-navigation">
+          <button ref={mobileToggleRef} type="button" className="grid h-9 w-9 place-items-center md:hidden" aria-label={mobileOpen ? 'Close navigation' : 'Open navigation'} aria-expanded={mobileOpen} aria-controls="mobile-navigation" onClick={() => setMobileOpen((value) => !value)} data-testid="button-mobile-navigation">
             {mobileOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
         </div>
-        {mobileOpen && (
-          <nav className="absolute left-0 right-0 top-full border-b border-foreground/20 bg-background p-5 shadow-md md:hidden" aria-label="Mobile navigation">
+        <nav id="mobile-navigation" hidden={!mobileOpen} className="absolute left-0 right-0 top-full border-b border-foreground/20 bg-background p-5 shadow-md md:hidden" aria-label="Mobile navigation">
             <div className="flex flex-col gap-5">
               {editor ? <Link href="/" onClick={close} className="signal-kicker signal-link">Back to publication</Link> : <>
                 <Link href="/" onClick={close} className="signal-kicker signal-link">Home</Link>
@@ -190,7 +208,6 @@ function Header({ editor = false }: { editor?: boolean }) {
               </>}
             </div>
           </nav>
-        )}
       </header>
     </>
   );
@@ -212,7 +229,7 @@ function StoryArt({ story, compact = false }: { story: Story; compact?: boolean 
   const tone = story.tone || story.topic;
   const visual = ARCHIVE_VISUALS[Math.abs(story.sortOrder ?? story.id) % ARCHIVE_VISUALS.length];
   return <div className={`story-art relative overflow-hidden border border-foreground/15 ${compact ? 'h-full min-h-[118px] sm:min-h-[142px]' : 'min-h-[270px]'} ${tone.includes('court') || tone.includes('policy') ? 'bg-[#314c5a]' : tone.includes('state') ? 'bg-[#52655b]' : tone.includes('history') ? 'bg-[#735d4e]' : tone.includes('data') ? 'bg-[#4d5370]' : 'bg-[#5f5369]'}`} aria-hidden="true">
-    <img src={visual.src} alt="" className="story-art-image absolute inset-0 h-full w-full object-cover" />
+    <img src={visual.src} alt="" loading="lazy" decoding="async" className="story-art-image absolute inset-0 h-full w-full object-cover" />
     <div className="absolute inset-0 bg-[#111827]/55 mix-blend-multiply" />
     <div className="absolute inset-0 opacity-25" style={{ backgroundImage: 'linear-gradient(120deg, transparent 35%, rgba(244,237,218,.7) 36%, transparent 37%), linear-gradient(32deg, transparent 50%, rgba(244,237,218,.42) 51%, transparent 52%)', backgroundSize: '44px 44px' }} />
     <div className="absolute left-4 top-4 max-w-[75%] signal-kicker text-[8px] leading-relaxed text-[#f2ede3]/80">Archive visual / {visual.caption.split(' / ')[1]}</div>
@@ -224,7 +241,7 @@ function StoryArt({ story, compact = false }: { story: Story; compact?: boolean 
 
 function SourceLine({ story, detail = false }: { story: Story; detail?: boolean }) {
   const verificationLabel = story.verificationStatus === 'verified' ? 'Verified' : story.verificationStatus === 'source-linked' ? 'Source linked' : 'Unverified';
-  return <div className={`source-stamp ${detail ? 'px-5 py-4' : 'pl-3'}`}><p className="signal-kicker text-accent">Source record</p><p className="mt-1 text-sm font-medium">{story.source || 'Source not supplied'}</p><p className="mt-1 font-mono-signal text-[10px] uppercase tracking-[.1em] text-muted-foreground">{story.kind} · {formatDate(story.publishedOn)}{story.state ? ` · ${story.state}` : ''}</p><p className="mt-2 signal-kicker text-muted-foreground">Verification / {verificationLabel}</p>{detail && story.verificationNotes && <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{story.verificationNotes}</p>}{detail && story.sourceUrl && <a href={story.sourceUrl} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1 text-[.68rem] font-bold uppercase tracking-[.12em] text-accent hover:underline" data-testid={`link-source-${story.id}`}>Open source <ExternalLink size={12} /></a>}</div>;
+  return <div className={`source-stamp ${detail ? 'px-5 py-4' : 'pl-3'}`}><p className="signal-kicker text-accent">Source record</p><p className="mt-1 text-sm font-medium">{story.source || 'Source not supplied'}</p><p className="mt-1 font-mono-signal text-[10px] uppercase tracking-[.1em] text-muted-foreground">{story.kind} · {formatDate(story.publishedOn)}{story.state ? ` · ${story.state}` : ''}</p><p className="mt-2 signal-kicker text-muted-foreground">Verification / {verificationLabel}</p>{detail && story.verificationNotes && <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{story.verificationNotes}</p>}{detail && story.sourceUrl && <a href={story.sourceUrl} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-1 text-[.68rem] font-bold uppercase tracking-[.12em] text-accent hover:underline" data-testid={`link-source-${story.id}`}>Open source <ExternalLink size={12} /></a>}</div>;
 }
 
 function StoryCard({ story, compact = false }: { story: Story; compact?: boolean }) {
@@ -238,13 +255,12 @@ function NewsletterSignup() {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const subscribe = useSubscribeToNewsletter();
-  const statusQuery = useGetNewsletterStatus({ email }, { query: { enabled: Boolean(email), queryKey: getGetNewsletterStatusQueryKey({ email }) } });
-  const subscribed = submitted || statusQuery.data?.subscribed === true;
+  const subscribed = submitted;
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    subscribe.mutate({ data: { email } }, { onSuccess: () => { window.localStorage.setItem('signal24-newsletter-email', email); setSubmitted(true); } });
+    subscribe.mutate({ data: { email } }, { onSuccess: () => setSubmitted(true) });
   }
-  return <section id="newsletter" className="signal-container mt-24 border-y-2 border-primary py-10 sm:mt-36 sm:py-14"><div className="grid gap-8 lg:grid-cols-[1fr_1fr] lg:items-center"><div><p className="signal-kicker text-accent">Stay with the record</p><h2 className="mt-3 max-w-lg font-display text-4xl leading-[.96] tracking-[-.04em] sm:text-6xl">A considered briefing, not a firehose.</h2><p className="mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">A short note when the national conversation moves: new reporting, court records, research and context.</p></div>{subscribed ? <div className="border border-accent bg-accent/10 p-6" data-testid="newsletter-confirmation"><div className="flex items-start gap-4"><div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent text-accent-foreground"><Check size={15} /></div><div><p className="font-display text-2xl">You are on the list.</p><p className="mt-1 text-sm text-muted-foreground">The next note will arrive in your inbox.</p></div></div></div> : <form onSubmit={submit} className="border border-foreground/20 bg-card p-5 sm:p-7" data-testid="form-newsletter"><label htmlFor="newsletter-email" className="signal-kicker text-muted-foreground">Your email, kept private</label><div className="mt-3 flex flex-col gap-3 sm:flex-row"><input id="newsletter-email" data-testid="input-newsletter-email" type="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" className="min-w-0 flex-1 border-b border-foreground/30 bg-transparent px-0 py-3 text-sm outline-none focus:border-accent" /><button type="submit" disabled={subscribe.isPending} className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-[.68rem] font-bold uppercase tracking-[.13em] text-primary-foreground disabled:opacity-60" data-testid="button-newsletter-submit">{subscribe.isPending ? 'Sending…' : 'Join the briefing'} <Send size={13} /></button></div>{subscribe.isError && <p className="mt-3 text-sm text-destructive">That address could not be added. Please try again.</p>}<p className="mt-4 signal-kicker text-[9px] text-muted-foreground">One considered email / unsubscribe anytime</p></form>}</div></section>;
+  return <section id="newsletter" className="signal-container mt-24 border-y-2 border-primary py-10 sm:mt-36 sm:py-14"><div className="grid gap-8 lg:grid-cols-[1fr_1fr] lg:items-center"><div><p className="signal-kicker text-accent">Stay with the record</p><h2 className="mt-3 max-w-lg font-display text-4xl leading-[.96] tracking-[-.04em] sm:text-6xl">A considered briefing, not a firehose.</h2><p className="mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">A short note when the national conversation moves: new reporting, court records, research and context.</p></div>{subscribed ? <div className="border border-accent bg-accent/10 p-6" role="status" aria-live="polite" data-testid="newsletter-confirmation"><div className="flex items-start gap-4"><div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent text-accent-foreground"><Check size={15} /></div><div><p className="font-display text-2xl">Thanks for signing up.</p><p className="mt-1 text-sm text-muted-foreground">If this address is eligible, the next note will arrive in your inbox.</p></div></div></div> : <form onSubmit={submit} className="border border-foreground/20 bg-card p-5 sm:p-7" data-testid="form-newsletter"><label htmlFor="newsletter-email" className="signal-kicker text-muted-foreground">Your email, kept private</label><div className="mt-3 flex flex-col gap-3 sm:flex-row"><input id="newsletter-email" data-testid="input-newsletter-email" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" className="min-w-0 flex-1 border-b border-foreground/30 bg-transparent px-0 py-3 text-sm outline-none focus:border-accent" /><button type="submit" disabled={subscribe.isPending} className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-[.68rem] font-bold uppercase tracking-[.13em] text-primary-foreground disabled:opacity-60" data-testid="button-newsletter-submit">{subscribe.isPending ? 'Sending…' : 'Join the briefing'} <Send size={13} /></button></div>{subscribe.isError && <p className="mt-3 text-sm text-destructive" role="alert">That address could not be added. Please try again.</p>}<p className="mt-4 signal-kicker text-[9px] text-muted-foreground">One considered email / unsubscribe anytime</p></form>}</div></section>;
 }
 
 function LiveDesk({ onSelect }: { onSelect?: (update: LiveUpdate) => void }) {
@@ -281,7 +297,7 @@ function LiveUpdateCard({ update, onSelect }: { update: LiveUpdate; onSelect?: (
     <div className="flex items-start justify-between gap-4"><p className="signal-kicker text-accent">{update.topic}</p><span className="signal-kicker whitespace-nowrap text-[9px] text-muted-foreground">Needs review</span></div>
     <h3 className="mt-4 font-display text-2xl leading-tight tracking-[-.025em]">{update.headline}</h3>
     <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-muted-foreground">{update.summary}</p>
-    <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-foreground/15 pt-4"><p className="signal-kicker text-muted-foreground">{update.source} · {update.publishedAt ? formatDate(update.publishedAt) : 'Date not supplied'}</p><div className="flex items-center gap-4">{onSelect && <button type="button" onClick={() => onSelect(update)} className="signal-kicker text-accent hover:underline" data-testid={`button-use-live-update-${update.id}`}>Start draft</button>}<a href={update.sourceUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 signal-kicker text-accent hover:underline">Open source <ExternalLink size={12} /></a></div></div>
+    <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-foreground/15 pt-4"><p className="signal-kicker text-muted-foreground">{update.source} · {update.publishedAt ? formatDate(update.publishedAt) : 'Date not supplied'}</p><div className="flex items-center gap-4">{onSelect && <button type="button" onClick={() => onSelect(update)} className="signal-kicker text-accent hover:underline" data-testid={`button-use-live-update-${update.id}`}>Start draft</button>}<a href={update.sourceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 signal-kicker text-accent hover:underline">Open source <ExternalLink size={12} /></a></div></div>
   </article>;
 }
 
@@ -438,7 +454,7 @@ function DecisionEvidenceSection({ records, isLoading, isError }: { records: Dec
         <div className="flex justify-between gap-4"><dt className="signal-kicker text-muted-foreground">Observed</dt><dd>{formatDate(record.observedOn)}</dd></div>
       </dl>
       <p className="mt-4 border-l-2 border-accent pl-3 text-sm leading-relaxed"><span className="signal-kicker text-accent">What this record means</span><span className="mt-1 block text-muted-foreground">{type === 'lived-account' ? 'Context from an account, not a prevalence estimate.' : type === 'monitored-lead' ? 'A source to check, not a published finding.' : record.definition}</span></p>
-      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-foreground/15 pt-4"><p className="signal-kicker text-muted-foreground">{record.source} · retrieved {formatDate(record.sourceRetrievedOn)}</p><a href={record.sourceUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 signal-kicker text-accent hover:underline" data-testid={`link-decision-evidence-source-${record.id}`}>Open source <ExternalLink size={12} /></a></div>
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-foreground/15 pt-4"><p className="signal-kicker text-muted-foreground">{record.source} · retrieved {formatDate(record.sourceRetrievedOn)}</p><a href={record.sourceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 signal-kicker text-accent hover:underline" data-testid={`link-decision-evidence-source-${record.id}`}>Open source <ExternalLink size={12} /></a></div>
       <div className="mt-3 border-t border-foreground/10 pt-3 text-xs leading-relaxed text-muted-foreground">
         {record.verificationNotes && <p>Verification context / {record.verificationNotes}</p>}
         {record.lastVerifiedAt && <p className="mt-1">Last verified / {formatDate(record.lastVerifiedAt)}</p>}
@@ -449,7 +465,7 @@ function DecisionEvidenceSection({ records, isLoading, isError }: { records: Dec
   };
   return <section id="decision-evidence" className="signal-container pt-24 sm:pt-36">
     <div className="flex flex-col justify-between gap-6 border-y-2 border-primary py-6 sm:flex-row sm:items-end"><div><p className="signal-kicker text-accent">05 / Migration + decision impacts</p><h2 className="mt-3 max-w-4xl font-display text-5xl leading-[.88] tracking-[-.055em] sm:text-7xl">What people decide,<br /><em className="font-normal text-accent">and what the record can prove.</em></h2></div><p className="max-w-sm text-sm leading-relaxed text-muted-foreground">Lived accounts show experience. Monitored leads show what needs checking. Quantified findings show measured patterns only when their source, definition and frame are visible.</p></div>
-    {isLoading ? <div className="mt-7 grid gap-5 md:grid-cols-3" role="status" data-testid="status-decision-evidence-loading">{DECISION_IMPACT_EVIDENCE_TYPES.map((type) => <div key={type} className="h-64 animate-pulse bg-muted" />)}</div> : isError ? <div className="mt-7 border border-accent/50 bg-card p-6" role="alert" data-testid="status-decision-evidence-error"><p className="signal-kicker text-accent">Evidence ledger / unavailable</p><p className="mt-3 text-sm leading-relaxed text-muted-foreground">The evidence ledger could not be reached. No movement number is shown.</p></div> : <div className="mt-7 grid gap-5 md:grid-cols-3">{card(lived, 'lived-account')}{card(monitored, 'monitored-lead')}{measured ? card(quantified, 'quantified-finding') : <div className="border border-dashed border-accent/60 p-5" data-testid="decision-evidence-quantified-gap"><p className="signal-kicker text-accent">Quantified finding / not established</p><p className="mt-3 font-display text-2xl leading-tight">{quantified ? 'A record exists, but it cannot carry a measured movement signal yet.' : 'No measured movement signal is published.'}</p><p className="mt-3 text-sm leading-relaxed text-muted-foreground">{quantified ? `The current record is missing a complete source, definition, geography, date or verification frame. ${quantified.summary}` : 'The available records do not establish a defensible migration trend. We will not replace the gap with an inferred number.'}</p>{quantified?.sourceUrl && <a href={quantified.sourceUrl} target="_blank" rel="noreferrer" className="mt-5 inline-flex items-center gap-1 signal-kicker text-accent hover:underline">Review the source <ExternalLink size={12} /></a>}</div>}</div>}
+    {isLoading ? <div className="mt-7 grid gap-5 md:grid-cols-3" role="status" data-testid="status-decision-evidence-loading">{DECISION_IMPACT_EVIDENCE_TYPES.map((type) => <div key={type} className="h-64 animate-pulse bg-muted" />)}</div> : isError ? <div className="mt-7 border border-accent/50 bg-card p-6" role="alert" data-testid="status-decision-evidence-error"><p className="signal-kicker text-accent">Evidence ledger / unavailable</p><p className="mt-3 text-sm leading-relaxed text-muted-foreground">The evidence ledger could not be reached. No movement number is shown.</p></div> : <div className="mt-7 grid gap-5 md:grid-cols-3">{card(lived, 'lived-account')}{card(monitored, 'monitored-lead')}{measured ? card(quantified, 'quantified-finding') : <div className="border border-dashed border-accent/60 p-5" data-testid="decision-evidence-quantified-gap"><p className="signal-kicker text-accent">Quantified finding / not established</p><p className="mt-3 font-display text-2xl leading-tight">{quantified ? 'A record exists, but it cannot carry a measured movement signal yet.' : 'No measured movement signal is published.'}</p><p className="mt-3 text-sm leading-relaxed text-muted-foreground">{quantified ? `The current record is missing a complete source, definition, geography, date or verification frame. ${quantified.summary}` : 'The available records do not establish a defensible migration trend. We will not replace the gap with an inferred number.'}</p>{quantified?.sourceUrl && <a href={quantified.sourceUrl} target="_blank" rel="noopener noreferrer" className="mt-5 inline-flex items-center gap-1 signal-kicker text-accent hover:underline">Review the source <ExternalLink size={12} /></a>}</div>}</div>}
     <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-b border-foreground/20 py-4"><p className="signal-kicker text-muted-foreground">Evidence ledger / {records.length} published records</p><p className="signal-kicker text-accent">{missing} evidence class{missing === 1 ? '' : 'es'} still missing a published record</p></div>
   </section>;
 }
@@ -570,7 +586,7 @@ function PolicySourceCard({ source }: { source: PolicySource }) {
       <div className="flex justify-between gap-4"><dt className="signal-kicker text-muted-foreground">Published</dt><dd data-testid={`text-policy-source-published-${source.id}`}>{formatDate(source.publishedOn)}</dd></div>
       <div className="flex justify-between gap-4"><dt className="signal-kicker text-muted-foreground">Retrieved</dt><dd data-testid={`text-policy-source-retrieved-${source.id}`}>{formatDate(source.retrievedOn)}</dd></div>
     </dl>
-    <a href={source.url} target="_blank" rel="noreferrer" className="mt-5 inline-flex items-center gap-2 signal-kicker text-accent hover:underline" data-testid={`link-policy-source-${source.id}`}>Open source <ExternalLink size={13} /></a>
+    <a href={source.url} target="_blank" rel="noopener noreferrer" className="mt-5 inline-flex items-center gap-2 signal-kicker text-accent hover:underline" data-testid={`link-policy-source-${source.id}`}>Open source <ExternalLink size={13} /></a>
   </article>;
 }
 
@@ -640,12 +656,12 @@ function PolicyDetail() {
   const { data: record, isLoading, isError, refetch } = useGetPolicy(slug, { query: { enabled: Boolean(slug), queryKey: getGetPolicyQueryKey(slug) } });
   const structuredData = useMemo(() => {
     if (!record) return null;
-    const url = new URL(record.canonicalPath, window.location.origin).href;
+    const url = absoluteSiteUrl(record.canonicalPath);
     return {
       '@context': 'https://schema.org',
       '@graph': [
-        { '@type': 'Article', '@id': `${url}#policy`, headline: record.title, description: record.summary, datePublished: record.publishedOn, dateModified: record.publishedOn, mainEntityOfPage: url, author: { '@type': 'Organization', name: 'The Signal 24' }, publisher: { ...organizationSchema, url: window.location.origin } },
-        { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'The Signal 24', item: window.location.origin }, { '@type': 'ListItem', position: 2, name: 'Policy ledger', item: `${window.location.origin}/policies` }, { '@type': 'ListItem', position: 3, name: record.title, item: url }] },
+        { '@type': 'Article', '@id': `${url}#policy`, headline: record.title, description: record.summary, datePublished: record.publishedOn, dateModified: record.publishedOn, mainEntityOfPage: url, author: { '@type': 'Organization', name: 'The Signal 24' }, publisher: { ...organizationSchema, url: absoluteSiteUrl('/') } },
+        { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'The Signal 24', item: absoluteSiteUrl('/') }, { '@type': 'ListItem', position: 2, name: 'Policy ledger', item: absoluteSiteUrl('/policies') }, { '@type': 'ListItem', position: 3, name: record.title, item: url }] },
         organizationSchema,
       ],
     };
@@ -704,7 +720,7 @@ function StoryDetail() {
   const recordPath = story ? storyPath(story) : undefined;
   const structuredData = useMemo(() => {
     if (!story) return null;
-    const url = new URL(recordPath ?? '/', window.location.origin).href;
+    const url = absoluteSiteUrl(recordPath ?? '/');
     const isDataset = story.recordFamily === 'data';
     const recordSchema = story.indexable ? {
       '@type': story.kind === 'Article' ? 'NewsArticle' : 'Article',
@@ -714,8 +730,8 @@ function StoryDetail() {
       datePublished: story.publishedOn ?? undefined,
       dateModified: story.publishedOn ?? undefined,
       mainEntityOfPage: url,
-      author: { '@type': 'Person', name: 'The Signal 24 editorial desk', url: `${window.location.origin}/authors/signal-24` },
-      publisher: { ...organizationSchema, url: window.location.origin },
+      author: { '@type': 'Person', name: 'The Signal 24 editorial desk', url: absoluteSiteUrl('/authors/signal-24') },
+      publisher: { ...organizationSchema, url: absoluteSiteUrl('/') },
     } : {
       '@type': 'WebPage',
       '@id': `${url}#record`,
@@ -729,13 +745,13 @@ function StoryDetail() {
         {
           '@type': 'BreadcrumbList',
           itemListElement: [
-            { '@type': 'ListItem', position: 1, name: 'The Signal 24', item: window.location.origin },
-            { '@type': 'ListItem', position: 2, name: 'Archive', item: `${window.location.origin}/archive` },
+            { '@type': 'ListItem', position: 1, name: 'The Signal 24', item: absoluteSiteUrl('/') },
+            { '@type': 'ListItem', position: 2, name: 'Archive', item: absoluteSiteUrl('/archive') },
             { '@type': 'ListItem', position: 3, name: story.title, item: url },
           ],
         },
-        { ...organizationSchema, url: window.location.origin },
-        { '@type': 'Person', name: 'The Signal 24 editorial desk', url: `${window.location.origin}/authors/signal-24` },
+        { ...organizationSchema, url: absoluteSiteUrl('/') },
+        { '@type': 'Person', name: 'The Signal 24 editorial desk', url: absoluteSiteUrl('/authors/signal-24') },
         ...(isDataset ? [{ '@type': 'Dataset', name: story.title, description: story.dek, url, creator: { '@type': 'Organization', name: 'The Signal 24' }, isAccessibleForFree: true }] : []),
       ],
     };
@@ -751,7 +767,7 @@ function StoryDetail() {
   if (!Number.isFinite(storyId)) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message="That record address is not valid." /></div></div>;
   if (isLoading) return <div className="signal-page"><Header /><LoadingBlock label="Opening the source record…" /></div>;
   if (isError || !story) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message="This record may have moved or is not published yet." onRetry={() => void refetch()} /></div></div>;
-  return <main className="signal-page"><Header /><article className="signal-container py-12 sm:py-20"><Link href="/archive" className="signal-kicker signal-link inline-flex items-center gap-2 text-muted-foreground" data-testid="link-back-archive"><ArrowLeft size={13} /> Back to the archive</Link><div className="mt-12 grid gap-10 lg:grid-cols-[1fr_.7fr] lg:items-end"><div><p className="signal-kicker text-accent">{story.topic} / {story.kind}</p><h1 className="mt-4 max-w-4xl font-display text-5xl leading-[.94] tracking-[-.055em] sm:text-7xl lg:text-8xl" data-testid="heading-story">{story.title}</h1><p className="mt-7 max-w-2xl text-lg leading-relaxed text-muted-foreground sm:text-xl">{story.dek}</p><div className="mt-7 flex flex-wrap gap-x-5 gap-y-2 signal-kicker text-muted-foreground"><span>Published {formatDate(story.publishedOn)}</span><span>{story.time}</span><span>{story.read} min read</span>{story.state && <span>{story.state}</span>}</div></div><StoryArt story={story} /></div><div className="mx-auto mt-12 w-full max-w-2xl"><SourceLine story={story} detail /></div>{story.aiDisclosure && <div className="mx-auto mt-6 max-w-2xl border-l-2 border-accent bg-accent/10 px-5 py-4"><p className="signal-kicker text-accent">AI-assisted drafting disclosure</p><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{story.aiDisclosure}</p></div>}{story.correctionNote && <div className="mx-auto mt-6 max-w-2xl border border-accent/40 bg-accent/5 px-5 py-4"><p className="signal-kicker text-accent">Correction note</p><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{story.correctionNote}</p></div>}<div className="story-body mx-auto mt-10 max-w-2xl text-[1.08rem] leading-[1.85] text-foreground/85">{story.body.split(/\n{2,}/).map((paragraph, index) => <p key={`${story.id}-${index}`} className={index === 0 ? 'first-letter:font-display first-letter:text-5xl first-letter:leading-[.8] first-letter:text-accent' : ''}>{paragraph}</p>)}</div><div className="mx-auto mt-12 flex max-w-2xl flex-wrap items-center justify-between gap-4 border-t border-foreground/20 pt-5"><p className="signal-kicker text-muted-foreground">End of record / {story.source}</p><div className="flex flex-wrap items-center gap-4">{story.sourceUrl && <a href={story.sourceUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 signal-kicker text-accent" data-testid="link-open-source-bottom">View source <ExternalLink size={13} /></a>}<Link href="/editorial-standards#corrections" className="signal-kicker text-muted-foreground hover:text-accent" data-testid="link-report-correction">Report a correction</Link></div></div></article></main>;
+  return <main className="signal-page"><Header /><article className="signal-container py-12 sm:py-20"><Link href="/archive" className="signal-kicker signal-link inline-flex items-center gap-2 text-muted-foreground" data-testid="link-back-archive"><ArrowLeft size={13} /> Back to the archive</Link><div className="mt-12 grid gap-10 lg:grid-cols-[1fr_.7fr] lg:items-end"><div><p className="signal-kicker text-accent">{story.topic} / {story.kind}</p><h1 className="mt-4 max-w-4xl font-display text-5xl leading-[.94] tracking-[-.055em] sm:text-7xl lg:text-8xl" data-testid="heading-story">{story.title}</h1><p className="mt-7 max-w-2xl text-lg leading-relaxed text-muted-foreground sm:text-xl">{story.dek}</p><div className="mt-7 flex flex-wrap gap-x-5 gap-y-2 signal-kicker text-muted-foreground"><span>Published {formatDate(story.publishedOn)}</span><span>{story.time}</span><span>{story.read} min read</span>{story.state && <span>{story.state}</span>}</div></div><StoryArt story={story} /></div><div className="mx-auto mt-12 w-full max-w-2xl"><SourceLine story={story} detail /></div>{story.aiDisclosure && <div className="mx-auto mt-6 max-w-2xl border-l-2 border-accent bg-accent/10 px-5 py-4"><p className="signal-kicker text-accent">AI-assisted drafting disclosure</p><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{story.aiDisclosure}</p></div>}{story.correctionNote && <div className="mx-auto mt-6 max-w-2xl border border-accent/40 bg-accent/5 px-5 py-4"><p className="signal-kicker text-accent">Correction note</p><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{story.correctionNote}</p></div>}<div className="story-body mx-auto mt-10 max-w-2xl text-[1.08rem] leading-[1.85] text-foreground/85">{story.body.split(/\n{2,}/).map((paragraph, index) => <p key={`${story.id}-${index}`} className={index === 0 ? 'first-letter:font-display first-letter:text-5xl first-letter:leading-[.8] first-letter:text-accent' : ''}>{paragraph}</p>)}</div><div className="mx-auto mt-12 flex max-w-2xl flex-wrap items-center justify-between gap-4 border-t border-foreground/20 pt-5"><p className="signal-kicker text-muted-foreground">End of record / {story.source}</p><div className="flex flex-wrap items-center gap-4">{story.sourceUrl && <a href={story.sourceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 signal-kicker text-accent" data-testid="link-open-source-bottom">View source <ExternalLink size={13} /></a>}<Link href="/editorial-standards#corrections" className="signal-kicker text-muted-foreground hover:text-accent" data-testid="link-report-correction">Report a correction</Link></div></div></article></main>;
 }
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
@@ -1109,11 +1125,14 @@ function MethodologyPage() {
 }
 
 function AuthorPage() {
+  const params = useParams<{ slug?: string }>();
   const path = '/authors/signal-24';
+  const validAuthor = params.slug === 'signal-24';
   useSeo({
     title: 'The Signal 24 editorial desk — The Signal 24',
     description: 'Meet the editorial desk behind The Signal 24, a source-first publication and research archive on reservation in India.',
-    canonicalPath: path,
+    canonicalPath: validAuthor ? path : undefined,
+    robots: validAuthor ? 'index, follow' : 'noindex, follow',
     structuredData: {
       '@context': 'https://schema.org',
       '@graph': [
@@ -1123,6 +1142,7 @@ function AuthorPage() {
       ],
     },
   });
+  if (!validAuthor) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message="That author page does not exist." /></div></div>;
   return <main className="signal-page"><Header /><section className="signal-container pt-14 sm:pt-24"><p className="signal-kicker text-accent">The Signal 24 / author</p><h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">The editorial<br /><em className="font-normal text-accent">desk.</em></h1><p className="mt-8 max-w-2xl text-lg leading-relaxed text-muted-foreground">The Signal 24 editorial desk keeps reporting, documents, analysis and opinion distinct, and names the source and date behind each published record.</p></section><section className="signal-container mt-16 border-y border-foreground/20 py-10 sm:mt-24 sm:py-14"><div className="grid gap-8 lg:grid-cols-[.7fr_1.3fr]"><div><p className="signal-kicker text-accent">Source first / always</p><h2 className="mt-3 font-display text-4xl leading-none">A byline with a responsibility.</h2></div><p className="max-w-2xl text-base leading-relaxed text-muted-foreground">The desk is a publication identity rather than a claim that every record has one author. Individual bylines, disclosures and corrections belong on the record when they are available.</p></div></section><footer className="signal-container flex justify-between gap-6 border-t border-foreground/20 py-8"><Link href="/archive" className="signal-kicker signal-link">Browse the archive</Link><Link href="/editorial-standards" className="signal-kicker signal-link">Editorial standards</Link></footer></main>;
 }
 
@@ -1220,6 +1240,12 @@ function CommunityComposer({ onClose }: { onClose: () => void }) {
 }
 
 function CommunityPage() {
+  useSeo({
+    title: 'Community noticeboard — The Signal 24',
+    description: 'Public participant contributions about reservation, representation and related policy. Contributions are not Signal 24 reporting.',
+    canonicalPath: '/community',
+    robots: 'noindex, follow',
+  });
   const [topic, setTopic] = useState('');
   const [state, setState] = useState('');
   const [sort, setSort] = useState<GetCommunityPostsSort>('recent');
@@ -1254,7 +1280,7 @@ function CommunityDetailPage() {
   const [authorName, setAuthorName] = useState('');
   const [replyBody, setReplyBody] = useState('');
   const [replyError, setReplyError] = useState(false);
-  useSeo({ title: data?.post ? `${data.post.title} — Community — The Signal 24` : 'Community post — The Signal 24', description: data?.post?.body.slice(0, 155) ?? 'A public participant contribution in The Signal 24 community.', robots: 'index, follow' });
+  useSeo({ title: data?.post ? `${data.post.title} — Community — The Signal 24` : 'Community post — The Signal 24', description: data?.post?.body.slice(0, 155) ?? 'A public participant contribution in The Signal 24 community.', robots: 'noindex, follow' });
   function like() {
     if (!data?.post) return;
     likeMutation.mutate({ postId }, { onSuccess: () => { void queryClient.invalidateQueries({ queryKey: getGetCommunityPostsQueryKey() }); void queryClient.invalidateQueries({ queryKey: getGetCommunityPostQueryKey(postId) }); } });
@@ -1275,7 +1301,7 @@ function CommunityDetailPage() {
     <Link href="/community" className="signal-kicker inline-flex items-center gap-2 text-muted-foreground hover:text-accent" data-testid="link-back-community"><ArrowLeft size={13} /> Back to community</Link>
     <div className="mt-12 grid gap-10 lg:grid-cols-[1fr_.48fr]"><div><div className="flex flex-wrap items-center gap-2"><span className="signal-kicker text-accent">{post.kind}</span><span className="text-muted-foreground">/</span><span className="signal-kicker text-muted-foreground">{post.topic}</span>{post.state && <><span className="text-muted-foreground">/</span><span className="signal-kicker text-muted-foreground">{post.state}</span></>}</div><h1 className="mt-5 max-w-4xl font-display text-5xl leading-[.92] tracking-[-.055em] sm:text-7xl" data-testid="heading-community-post">{post.title}</h1><p className="mt-6 signal-kicker text-muted-foreground">Shared by {post.authorName} · {communityDate(post.createdAt)}</p></div><aside className="border-l-2 border-accent pl-5"><p className="signal-kicker text-accent">Community record</p><p className="mt-3 text-sm leading-relaxed text-muted-foreground">A public participant contribution. It is not automatically Signal 24 reporting or a verified archive record.</p><button type="button" onClick={like} disabled={likeMutation.isPending} className={`mt-6 inline-flex items-center gap-2 rounded-full border px-4 py-2 signal-kicker hover:border-accent hover:text-accent disabled:opacity-50 ${post.likedByViewer ? 'border-accent text-accent' : 'border-foreground/25'}`} data-testid="button-like-community-detail"><Heart size={14} fill={post.likedByViewer ? 'currentColor' : 'none'} /> {post.likedByViewer ? 'Liked' : 'Like'} · {post.likeCount}</button></aside></div>
     <div className="story-body mt-12 max-w-3xl whitespace-pre-line text-[1.08rem] leading-[1.85] text-foreground/85" data-testid="text-community-detail-body">{post.body}</div>
-    {post.linkUrl && <a href={post.linkUrl} target="_blank" rel="noreferrer" className="mt-8 inline-flex items-center gap-2 border-b border-accent pb-1 signal-kicker text-accent hover:border-primary hover:text-primary" data-testid="link-community-external"><Link2 size={14} /> Open shared link <ExternalLink size={13} /></a>}
+    {post.linkUrl && <a href={post.linkUrl} target="_blank" rel="noopener noreferrer" className="mt-8 inline-flex items-center gap-2 border-b border-accent pb-1 signal-kicker text-accent hover:border-primary hover:text-primary" data-testid="link-community-external"><Link2 size={14} /> Open shared link <ExternalLink size={13} /></a>}
     <section className="mt-16 border-t-2 border-primary pt-8" aria-labelledby="community-replies-title"><div className="flex items-end justify-between gap-4"><div><p className="signal-kicker text-accent">Responses</p><h2 id="community-replies-title" className="mt-2 font-display text-4xl">The reply line.</h2></div><span className="signal-kicker text-muted-foreground">{data.replies.length} replies</span></div>
       {data.replies.length ? <div className="mt-7 divide-y divide-foreground/15 border-y border-foreground/15">{data.replies.map((item: CommunityReply) => <article key={item.id} className="py-5" data-testid={`card-community-reply-${item.id}`}><div className="flex flex-wrap justify-between gap-3"><p className="signal-kicker text-accent">{item.authorName}</p><time className="signal-kicker text-[9px] text-muted-foreground" dateTime={item.createdAt}>{communityDate(item.createdAt)}</time></div><p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{item.body}</p></article>)}</div> : <p className="mt-7 border border-dashed border-foreground/25 px-5 py-8 text-sm text-muted-foreground">No replies yet. Disagreement is welcome when it brings context.</p>}
       <form onSubmit={reply} className="mt-8 grid gap-4 border border-foreground/15 bg-card p-5 sm:p-7"><p className="font-display text-2xl">Add your context.</p><div className="grid gap-4 sm:grid-cols-2"><Field label="Your name"><input required minLength={2} maxLength={80} value={authorName} onChange={(event) => setAuthorName(event.target.value)} className="editor-input" data-testid="input-community-reply-author" /></Field><Field label="Your reply"><textarea required minLength={2} maxLength={5000} value={replyBody} onChange={(event) => setReplyBody(event.target.value)} className="editor-input min-h-24 resize-y" data-testid="textarea-community-reply" /></Field></div>{replyError && <p className="text-sm text-destructive" role="alert">Your reply could not be posted. Please try again.</p>}<button type="submit" disabled={replyMutation.isPending} className="w-fit rounded-full bg-primary px-5 py-3 signal-kicker text-primary-foreground disabled:opacity-50" data-testid="button-submit-community-reply">{replyMutation.isPending ? 'Posting…' : 'Post reply'}</button></form>
@@ -1284,6 +1310,7 @@ function CommunityDetailPage() {
 }
 
 function SignInPage() {
+  useSeo({ title: 'Editor sign in — The Signal 24', description: 'Sign in to access the private Signal 24 editorial desk.', robots: 'noindex, nofollow' });
   return <main className="signal-page"><section className="signal-container flex min-h-[100dvh] flex-col items-center justify-center gap-8 py-12">
     <Link href="/" className="signal-link font-display text-2xl">The Signal <span className="text-accent">24</span></Link>
     <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} forceRedirectUrl={`${basePath}/editor`} />
@@ -1313,7 +1340,24 @@ function ClerkProviderWithRouting() {
   >
     <QueryClientProvider client={queryClient}>
       <ClerkQueryClientCacheInvalidator />
-      <TooltipProvider><ErrorBoundary><AppRoutes /><Toaster /></ErrorBoundary></TooltipProvider>
+      <TooltipProvider>
+        <a
+          href="#main-content"
+          className="skip-link"
+          onClick={(event) => {
+            event.preventDefault();
+            const main = document.querySelector<HTMLElement>('main');
+            if (main) {
+              main.tabIndex = -1;
+              main.focus();
+              main.scrollIntoView({ block: 'start' });
+            }
+          }}
+        >
+          Skip to main content
+        </a>
+        <ErrorBoundary><AppRoutes /><Toaster /></ErrorBoundary>
+      </TooltipProvider>
     </QueryClientProvider>
   </ClerkProvider>;
 }
@@ -1324,7 +1368,7 @@ function App() {
 export default App;
 
 function useSeo({ title, description, canonicalPath, robots = 'index, follow', type = 'website', structuredData }: SeoConfig) {
-  const structuredDataText = JSON.stringify(structuredData ?? null);
+  const structuredDataText = JSON.stringify(absoluteStructuredData(structuredData ?? null));
   useEffect(() => {
     document.title = title;
     const upsertMeta = (attribute: 'name' | 'property', key: string, content: string) => {
@@ -1343,7 +1387,12 @@ function useSeo({ title, description, canonicalPath, robots = 'index, follow', t
     upsertMeta('property', 'og:title', title);
     upsertMeta('property', 'og:description', description);
     upsertMeta('property', 'og:type', type);
-    upsertMeta('property', 'og:url', canonicalPath ? new URL(canonicalPath, window.location.origin).href : window.location.href);
+    const pathname = window.location.pathname;
+    const currentPath = basePath && (pathname === basePath || pathname.startsWith(`${basePath}/`))
+      ? pathname.slice(basePath.length) || '/'
+      : pathname;
+    upsertMeta('property', 'og:url', absoluteSiteUrl(canonicalPath ?? currentPath));
+    upsertMeta('property', 'og:site_name', 'The Signal 24');
     upsertMeta('name', 'twitter:title', title);
     upsertMeta('name', 'twitter:description', description);
 
@@ -1351,7 +1400,7 @@ function useSeo({ title, description, canonicalPath, robots = 'index, follow', t
     if (canonicalPath && robots.startsWith('index')) {
       const canonical = document.createElement('link');
       canonical.rel = 'canonical';
-      canonical.href = new URL(canonicalPath, window.location.origin).href;
+      canonical.href = absoluteSiteUrl(canonicalPath);
       canonical.dataset.signalSeo = 'true';
       document.head.appendChild(canonical);
     }
@@ -1379,7 +1428,7 @@ const organizationSchema = {
   '@type': 'Organization',
   name: 'The Signal 24',
   description: 'A source-first public-interest publication and research archive on reservation and representation in India.',
-  url: '/',
+  url: absoluteSiteUrl('/'),
 };
 
 function recordFamilyForStory(story: Story) {
@@ -1393,6 +1442,11 @@ function recordFamilyForStory(story: Story) {
 
 function DataIndexPage() {
   const path = '/data';
+  const params = useMemo(() => ({ topic: 'Data & Notes' as Topic, limit: 100 }), []);
+  const { data, isLoading, isError, refetch } = useGetArchive(params, {
+    query: { queryKey: getGetArchiveQueryKey(params) },
+  });
+  const records = data?.stories.filter((story) => story.recordFamily === 'data' || story.topic === 'Data & Notes') ?? [];
   useSeo({
     title: 'Data room — The Signal 24',
     description: 'A source-linked data room for understanding reservation and representation in India.',
@@ -1400,13 +1454,13 @@ function DataIndexPage() {
     structuredData: {
       '@context': 'https://schema.org',
       '@graph': [
-        { '@type': 'Dataset', name: 'The Signal 24 data room', description: 'Source-linked datasets and methodology notes on reservation and representation in India.', url: path, creator: organizationSchema, isAccessibleForFree: true },
+        { '@type': 'CollectionPage', name: 'The Signal 24 data room', description: 'Published data records and methodology notes on reservation and representation in India.', url: path, mainEntity: records.map((story) => ({ '@type': 'Dataset', name: story.title, description: story.dek, url: story.canonicalPath || storyPath(story), creator: organizationSchema, isAccessibleForFree: true })) },
         organizationSchema,
         { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'The Signal 24', item: '/' }, { '@type': 'ListItem', position: 2, name: 'Data', item: path }] },
       ],
     },
   });
-  return <main className="signal-page"><Header /><section className="signal-container pt-14 sm:pt-24"><p className="signal-kicker text-accent">The Signal 24 / data room</p><h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">Numbers need<br /><em className="font-normal text-accent">a denominator.</em></h1><p className="mt-8 max-w-2xl text-lg leading-relaxed text-muted-foreground">Published data records show the value, unit, year, geography, definition, source and last verified date beside every comparison.</p></section><section className="signal-container mt-16 border-y border-dashed border-foreground/25 py-12 sm:mt-24 sm:py-16"><p className="signal-kicker text-accent">Data room / awaiting verified releases</p><p className="mt-4 max-w-2xl font-display text-3xl leading-tight">No standalone dataset has been published yet.</p><p className="mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground">When a dataset is ready, it will receive its own durable data record and source documentation. Starter notes are not included in the public sitemap.</p><Link href="/archive?kind=Paper%20note" className="mt-7 inline-flex items-center gap-2 signal-kicker text-accent hover:underline">Read methodology notes <ArrowUpRight size={13} /></Link></section></main>;
+  return <main className="signal-page"><Header /><section className="signal-container pt-14 sm:pt-24"><p className="signal-kicker text-accent">The Signal 24 / data room</p><h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">Numbers need<br /><em className="font-normal text-accent">a denominator.</em></h1><p className="mt-8 max-w-2xl text-lg leading-relaxed text-muted-foreground">Published data records show the value, unit, year, geography, definition, source and last verified date beside every comparison.</p></section><section className="signal-container mt-16 border-y border-dashed border-foreground/25 py-12 sm:mt-24 sm:py-16" aria-labelledby="data-room-records-title"><p className="signal-kicker text-accent">Data room / source-linked records</p><h2 id="data-room-records-title" className="mt-3 font-display text-3xl leading-tight">Published datasets and notes</h2>{isLoading ? <div className="mt-6" role="status" aria-live="polite">Loading published data records…</div> : isError ? <div className="mt-6"><ErrorState message="Published data records could not be loaded." onRetry={() => void refetch()} /></div> : records.length === 0 ? <><p className="mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground">No source-linked data record has been published yet. Records will appear here when their source, method and verification notes are ready.</p><Link href="/methodology" className="mt-7 inline-flex items-center gap-2 signal-kicker text-accent hover:underline">Read the methodology <ArrowUpRight size={13} /></Link></> : <div className="mt-7 grid gap-6 md:grid-cols-2">{records.map((story) => <StoryCard key={story.id} story={story} />)}</div>}</section></main>;
 }
 
 function ClerkQueryClientCacheInvalidator() {
@@ -1475,6 +1529,7 @@ const clerkAppearance = {
 };
 
 function SignUpPage() {
+  useSeo({ title: 'Editor account — The Signal 24', description: 'Create an account to request access to the private Signal 24 editorial desk.', robots: 'noindex, nofollow' });
   return <main className="signal-page"><section className="signal-container flex min-h-[100dvh] flex-col items-center justify-center gap-8 py-12">
     <Link href="/" className="signal-link font-display text-2xl">The Signal <span className="text-accent">24</span></Link>
     <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} forceRedirectUrl={`${basePath}/editor`} />
@@ -1491,6 +1546,11 @@ function EditorAccessRoute() {
       retry: false,
       staleTime: 30_000,
     },
+  });
+  useSeo({
+    title: 'Editorial desk — The Signal 24',
+    description: 'Private editorial workspace for preparing source-aware Signal 24 records.',
+    robots: 'noindex, nofollow',
   });
 
   if (!isLoaded || (isSignedIn && session.isLoading)) {

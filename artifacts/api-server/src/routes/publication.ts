@@ -412,6 +412,7 @@ router.get("/sitemap.xml", async (req, res, next) => {
     const origin = requestOrigin(req);
     const staticPaths = [
       "/",
+      "/data",
       "/archive",
       "/policies",
       "/about",

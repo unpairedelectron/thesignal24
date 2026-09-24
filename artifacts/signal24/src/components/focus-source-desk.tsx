@@ -210,7 +210,7 @@ export function FocusSourceDesk() {
             <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">{source.summary}</p>
             <div className="mt-5 flex items-center justify-between gap-3 border-t border-foreground/15 pt-4">
               <span className="signal-kicker text-muted-foreground">{source.publisher}</span>
-              <a href={source.href} target="_blank" rel="noreferrer" className="inline-flex shrink-0 items-center gap-1 signal-kicker text-accent hover:underline">
+              <a href={source.href} target="_blank" rel="noopener noreferrer" className="inline-flex shrink-0 items-center gap-1 signal-kicker text-accent hover:underline">
                 Source <ExternalLink size={12} />
               </a>
             </div>

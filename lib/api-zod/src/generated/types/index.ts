@@ -31,7 +31,6 @@ export * from './getArchiveParams';
 export * from './getCommunityPostsParams';
 export * from './getCommunityPostsSort';
 export * from './getDecisionImpactsParams';
-export * from './getNewsletterStatusParams';
 export * from './getPoliciesParams';
 export * from './healthStatus';
 export * from './issue';

@@ -1,45 +1,49 @@
-# [Project name]
+# The Signal 24
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+A source-first public-interest publication and research archive covering UGC equity rules, open-category competition, EWS eligibility, and state reservation disputes in India.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- The `artifacts/signal24: web` workflow runs `pnpm --filter @workspace/signal24 run dev`; Replit injects `PORT` and `BASE_PATH`.
+- The `artifacts/api-server: API Server` workflow runs `pnpm --filter @workspace/api-server run dev` and serves the same-origin `/api` routes.
+- `pnpm run typecheck` — typecheck workspace libraries and artifacts.
+- `pnpm run build` — typecheck and build all workspace packages.
+- `pnpm --dir lib/api-spec codegen` — regenerate API clients and Zod schemas from the OpenAPI contract.
+- `pnpm --filter @workspace/db run push` — apply schema changes to the development database only.
+- Required runtime configuration includes `DATABASE_URL` and `SESSION_SECRET`. Editor access also requires Clerk configuration and an `EDITOR_EMAILS` allowlist; provide values through Replit Secrets, not source files.
 
 ## Stack
 
-- pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- pnpm workspace, Node.js 24, TypeScript 5.9
+- Web: React 19, Vite, Tailwind CSS, Wouter, TanStack Query
+- Authentication: Clerk; editor mutations are protected by server-side verified-email authorization
+- API: Express 5, PostgreSQL, Drizzle ORM, Zod, OpenAPI-generated client and schemas
+- Production: static web artifact with SPA rewrites plus a separate API service mounted under `/api`
 
-## Where things live
+## Where Things Live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/signal24/src/App.tsx` — public routes, editorial desk, and route-aware metadata
+- `artifacts/signal24/src/components/` — reusable visual components
+- `artifacts/signal24/src/index.css` — design tokens, typography, layout, and motion
+- `artifacts/signal24/public/` — static images, icons, robots rules, and sitemap index
+- `artifacts/api-server/src/routes/` — publication, policy, newsletter, community, and health endpoints
+- `artifacts/api-server/src/middlewares/editorAuth.ts` — editor authorization boundary
+- `lib/api-spec/openapi.yaml` — source of truth for generated API contracts
+- `lib/db/src/schema/` — Drizzle database schema
 
-## Architecture decisions
+## Architecture Decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- Unreviewed external feed items are leads, not Signal 24 reporting; source-linked publication records remain a separate editorial workflow.
+- Public participant contributions are labeled separately from verified editorial records.
+- Production web and API requests share one origin; the browser calls `/api` rather than a hard-coded API host.
+- Canonical metadata is generated at runtime because a literal root canonical in the Vite HTML entry can break production builds.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+The publication provides a current briefing, a source-linked archive, a policy ledger, court and state coverage, a data room, editorial standards, and a public participant noticeboard. The private editorial desk manages publication records and revision history.
 
-## User preferences
+## Operational Notes
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
-
-## Gotchas
-
-_Populate as you build — sharp edges, "always run X before Y" rules._
-
-## Pointers
-
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+- Do not treat a `scheduled` story status as an automatic publication promise until a production scheduler is configured and verified.
+- Keep production database changes separate from development schema pushes.
+- Check the source URL and verification status on each record before describing it as reporting or a finding.

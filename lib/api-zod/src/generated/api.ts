@@ -120,6 +120,7 @@ export const getCommunityPostsResponsePostsItemOneTitleMax = 180;
 export const getCommunityPostsResponsePostsItemOneBodyMin = 10;
 export const getCommunityPostsResponsePostsItemOneBodyMax = 10000;
 
+export const getCommunityPostsResponsePostsItemOneLinkUrlRegExp = new RegExp('^(http|https):[/][/]');
 
 
 export const GetCommunityPostsResponse = zod.object({
@@ -130,7 +131,7 @@ export const GetCommunityPostsResponse = zod.object({
   "state": zod.string().max(getCommunityPostsResponsePostsItemOneStateMax).nullish(),
   "title": zod.string().min(getCommunityPostsResponsePostsItemOneTitleMin).max(getCommunityPostsResponsePostsItemOneTitleMax),
   "body": zod.string().min(getCommunityPostsResponsePostsItemOneBodyMin).max(getCommunityPostsResponsePostsItemOneBodyMax),
-  "linkUrl": zod.string().url().nullish()
+  "linkUrl": zod.string().url().regex(getCommunityPostsResponsePostsItemOneLinkUrlRegExp).nullish()
 }).and(zod.object({
   "id": zod.number().int(),
   "likeCount": zod.number().int(),
@@ -157,6 +158,7 @@ export const createCommunityPostBodyTitleMax = 180;
 export const createCommunityPostBodyBodyMin = 10;
 export const createCommunityPostBodyBodyMax = 10000;
 
+export const createCommunityPostBodyLinkUrlRegExp = new RegExp('^(http|https):[/][/]');
 
 
 export const CreateCommunityPostBody = zod.object({
@@ -166,7 +168,7 @@ export const CreateCommunityPostBody = zod.object({
   "state": zod.string().max(createCommunityPostBodyStateMax).nullish(),
   "title": zod.string().min(createCommunityPostBodyTitleMin).max(createCommunityPostBodyTitleMax),
   "body": zod.string().min(createCommunityPostBodyBodyMin).max(createCommunityPostBodyBodyMax),
-  "linkUrl": zod.string().url().nullish()
+  "linkUrl": zod.string().url().regex(createCommunityPostBodyLinkUrlRegExp).nullish()
 })
 
 export const createCommunityPostResponseOneAuthorNameMin = 2;
@@ -180,6 +182,7 @@ export const createCommunityPostResponseOneTitleMax = 180;
 export const createCommunityPostResponseOneBodyMin = 10;
 export const createCommunityPostResponseOneBodyMax = 10000;
 
+export const createCommunityPostResponseOneLinkUrlRegExp = new RegExp('^(http|https):[/][/]');
 
 
 export const CreateCommunityPostResponse = zod.object({
@@ -189,7 +192,7 @@ export const CreateCommunityPostResponse = zod.object({
   "state": zod.string().max(createCommunityPostResponseOneStateMax).nullish(),
   "title": zod.string().min(createCommunityPostResponseOneTitleMin).max(createCommunityPostResponseOneTitleMax),
   "body": zod.string().min(createCommunityPostResponseOneBodyMin).max(createCommunityPostResponseOneBodyMax),
-  "linkUrl": zod.string().url().nullish()
+  "linkUrl": zod.string().url().regex(createCommunityPostResponseOneLinkUrlRegExp).nullish()
 }).and(zod.object({
   "id": zod.number().int(),
   "likeCount": zod.number().int(),
@@ -217,6 +220,7 @@ export const getCommunityPostResponsePostOneTitleMax = 180;
 export const getCommunityPostResponsePostOneBodyMin = 10;
 export const getCommunityPostResponsePostOneBodyMax = 10000;
 
+export const getCommunityPostResponsePostOneLinkUrlRegExp = new RegExp('^(http|https):[/][/]');
 export const getCommunityPostResponseRepliesItemOneAuthorNameMin = 2;
 export const getCommunityPostResponseRepliesItemOneAuthorNameMax = 80;
 
@@ -233,7 +237,7 @@ export const GetCommunityPostResponse = zod.object({
   "state": zod.string().max(getCommunityPostResponsePostOneStateMax).nullish(),
   "title": zod.string().min(getCommunityPostResponsePostOneTitleMin).max(getCommunityPostResponsePostOneTitleMax),
   "body": zod.string().min(getCommunityPostResponsePostOneBodyMin).max(getCommunityPostResponsePostOneBodyMax),
-  "linkUrl": zod.string().url().nullish()
+  "linkUrl": zod.string().url().regex(getCommunityPostResponsePostOneLinkUrlRegExp).nullish()
 }).and(zod.object({
   "id": zod.number().int(),
   "likeCount": zod.number().int(),
@@ -953,19 +957,6 @@ export const SubscribeToNewsletterBody = zod.object({
 })
 
 export const SubscribeToNewsletterResponse = zod.object({
-  "subscribed": zod.boolean(),
-  "email": zod.string().email()
-})
-
-
-/**
- * @summary Check whether an email is subscribed
- */
-export const GetNewsletterStatusQueryParams = zod.object({
-  "email": zod.coerce.string().email()
-})
-
-export const GetNewsletterStatusResponse = zod.object({
   "subscribed": zod.boolean(),
   "email": zod.string().email()
 })
