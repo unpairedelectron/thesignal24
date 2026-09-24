@@ -1,5 +1,8 @@
 import { type FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
+import { ClerkProvider, SignIn, SignUp, useClerk, useUser } from '@clerk/react';
+import { publishableKeyFromHost } from '@clerk/react/internal';
+import { shadcn } from '@clerk/themes';
 import {
   Archive,
   ArrowDownRight,
@@ -29,7 +32,7 @@ import {
   SlidersHorizontal,
   X,
 } from 'lucide-react';
-import { Link, Route, Router as WouterRouter, Switch, useParams } from 'wouter';
+import { Link, Route, Router as WouterRouter, Switch, useLocation, useParams } from 'wouter';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { FocusSourceDesk, FOCUS_SOURCES } from '@/components/focus-source-desk';
 import { Toaster } from '@/components/ui/toaster';
@@ -39,6 +42,7 @@ import {
   getGetDecisionImpactRevisionsQueryKey,
   getGetDecisionImpactRevisionsQueryOptions,
   getGetEditorialIssueQueryKey,
+  getGetEditorSessionQueryKey,
   getGetCurrentIssueQueryKey,
   getGetDecisionImpactsQueryKey,
   getGetLiveUpdatesQueryKey,
@@ -72,11 +76,14 @@ import {
   useUpdateStory,
   useCreateDecisionImpact,
   useUpdateDecisionImpact,
+  useGetEditorSession,
 } from '@workspace/api-client-react';
 import type { CommunityPost, CommunityReply, CommunityPostInput, CommunityPostKind, CommunityTopic, DecisionImpactArea, DecisionImpactEvidenceType, DecisionImpactInput, DecisionImpactRecord, DecisionImpactRevision, DecisionImpactWorkflowStatus, GetCommunityPostsParams, GetCommunityPostsSort, GetPoliciesParams, Issue, IssueInput, LiveUpdate, PolicyRecord, PolicySource, Story, StoryInput, StoryKind, StoryWorkflowStatus, Topic, VerificationStatus } from '@workspace/api-client-react';
 import NotFound from '@/pages/not-found';
 
 const queryClient = new QueryClient();
+
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
 const TOPICS = ['Latest', 'Courts & Policy', 'States', 'History', 'Ground Reports', 'Data & Notes'] as Topic[];
 const KINDS = ['Article', 'Paper note', 'Archive', 'Explainer'] as StoryKind[];
 const WORKFLOW_STATUSES = ['draft', 'review', 'scheduled', 'published', 'archived'] as StoryWorkflowStatus[];
@@ -1276,12 +1283,42 @@ function CommunityDetailPage() {
   </article></main>;
 }
 
+function SignInPage() {
+  return <main className="signal-page"><section className="signal-container flex min-h-[100dvh] flex-col items-center justify-center gap-8 py-12">
+    <Link href="/" className="signal-link font-display text-2xl">The Signal <span className="text-accent">24</span></Link>
+    <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} forceRedirectUrl={`${basePath}/editor`} />
+  </section></main>;
+}
 function AppRoutes() {
-  return <Switch><Route path="/" component={Home} /><Route path="/community" component={CommunityPage} /><Route path="/community/:id" component={CommunityDetailPage} /><Route path="/policies" component={PoliciesPage} /><Route path="/policies/:slug" component={PolicyDetail} /><Route path="/archive" component={ArchivePage} /><Route path="/authors/:slug" component={AuthorPage} /><Route path="/data" component={DataIndexPage} /><Route path="/stories/:id" component={StoryDetail} /><Route path="/editor" component={EditorialDesk} /><Route path="/about" component={AboutPage} /><Route path="/editorial-standards" component={StandardsPage} /><Route path="/methodology" component={MethodologyPage} /><Route path="/:family/:slug" component={StoryDetail} /><Route component={NotFound} /></Switch>;
+  return <Switch><Route path="/" component={Home} /><Route path="/sign-in/*?" component={SignInPage} /><Route path="/sign-up/*?" component={SignUpPage} /><Route path="/community" component={CommunityPage} /><Route path="/community/:id" component={CommunityDetailPage} /><Route path="/policies" component={PoliciesPage} /><Route path="/policies/:slug" component={PolicyDetail} /><Route path="/archive" component={ArchivePage} /><Route path="/authors/:slug" component={AuthorPage} /><Route path="/data" component={DataIndexPage} /><Route path="/stories/:id" component={StoryDetail} /><Route path="/editor" component={EditorAccessRoute} /><Route path="/about" component={AboutPage} /><Route path="/editorial-standards" component={StandardsPage} /><Route path="/methodology" component={MethodologyPage} /><Route path="/:family/:slug" component={StoryDetail} /><Route component={NotFound} /></Switch>;
 }
 
+function ClerkProviderWithRouting() {
+  const [, setLocation] = useLocation();
+
+  return <ClerkProvider
+    publishableKey={clerkPubKey}
+    proxyUrl={clerkProxyUrl}
+    appearance={clerkAppearance}
+    signInUrl={`${basePath}/sign-in`}
+    signUpUrl={`${basePath}/sign-up`}
+    signInFallbackRedirectUrl={`${basePath}/editor`}
+    signUpFallbackRedirectUrl={`${basePath}/editor`}
+    localization={{
+      signIn: { start: { title: 'Editor sign in', subtitle: 'Sign in to access the private editorial desk.' } },
+      signUp: { start: { title: 'Editor account', subtitle: 'Create an account, then use an authorized verified email.' } },
+    }}
+    routerPush={(to) => setLocation(stripBase(to))}
+    routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
+  >
+    <QueryClientProvider client={queryClient}>
+      <ClerkQueryClientCacheInvalidator />
+      <TooltipProvider><ErrorBoundary><AppRoutes /><Toaster /></ErrorBoundary></TooltipProvider>
+    </QueryClientProvider>
+  </ClerkProvider>;
+}
 function App() {
-  return <QueryClientProvider client={queryClient}><TooltipProvider><ErrorBoundary><WouterRouter><AppRoutes /></WouterRouter><Toaster /></ErrorBoundary></TooltipProvider></QueryClientProvider>;
+  return <WouterRouter base={basePath}><ClerkProviderWithRouting /></WouterRouter>;
 }
 
 export default App;
@@ -1370,4 +1407,126 @@ function DataIndexPage() {
     },
   });
   return <main className="signal-page"><Header /><section className="signal-container pt-14 sm:pt-24"><p className="signal-kicker text-accent">The Signal 24 / data room</p><h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">Numbers need<br /><em className="font-normal text-accent">a denominator.</em></h1><p className="mt-8 max-w-2xl text-lg leading-relaxed text-muted-foreground">Published data records show the value, unit, year, geography, definition, source and last verified date beside every comparison.</p></section><section className="signal-container mt-16 border-y border-dashed border-foreground/25 py-12 sm:mt-24 sm:py-16"><p className="signal-kicker text-accent">Data room / awaiting verified releases</p><p className="mt-4 max-w-2xl font-display text-3xl leading-tight">No standalone dataset has been published yet.</p><p className="mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground">When a dataset is ready, it will receive its own durable data record and source documentation. Starter notes are not included in the public sitemap.</p><Link href="/archive?kind=Paper%20note" className="mt-7 inline-flex items-center gap-2 signal-kicker text-accent hover:underline">Read methodology notes <ArrowUpRight size={13} /></Link></section></main>;
+}
+
+function ClerkQueryClientCacheInvalidator() {
+  const { addListener } = useClerk();
+  const client = useQueryClient();
+  const previousUserId = useRef<string | null | undefined>(undefined);
+
+  useEffect(() => addListener(({ user }) => {
+    const userId = user?.id ?? null;
+    if (previousUserId.current !== undefined && previousUserId.current !== userId) {
+      client.clear();
+    }
+    previousUserId.current = userId;
+  }), [addListener, client]);
+
+  return null;
+}
+
+const clerkAppearance = {
+  theme: shadcn,
+  cssLayerName: 'clerk',
+  options: {
+    logoPlacement: 'inside' as const,
+    logoLinkUrl: basePath || '/',
+    logoImageUrl: `${window.location.origin}${basePath}/logo.svg`,
+  },
+  variables: {
+    colorPrimary: '#d73524',
+    colorForeground: '#19243a',
+    colorMutedForeground: '#626773',
+    colorDanger: '#c92f22',
+    colorBackground: '#f8f5ed',
+    colorInput: '#ffffff',
+    colorInputForeground: '#19243a',
+    colorNeutral: '#aeb2bd',
+    fontFamily: "'DM Sans', sans-serif",
+    borderRadius: '0.75rem',
+  },
+  elements: {
+    rootBox: 'w-full flex justify-center',
+    cardBox: 'bg-[#f8f5ed] rounded-xl w-[440px] max-w-full overflow-hidden border border-[#aeb2bd]',
+    card: '!shadow-none !border-0 !bg-transparent !rounded-none',
+    footer: '!shadow-none !border-0 !bg-transparent !rounded-none',
+    headerTitle: 'text-[#19243a]',
+    headerSubtitle: 'text-[#626773]',
+    socialButtonsBlockButtonText: 'text-[#19243a]',
+    formFieldLabel: 'text-[#19243a]',
+    footerActionLink: 'text-[#c92f22]',
+    footerActionText: 'text-[#626773]',
+    dividerText: 'text-[#626773]',
+    identityPreviewEditButton: 'text-[#c92f22]',
+    formFieldSuccessText: 'text-[#245e4d]',
+    alertText: 'text-[#19243a]',
+    logoBox: 'h-12',
+    logoImage: 'h-10 w-auto',
+    socialButtonsBlockButton: 'border border-[#aeb2bd] bg-white',
+    formButtonPrimary: 'bg-[#19243a] text-[#f1eee4] hover:bg-[#303c54]',
+    formFieldInput: 'border border-[#aeb2bd] bg-white text-[#19243a]',
+    footerAction: 'text-[#626773]',
+    dividerLine: 'bg-[#aeb2bd]',
+    alert: 'border border-[#aeb2bd]',
+    otpCodeFieldInput: 'border border-[#aeb2bd] bg-white text-[#19243a]',
+    formFieldRow: 'text-[#19243a]',
+    main: 'text-[#19243a]',
+  },
+};
+
+function SignUpPage() {
+  return <main className="signal-page"><section className="signal-container flex min-h-[100dvh] flex-col items-center justify-center gap-8 py-12">
+    <Link href="/" className="signal-link font-display text-2xl">The Signal <span className="text-accent">24</span></Link>
+    <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} forceRedirectUrl={`${basePath}/editor`} />
+  </section></main>;
+}
+
+function EditorAccessRoute() {
+  const { isLoaded, isSignedIn } = useUser();
+  const { signOut } = useClerk();
+  const session = useGetEditorSession({
+    query: {
+      queryKey: getGetEditorSessionQueryKey(),
+      enabled: isLoaded && isSignedIn === true,
+      retry: false,
+      staleTime: 30_000,
+    },
+  });
+
+  if (!isLoaded || (isSignedIn && session.isLoading)) {
+    return <main className="signal-page"><Header editor /><section className="signal-container py-16 text-sm text-muted-foreground">Checking editor access…</section></main>;
+  }
+
+  if (!isSignedIn) {
+    return <main className="signal-page"><Header editor /><section className="signal-container py-16">
+      <p className="signal-kicker text-accent">Private workspace</p>
+      <h1 className="mt-3 font-display text-5xl">Sign in to the editorial desk.</h1>
+      <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground">Use the verified editor account to manage publication records and review revision history.</p>
+      <Link href="/sign-in" className="mt-7 inline-flex rounded-full bg-primary px-5 py-3 signal-kicker text-primary-foreground">Sign in</Link>
+    </section></main>;
+  }
+
+  if (session.isError || !session.data) {
+    return <main className="signal-page"><Header editor /><section className="signal-container py-16">
+      <p className="signal-kicker text-accent">Editor access denied</p>
+      <h1 className="mt-3 font-display text-5xl">This account is not on the editor list.</h1>
+      <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground">Sign out and use an authorized account with a verified email address.</p>
+      <button type="button" onClick={() => void signOut({ redirectUrl: basePath || '/' })} className="mt-7 rounded-full border border-foreground/25 px-5 py-3 signal-kicker">Sign out</button>
+    </section></main>;
+  }
+
+  return <EditorialDesk />;
+}
+
+const clerkPubKey = publishableKeyFromHost(
+  window.location.hostname,
+  import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,
+);
+
+const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
+
+function stripBase(path: string) {
+  return basePath && path.startsWith(basePath)
+    ? path.slice(basePath.length) || '/'
+    : path;
 }

@@ -26,6 +26,10 @@ import {
   UpdateDecisionImpactBody,
 } from "@workspace/api-zod";
 import { getLiveUpdates } from "../lib/live-feed";
+import {
+  requireEditor,
+  requireEditorForUnpublished,
+} from "../middlewares/editorAuth";
 
 const router: IRouter = Router();
 
@@ -94,7 +98,8 @@ const decisionImpactWorkflowStatusValues = new Set(
 type DecisionImpactWorkflowStatus =
   (typeof decisionImpactWorkflowStatusList)[number];
 
-function parseId(value: string) {
+function parseId(value: unknown) {
+  if (typeof value !== "string") return null;
   const id = Number(value);
   if (!Number.isInteger(id) || id < 1) {
     return null;
@@ -308,7 +313,11 @@ router.get("/updates/live", async (_req, res, next) => {
   }
 });
 
-router.get("/editor/issues/current", async (_req, res, next) => {
+router.get("/editor/session", requireEditor, (req, res) => {
+  res.json({ displayName: req.editorIdentity!.displayName });
+});
+
+router.get("/editor/issues/current", requireEditor, async (_req, res, next) => {
   try {
     const [issue] = await db
       .select()
@@ -434,7 +443,7 @@ router.get("/sitemap.xml", async (req, res, next) => {
   }
 });
 
-router.post("/issues", async (req, res, next) => {
+router.post("/issues", requireEditor, async (req, res, next) => {
   try {
     const parsed = CreateIssueBody.parse(req.body);
     const input = {
@@ -451,7 +460,10 @@ router.post("/issues", async (req, res, next) => {
   }
 });
 
-router.post("/issues/:issueId/publish", async (req, res, next) => {
+router.post(
+  "/issues/:issueId/publish",
+  requireEditor,
+  async (req, res, next) => {
   try {
     const issueId = parseId(req.params.issueId);
     if (!issueId) {
@@ -547,7 +559,10 @@ router.get("/stories/:storyId", async (req, res, next) => {
   }
 });
 
-router.get("/stories/:storyId/revisions", async (req, res, next) => {
+router.get(
+  "/stories/:storyId/revisions",
+  requireEditor,
+  async (req, res, next) => {
   try {
     const storyId = parseId(req.params.storyId);
     if (!storyId) {
@@ -590,7 +605,7 @@ function dateOnly(value: Date | string | null | undefined): string | null {
   return value instanceof Date ? value.toISOString().slice(0, 10) : value;
 }
 
-router.post("/stories", async (req, res, next) => {
+router.post("/stories", requireEditor, async (req, res, next) => {
   try {
     const input = CreateStoryBody.parse(req.body);
     const workflowStatus = input.workflowStatus ?? "draft";
@@ -638,7 +653,7 @@ router.post("/stories", async (req, res, next) => {
   }
 });
 
-router.put("/stories/:storyId", async (req, res, next) => {
+router.put("/stories/:storyId", requireEditor, async (req, res, next) => {
   try {
     const storyId = parseId(req.params.storyId);
     if (!storyId) {
@@ -862,6 +877,8 @@ async function recordDecisionImpactRevision(
   tx: DecisionImpactTransaction,
   record: typeof decisionImpactRecordsTable.$inferSelect,
   changeNote: string,
+  editorId: string,
+  editorName: string,
 ) {
   const [latest] = await tx
     .select({
@@ -880,7 +897,8 @@ async function recordDecisionImpactRevision(
     decisionImpactRecordId: record.id,
     revisionNumber: (latest?.revisionNumber ?? 0) + 1,
     changeNote,
-    changedBy: "Editorial desk",
+    changedBy: editorName,
+    changedById: editorId,
     snapshot: serializeDecisionImpact(record),
   });
 }
@@ -991,9 +1009,15 @@ router.get("/policies/:slug", async (req, res, next) => {
   }
 });
 
-router.get("/decision-impacts", async (req, res, next) => {
+router.get(
+  "/decision-impacts",
+  requireEditorForUnpublished,
+  async (req, res, next) => {
   try {
-    const parsed = GetDecisionImpactsQueryParams.parse(req.query);
+    const parsed = GetDecisionImpactsQueryParams.parse({
+      ...req.query,
+      includeUnpublished: req.query.includeUnpublished === "true",
+    });
     const conditions = [];
     if (!parsed.includeUnpublished) {
       conditions.push(eq(decisionImpactRecordsTable.workflowStatus, "published"));
@@ -1067,7 +1091,10 @@ router.get("/decision-impacts", async (req, res, next) => {
   }
 });
 
-router.get("/decision-impacts/:recordId/revisions", async (req, res, next) => {
+router.get(
+  "/decision-impacts/:recordId/revisions",
+  requireEditor,
+  async (req, res, next) => {
   try {
     const recordId = parseId(req.params.recordId);
     if (!recordId) {
@@ -1084,33 +1111,13 @@ router.get("/decision-impacts/:recordId/revisions", async (req, res, next) => {
       return;
     }
 
-    let revisions = await db
+    const revisions = await db
       .select()
       .from(decisionImpactRevisionsTable)
       .where(
         eq(decisionImpactRevisionsTable.decisionImpactRecordId, recordId),
       )
       .orderBy(desc(decisionImpactRevisionsTable.revisionNumber));
-    if (revisions.length === 0) {
-      await db
-        .insert(decisionImpactRevisionsTable)
-        .values({
-          decisionImpactRecordId: record.id,
-          revisionNumber: 1,
-          changeNote:
-            "Revision history begins here; earlier changes were not recorded.",
-          changedBy: "Editorial desk",
-          snapshot: serializeDecisionImpact(record),
-        })
-        .onConflictDoNothing();
-      revisions = await db
-        .select()
-        .from(decisionImpactRevisionsTable)
-        .where(
-          eq(decisionImpactRevisionsTable.decisionImpactRecordId, recordId),
-        )
-        .orderBy(desc(decisionImpactRevisionsTable.revisionNumber));
-    }
     res.json(
       GetDecisionImpactRevisionsResponse.parse(
         revisions.map((revision) => ({
@@ -1118,7 +1125,10 @@ router.get("/decision-impacts/:recordId/revisions", async (req, res, next) => {
           decisionImpactRecordId: revision.decisionImpactRecordId,
           revisionNumber: revision.revisionNumber,
           changeNote: revision.changeNote,
-          changedBy: revision.changedBy,
+          changedBy: revision.changedById
+            ? revision.changedBy
+            : "Legacy change — editor not recorded",
+          changedById: revision.changedById,
           snapshot: revision.snapshot,
           createdAt: revision.createdAt.toISOString(),
         })),
@@ -1129,7 +1139,7 @@ router.get("/decision-impacts/:recordId/revisions", async (req, res, next) => {
   }
 });
 
-router.post("/decision-impacts", async (req, res, next) => {
+router.post("/decision-impacts", requireEditor, async (req, res, next) => {
   try {
     const input = CreateDecisionImpactBody.parse(req.body);
     const workflowStatus = input.workflowStatus ?? "draft";
@@ -1176,6 +1186,8 @@ router.post("/decision-impacts", async (req, res, next) => {
         tx,
         savedRecord,
         decisionImpactChangeNote(null, savedRecord, input.revisionNote),
+        req.editorIdentity!.id,
+        req.editorIdentity!.displayName,
       );
       return savedRecord;
     });
@@ -1185,7 +1197,10 @@ router.post("/decision-impacts", async (req, res, next) => {
   }
 });
 
-router.put("/decision-impacts/:recordId", async (req, res, next) => {
+router.put(
+  "/decision-impacts/:recordId",
+  requireEditor,
+  async (req, res, next) => {
   try {
     const recordId = parseId(req.params.recordId);
     if (!recordId) {
@@ -1292,6 +1307,8 @@ router.put("/decision-impacts/:recordId", async (req, res, next) => {
           recordWithSlug,
           input.revisionNote,
         ),
+        req.editorIdentity!.id,
+        req.editorIdentity!.displayName,
       );
       return recordWithSlug;
     });

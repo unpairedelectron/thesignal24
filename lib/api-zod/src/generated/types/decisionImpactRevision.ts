@@ -13,6 +13,8 @@ export interface DecisionImpactRevision {
   revisionNumber: number;
   changeNote: string;
   changedBy: string;
+  /** @nullable */
+  changedById: string | null;
   snapshot: DecisionImpactRevisionSnapshot;
   createdAt: Date;
 }

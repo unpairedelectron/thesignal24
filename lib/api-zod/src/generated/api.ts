@@ -354,6 +354,14 @@ export const GetEditorialIssueResponse = zod.object({
 
 
 /**
+ * @summary Get the signed-in editor identity
+ */
+export const GetEditorSessionResponse = zod.object({
+  "displayName": zod.string()
+})
+
+
+/**
  * @summary Browse the reservation archive
  */
 export const getArchiveQueryLimitDefault = 50;
@@ -498,7 +506,7 @@ export const GetPolicyResponse = zod.object({
 
 
 /**
- * Returns published evidence by default. The editorial desk may request draft and review records with includeUnpublished.
+ * Returns published evidence by default. Only verified editors may request draft and review records with includeUnpublished.
  * @summary Browse source-backed migration and decision-impact evidence
  */
 export const getDecisionImpactsQueryIncludeUnpublishedDefault = false;
@@ -621,6 +629,7 @@ export const GetDecisionImpactRevisionsResponseItem = zod.object({
   "revisionNumber": zod.number().int(),
   "changeNote": zod.string(),
   "changedBy": zod.string(),
+  "changedById": zod.string().nullable(),
   "snapshot": zod.record(zod.string(), zod.unknown()),
   "createdAt": zod.coerce.date()
 })

@@ -178,6 +178,26 @@ paths:
                 $ref: "#/components/schemas/CurrentIssue"
         "404":
           description: No issue exists
+        "401":
+          description: Sign-in required
+        "403":
+          description: Verified editor access required
+  /editor/session:
+    get:
+      operationId: getEditorSession
+      tags: [publication]
+      summary: Get the signed-in editor identity
+      responses:
+        "200":
+          description: Verified editor identity
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EditorSession"
+        "401":
+          description: Sign-in required
+        "403":
+          description: Verified editor access required
   /archive:
     get:
       operationId: getArchive
@@ -297,7 +317,7 @@ paths:
       operationId: getDecisionImpacts
       tags: [publication]
       summary: Browse source-backed migration and decision-impact evidence
-      description: Returns published evidence by default. The editorial desk may request draft and review records with includeUnpublished.
+      description: Returns published evidence by default. Only verified editors may request draft and review records with includeUnpublished.
       parameters:
         - name: evidenceType
           in: query
@@ -335,6 +355,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/DecisionImpactListResult"
+        "401":
+          description: Sign-in required to include unpublished records
+        "403":
+          description: Verified editor access required to include unpublished records
     post:
       operationId: createDecisionImpact
       tags: [publication]
@@ -352,6 +376,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/DecisionImpactRecord"
+        "401":
+          description: Sign-in required
+        "403":
+          description: Verified editor access required
   /decision-impacts/{recordId}/revisions:
     get:
       operationId: getDecisionImpactRevisions
@@ -366,6 +394,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/DecisionImpactRevisions"
+        "401":
+          description: Sign-in required
+        "403":
+          description: Verified editor access required
         "404":
           description: Decision-impact record not found
   /decision-impacts/{recordId}:
@@ -390,6 +422,10 @@ paths:
                 $ref: "#/components/schemas/DecisionImpactRecord"
         "404":
           description: Evidence record not found
+        "401":
+          description: Sign-in required
+        "403":
+          description: Verified editor access required
   /sitemap.xml:
     get:
       operationId: getPublicationSitemap
@@ -420,6 +456,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Issue"
+        "401":
+          description: Sign-in required
+        "403":
+          description: Verified editor access required
   /issues/{issueId}/publish:
     post:
       operationId: publishIssue
@@ -438,6 +478,10 @@ paths:
           description: Issue not found
         "409":
           description: Issue contains records that have not passed editorial review
+        "401":
+          description: Sign-in required
+        "403":
+          description: Verified editor access required
   /stories/{storyId}:
     get:
       operationId: getStory
@@ -454,6 +498,10 @@ paths:
                 $ref: "#/components/schemas/Story"
         "404":
           description: Story not found
+        "401":
+          description: Sign-in required
+        "403":
+          description: Verified editor access required
     put:
       operationId: updateStory
       tags: [publication]
@@ -475,6 +523,10 @@ paths:
                 $ref: "#/components/schemas/Story"
         "404":
           description: Story not found
+        "401":
+          description: Sign-in required
+        "403":
+          description: Verified editor access required
   /stories/{storyId}/revisions:
     get:
       operationId: getStoryRevisions
@@ -509,6 +561,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Story"
+        "401":
+          description: Sign-in required
+        "403":
+          description: Verified editor access required
   /newsletter:
     post:
       operationId: subscribeToNewsletter
@@ -1074,13 +1130,21 @@ components:
           type: string
         changedBy:
           type: string
+        changedById:
+          type: ["string", "null"]
         snapshot:
           type: object
           additionalProperties: true
         createdAt:
           type: string
           format: date-time
-      required: [id, decisionImpactRecordId, revisionNumber, changeNote, changedBy, snapshot, createdAt]
+      required: [id, decisionImpactRecordId, revisionNumber, changeNote, changedBy, changedById, snapshot, createdAt]
+    EditorSession:
+      type: object
+      properties:
+        displayName:
+          type: string
+      required: [displayName]
     DecisionImpactRevisions:
       type: array
       items:

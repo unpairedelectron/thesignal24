@@ -332,8 +332,14 @@ export interface DecisionImpactRevision {
   revisionNumber: number;
   changeNote: string;
   changedBy: string;
+  /** @nullable */
+  changedById: string | null;
   snapshot: DecisionImpactRevisionSnapshot;
   createdAt: string;
+}
+
+export interface EditorSession {
+  displayName: string;
 }
 
 export type DecisionImpactRevisions = DecisionImpactRevision[];

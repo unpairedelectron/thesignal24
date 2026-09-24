@@ -58,7 +58,8 @@ export const decisionImpactRevisionsTable = pgTable(
       .references(() => decisionImpactRecordsTable.id, { onDelete: "cascade" }),
     revisionNumber: integer("revision_number").notNull(),
     changeNote: text("change_note").notNull(),
-    changedBy: text("changed_by").notNull().default("Editorial desk"),
+    changedBy: text("changed_by").notNull(),
+    changedById: text("changed_by_id"),
     snapshot: jsonb("snapshot")
       .$type<Record<string, unknown>>()
       .notNull(),

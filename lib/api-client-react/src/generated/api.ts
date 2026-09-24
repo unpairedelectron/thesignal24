@@ -33,6 +33,7 @@ import type {
   DecisionImpactListResult,
   DecisionImpactRecord,
   DecisionImpactRevisions,
+  EditorSession,
   GetArchiveParams,
   GetCommunityPostsParams,
   GetDecisionImpactsParams,
@@ -800,6 +801,83 @@ export function useGetEditorialIssue<TData = Awaited<ReturnType<typeof getEditor
 
 
 
+export const getGetEditorSessionUrl = () => {
+
+
+
+
+  return `/api/editor/session`
+}
+
+/**
+ * @summary Get the signed-in editor identity
+ */
+export const getEditorSession = async ( options?: Parameters<typeof customFetch>[1]): Promise<EditorSession> => {
+
+  return customFetch<EditorSession>(getGetEditorSessionUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetEditorSessionQueryKey = () => {
+    return [
+    `/api/editor/session`
+    ] as const;
+    }
+
+
+export const getGetEditorSessionQueryOptions = <TData = Awaited<ReturnType<typeof getEditorSession>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getEditorSession>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetEditorSessionQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getEditorSession>>> = ({ signal }) => getEditorSession({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getEditorSession>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetEditorSessionQueryResult = NonNullable<Awaited<ReturnType<typeof getEditorSession>>>
+export type GetEditorSessionQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get the signed-in editor identity
+ */
+
+export function useGetEditorSession<TData = Awaited<ReturnType<typeof getEditorSession>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getEditorSession>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetEditorSessionQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export const getGetArchiveUrl = (params?: GetArchiveParams,) => {
   const normalizedParams = new URLSearchParams();
 
@@ -1061,7 +1139,7 @@ export const getGetDecisionImpactsUrl = (params?: GetDecisionImpactsParams,) => 
 }
 
 /**
- * Returns published evidence by default. The editorial desk may request draft and review records with includeUnpublished.
+ * Returns published evidence by default. Only verified editors may request draft and review records with includeUnpublished.
  * @summary Browse source-backed migration and decision-impact evidence
  */
 export const getDecisionImpacts = async (params?: GetDecisionImpactsParams, options?: Parameters<typeof customFetch>[1]): Promise<DecisionImpactListResult> => {
@@ -1086,7 +1164,7 @@ export const getGetDecisionImpactsQueryKey = (params?: GetDecisionImpactsParams,
     }
 
 
-export const getGetDecisionImpactsQueryOptions = <TData = Awaited<ReturnType<typeof getDecisionImpacts>>, TError = ErrorType<unknown>>(params?: GetDecisionImpactsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDecisionImpacts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetDecisionImpactsQueryOptions = <TData = Awaited<ReturnType<typeof getDecisionImpacts>>, TError = ErrorType<void>>(params?: GetDecisionImpactsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDecisionImpacts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -1105,14 +1183,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetDecisionImpactsQueryResult = NonNullable<Awaited<ReturnType<typeof getDecisionImpacts>>>
-export type GetDecisionImpactsQueryError = ErrorType<unknown>
+export type GetDecisionImpactsQueryError = ErrorType<void>
 
 
 /**
  * @summary Browse source-backed migration and decision-impact evidence
  */
 
-export function useGetDecisionImpacts<TData = Awaited<ReturnType<typeof getDecisionImpacts>>, TError = ErrorType<unknown>>(
+export function useGetDecisionImpacts<TData = Awaited<ReturnType<typeof getDecisionImpacts>>, TError = ErrorType<void>>(
  params?: GetDecisionImpactsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDecisionImpacts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -1172,7 +1250,7 @@ return customFetch<DecisionImpactRecord>(getCreateDecisionImpactUrl(),
 
 export const getCreateDecisionImpactMutationKey = () => ['createDecisionImpact'] as const;
 
-export const getCreateDecisionImpactMutationOptions = <TError = ErrorType<unknown>,
+export const getCreateDecisionImpactMutationOptions = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createDecisionImpact>>, TError,CreateDecisionImpactMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof createDecisionImpact>>, TError,CreateDecisionImpactMutationVariables, TContext> => {
 
@@ -1201,13 +1279,13 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type CreateDecisionImpactMutationResult = NonNullable<Awaited<ReturnType<typeof createDecisionImpact>>>
     export type CreateDecisionImpactMutationBody = BodyType<DecisionImpactInput>
-    export type CreateDecisionImpactMutationError = ErrorType<unknown>
+    export type CreateDecisionImpactMutationError = ErrorType<void>
     export type CreateDecisionImpactMutationVariables = {data: BodyType<DecisionImpactInput>}
 
     /**
  * @summary Create a migration or decision-impact evidence record
  */
-export const useCreateDecisionImpact = <TError = ErrorType<unknown>,
+export const useCreateDecisionImpact = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createDecisionImpact>>, TError,CreateDecisionImpactMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof createDecisionImpact>>,
@@ -1503,7 +1581,7 @@ return customFetch<Issue>(getCreateIssueUrl(),
 
 export const getCreateIssueMutationKey = () => ['createIssue'] as const;
 
-export const getCreateIssueMutationOptions = <TError = ErrorType<unknown>,
+export const getCreateIssueMutationOptions = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createIssue>>, TError,CreateIssueMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof createIssue>>, TError,CreateIssueMutationVariables, TContext> => {
 
@@ -1532,13 +1610,13 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type CreateIssueMutationResult = NonNullable<Awaited<ReturnType<typeof createIssue>>>
     export type CreateIssueMutationBody = BodyType<IssueInput>
-    export type CreateIssueMutationError = ErrorType<unknown>
+    export type CreateIssueMutationError = ErrorType<void>
     export type CreateIssueMutationVariables = {data: BodyType<IssueInput>}
 
     /**
  * @summary Create a daily issue
  */
-export const useCreateIssue = <TError = ErrorType<unknown>,
+export const useCreateIssue = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createIssue>>, TError,CreateIssueMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof createIssue>>,
@@ -1908,7 +1986,7 @@ return customFetch<Story>(getCreateStoryUrl(),
 
 export const getCreateStoryMutationKey = () => ['createStory'] as const;
 
-export const getCreateStoryMutationOptions = <TError = ErrorType<unknown>,
+export const getCreateStoryMutationOptions = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createStory>>, TError,CreateStoryMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof createStory>>, TError,CreateStoryMutationVariables, TContext> => {
 
@@ -1937,13 +2015,13 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type CreateStoryMutationResult = NonNullable<Awaited<ReturnType<typeof createStory>>>
     export type CreateStoryMutationBody = BodyType<StoryInput>
-    export type CreateStoryMutationError = ErrorType<unknown>
+    export type CreateStoryMutationError = ErrorType<void>
     export type CreateStoryMutationVariables = {data: BodyType<StoryInput>}
 
     /**
  * @summary Add a story to an issue
  */
-export const useCreateStory = <TError = ErrorType<unknown>,
+export const useCreateStory = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createStory>>, TError,CreateStoryMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof createStory>>,

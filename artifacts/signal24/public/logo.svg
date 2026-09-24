@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 48" role="img" aria-label="The Signal 24">
+  <rect width="48" height="48" rx="12" fill="#19243a"/>
+  <path d="M11 24h7l4-9 7 18 4-9h4" fill="none" stroke="#f1eee4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"/>
+  <circle cx="37" cy="24" r="2" fill="#d73524"/>
+  <text x="60" y="31" fill="#19243a" font-family="DM Sans, sans-serif" font-size="21" font-weight="700">THE SIGNAL 24</text>
+</svg>

@@ -26,6 +26,7 @@ export * from './decisionImpactRevision';
 export * from './decisionImpactRevisions';
 export * from './decisionImpactRevisionSnapshot';
 export * from './decisionImpactWorkflowStatus';
+export * from './editorSession';
 export * from './getArchiveParams';
 export * from './getCommunityPostsParams';
 export * from './getCommunityPostsSort';
