@@ -2,6 +2,8 @@ import { createInsertSchema } from "drizzle-zod";
 import {
   date,
   doublePrecision,
+  integer,
+  jsonb,
   pgTable,
   serial,
   text,
@@ -47,6 +49,30 @@ export const decisionImpactRecordsTable = pgTable(
   }),
 );
 
+export const decisionImpactRevisionsTable = pgTable(
+  "decision_impact_revisions",
+  {
+    id: serial("id").primaryKey(),
+    decisionImpactRecordId: integer("decision_impact_record_id")
+      .notNull()
+      .references(() => decisionImpactRecordsTable.id, { onDelete: "cascade" }),
+    revisionNumber: integer("revision_number").notNull(),
+    changeNote: text("change_note").notNull(),
+    changedBy: text("changed_by").notNull().default("Editorial desk"),
+    snapshot: jsonb("snapshot")
+      .$type<Record<string, unknown>>()
+      .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => ({
+    recordRevisionIndex: uniqueIndex(
+      "decision_impact_revisions_record_revision_idx",
+    ).on(table.decisionImpactRecordId, table.revisionNumber),
+  }),
+);
+
 export const insertDecisionImpactRecordSchema = createInsertSchema(
   decisionImpactRecordsTable,
 ).omit({
@@ -55,8 +81,20 @@ export const insertDecisionImpactRecordSchema = createInsertSchema(
   updatedAt: true,
 });
 
+export const insertDecisionImpactRevisionSchema = createInsertSchema(
+  decisionImpactRevisionsTable,
+).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type DecisionImpactRecord =
   typeof decisionImpactRecordsTable.$inferSelect;
 export type InsertDecisionImpactRecord = z.infer<
   typeof insertDecisionImpactRecordSchema
+>;
+export type DecisionImpactRevision =
+  typeof decisionImpactRevisionsTable.$inferSelect;
+export type InsertDecisionImpactRevision = z.infer<
+  typeof insertDecisionImpactRevisionSchema
 >;

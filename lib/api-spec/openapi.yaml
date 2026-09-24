@@ -352,6 +352,22 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/DecisionImpactRecord"
+  /decision-impacts/{recordId}/revisions:
+    get:
+      operationId: getDecisionImpactRevisions
+      tags: [publication]
+      summary: Get the editorial revision history for a decision-impact record
+      parameters:
+        - $ref: "#/components/parameters/DecisionImpactId"
+      responses:
+        "200":
+          description: Decision-impact revision history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DecisionImpactRevisions"
+        "404":
+          description: Decision-impact record not found
   /decision-impacts/{recordId}:
     put:
       operationId: updateDecisionImpact
@@ -1045,6 +1061,30 @@ components:
           items:
             type: string
       required: [records, evidenceTypes, decisionAreas, geographies]
+    DecisionImpactRevision:
+      type: object
+      properties:
+        id:
+          type: integer
+        decisionImpactRecordId:
+          type: integer
+        revisionNumber:
+          type: integer
+        changeNote:
+          type: string
+        changedBy:
+          type: string
+        snapshot:
+          type: object
+          additionalProperties: true
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, decisionImpactRecordId, revisionNumber, changeNote, changedBy, snapshot, createdAt]
+    DecisionImpactRevisions:
+      type: array
+      items:
+        $ref: "#/components/schemas/DecisionImpactRevision"
     LiveUpdate:
       type: object
       properties:

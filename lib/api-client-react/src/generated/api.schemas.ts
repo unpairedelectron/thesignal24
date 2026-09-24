@@ -324,6 +324,20 @@ export interface DecisionImpactListResult {
   geographies: string[];
 }
 
+export type DecisionImpactRevisionSnapshot = { [key: string]: unknown };
+
+export interface DecisionImpactRevision {
+  id: number;
+  decisionImpactRecordId: number;
+  revisionNumber: number;
+  changeNote: string;
+  changedBy: string;
+  snapshot: DecisionImpactRevisionSnapshot;
+  createdAt: string;
+}
+
+export type DecisionImpactRevisions = DecisionImpactRevision[];
+
 export type LiveUpdateTopic = typeof LiveUpdateTopic[keyof typeof LiveUpdateTopic];
 
 

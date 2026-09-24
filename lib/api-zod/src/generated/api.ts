@@ -609,6 +609,25 @@ export const CreateDecisionImpactResponse = zod.object({
 
 
 /**
+ * @summary Get the editorial revision history for a decision-impact record
+ */
+export const GetDecisionImpactRevisionsParams = zod.object({
+  "recordId": zod.coerce.number().int()
+})
+
+export const GetDecisionImpactRevisionsResponseItem = zod.object({
+  "id": zod.number().int(),
+  "decisionImpactRecordId": zod.number().int(),
+  "revisionNumber": zod.number().int(),
+  "changeNote": zod.string(),
+  "changedBy": zod.string(),
+  "snapshot": zod.record(zod.string(), zod.unknown()),
+  "createdAt": zod.coerce.date()
+})
+export const GetDecisionImpactRevisionsResponse = zod.array(GetDecisionImpactRevisionsResponseItem)
+
+
+/**
  * @summary Update a migration or decision-impact evidence record
  */
 export const UpdateDecisionImpactParams = zod.object({

@@ -3,6 +3,7 @@ import { and, asc, desc, eq, gte, inArray, like, lte, or } from "drizzle-orm";
 import {
   db,
   decisionImpactRecordsTable,
+  decisionImpactRevisionsTable,
   issuesTable,
   policyRecordsTable,
   policySourcesTable,
@@ -15,6 +16,7 @@ import {
   CreateStoryBody,
   GetDecisionImpactsQueryParams,
   GetDecisionImpactsResponse,
+  GetDecisionImpactRevisionsResponse,
   GetPoliciesQueryParams,
   GetPoliciesResponse,
   GetPolicyParams,
@@ -822,6 +824,67 @@ function decisionImpactSlug(title: string, id: number) {
   return `${slugify(title) || "decision-impact"}-${id}`;
 }
 
+type DecisionImpactTransaction = Parameters<
+  Parameters<typeof db.transaction>[0]
+>[0];
+
+function decisionImpactChangeNote(
+  existing: typeof decisionImpactRecordsTable.$inferSelect | null,
+  current: typeof decisionImpactRecordsTable.$inferSelect,
+  suppliedNote?: string | null,
+) {
+  const transitions: string[] = [];
+  if (!existing) {
+    transitions.push(
+      `Created as ${current.workflowStatus}; verification ${current.verificationStatus}`,
+    );
+  } else {
+    if (existing.workflowStatus !== current.workflowStatus) {
+      transitions.push(
+        `Publication status changed from ${existing.workflowStatus} to ${current.workflowStatus}`,
+      );
+    }
+    if (existing.verificationStatus !== current.verificationStatus) {
+      transitions.push(
+        `Verification changed from ${existing.verificationStatus} to ${current.verificationStatus}`,
+      );
+    }
+  }
+  return [
+    suppliedNote?.trim(),
+    ...transitions,
+  ]
+    .filter(Boolean)
+    .join(" · ") || "Updated decision-impact record";
+}
+
+async function recordDecisionImpactRevision(
+  tx: DecisionImpactTransaction,
+  record: typeof decisionImpactRecordsTable.$inferSelect,
+  changeNote: string,
+) {
+  const [latest] = await tx
+    .select({
+      revisionNumber: decisionImpactRevisionsTable.revisionNumber,
+    })
+    .from(decisionImpactRevisionsTable)
+    .where(
+      eq(
+        decisionImpactRevisionsTable.decisionImpactRecordId,
+        record.id,
+      ),
+    )
+    .orderBy(desc(decisionImpactRevisionsTable.revisionNumber))
+    .limit(1);
+  await tx.insert(decisionImpactRevisionsTable).values({
+    decisionImpactRecordId: record.id,
+    revisionNumber: (latest?.revisionNumber ?? 0) + 1,
+    changeNote,
+    changedBy: "Editorial desk",
+    snapshot: serializeDecisionImpact(record),
+  });
+}
+
 router.get("/policies", async (req, res, next) => {
   try {
     const parsed = GetPoliciesQueryParams.parse({
@@ -1004,6 +1067,68 @@ router.get("/decision-impacts", async (req, res, next) => {
   }
 });
 
+router.get("/decision-impacts/:recordId/revisions", async (req, res, next) => {
+  try {
+    const recordId = parseId(req.params.recordId);
+    if (!recordId) {
+      res.status(400).json({ message: "Invalid decision-impact record id" });
+      return;
+    }
+    const [record] = await db
+      .select()
+      .from(decisionImpactRecordsTable)
+      .where(eq(decisionImpactRecordsTable.id, recordId))
+      .limit(1);
+    if (!record) {
+      res.status(404).json({ message: "Decision-impact record not found" });
+      return;
+    }
+
+    let revisions = await db
+      .select()
+      .from(decisionImpactRevisionsTable)
+      .where(
+        eq(decisionImpactRevisionsTable.decisionImpactRecordId, recordId),
+      )
+      .orderBy(desc(decisionImpactRevisionsTable.revisionNumber));
+    if (revisions.length === 0) {
+      await db
+        .insert(decisionImpactRevisionsTable)
+        .values({
+          decisionImpactRecordId: record.id,
+          revisionNumber: 1,
+          changeNote:
+            "Revision history begins here; earlier changes were not recorded.",
+          changedBy: "Editorial desk",
+          snapshot: serializeDecisionImpact(record),
+        })
+        .onConflictDoNothing();
+      revisions = await db
+        .select()
+        .from(decisionImpactRevisionsTable)
+        .where(
+          eq(decisionImpactRevisionsTable.decisionImpactRecordId, recordId),
+        )
+        .orderBy(desc(decisionImpactRevisionsTable.revisionNumber));
+    }
+    res.json(
+      GetDecisionImpactRevisionsResponse.parse(
+        revisions.map((revision) => ({
+          id: revision.id,
+          decisionImpactRecordId: revision.decisionImpactRecordId,
+          revisionNumber: revision.revisionNumber,
+          changeNote: revision.changeNote,
+          changedBy: revision.changedBy,
+          snapshot: revision.snapshot,
+          createdAt: revision.createdAt.toISOString(),
+        })),
+      ),
+    );
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.post("/decision-impacts", async (req, res, next) => {
   try {
     const input = CreateDecisionImpactBody.parse(req.body);
@@ -1014,38 +1139,46 @@ router.post("/decision-impacts", async (req, res, next) => {
       });
       return;
     }
-    const [record] = await db
-      .insert(decisionImpactRecordsTable)
-      .values({
-        slug: slugify(input.title) || "decision-impact",
-        evidenceType: input.evidenceType,
-        decisionArea: input.decisionArea,
-        title: input.title,
-        summary: input.summary,
-        geography: input.geography,
-        observedOn: dateOnly(input.observedOn)!,
-        definition: input.definition,
-        findingValue: input.findingValue ?? null,
-        findingUnit: input.findingUnit ?? null,
-        denominator: input.denominator ?? null,
-        source: input.source,
-        sourceUrl: input.sourceUrl,
-        sourcePublishedOn: dateOnly(input.sourcePublishedOn),
-        sourceRetrievedOn: dateOnly(input.sourceRetrievedOn)!,
-        verificationStatus: input.verificationStatus ?? "unverified",
-        verificationNotes: input.verificationNotes ?? null,
-        workflowStatus,
-        reviewedAt: workflowStatus === "review" ? new Date() : null,
-        lastVerifiedAt:
-          input.verificationStatus === "verified" ? new Date() : null,
-        publishedOn: null,
-      })
-      .returning();
-    const [withSlug] = await db
-      .update(decisionImpactRecordsTable)
-      .set({ slug: decisionImpactSlug(record.title, record.id) })
-      .where(eq(decisionImpactRecordsTable.id, record.id))
-      .returning();
+    const withSlug = await db.transaction(async (tx) => {
+      const [record] = await tx
+        .insert(decisionImpactRecordsTable)
+        .values({
+          slug: slugify(input.title) || "decision-impact",
+          evidenceType: input.evidenceType,
+          decisionArea: input.decisionArea,
+          title: input.title,
+          summary: input.summary,
+          geography: input.geography,
+          observedOn: dateOnly(input.observedOn)!,
+          definition: input.definition,
+          findingValue: input.findingValue ?? null,
+          findingUnit: input.findingUnit ?? null,
+          denominator: input.denominator ?? null,
+          source: input.source,
+          sourceUrl: input.sourceUrl,
+          sourcePublishedOn: dateOnly(input.sourcePublishedOn),
+          sourceRetrievedOn: dateOnly(input.sourceRetrievedOn)!,
+          verificationStatus: input.verificationStatus ?? "unverified",
+          verificationNotes: input.verificationNotes ?? null,
+          workflowStatus,
+          reviewedAt: workflowStatus === "review" ? new Date() : null,
+          lastVerifiedAt:
+            input.verificationStatus === "verified" ? new Date() : null,
+          publishedOn: null,
+        })
+        .returning();
+      const [savedRecord] = await tx
+        .update(decisionImpactRecordsTable)
+        .set({ slug: decisionImpactSlug(record.title, record.id) })
+        .where(eq(decisionImpactRecordsTable.id, record.id))
+        .returning();
+      await recordDecisionImpactRevision(
+        tx,
+        savedRecord,
+        decisionImpactChangeNote(null, savedRecord, input.revisionNote),
+      );
+      return savedRecord;
+    });
     res.status(201).json(serializeDecisionImpact(withSlug));
   } catch (error) {
     next(error);
@@ -1080,66 +1213,92 @@ router.put("/decision-impacts/:recordId", async (req, res, next) => {
       });
       return;
     }
-    const verificationStatus =
-      input.verificationStatus ?? existing.verificationStatus;
-    const [record] = await db
-      .update(decisionImpactRecordsTable)
-      .set({
-        evidenceType: input.evidenceType,
-        decisionArea: input.decisionArea,
-        title: input.title,
-        summary: input.summary,
-        geography: input.geography,
-        observedOn: dateOnly(input.observedOn)!,
-        definition: input.definition,
-        findingValue:
-          input.findingValue === undefined
-            ? existing.findingValue
-            : input.findingValue,
-        findingUnit:
-          input.findingUnit === undefined
-            ? existing.findingUnit
-            : input.findingUnit,
-        denominator:
-          input.denominator === undefined
-            ? existing.denominator
-            : input.denominator,
-        source: input.source,
-        sourceUrl: input.sourceUrl,
-        sourcePublishedOn:
-          input.sourcePublishedOn === undefined
-            ? existing.sourcePublishedOn
-            : dateOnly(input.sourcePublishedOn),
-        sourceRetrievedOn: dateOnly(input.sourceRetrievedOn)!,
-        verificationStatus,
-        verificationNotes:
-          input.verificationNotes === undefined
-            ? existing.verificationNotes
-            : input.verificationNotes,
-        workflowStatus,
-        reviewedAt:
-          workflowStatus === "review"
-            ? existing.reviewedAt ?? new Date()
-            : existing.reviewedAt,
-        lastVerifiedAt:
-          verificationStatus === "verified"
-            ? existing.lastVerifiedAt ?? new Date()
-            : verificationStatus === "unverified"
-              ? null
-              : existing.lastVerifiedAt,
-        publishedOn:
-          workflowStatus === "published"
-            ? existing.publishedOn ?? new Date().toISOString().slice(0, 10)
-            : existing.publishedOn,
-        updatedAt: new Date(),
-      })
-      .where(eq(decisionImpactRecordsTable.id, recordId))
-      .returning();
-    const [withSlug] = await db
-      .update(decisionImpactRecordsTable)
-      .set({ slug: decisionImpactSlug(record.title, record.id) })
-      .where(eq(decisionImpactRecordsTable.id, record.id))
-      .returning();
+    const withSlug = await db.transaction(async (tx) => {
+      const [lockedExisting] = await tx
+        .select()
+        .from(decisionImpactRecordsTable)
+        .where(eq(decisionImpactRecordsTable.id, recordId))
+        .for("update");
+      if (!lockedExisting) {
+        return null;
+      }
+      const currentWorkflowStatus =
+        input.workflowStatus ?? lockedExisting.workflowStatus;
+      const currentVerificationStatus =
+        input.verificationStatus ?? lockedExisting.verificationStatus;
+      const [savedRecord] = await tx
+        .update(decisionImpactRecordsTable)
+        .set({
+          evidenceType: input.evidenceType,
+          decisionArea: input.decisionArea,
+          title: input.title,
+          summary: input.summary,
+          geography: input.geography,
+          observedOn: dateOnly(input.observedOn)!,
+          definition: input.definition,
+          findingValue:
+            input.findingValue === undefined
+              ? lockedExisting.findingValue
+              : input.findingValue,
+          findingUnit:
+            input.findingUnit === undefined
+              ? lockedExisting.findingUnit
+              : input.findingUnit,
+          denominator:
+            input.denominator === undefined
+              ? lockedExisting.denominator
+              : input.denominator,
+          source: input.source,
+          sourceUrl: input.sourceUrl,
+          sourcePublishedOn:
+            input.sourcePublishedOn === undefined
+              ? lockedExisting.sourcePublishedOn
+              : dateOnly(input.sourcePublishedOn),
+          sourceRetrievedOn: dateOnly(input.sourceRetrievedOn)!,
+          verificationStatus: currentVerificationStatus,
+          verificationNotes:
+            input.verificationNotes === undefined
+              ? lockedExisting.verificationNotes
+              : input.verificationNotes,
+          workflowStatus: currentWorkflowStatus,
+          reviewedAt:
+            currentWorkflowStatus === "review"
+              ? lockedExisting.reviewedAt ?? new Date()
+              : lockedExisting.reviewedAt,
+          lastVerifiedAt:
+            currentVerificationStatus === "verified"
+              ? lockedExisting.lastVerifiedAt ?? new Date()
+              : currentVerificationStatus === "unverified"
+                ? null
+                : lockedExisting.lastVerifiedAt,
+          publishedOn:
+            currentWorkflowStatus === "published"
+              ? lockedExisting.publishedOn ?? new Date().toISOString().slice(0, 10)
+              : lockedExisting.publishedOn,
+          updatedAt: new Date(),
+        })
+        .where(eq(decisionImpactRecordsTable.id, recordId))
+        .returning();
+      const [recordWithSlug] = await tx
+        .update(decisionImpactRecordsTable)
+        .set({ slug: decisionImpactSlug(savedRecord.title, savedRecord.id) })
+        .where(eq(decisionImpactRecordsTable.id, savedRecord.id))
+        .returning();
+      await recordDecisionImpactRevision(
+        tx,
+        recordWithSlug,
+        decisionImpactChangeNote(
+          lockedExisting,
+          recordWithSlug,
+          input.revisionNote,
+        ),
+      );
+      return recordWithSlug;
+    });
+    if (!withSlug) {
+      res.status(404).json({ message: "Decision-impact record not found" });
+      return;
+    }
     res.json(serializeDecisionImpact(withSlug));
   } catch (error) {
     next(error);

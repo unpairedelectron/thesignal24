@@ -32,6 +32,7 @@ import type {
   DecisionImpactInput,
   DecisionImpactListResult,
   DecisionImpactRecord,
+  DecisionImpactRevisions,
   GetArchiveParams,
   GetCommunityPostsParams,
   GetDecisionImpactsParams,
@@ -1216,6 +1217,83 @@ export const useCreateDecisionImpact = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getCreateDecisionImpactMutationOptions(options));
     }
+
+export const getGetDecisionImpactRevisionsUrl = (recordId: number,) => {
+
+
+
+
+  return `/api/decision-impacts/${recordId}/revisions`
+}
+
+/**
+ * @summary Get the editorial revision history for a decision-impact record
+ */
+export const getDecisionImpactRevisions = async (recordId: number, options?: Parameters<typeof customFetch>[1]): Promise<DecisionImpactRevisions> => {
+
+  return customFetch<DecisionImpactRevisions>(getGetDecisionImpactRevisionsUrl(recordId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetDecisionImpactRevisionsQueryKey = (recordId: number,) => {
+    return [
+    `/api/decision-impacts/${recordId}/revisions`
+    ] as const;
+    }
+
+
+export const getGetDecisionImpactRevisionsQueryOptions = <TData = Awaited<ReturnType<typeof getDecisionImpactRevisions>>, TError = ErrorType<void>>(recordId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDecisionImpactRevisions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetDecisionImpactRevisionsQueryKey(recordId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getDecisionImpactRevisions>>> = ({ signal }) => getDecisionImpactRevisions(recordId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: recordId !== null && recordId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getDecisionImpactRevisions>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetDecisionImpactRevisionsQueryResult = NonNullable<Awaited<ReturnType<typeof getDecisionImpactRevisions>>>
+export type GetDecisionImpactRevisionsQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get the editorial revision history for a decision-impact record
+ */
+
+export function useGetDecisionImpactRevisions<TData = Awaited<ReturnType<typeof getDecisionImpactRevisions>>, TError = ErrorType<void>>(
+ recordId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDecisionImpactRevisions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetDecisionImpactRevisionsQueryOptions(recordId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getUpdateDecisionImpactUrl = (recordId: number,) => {
 

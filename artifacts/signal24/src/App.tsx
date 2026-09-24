@@ -35,6 +35,8 @@ import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import {
   getGetArchiveQueryKey,
+  getGetDecisionImpactRevisionsQueryKey,
+  getGetDecisionImpactRevisionsQueryOptions,
   getGetEditorialIssueQueryKey,
   getGetCurrentIssueQueryKey,
   getGetDecisionImpactsQueryKey,
@@ -49,6 +51,7 @@ import {
   useGetArchive,
   useGetCurrentIssue,
   useGetDecisionImpacts,
+  useGetDecisionImpactRevisions,
   useGetEditorialIssue,
   useGetLiveUpdates,
   useGetPolicies,
@@ -69,7 +72,7 @@ import {
   useCreateDecisionImpact,
   useUpdateDecisionImpact,
 } from '@workspace/api-client-react';
-import type { CommunityPost, CommunityReply, CommunityPostInput, CommunityPostKind, CommunityTopic, DecisionImpactArea, DecisionImpactEvidenceType, DecisionImpactInput, DecisionImpactRecord, DecisionImpactWorkflowStatus, GetCommunityPostsParams, GetCommunityPostsSort, GetPoliciesParams, Issue, IssueInput, LiveUpdate, PolicyRecord, PolicySource, Story, StoryInput, StoryKind, StoryWorkflowStatus, Topic, VerificationStatus } from '@workspace/api-client-react';
+import type { CommunityPost, CommunityReply, CommunityPostInput, CommunityPostKind, CommunityTopic, DecisionImpactArea, DecisionImpactEvidenceType, DecisionImpactInput, DecisionImpactRecord, DecisionImpactRevision, DecisionImpactWorkflowStatus, GetCommunityPostsParams, GetCommunityPostsSort, GetPoliciesParams, Issue, IssueInput, LiveUpdate, PolicyRecord, PolicySource, Story, StoryInput, StoryKind, StoryWorkflowStatus, Topic, VerificationStatus } from '@workspace/api-client-react';
 import NotFound from '@/pages/not-found';
 
 const queryClient = new QueryClient();
@@ -414,7 +417,12 @@ function DecisionEvidenceSection({ records, isLoading, isError }: { records: Dec
       </dl>
       <p className="mt-4 border-l-2 border-accent pl-3 text-sm leading-relaxed"><span className="signal-kicker text-accent">What this record means</span><span className="mt-1 block text-muted-foreground">{type === 'lived-account' ? 'Context from an account, not a prevalence estimate.' : type === 'monitored-lead' ? 'A source to check, not a published finding.' : record.definition}</span></p>
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-foreground/15 pt-4"><p className="signal-kicker text-muted-foreground">{record.source} · retrieved {formatDate(record.sourceRetrievedOn)}</p><a href={record.sourceUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 signal-kicker text-accent hover:underline" data-testid={`link-decision-evidence-source-${record.id}`}>Open source <ExternalLink size={12} /></a></div>
-      {record.verificationNotes && <p className="mt-3 text-xs leading-relaxed text-muted-foreground">Verification context / {record.verificationNotes}</p>}
+      <div className="mt-3 border-t border-foreground/10 pt-3 text-xs leading-relaxed text-muted-foreground">
+        {record.verificationNotes && <p>Verification context / {record.verificationNotes}</p>}
+        {record.lastVerifiedAt && <p className="mt-1">Last verified / {formatDate(record.lastVerifiedAt)}</p>}
+        {record.reviewedAt && <p className="mt-1">Editorial review / {formatDate(record.reviewedAt)}</p>}
+        {record.publishedOn && <p className="mt-1">Published / {formatDate(record.publishedOn)}</p>}
+      </div>
     </article>;
   };
   return <section id="decision-evidence" className="signal-container pt-24 sm:pt-36">
@@ -821,6 +829,76 @@ function RevisionHistory({ storyId }: { storyId?: number }) {
 
 type DecisionImpactDraft = DecisionImpactInput & { id?: number };
 
+function DecisionImpactRevisionHistory({ recordId }: { recordId: number }) {
+  const { data, isLoading, isError } = useGetDecisionImpactRevisions(recordId, {
+    query: {
+      ...getGetDecisionImpactRevisionsQueryOptions(recordId),
+      enabled: Boolean(recordId),
+    },
+  });
+
+  if (isLoading) {
+    return <p className="mt-3 text-sm text-muted-foreground">Loading saved revisions…</p>;
+  }
+  if (isError) {
+    return <p className="mt-3 text-sm text-accent" role="alert">The revision history could not be loaded.</p>;
+  }
+  if (!data?.length) {
+    return <p className="mt-3 text-sm text-muted-foreground">No revisions recorded yet.</p>;
+  }
+
+  return <div className="mt-3 space-y-3">
+    {data.map((revision: DecisionImpactRevision) => {
+      const snapshot = revision.snapshot;
+      const snapshotTitle = typeof snapshot.title === 'string' ? snapshot.title : 'Untitled revision';
+      return <details key={revision.id} className="border-l border-foreground/20 pl-3" data-testid={`decision-impact-revision-${revision.revisionNumber}`}>
+        <summary className="cursor-pointer text-sm">
+          <span className="font-medium">Revision {revision.revisionNumber} / {snapshotTitle}</span>
+          <span className="ml-2 text-xs text-muted-foreground">{formatDate(revision.createdAt)}</span>
+        </summary>
+        <p className="mt-2 text-sm text-muted-foreground">{revision.changeNote}</p>
+        <p className="mt-1 signal-kicker text-muted-foreground">Recorded by {revision.changedBy}</p>
+        <pre className="mt-3 max-h-72 overflow-auto whitespace-pre-wrap break-words border border-foreground/10 bg-background p-3 text-xs leading-relaxed text-muted-foreground">{JSON.stringify(snapshot, null, 2)}</pre>
+      </details>;
+    })}
+  </div>;
+}
+
+function DecisionImpactDeskRecordRow({
+  record,
+  historyOpen,
+  onToggleHistory,
+  onEdit,
+}: {
+  record: DecisionImpactRecord;
+  historyOpen: boolean;
+  onToggleHistory: () => void;
+  onEdit: () => void;
+}) {
+  return <div className="py-4" data-testid={`row-editor-decision-impact-${record.id}`}>
+    <div className="flex items-start justify-between gap-4">
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="signal-kicker text-accent">{evidenceTypeLabel(record.evidenceType)} / {record.decisionArea}</p>
+          <span className="rounded-full border border-foreground/20 px-2 py-1 signal-kicker text-[9px]">{record.workflowStatus}</span>
+          <span className="signal-kicker text-muted-foreground">{verificationLabel(record.verificationStatus)}</span>
+        </div>
+        <h3 className="mt-1 truncate font-display text-2xl">{record.title}</h3>
+        <p className="mt-1 truncate text-sm text-muted-foreground">{record.geography} · {formatDate(record.observedOn)} · {record.source}</p>
+      </div>
+      <div className="flex shrink-0 flex-wrap items-center justify-end gap-4">
+        <button type="button" onClick={onToggleHistory} aria-expanded={historyOpen} className="inline-flex items-center gap-1 signal-kicker text-muted-foreground hover:text-accent" data-testid={`button-history-decision-impact-${record.id}`}>
+          <ChevronDown size={13} className={historyOpen ? 'rotate-180' : ''} /> History
+        </button>
+        <button type="button" onClick={onEdit} className="inline-flex items-center gap-2 signal-kicker text-muted-foreground hover:text-accent" data-testid={`button-edit-decision-impact-${record.id}`}>
+          <Pencil size={13} /> Edit
+        </button>
+      </div>
+    </div>
+    {historyOpen && <DecisionImpactRevisionHistory recordId={record.id} />}
+  </div>;
+}
+
 function emptyDecisionImpact(): DecisionImpactDraft {
   const today = new Date().toISOString().slice(0, 10);
   return {
@@ -853,6 +931,7 @@ function DecisionImpactDeskPanel() {
   const updateMutation = useUpdateDecisionImpact();
   const [form, setForm] = useState<DecisionImpactDraft | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [historyRecordId, setHistoryRecordId] = useState<number | null>(null);
   const records = data?.records ?? [];
   const setField = (field: keyof DecisionImpactDraft, value: string | number | null) => setForm((current) => current ? { ...current, [field]: value } : current);
   function save(event: FormEvent<HTMLFormElement>) {
@@ -864,6 +943,9 @@ function DecisionImpactDeskPanel() {
       setNotice(form.id ? 'Decision-impact evidence updated.' : 'Decision-impact evidence saved as a draft.');
       void queryClient.invalidateQueries({ queryKey: getGetDecisionImpactsQueryKey(listParams) });
       void queryClient.invalidateQueries({ queryKey: getGetDecisionImpactsQueryKey({ limit: 100 }) });
+      if (form.id) {
+        void queryClient.invalidateQueries({ queryKey: getGetDecisionImpactRevisionsQueryKey(form.id) });
+      }
     };
     const onError = () => setNotice('The evidence record could not be saved. Check the source, dates and required definition.');
     if (form.id) updateMutation.mutate({ recordId: form.id, data: form }, { onSuccess, onError });
@@ -893,7 +975,24 @@ function DecisionImpactDeskPanel() {
       <Field label="Verification context"><textarea value={form.verificationNotes ?? ''} onChange={(event) => setField('verificationNotes', event.target.value)} className="editor-input min-h-20 resize-y" placeholder="What was checked, against which source, and what remains uncertain?" data-testid="textarea-decision-impact-verification-notes" /></Field>
       <Field label="Revision note"><input value={form.revisionNote ?? ''} onChange={(event) => setField('revisionNote', event.target.value)} className="editor-input" placeholder="What changed?" data-testid="input-decision-impact-revision-note" /></Field>
       <div className="flex flex-wrap gap-2"><button type="submit" disabled={createMutation.isPending || updateMutation.isPending} className="rounded-full bg-primary px-5 py-3 signal-kicker text-primary-foreground disabled:opacity-60" data-testid="button-save-decision-impact">{createMutation.isPending || updateMutation.isPending ? 'Saving…' : form.id ? 'Save changes' : 'Save draft'}</button><button type="button" onClick={() => setForm(null)} className="rounded-full border border-foreground/20 px-5 py-3 signal-kicker" data-testid="button-cancel-decision-impact">Cancel</button></div>
-    </form> : <div className="mt-6">{isLoading ? <p className="text-sm text-muted-foreground">Loading evidence records…</p> : isError ? <div className="flex flex-wrap items-center justify-between gap-4 border border-accent/50 p-5"><p className="text-sm text-muted-foreground">The evidence records could not be loaded.</p><button type="button" onClick={() => void refetch()} className="signal-kicker text-accent">Try again</button></div> : records.length === 0 ? <div className="border border-dashed border-foreground/25 p-6"><p className="signal-kicker text-accent">No decision evidence yet</p><p className="mt-3 text-sm leading-relaxed text-muted-foreground">Add a lived account, monitored lead or quantified finding with its source and verification frame.</p></div> : <div className="divide-y divide-foreground/15">{records.map((record) => <div key={record.id} className="flex items-start justify-between gap-4 py-4" data-testid={`row-editor-decision-impact-${record.id}`}><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><p className="signal-kicker text-accent">{evidenceTypeLabel(record.evidenceType)} / {record.decisionArea}</p><span className="rounded-full border border-foreground/20 px-2 py-1 signal-kicker text-[9px]">{record.workflowStatus}</span><span className="signal-kicker text-muted-foreground">{verificationLabel(record.verificationStatus)}</span></div><h3 className="mt-1 truncate font-display text-2xl">{record.title}</h3><p className="mt-1 truncate text-sm text-muted-foreground">{record.geography} · {formatDate(record.observedOn)} · {record.source}</p></div><button type="button" onClick={() => setForm({ ...record, revisionNote: '', observedOn: record.observedOn, sourcePublishedOn: record.sourcePublishedOn, sourceRetrievedOn: record.sourceRetrievedOn, workflowStatus: record.workflowStatus === 'published' ? 'draft' : record.workflowStatus })} className="inline-flex shrink-0 items-center gap-2 signal-kicker text-muted-foreground hover:text-accent" data-testid={`button-edit-decision-impact-${record.id}`}><Pencil size={13} /> Edit</button></div>)}</div>}</div>}
+    </form> : <div className="mt-6">
+      {isLoading ? <p className="text-sm text-muted-foreground">Loading evidence records…</p> : isError ? <div className="flex flex-wrap items-center justify-between gap-4 border border-accent/50 p-5"><p className="text-sm text-muted-foreground">The evidence records could not be loaded.</p><button type="button" onClick={() => void refetch()} className="signal-kicker text-accent">Try again</button></div> : records.length === 0 ? <div className="border border-dashed border-foreground/25 p-6"><p className="signal-kicker text-accent">No decision evidence yet</p><p className="mt-3 text-sm leading-relaxed text-muted-foreground">Add a lived account, monitored lead or quantified finding with its source and verification frame.</p></div> : <div className="divide-y divide-foreground/15">
+        {records.map((record) => <DecisionImpactDeskRecordRow
+          key={record.id}
+          record={record}
+          historyOpen={historyRecordId === record.id}
+          onToggleHistory={() => setHistoryRecordId((current) => current === record.id ? null : record.id)}
+          onEdit={() => setForm({
+            ...record,
+            revisionNote: '',
+            observedOn: record.observedOn,
+            sourcePublishedOn: record.sourcePublishedOn,
+            sourceRetrievedOn: record.sourceRetrievedOn,
+            workflowStatus: record.workflowStatus === 'published' ? 'draft' : record.workflowStatus,
+          })}
+        />)}
+      </div>}
+    </div>}
   </section>;
 }
 
