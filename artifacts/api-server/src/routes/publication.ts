@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { and, asc, desc, eq, gte, inArray, like, lte, or } from "drizzle-orm";
 import {
   db,
+  decisionImpactRecordsTable,
   issuesTable,
   policyRecordsTable,
   policySourcesTable,
@@ -10,13 +11,17 @@ import {
 } from "@workspace/db";
 import {
   CreateIssueBody,
+  CreateDecisionImpactBody,
   CreateStoryBody,
+  GetDecisionImpactsQueryParams,
+  GetDecisionImpactsResponse,
   GetPoliciesQueryParams,
   GetPoliciesResponse,
   GetPolicyParams,
   GetPolicyResponse,
   GetStoryRevisionsResponse,
   UpdateStoryBody,
+  UpdateDecisionImpactBody,
 } from "@workspace/api-zod";
 import { getLiveUpdates } from "../lib/live-feed";
 
@@ -56,6 +61,36 @@ type WorkflowStatus = (typeof workflowStatusList)[number];
 const verificationStatusList = ["unverified", "source-linked", "verified"] as const;
 const verificationStatusValues = new Set(verificationStatusList);
 type VerificationStatus = (typeof verificationStatusList)[number];
+const decisionImpactEvidenceTypeList = [
+  "lived-account",
+  "monitored-lead",
+  "quantified-finding",
+] as const;
+const decisionImpactEvidenceTypeValues = new Set(decisionImpactEvidenceTypeList);
+type DecisionImpactEvidenceType =
+  (typeof decisionImpactEvidenceTypeList)[number];
+const decisionImpactAreaList = [
+  "migration",
+  "study",
+  "work",
+  "applications",
+  "staying",
+  "speaking",
+  "leaving",
+] as const;
+const decisionImpactAreaValues = new Set(decisionImpactAreaList);
+type DecisionImpactArea = (typeof decisionImpactAreaList)[number];
+const decisionImpactWorkflowStatusList = [
+  "draft",
+  "review",
+  "published",
+  "archived",
+] as const;
+const decisionImpactWorkflowStatusValues = new Set(
+  decisionImpactWorkflowStatusList,
+);
+type DecisionImpactWorkflowStatus =
+  (typeof decisionImpactWorkflowStatusList)[number];
 
 function parseId(value: string) {
   const id = Number(value);
@@ -738,6 +773,55 @@ function serializePolicy(
   };
 }
 
+function serializeDecisionImpact(
+  record: typeof decisionImpactRecordsTable.$inferSelect,
+) {
+  return {
+    id: record.id,
+    slug: record.slug,
+    evidenceType: decisionImpactEvidenceTypeValues.has(
+      record.evidenceType as DecisionImpactEvidenceType,
+    )
+      ? (record.evidenceType as DecisionImpactEvidenceType)
+      : "lived-account",
+    decisionArea: decisionImpactAreaValues.has(
+      record.decisionArea as DecisionImpactArea,
+    )
+      ? (record.decisionArea as DecisionImpactArea)
+      : "migration",
+    title: record.title,
+    summary: record.summary,
+    geography: record.geography,
+    observedOn: record.observedOn,
+    definition: record.definition,
+    findingValue: record.findingValue,
+    findingUnit: record.findingUnit,
+    denominator: record.denominator,
+    source: record.source,
+    sourceUrl: record.sourceUrl,
+    sourcePublishedOn: record.sourcePublishedOn,
+    sourceRetrievedOn: record.sourceRetrievedOn,
+    verificationStatus: verificationStatusValues.has(
+      record.verificationStatus as VerificationStatus,
+    )
+      ? (record.verificationStatus as VerificationStatus)
+      : "unverified",
+    verificationNotes: record.verificationNotes,
+    workflowStatus: decisionImpactWorkflowStatusValues.has(
+      record.workflowStatus as DecisionImpactWorkflowStatus,
+    )
+      ? (record.workflowStatus as DecisionImpactWorkflowStatus)
+      : "draft",
+    reviewedAt: record.reviewedAt?.toISOString() ?? null,
+    lastVerifiedAt: record.lastVerifiedAt?.toISOString() ?? null,
+    publishedOn: record.publishedOn,
+  };
+}
+
+function decisionImpactSlug(title: string, id: number) {
+  return `${slugify(title) || "decision-impact"}-${id}`;
+}
+
 router.get("/policies", async (req, res, next) => {
   try {
     const parsed = GetPoliciesQueryParams.parse({
@@ -839,6 +923,224 @@ router.get("/policies/:slug", async (req, res, next) => {
       .where(eq(policySourcesTable.policyRecordId, policy.id))
       .orderBy(desc(policySourcesTable.isPrimary), asc(policySourcesTable.id));
     res.json(GetPolicyResponse.parse(serializePolicy(policy, sources)));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/decision-impacts", async (req, res, next) => {
+  try {
+    const parsed = GetDecisionImpactsQueryParams.parse(req.query);
+    const conditions = [];
+    if (!parsed.includeUnpublished) {
+      conditions.push(eq(decisionImpactRecordsTable.workflowStatus, "published"));
+    }
+    if (parsed.evidenceType) {
+      conditions.push(
+        eq(decisionImpactRecordsTable.evidenceType, parsed.evidenceType),
+      );
+    }
+    if (parsed.decisionArea) {
+      conditions.push(
+        eq(decisionImpactRecordsTable.decisionArea, parsed.decisionArea),
+      );
+    }
+    if (parsed.geography) {
+      conditions.push(
+        eq(decisionImpactRecordsTable.geography, parsed.geography),
+      );
+    }
+    const records = await db
+      .select()
+      .from(decisionImpactRecordsTable)
+      .where(conditions.length ? and(...conditions) : undefined)
+      .orderBy(
+        desc(decisionImpactRecordsTable.observedOn),
+        desc(decisionImpactRecordsTable.updatedAt),
+      )
+      .limit(parsed.limit);
+    const facets = await db
+      .select({
+        evidenceType: decisionImpactRecordsTable.evidenceType,
+        decisionArea: decisionImpactRecordsTable.decisionArea,
+        geography: decisionImpactRecordsTable.geography,
+      })
+      .from(decisionImpactRecordsTable)
+      .where(
+        parsed.includeUnpublished
+          ? undefined
+          : eq(decisionImpactRecordsTable.workflowStatus, "published"),
+      );
+    res.json(
+      GetDecisionImpactsResponse.parse({
+        records: records.map(serializeDecisionImpact),
+        evidenceTypes: [
+          ...new Set(
+            facets
+              .map((facet) => facet.evidenceType)
+              .filter((value): value is DecisionImpactEvidenceType =>
+                decisionImpactEvidenceTypeValues.has(
+                  value as DecisionImpactEvidenceType,
+                ),
+              ),
+          ),
+        ],
+        decisionAreas: [
+          ...new Set(
+            facets
+              .map((facet) => facet.decisionArea)
+              .filter((value): value is DecisionImpactArea =>
+                decisionImpactAreaValues.has(value as DecisionImpactArea),
+              ),
+          ),
+        ],
+        geographies: [
+          ...new Set(facets.map((facet) => facet.geography).filter(Boolean)),
+        ],
+      }),
+    );
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/decision-impacts", async (req, res, next) => {
+  try {
+    const input = CreateDecisionImpactBody.parse(req.body);
+    const workflowStatus = input.workflowStatus ?? "draft";
+    if (!["draft", "review"].includes(workflowStatus)) {
+      res.status(400).json({
+        message: "New evidence records must start as drafts or enter review.",
+      });
+      return;
+    }
+    const [record] = await db
+      .insert(decisionImpactRecordsTable)
+      .values({
+        slug: slugify(input.title) || "decision-impact",
+        evidenceType: input.evidenceType,
+        decisionArea: input.decisionArea,
+        title: input.title,
+        summary: input.summary,
+        geography: input.geography,
+        observedOn: dateOnly(input.observedOn)!,
+        definition: input.definition,
+        findingValue: input.findingValue ?? null,
+        findingUnit: input.findingUnit ?? null,
+        denominator: input.denominator ?? null,
+        source: input.source,
+        sourceUrl: input.sourceUrl,
+        sourcePublishedOn: dateOnly(input.sourcePublishedOn),
+        sourceRetrievedOn: dateOnly(input.sourceRetrievedOn)!,
+        verificationStatus: input.verificationStatus ?? "unverified",
+        verificationNotes: input.verificationNotes ?? null,
+        workflowStatus,
+        reviewedAt: workflowStatus === "review" ? new Date() : null,
+        lastVerifiedAt:
+          input.verificationStatus === "verified" ? new Date() : null,
+        publishedOn: null,
+      })
+      .returning();
+    const [withSlug] = await db
+      .update(decisionImpactRecordsTable)
+      .set({ slug: decisionImpactSlug(record.title, record.id) })
+      .where(eq(decisionImpactRecordsTable.id, record.id))
+      .returning();
+    res.status(201).json(serializeDecisionImpact(withSlug));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.put("/decision-impacts/:recordId", async (req, res, next) => {
+  try {
+    const recordId = parseId(req.params.recordId);
+    if (!recordId) {
+      res.status(400).json({ message: "Invalid decision-impact record id" });
+      return;
+    }
+    const input = UpdateDecisionImpactBody.parse(req.body);
+    const [existing] = await db
+      .select()
+      .from(decisionImpactRecordsTable)
+      .where(eq(decisionImpactRecordsTable.id, recordId))
+      .limit(1);
+    if (!existing) {
+      res.status(404).json({ message: "Decision-impact record not found" });
+      return;
+    }
+    const workflowStatus = input.workflowStatus ?? existing.workflowStatus;
+    if (
+      workflowStatus === "published" &&
+      (!existing.reviewedAt || existing.workflowStatus === "published")
+    ) {
+      res.status(400).json({
+        message:
+          "Evidence records must pass editorial review before publication.",
+      });
+      return;
+    }
+    const verificationStatus =
+      input.verificationStatus ?? existing.verificationStatus;
+    const [record] = await db
+      .update(decisionImpactRecordsTable)
+      .set({
+        evidenceType: input.evidenceType,
+        decisionArea: input.decisionArea,
+        title: input.title,
+        summary: input.summary,
+        geography: input.geography,
+        observedOn: dateOnly(input.observedOn)!,
+        definition: input.definition,
+        findingValue:
+          input.findingValue === undefined
+            ? existing.findingValue
+            : input.findingValue,
+        findingUnit:
+          input.findingUnit === undefined
+            ? existing.findingUnit
+            : input.findingUnit,
+        denominator:
+          input.denominator === undefined
+            ? existing.denominator
+            : input.denominator,
+        source: input.source,
+        sourceUrl: input.sourceUrl,
+        sourcePublishedOn:
+          input.sourcePublishedOn === undefined
+            ? existing.sourcePublishedOn
+            : dateOnly(input.sourcePublishedOn),
+        sourceRetrievedOn: dateOnly(input.sourceRetrievedOn)!,
+        verificationStatus,
+        verificationNotes:
+          input.verificationNotes === undefined
+            ? existing.verificationNotes
+            : input.verificationNotes,
+        workflowStatus,
+        reviewedAt:
+          workflowStatus === "review"
+            ? existing.reviewedAt ?? new Date()
+            : existing.reviewedAt,
+        lastVerifiedAt:
+          verificationStatus === "verified"
+            ? existing.lastVerifiedAt ?? new Date()
+            : verificationStatus === "unverified"
+              ? null
+              : existing.lastVerifiedAt,
+        publishedOn:
+          workflowStatus === "published"
+            ? existing.publishedOn ?? new Date().toISOString().slice(0, 10)
+            : existing.publishedOn,
+        updatedAt: new Date(),
+      })
+      .where(eq(decisionImpactRecordsTable.id, recordId))
+      .returning();
+    const [withSlug] = await db
+      .update(decisionImpactRecordsTable)
+      .set({ slug: decisionImpactSlug(record.title, record.id) })
+      .where(eq(decisionImpactRecordsTable.id, record.id))
+      .returning();
+    res.json(serializeDecisionImpact(withSlug));
   } catch (error) {
     next(error);
   }

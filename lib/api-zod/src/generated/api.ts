@@ -498,6 +498,183 @@ export const GetPolicyResponse = zod.object({
 
 
 /**
+ * Returns published evidence by default. The editorial desk may request draft and review records with includeUnpublished.
+ * @summary Browse source-backed migration and decision-impact evidence
+ */
+export const getDecisionImpactsQueryIncludeUnpublishedDefault = false;
+export const getDecisionImpactsQueryLimitDefault = 50;
+export const getDecisionImpactsQueryLimitMax = 100;
+
+
+
+export const GetDecisionImpactsQueryParams = zod.object({
+  "evidenceType": zod.enum(['lived-account', 'monitored-lead', 'quantified-finding']).optional(),
+  "decisionArea": zod.enum(['migration', 'study', 'work', 'applications', 'staying', 'speaking', 'leaving']).optional(),
+  "geography": zod.coerce.string().optional(),
+  "includeUnpublished": zod.coerce.boolean().default(getDecisionImpactsQueryIncludeUnpublishedDefault),
+  "limit": zod.coerce.number().int().min(1).max(getDecisionImpactsQueryLimitMax).default(getDecisionImpactsQueryLimitDefault)
+})
+
+export const GetDecisionImpactsResponse = zod.object({
+  "records": zod.array(zod.object({
+  "id": zod.number().int(),
+  "slug": zod.string(),
+  "evidenceType": zod.enum(['lived-account', 'monitored-lead', 'quantified-finding']),
+  "decisionArea": zod.enum(['migration', 'study', 'work', 'applications', 'staying', 'speaking', 'leaving']),
+  "title": zod.string(),
+  "summary": zod.string(),
+  "geography": zod.string(),
+  "observedOn": zod.coerce.date(),
+  "definition": zod.string(),
+  "findingValue": zod.number().nullable(),
+  "findingUnit": zod.string().nullable(),
+  "denominator": zod.string().nullable(),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url(),
+  "sourcePublishedOn": zod.coerce.date().nullable(),
+  "sourceRetrievedOn": zod.coerce.date(),
+  "verificationStatus": zod.enum(['unverified', 'source-linked', 'verified']),
+  "verificationNotes": zod.string().nullable(),
+  "workflowStatus": zod.enum(['draft', 'review', 'published', 'archived']),
+  "reviewedAt": zod.coerce.date().nullable(),
+  "lastVerifiedAt": zod.coerce.date().nullable(),
+  "publishedOn": zod.coerce.date().nullable()
+})),
+  "evidenceTypes": zod.array(zod.enum(['lived-account', 'monitored-lead', 'quantified-finding'])),
+  "decisionAreas": zod.array(zod.enum(['migration', 'study', 'work', 'applications', 'staying', 'speaking', 'leaving'])),
+  "geographies": zod.array(zod.string())
+})
+
+
+/**
+ * @summary Create a migration or decision-impact evidence record
+ */
+export const createDecisionImpactBodyTitleMin = 12;
+
+export const createDecisionImpactBodySummaryMin = 20;
+
+export const createDecisionImpactBodyGeographyMin = 2;
+
+export const createDecisionImpactBodyDefinitionMin = 20;
+
+export const createDecisionImpactBodySourceMin = 2;
+
+
+
+export const CreateDecisionImpactBody = zod.object({
+  "evidenceType": zod.enum(['lived-account', 'monitored-lead', 'quantified-finding']),
+  "decisionArea": zod.enum(['migration', 'study', 'work', 'applications', 'staying', 'speaking', 'leaving']),
+  "title": zod.string().min(createDecisionImpactBodyTitleMin),
+  "summary": zod.string().min(createDecisionImpactBodySummaryMin),
+  "geography": zod.string().min(createDecisionImpactBodyGeographyMin),
+  "observedOn": zod.coerce.date(),
+  "definition": zod.string().min(createDecisionImpactBodyDefinitionMin),
+  "findingValue": zod.number().nullish(),
+  "findingUnit": zod.string().nullish(),
+  "denominator": zod.string().nullish(),
+  "source": zod.string().min(createDecisionImpactBodySourceMin),
+  "sourceUrl": zod.string().url(),
+  "sourcePublishedOn": zod.coerce.date().nullish(),
+  "sourceRetrievedOn": zod.coerce.date(),
+  "verificationStatus": zod.enum(['unverified', 'source-linked', 'verified']).optional(),
+  "verificationNotes": zod.string().nullish(),
+  "workflowStatus": zod.enum(['draft', 'review', 'published', 'archived']).optional(),
+  "revisionNote": zod.string().nullish()
+})
+
+export const CreateDecisionImpactResponse = zod.object({
+  "id": zod.number().int(),
+  "slug": zod.string(),
+  "evidenceType": zod.enum(['lived-account', 'monitored-lead', 'quantified-finding']),
+  "decisionArea": zod.enum(['migration', 'study', 'work', 'applications', 'staying', 'speaking', 'leaving']),
+  "title": zod.string(),
+  "summary": zod.string(),
+  "geography": zod.string(),
+  "observedOn": zod.coerce.date(),
+  "definition": zod.string(),
+  "findingValue": zod.number().nullable(),
+  "findingUnit": zod.string().nullable(),
+  "denominator": zod.string().nullable(),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url(),
+  "sourcePublishedOn": zod.coerce.date().nullable(),
+  "sourceRetrievedOn": zod.coerce.date(),
+  "verificationStatus": zod.enum(['unverified', 'source-linked', 'verified']),
+  "verificationNotes": zod.string().nullable(),
+  "workflowStatus": zod.enum(['draft', 'review', 'published', 'archived']),
+  "reviewedAt": zod.coerce.date().nullable(),
+  "lastVerifiedAt": zod.coerce.date().nullable(),
+  "publishedOn": zod.coerce.date().nullable()
+})
+
+
+/**
+ * @summary Update a migration or decision-impact evidence record
+ */
+export const UpdateDecisionImpactParams = zod.object({
+  "recordId": zod.coerce.number().int()
+})
+
+export const updateDecisionImpactBodyTitleMin = 12;
+
+export const updateDecisionImpactBodySummaryMin = 20;
+
+export const updateDecisionImpactBodyGeographyMin = 2;
+
+export const updateDecisionImpactBodyDefinitionMin = 20;
+
+export const updateDecisionImpactBodySourceMin = 2;
+
+
+
+export const UpdateDecisionImpactBody = zod.object({
+  "evidenceType": zod.enum(['lived-account', 'monitored-lead', 'quantified-finding']),
+  "decisionArea": zod.enum(['migration', 'study', 'work', 'applications', 'staying', 'speaking', 'leaving']),
+  "title": zod.string().min(updateDecisionImpactBodyTitleMin),
+  "summary": zod.string().min(updateDecisionImpactBodySummaryMin),
+  "geography": zod.string().min(updateDecisionImpactBodyGeographyMin),
+  "observedOn": zod.coerce.date(),
+  "definition": zod.string().min(updateDecisionImpactBodyDefinitionMin),
+  "findingValue": zod.number().nullish(),
+  "findingUnit": zod.string().nullish(),
+  "denominator": zod.string().nullish(),
+  "source": zod.string().min(updateDecisionImpactBodySourceMin),
+  "sourceUrl": zod.string().url(),
+  "sourcePublishedOn": zod.coerce.date().nullish(),
+  "sourceRetrievedOn": zod.coerce.date(),
+  "verificationStatus": zod.enum(['unverified', 'source-linked', 'verified']).optional(),
+  "verificationNotes": zod.string().nullish(),
+  "workflowStatus": zod.enum(['draft', 'review', 'published', 'archived']).optional(),
+  "revisionNote": zod.string().nullish()
+})
+
+export const UpdateDecisionImpactResponse = zod.object({
+  "id": zod.number().int(),
+  "slug": zod.string(),
+  "evidenceType": zod.enum(['lived-account', 'monitored-lead', 'quantified-finding']),
+  "decisionArea": zod.enum(['migration', 'study', 'work', 'applications', 'staying', 'speaking', 'leaving']),
+  "title": zod.string(),
+  "summary": zod.string(),
+  "geography": zod.string(),
+  "observedOn": zod.coerce.date(),
+  "definition": zod.string(),
+  "findingValue": zod.number().nullable(),
+  "findingUnit": zod.string().nullable(),
+  "denominator": zod.string().nullable(),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url(),
+  "sourcePublishedOn": zod.coerce.date().nullable(),
+  "sourceRetrievedOn": zod.coerce.date(),
+  "verificationStatus": zod.enum(['unverified', 'source-linked', 'verified']),
+  "verificationNotes": zod.string().nullable(),
+  "workflowStatus": zod.enum(['draft', 'review', 'published', 'archived']),
+  "reviewedAt": zod.coerce.date().nullable(),
+  "lastVerifiedAt": zod.coerce.date().nullable(),
+  "publishedOn": zod.coerce.date().nullable()
+})
+
+
+/**
  * @summary Get the indexable publication sitemap
  */
 export const GetPublicationSitemapResponse = zod.unknown()

@@ -29,8 +29,12 @@ import type {
   CommunityReply,
   CommunityReplyInput,
   CurrentIssue,
+  DecisionImpactInput,
+  DecisionImpactListResult,
+  DecisionImpactRecord,
   GetArchiveParams,
   GetCommunityPostsParams,
+  GetDecisionImpactsParams,
   GetNewsletterStatusParams,
   GetPoliciesParams,
   HealthStatus,
@@ -1039,6 +1043,268 @@ export function useGetPolicy<TData = Awaited<ReturnType<typeof getPolicy>>, TErr
 
 
 
+
+export const getGetDecisionImpactsUrl = (params?: GetDecisionImpactsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/decision-impacts?${stringifiedParams}` : `/api/decision-impacts`
+}
+
+/**
+ * Returns published evidence by default. The editorial desk may request draft and review records with includeUnpublished.
+ * @summary Browse source-backed migration and decision-impact evidence
+ */
+export const getDecisionImpacts = async (params?: GetDecisionImpactsParams, options?: Parameters<typeof customFetch>[1]): Promise<DecisionImpactListResult> => {
+
+  return customFetch<DecisionImpactListResult>(getGetDecisionImpactsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetDecisionImpactsQueryKey = (params?: GetDecisionImpactsParams,) => {
+    return [
+    `/api/decision-impacts`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetDecisionImpactsQueryOptions = <TData = Awaited<ReturnType<typeof getDecisionImpacts>>, TError = ErrorType<unknown>>(params?: GetDecisionImpactsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDecisionImpacts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetDecisionImpactsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getDecisionImpacts>>> = ({ signal }) => getDecisionImpacts(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getDecisionImpacts>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetDecisionImpactsQueryResult = NonNullable<Awaited<ReturnType<typeof getDecisionImpacts>>>
+export type GetDecisionImpactsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Browse source-backed migration and decision-impact evidence
+ */
+
+export function useGetDecisionImpacts<TData = Awaited<ReturnType<typeof getDecisionImpacts>>, TError = ErrorType<unknown>>(
+ params?: GetDecisionImpactsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDecisionImpacts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetDecisionImpactsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateDecisionImpactUrl = () => {
+
+
+
+
+  return `/api/decision-impacts`
+}
+
+/**
+ * @summary Create a migration or decision-impact evidence record
+ */
+export const createDecisionImpact = async (decisionImpactInput: DecisionImpactInput, options?: Parameters<typeof customFetch>[1]): Promise<DecisionImpactRecord> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<DecisionImpactRecord>(getCreateDecisionImpactUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(decisionImpactInput)
+  }
+);}
+
+
+
+
+
+export const getCreateDecisionImpactMutationKey = () => ['createDecisionImpact'] as const;
+
+export const getCreateDecisionImpactMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createDecisionImpact>>, TError,CreateDecisionImpactMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createDecisionImpact>>, TError,CreateDecisionImpactMutationVariables, TContext> => {
+
+const mutationKey = getCreateDecisionImpactMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createDecisionImpact>>, CreateDecisionImpactMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createDecisionImpact(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateDecisionImpactMutationResult = NonNullable<Awaited<ReturnType<typeof createDecisionImpact>>>
+    export type CreateDecisionImpactMutationBody = BodyType<DecisionImpactInput>
+    export type CreateDecisionImpactMutationError = ErrorType<unknown>
+    export type CreateDecisionImpactMutationVariables = {data: BodyType<DecisionImpactInput>}
+
+    /**
+ * @summary Create a migration or decision-impact evidence record
+ */
+export const useCreateDecisionImpact = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createDecisionImpact>>, TError,CreateDecisionImpactMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createDecisionImpact>>,
+        TError,
+        CreateDecisionImpactMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateDecisionImpactMutationOptions(options));
+    }
+
+export const getUpdateDecisionImpactUrl = (recordId: number,) => {
+
+
+
+
+  return `/api/decision-impacts/${recordId}`
+}
+
+/**
+ * @summary Update a migration or decision-impact evidence record
+ */
+export const updateDecisionImpact = async (recordId: number,
+    decisionImpactInput: DecisionImpactInput, options?: Parameters<typeof customFetch>[1]): Promise<DecisionImpactRecord> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<DecisionImpactRecord>(getUpdateDecisionImpactUrl(recordId),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(decisionImpactInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateDecisionImpactMutationKey = () => ['updateDecisionImpact'] as const;
+
+export const getUpdateDecisionImpactMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateDecisionImpact>>, TError,UpdateDecisionImpactMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateDecisionImpact>>, TError,UpdateDecisionImpactMutationVariables, TContext> => {
+
+const mutationKey = getUpdateDecisionImpactMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateDecisionImpact>>, UpdateDecisionImpactMutationVariables> = (props) => {
+          const {recordId,data} = props ?? {};
+
+          return  updateDecisionImpact(recordId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateDecisionImpactMutationResult = NonNullable<Awaited<ReturnType<typeof updateDecisionImpact>>>
+    export type UpdateDecisionImpactMutationBody = BodyType<DecisionImpactInput>
+    export type UpdateDecisionImpactMutationError = ErrorType<void>
+    export type UpdateDecisionImpactMutationVariables = {recordId: number;data: BodyType<DecisionImpactInput>}
+
+    /**
+ * @summary Update a migration or decision-impact evidence record
+ */
+export const useUpdateDecisionImpact = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateDecisionImpact>>, TError,UpdateDecisionImpactMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateDecisionImpact>>,
+        TError,
+        UpdateDecisionImpactMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateDecisionImpactMutationOptions(options));
+    }
 
 export const getGetPublicationSitemapUrl = () => {
 

@@ -51,6 +51,38 @@ export const VerificationStatus = {
   verified: 'verified',
 } as const;
 
+export type DecisionImpactEvidenceType = typeof DecisionImpactEvidenceType[keyof typeof DecisionImpactEvidenceType];
+
+
+export const DecisionImpactEvidenceType = {
+  'lived-account': 'lived-account',
+  'monitored-lead': 'monitored-lead',
+  'quantified-finding': 'quantified-finding',
+} as const;
+
+export type DecisionImpactArea = typeof DecisionImpactArea[keyof typeof DecisionImpactArea];
+
+
+export const DecisionImpactArea = {
+  migration: 'migration',
+  study: 'study',
+  work: 'work',
+  applications: 'applications',
+  staying: 'staying',
+  speaking: 'speaking',
+  leaving: 'leaving',
+} as const;
+
+export type DecisionImpactWorkflowStatus = typeof DecisionImpactWorkflowStatus[keyof typeof DecisionImpactWorkflowStatus];
+
+
+export const DecisionImpactWorkflowStatus = {
+  draft: 'draft',
+  review: 'review',
+  published: 'published',
+  archived: 'archived',
+} as const;
+
 export type IssueStatus = typeof IssueStatus[keyof typeof IssueStatus];
 
 
@@ -232,6 +264,64 @@ export interface PolicyListResult {
   states: string[];
   sectors: string[];
   statuses: string[];
+}
+
+export interface DecisionImpactRecord {
+  id: number;
+  slug: string;
+  evidenceType: DecisionImpactEvidenceType;
+  decisionArea: DecisionImpactArea;
+  title: string;
+  summary: string;
+  geography: string;
+  observedOn: string;
+  definition: string;
+  findingValue: number | null;
+  findingUnit: string | null;
+  denominator: string | null;
+  source: string;
+  sourceUrl: string;
+  sourcePublishedOn: string | null;
+  sourceRetrievedOn: string;
+  verificationStatus: VerificationStatus;
+  verificationNotes: string | null;
+  workflowStatus: DecisionImpactWorkflowStatus;
+  reviewedAt: string | null;
+  lastVerifiedAt: string | null;
+  publishedOn: string | null;
+}
+
+export interface DecisionImpactInput {
+  evidenceType: DecisionImpactEvidenceType;
+  decisionArea: DecisionImpactArea;
+  /** @minLength 12 */
+  title: string;
+  /** @minLength 20 */
+  summary: string;
+  /** @minLength 2 */
+  geography: string;
+  observedOn: string;
+  /** @minLength 20 */
+  definition: string;
+  findingValue?: number | null;
+  findingUnit?: string | null;
+  denominator?: string | null;
+  /** @minLength 2 */
+  source: string;
+  sourceUrl: string;
+  sourcePublishedOn?: string | null;
+  sourceRetrievedOn: string;
+  verificationStatus?: VerificationStatus;
+  verificationNotes?: string | null;
+  workflowStatus?: DecisionImpactWorkflowStatus;
+  revisionNote?: string | null;
+}
+
+export interface DecisionImpactListResult {
+  records: DecisionImpactRecord[];
+  evidenceTypes: DecisionImpactEvidenceType[];
+  decisionAreas: DecisionImpactArea[];
+  geographies: string[];
 }
 
 export type LiveUpdateTopic = typeof LiveUpdateTopic[keyof typeof LiveUpdateTopic];
@@ -426,6 +516,18 @@ sector?: string;
 status?: string;
 effectiveFrom?: string;
 effectiveTo?: string;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
+};
+
+export type GetDecisionImpactsParams = {
+evidenceType?: DecisionImpactEvidenceType;
+decisionArea?: DecisionImpactArea;
+geography?: string;
+includeUnpublished?: boolean;
 /**
  * @minimum 1
  * @maximum 100

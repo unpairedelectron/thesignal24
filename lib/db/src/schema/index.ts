@@ -12,6 +12,7 @@ import {
 import { z } from "zod/v4";
 export * from "./policies";
 export * from "./community";
+export * from "./decision-impacts";
 
 export const issuesTable = pgTable(
   "publication_issues",

@@ -292,6 +292,88 @@ paths:
                 $ref: "#/components/schemas/PolicyRecord"
         "404":
           description: Policy record not found
+  /decision-impacts:
+    get:
+      operationId: getDecisionImpacts
+      tags: [publication]
+      summary: Browse source-backed migration and decision-impact evidence
+      description: Returns published evidence by default. The editorial desk may request draft and review records with includeUnpublished.
+      parameters:
+        - name: evidenceType
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/DecisionImpactEvidenceType"
+        - name: decisionArea
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/DecisionImpactArea"
+        - name: geography
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: includeUnpublished
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+      responses:
+        "200":
+          description: Migration and decision-impact evidence records
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DecisionImpactListResult"
+    post:
+      operationId: createDecisionImpact
+      tags: [publication]
+      summary: Create a migration or decision-impact evidence record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DecisionImpactInput"
+      responses:
+        "201":
+          description: Evidence record created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DecisionImpactRecord"
+  /decision-impacts/{recordId}:
+    put:
+      operationId: updateDecisionImpact
+      tags: [publication]
+      summary: Update a migration or decision-impact evidence record
+      parameters:
+        - $ref: "#/components/parameters/DecisionImpactId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DecisionImpactInput"
+      responses:
+        "200":
+          description: Evidence record updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DecisionImpactRecord"
+        "404":
+          description: Evidence record not found
   /sitemap.xml:
     get:
       operationId: getPublicationSitemap
@@ -471,6 +553,13 @@ components:
       schema:
         type: integer
         format: int32
+    DecisionImpactId:
+      name: recordId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int32
   schemas:
     HealthStatus:
       type: object
@@ -491,6 +580,15 @@ components:
     VerificationStatus:
       type: string
       enum: [unverified, source-linked, verified]
+    DecisionImpactEvidenceType:
+      type: string
+      enum: [lived-account, monitored-lead, quantified-finding]
+    DecisionImpactArea:
+      type: string
+      enum: [migration, study, work, applications, staying, speaking, leaving]
+    DecisionImpactWorkflowStatus:
+      type: string
+      enum: [draft, review, published, archived]
     Issue:
       type: object
       properties:
@@ -809,6 +907,144 @@ components:
           items:
             type: string
       required: [records, states, sectors, statuses]
+    DecisionImpactRecord:
+      type: object
+      properties:
+        id:
+          type: integer
+        slug:
+          type: string
+        evidenceType:
+          $ref: "#/components/schemas/DecisionImpactEvidenceType"
+        decisionArea:
+          $ref: "#/components/schemas/DecisionImpactArea"
+        title:
+          type: string
+        summary:
+          type: string
+        geography:
+          type: string
+        observedOn:
+          type: string
+          format: date
+        definition:
+          type: string
+        findingValue:
+          type: number
+          nullable: true
+        findingUnit:
+          type: string
+          nullable: true
+        denominator:
+          type: string
+          nullable: true
+        source:
+          type: string
+        sourceUrl:
+          type: string
+          format: uri
+        sourcePublishedOn:
+          type: string
+          format: date
+          nullable: true
+        sourceRetrievedOn:
+          type: string
+          format: date
+        verificationStatus:
+          $ref: "#/components/schemas/VerificationStatus"
+        verificationNotes:
+          type: string
+          nullable: true
+        workflowStatus:
+          $ref: "#/components/schemas/DecisionImpactWorkflowStatus"
+        reviewedAt:
+          type: string
+          format: date-time
+          nullable: true
+        lastVerifiedAt:
+          type: string
+          format: date-time
+          nullable: true
+        publishedOn:
+          type: string
+          format: date
+          nullable: true
+      required: [id, slug, evidenceType, decisionArea, title, summary, geography, observedOn, definition, findingValue, findingUnit, denominator, source, sourceUrl, sourcePublishedOn, sourceRetrievedOn, verificationStatus, verificationNotes, workflowStatus, reviewedAt, lastVerifiedAt, publishedOn]
+    DecisionImpactInput:
+      type: object
+      properties:
+        evidenceType:
+          $ref: "#/components/schemas/DecisionImpactEvidenceType"
+        decisionArea:
+          $ref: "#/components/schemas/DecisionImpactArea"
+        title:
+          type: string
+          minLength: 12
+        summary:
+          type: string
+          minLength: 20
+        geography:
+          type: string
+          minLength: 2
+        observedOn:
+          type: string
+          format: date
+        definition:
+          type: string
+          minLength: 20
+        findingValue:
+          type: number
+          nullable: true
+        findingUnit:
+          type: string
+          nullable: true
+        denominator:
+          type: string
+          nullable: true
+        source:
+          type: string
+          minLength: 2
+        sourceUrl:
+          type: string
+          format: uri
+        sourcePublishedOn:
+          type: string
+          format: date
+          nullable: true
+        sourceRetrievedOn:
+          type: string
+          format: date
+        verificationStatus:
+          $ref: "#/components/schemas/VerificationStatus"
+        verificationNotes:
+          type: string
+          nullable: true
+        workflowStatus:
+          $ref: "#/components/schemas/DecisionImpactWorkflowStatus"
+        revisionNote:
+          type: string
+          nullable: true
+      required: [evidenceType, decisionArea, title, summary, geography, observedOn, definition, source, sourceUrl, sourceRetrievedOn]
+    DecisionImpactListResult:
+      type: object
+      properties:
+        records:
+          type: array
+          items:
+            $ref: "#/components/schemas/DecisionImpactRecord"
+        evidenceTypes:
+          type: array
+          items:
+            $ref: "#/components/schemas/DecisionImpactEvidenceType"
+        decisionAreas:
+          type: array
+          items:
+            $ref: "#/components/schemas/DecisionImpactArea"
+        geographies:
+          type: array
+          items:
+            type: string
+      required: [records, evidenceTypes, decisionAreas, geographies]
     LiveUpdate:
       type: object
       properties:
