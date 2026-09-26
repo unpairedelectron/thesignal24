@@ -1,0 +1,414 @@
+Now refine the Signal Hub design into a **final, production-quality editorial product**.
+
+Do not redesign the concept from scratch. Keep the existing visual direction, but significantly improve the hierarchy, spacing, typography, information density, and editorial character.
+
+## 1. REMOVE THE “TEMPLATE” FEEL
+
+Audit every section and remove anything that looks like a generic startup template.
+
+Specifically reduce:
+
+* excessive rounded cards
+* unnecessary containers
+* repetitive card grids
+* oversized decorative elements
+* excessive shadows
+* generic gradients
+* unnecessary icons
+* excessive pill-shaped UI
+
+Replace them with:
+
+* editorial rules
+* whitespace
+* strong typography
+* asymmetric layouts
+* clear hierarchy
+* carefully controlled image placement
+
+The page should feel designed by an experienced magazine / investigative newsroom design team.
+
+## 2. MAKE THE HOMEPAGE FEEL LIKE A FRONT PAGE
+
+The homepage should immediately communicate that Signal Hub is serious and information-dense.
+
+Create a strong opening composition:
+
+TOP:
+Signal Hub logo + navigation
+
+Below:
+A thin “LATEST SIGNAL” ticker / information strip.
+
+Then:
+A dominant lead investigation.
+
+Use a large editorial headline occupying significant visual space.
+
+Example placeholder:
+
+“HOW POLICY CHANGES ARE RESHAPING EVERYDAY LIFE”
+
+Below it:
+A concise 2–3 line explanation.
+
+Metadata:
+INVESTIGATION
+26 SEP 2026
+12 MIN READ
+
+Right side:
+A powerful documentary image OR data visualization.
+
+Under the hero:
+Use a horizontal divider.
+
+Then introduce:
+
+LATEST SIGNALS
+
+Do not show six identical cards.
+
+Instead use an editorial newspaper-like arrangement:
+
+ONE LARGE STORY
+TWO MEDIUM STORIES
+FOUR SMALL STORIES
+
+Create visual hierarchy through size, typography and spacing rather than boxes.
+
+## 3. INTRODUCE A STRONG EDITORIAL GRID
+
+Use a sophisticated 12-column grid.
+
+Allow content to intentionally span different column widths.
+
+Examples:
+
+* headline spanning 8 columns
+* metadata spanning 2 columns
+* image spanning 5 columns
+* article body spanning 7 columns
+
+Avoid making every component perfectly symmetrical.
+
+Controlled asymmetry should make the publication feel more sophisticated.
+
+## 4. MAKE “EVIDENCE” A CORE PRODUCT FEATURE
+
+Signal Hub should visually communicate that it is evidence-driven.
+
+Create a distinct evidence component.
+
+Example:
+
+DOCUMENTED EVIDENCE
+
+Official source
+[Document title]
+
+Published:
+12 March 2026
+
+Source:
+[Organization]
+
+[VIEW ORIGINAL]
+
+Create additional components:
+
+SOURCE DOCUMENT
+
+PRIMARY SOURCE
+
+ARCHIVED RECORD
+
+OFFICIAL DATA
+
+Create a consistent visual language for all evidence references.
+
+These should feel more like research citations than ordinary news links.
+
+## 5. CREATE A “WHAT CHANGED?” COMPONENT
+
+For important investigations create a comparison block:
+
+WHAT CHANGED?
+
+BEFORE
+[Previous policy / condition]
+
+AFTER
+[Current policy / condition]
+
+IMPACT
+[Documented consequence]
+
+Use typography and a strong divider system instead of cards.
+
+## 6. CREATE A PREMIUM DATA VISUALIZATION LANGUAGE
+
+The Data section must look like professional journalism graphics.
+
+Use:
+
+* minimal axes
+* restrained labels
+* large numeric callouts
+* annotations
+* source attribution
+* timeline markers
+
+Every visualization must contain:
+
+TITLE
+DESCRIPTION
+DATA
+SOURCE
+DATE
+
+Do not make charts resemble a business intelligence dashboard.
+
+They should resemble **Reuters Graphics / NYT Upshot / Economist visual journalism**.
+
+## 7. IMPROVE THE ARTICLE EXPERIENCE
+
+The article page is the most important page after the homepage.
+
+Make the reading experience extremely polished.
+
+Structure:
+
+CATEGORY
+
+HEADLINE
+
+DEK
+
+AUTHOR / DATE / READING TIME
+
+HERO IMAGE
+
+CAPTION
+
+ARTICLE BODY
+
+KEY TAKEAWAY
+
+TIMELINE
+
+EVIDENCE
+
+SOURCE DOCUMENTS
+
+RELATED STORIES
+
+Article text should occupy approximately 680–760px.
+
+Keep supporting information outside the main reading column.
+
+Add a subtle sticky article navigation rail on desktop.
+
+Possible navigation:
+
+01 Context
+02 What Happened
+03 Evidence
+04 Why It Matters
+05 Timeline
+06 Sources
+
+## 8. CREATE A DISTINCT “SIGNAL” VISUAL DEVICE
+
+Introduce one subtle brand motif throughout the website.
+
+Possible concept:
+
+A thin horizontal line that changes into a waveform / signal pulse.
+
+Use this motif for:
+
+* section transitions
+* timeline markers
+* article metadata
+* loading states
+* dividers
+
+It should become recognizable as the Signal Hub visual signature.
+
+Keep it extremely subtle.
+
+## 9. MAKE THE ARCHIVE FEEL IMPORTANT
+
+The Archive should not feel like a basic search-results page.
+
+Create:
+
+THE ARCHIVE
+
+“Everything we have documented.”
+
+Large search interface.
+
+Then:
+
+BROWSE BY YEAR
+
+2026
+2025
+2024
+2023
+2022
+2021
+
+Then filters:
+
+Topic
+Region
+Organization
+Document Type
+Date
+
+Results should feel like a research catalogue.
+
+Use dates prominently.
+
+## 10. CREATE A STRONG TOPIC PAGE
+
+Topic pages should feel like miniature investigations.
+
+Structure:
+
+TOPIC
+
+Overview
+
+Key facts
+
+Latest developments
+
+Major investigations
+
+Timeline
+
+Data
+
+Important documents
+
+Related topics
+
+Create a visual relationship map showing:
+
+Topic → Events → Documents → Articles
+
+This should become a signature feature of Signal Hub.
+
+## 11. IMPROVE THE HEADER
+
+Create a very refined editorial navigation.
+
+Desktop:
+
+SIGNAL HUB
+
+Investigations
+Signals
+Data
+Timeline
+Archive
+Topics
+About
+
+Right:
+
+Search
+Subscribe
+
+Do not use a giant navigation bar.
+
+Keep the header compact and confident.
+
+Consider a thin top border and bottom rule.
+
+## 12. COLOR REFINEMENT
+
+Use primarily:
+
+Warm paper / off-white
+Charcoal
+Muted gray
+
+Use accent colors sparingly.
+
+Primary accent:
+Deep editorial red.
+
+Secondary:
+Muted blue.
+
+Warning:
+Muted amber.
+
+Red should mean something important — not simply act as decoration.
+
+## 13. TYPOGRAPHIC CONTRAST
+
+Create dramatic contrast between:
+
+SERIF:
+Editorial headlines
+
+SANS:
+Navigation / metadata / interface
+
+MONOSPACE:
+Data / timestamps / document references where appropriate
+
+Large headlines should feel almost print-editorial.
+
+Avoid making every heading the same size.
+
+## 14. MOBILE DESIGN
+
+Do not simply stack the desktop page.
+
+Redesign mobile intentionally.
+
+Mobile should prioritize:
+
+Headline
+Context
+Evidence
+Reading
+Sources
+
+Use full-width editorial images.
+
+Make source references easy to open.
+
+Keep navigation extremely simple.
+
+Create a bottom reading progress indicator for long articles.
+
+## 15. EMPTY / ERROR / LOADING STATES
+
+Design realistic states for:
+
+No search results
+No articles
+Loading articles
+Missing image
+Source unavailable
+Archived document unavailable
+
+These states should follow the same editorial visual system.
+
+## 16. CREATE REALISTIC CONTENT
+
+Replace obvious placeholder copy such as:
+
+“Lorem ipsum”
+“Your headline here”
+“Sample article”
+
+with realistic editori
