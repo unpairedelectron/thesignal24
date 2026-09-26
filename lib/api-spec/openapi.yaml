@@ -239,6 +239,376 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ArchiveResult"
+  /events:
+    get:
+      operationId: getEvidenceEvents
+      tags: [evidence]
+      summary: List published events and their explicit evidence relationships
+      parameters:
+        - name: topic
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/Topic"
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 100
+      responses:
+        "200":
+          description: Published event records with explicitly linked articles and sources
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvidenceEventsResponse"
+  /events/{eventId}:
+    get:
+      operationId: getEvidenceEvent
+      tags: [evidence]
+      summary: Get a published event and its explicit relationships
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        "200":
+          description: Published event details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvidenceEventResponse"
+        "404":
+          description: Event not found
+  /stories/{storyId}/evidence:
+    get:
+      operationId: getStoryEvidence
+      tags: [evidence]
+      summary: Get events and sources explicitly linked to a published article
+      parameters:
+        - $ref: "#/components/parameters/StoryId"
+      responses:
+        "200":
+          description: Evidence relationships visible to the public
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StoryEvidenceResponse"
+        "404":
+          description: Article not found
+  /sources/{sourceId}:
+    get:
+      operationId: getSourceDocument
+      tags: [evidence]
+      summary: Get a source document and its explicit event and article links
+      parameters:
+        - name: sourceId
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        "200":
+          description: Source document relationships visible to the public
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SourceDocumentResponse"
+        "404":
+          description: Source document not found
+  /evidence-search:
+    get:
+      operationId: searchEvidenceRecords
+      tags: [evidence]
+      summary: Search published articles, events, and source documents separately
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 1
+      responses:
+        "200":
+          description: Search results retain their article, event, or source type
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvidenceSearchResponse"
+  /editor/evidence:
+    get:
+      operationId: getEditorEvidence
+      tags: [evidence, editor]
+      summary: List evidence records and all stored relationships for editors
+      responses:
+        "200":
+          description: Editorial evidence graph
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EditorEvidenceResponse"
+        "401":
+          description: Sign-in required
+        "403":
+          description: Verified editor access required
+  /editor/events:
+    post:
+      operationId: createEvidenceEvent
+      tags: [evidence, editor]
+      summary: Create an event record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EvidenceEventInput"
+      responses:
+        "201":
+          description: Created event
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvidenceEventRecord"
+        "400":
+          description: Invalid event
+        "401":
+          description: Sign-in required
+        "403":
+          description: Verified editor access required
+  /editor/events/{eventId}:
+    put:
+      operationId: updateEvidenceEvent
+      tags: [evidence, editor]
+      summary: Update an event record
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EvidenceEventInput"
+      responses:
+        "200":
+          description: Updated event
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvidenceEventRecord"
+        "404":
+          description: Event not found
+        "401":
+          description: Sign-in required
+        "403":
+          description: Verified editor access required
+    delete:
+      operationId: deleteEvidenceEvent
+      tags: [evidence, editor]
+      summary: Delete an event and cascade its relationship rows
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        "204":
+          description: Event and its relationships deleted
+        "404":
+          description: Event not found
+        "401":
+          description: Sign-in required
+        "403":
+          description: Verified editor access required
+  /editor/sources:
+    post:
+      operationId: createSourceDocument
+      tags: [evidence, editor]
+      summary: Create a source document record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SourceDocumentInput"
+      responses:
+        "201":
+          description: Created source document
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SourceDocument"
+        "400":
+          description: Invalid source document
+        "401":
+          description: Sign-in required
+        "403":
+          description: Verified editor access required
+  /editor/sources/{sourceId}:
+    put:
+      operationId: updateSourceDocument
+      tags: [evidence, editor]
+      summary: Update a source document record
+      parameters:
+        - name: sourceId
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SourceDocumentInput"
+      responses:
+        "200":
+          description: Updated source document
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SourceDocument"
+        "404":
+          description: Source document not found
+        "401":
+          description: Sign-in required
+        "403":
+          description: Verified editor access required
+    delete:
+      operationId: deleteSourceDocument
+      tags: [evidence, editor]
+      summary: Delete a source document and cascade its relationship rows
+      parameters:
+        - name: sourceId
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        "204":
+          description: Source document and its relationships deleted
+        "404":
+          description: Source document not found
+        "401":
+          description: Sign-in required
+        "403":
+          description: Verified editor access required
+  /editor/article-events:
+    post:
+      operationId: linkArticleToEvent
+      tags: [evidence, editor]
+      summary: Explicitly link an article to an event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ArticleEventLinkInput"
+      responses:
+        "201":
+          description: Article-to-event relationship created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvidenceRelationshipResult"
+        "400":
+          description: Invalid or duplicate relationship
+        "404":
+          description: Article or event not found
+        "401":
+          description: Sign-in required
+        "403":
+          description: Verified editor access required
+  /editor/article-events/{eventId}/{storyId}:
+    delete:
+      operationId: unlinkArticleFromEvent
+      tags: [evidence, editor]
+      summary: Remove an explicit article-to-event relationship
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+        - $ref: "#/components/parameters/StoryId"
+      responses:
+        "204":
+          description: Relationship removed
+        "404":
+          description: Relationship not found
+        "401":
+          description: Sign-in required
+        "403":
+          description: Verified editor access required
+  /editor/event-sources:
+    post:
+      operationId: linkSourceToEvent
+      tags: [evidence, editor]
+      summary: Explicitly link a source document to an event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EventSourceLinkInput"
+      responses:
+        "201":
+          description: Event-to-source relationship created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvidenceRelationshipResult"
+        "400":
+          description: Invalid or duplicate relationship
+        "404":
+          description: Event or source document not found
+        "401":
+          description: Sign-in required
+        "403":
+          description: Verified editor access required
+  /editor/event-sources/{eventId}/{sourceId}:
+    delete:
+      operationId: unlinkSourceFromEvent
+      tags: [evidence, editor]
+      summary: Remove an explicit event-to-source relationship
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+        - name: sourceId
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        "204":
+          description: Relationship removed
+        "404":
+          description: Relationship not found
+        "401":
+          description: Sign-in required
+        "403":
+          description: Verified editor access required
   /policies:
     get:
       operationId: getPolicies
@@ -642,6 +1012,21 @@ components:
     DecisionImpactWorkflowStatus:
       type: string
       enum: [draft, review, published, archived]
+    EvidenceEventWorkflowStatus:
+      type: string
+      enum: [draft, published, archived]
+    EvidenceSourceStatus:
+      type: string
+      enum: [verified, unverified, archived, unavailable]
+    EvidenceDocumentType:
+      type: string
+      enum: [official-document, court-record, government-data, report, news-report, other]
+    EvidenceSourceRole:
+      type: string
+      enum: [primary, secondary]
+    EvidenceResultType:
+      type: string
+      enum: [article, event, source]
     Issue:
       type: object
       properties:
@@ -701,6 +1086,18 @@ components:
           type: string
           format: date
           nullable: true
+        recordDate:
+          type: ["string", "null"]
+          pattern: '^\d{4}-\d{2}-\d{2}$'
+        articlePublishedAt:
+          type: ["string", "null"]
+          format: date-time
+        eventCount:
+          type: integer
+          minimum: 0
+        sourceCount:
+          type: integer
+          minimum: 0
         eyebrow:
           type: string
         title:
@@ -754,7 +1151,7 @@ components:
           type: ["string", "null"]
         correctionNote:
           type: ["string", "null"]
-      required: [id, issueId, topic, kind, state, source, sourceUrl, publishedOn, eyebrow, title, dek, body, time, read, tone, number, sortOrder, slug, recordFamily, canonicalPath, indexable, workflowStatus, verificationStatus, verificationNotes, sourcePublishedOn, sourceRetrievedOn, lastVerifiedAt, reviewedAt, scheduledFor, aiDisclosure, correctionNote]
+      required: [id, issueId, topic, kind, state, source, sourceUrl, publishedOn, recordDate, articlePublishedAt, eyebrow, title, dek, body, time, read, tone, number, sortOrder, slug, recordFamily, canonicalPath, indexable, workflowStatus, verificationStatus, verificationNotes, sourcePublishedOn, sourceRetrievedOn, lastVerifiedAt, reviewedAt, scheduledFor, aiDisclosure, correctionNote]
     StoryInput:
       type: object
       properties:
@@ -877,6 +1274,335 @@ components:
           items:
             type: string
       required: [stories, topics, kinds, states]
+    EvidenceEventRecord:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        topic:
+          $ref: "#/components/schemas/Topic"
+        recordDate:
+          type: ["string", "null"]
+          pattern: '^\d{4}-\d{2}-\d{2}$'
+        summary:
+          type: string
+        workflowStatus:
+          $ref: "#/components/schemas/EvidenceEventWorkflowStatus"
+      required: [id, title, topic, recordDate, summary, workflowStatus]
+    EvidenceEventInput:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+        topic:
+          $ref: "#/components/schemas/Topic"
+        recordDate:
+          type: ["string", "null"]
+          format: date
+        summary:
+          type: string
+        workflowStatus:
+          $ref: "#/components/schemas/EvidenceEventWorkflowStatus"
+      required: [title, topic, summary]
+    SourceDocument:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        publisher:
+          type: string
+        publicationDate:
+          type: ["string", "null"]
+          pattern: '^\d{4}-\d{2}-\d{2}$'
+        documentType:
+          $ref: "#/components/schemas/EvidenceDocumentType"
+        sourceUrl:
+          type: ["string", "null"]
+          format: uri
+        status:
+          $ref: "#/components/schemas/EvidenceSourceStatus"
+      required: [id, title, publisher, publicationDate, documentType, sourceUrl, status]
+    SourceDocumentInput:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+        publisher:
+          type: string
+          minLength: 1
+        publicationDate:
+          type: ["string", "null"]
+          pattern: '^\d{4}-\d{2}-\d{2}$'
+        documentType:
+          $ref: "#/components/schemas/EvidenceDocumentType"
+        sourceUrl:
+          type: ["string", "null"]
+          format: uri
+        status:
+          $ref: "#/components/schemas/EvidenceSourceStatus"
+      required: [title, publisher, documentType, status]
+    EvidenceArticle:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        topic:
+          $ref: "#/components/schemas/Topic"
+        kind:
+          $ref: "#/components/schemas/StoryKind"
+        recordDate:
+          type: ["string", "null"]
+          pattern: '^\d{4}-\d{2}-\d{2}$'
+        articlePublishedAt:
+          type: ["string", "null"]
+          format: date-time
+        canonicalPath:
+          type: string
+        verificationStatus:
+          $ref: "#/components/schemas/VerificationStatus"
+        workflowStatus:
+          $ref: "#/components/schemas/StoryWorkflowStatus"
+      required: [id, title, topic, kind, recordDate, articlePublishedAt, canonicalPath, verificationStatus]
+    EventSourceRelationship:
+      type: object
+      properties:
+        sourceRole:
+          $ref: "#/components/schemas/EvidenceSourceRole"
+        sourceDocument:
+          $ref: "#/components/schemas/SourceDocument"
+      required: [sourceRole, sourceDocument]
+    EvidenceEventDetail:
+      type: object
+      properties:
+        event:
+          $ref: "#/components/schemas/EvidenceEventRecord"
+        articles:
+          type: array
+          items:
+            $ref: "#/components/schemas/EvidenceArticle"
+        primarySources:
+          type: array
+          items:
+            $ref: "#/components/schemas/SourceDocument"
+        secondarySources:
+          type: array
+          items:
+            $ref: "#/components/schemas/SourceDocument"
+        articleCount:
+          type: integer
+          minimum: 0
+        sourceCount:
+          type: integer
+          minimum: 0
+      required: [event, articles, primarySources, secondarySources, articleCount, sourceCount]
+    EvidenceEventsResponse:
+      type: object
+      properties:
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/EvidenceEventDetail"
+      required: [events]
+    EvidenceEventResponse:
+      type: object
+      properties:
+        event:
+          $ref: "#/components/schemas/EvidenceEventDetail"
+      required: [event]
+    StoryEvidenceResponse:
+      type: object
+      properties:
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/EvidenceEventDetail"
+      required: [events]
+    SourceEventRelationship:
+      type: object
+      properties:
+        event:
+          $ref: "#/components/schemas/EvidenceEventRecord"
+        sourceRole:
+          $ref: "#/components/schemas/EvidenceSourceRole"
+      required: [event, sourceRole]
+    SourceDocumentResponse:
+      type: object
+      properties:
+        sourceDocument:
+          $ref: "#/components/schemas/SourceDocument"
+        supportingEvents:
+          type: array
+          items:
+            $ref: "#/components/schemas/SourceEventRelationship"
+        citedByArticles:
+          type: array
+          items:
+            $ref: "#/components/schemas/EvidenceArticle"
+      required: [sourceDocument, supportingEvents, citedByArticles]
+    EvidenceAuditMetadata:
+      type: object
+      properties:
+        createdBy:
+          type: string
+        updatedBy:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [createdBy, updatedBy, createdAt, updatedAt]
+    EditorArticleEventLink:
+      type: object
+      properties:
+        article:
+          $ref: "#/components/schemas/EvidenceArticle"
+        linkedBy:
+          type: string
+        linkedAt:
+          type: string
+          format: date-time
+      required: [article, linkedBy, linkedAt]
+    EditorEventSourceLink:
+      type: object
+      properties:
+        sourceDocument:
+          $ref: "#/components/schemas/SourceDocument"
+        sourceRole:
+          $ref: "#/components/schemas/EvidenceSourceRole"
+        linkedBy:
+          type: string
+        linkedAt:
+          type: string
+          format: date-time
+      required: [sourceDocument, sourceRole, linkedBy, linkedAt]
+    EditorEvidenceEvent:
+      type: object
+      properties:
+        event:
+          $ref: "#/components/schemas/EvidenceEventRecord"
+        audit:
+          $ref: "#/components/schemas/EvidenceAuditMetadata"
+        articleLinks:
+          type: array
+          items:
+            $ref: "#/components/schemas/EditorArticleEventLink"
+        sourceLinks:
+          type: array
+          items:
+            $ref: "#/components/schemas/EditorEventSourceLink"
+      required: [event, audit, articleLinks, sourceLinks]
+    EditorSourceDocument:
+      type: object
+      properties:
+        sourceDocument:
+          $ref: "#/components/schemas/SourceDocument"
+        audit:
+          $ref: "#/components/schemas/EvidenceAuditMetadata"
+      required: [sourceDocument, audit]
+    EditorEvidenceResponse:
+      type: object
+      properties:
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/EditorEvidenceEvent"
+        sourceDocuments:
+          type: array
+          items:
+            $ref: "#/components/schemas/EditorSourceDocument"
+        articles:
+          type: array
+          items:
+            $ref: "#/components/schemas/EvidenceArticle"
+      required: [events, sourceDocuments, articles]
+    EvidenceSearchResult:
+      type: object
+      properties:
+        resultType:
+          $ref: "#/components/schemas/EvidenceResultType"
+        id:
+          type: integer
+        title:
+          type: string
+        summary:
+          type: string
+        topic:
+          type: ["string", "null"]
+        recordDate:
+          type: ["string", "null"]
+          pattern: '^\d{4}-\d{2}-\d{2}$'
+        articlePublishedAt:
+          type: ["string", "null"]
+          format: date-time
+        sourcePublicationDate:
+          type: ["string", "null"]
+          pattern: '^\d{4}-\d{2}-\d{2}$'
+        path:
+          type: string
+        eventCount:
+          type: integer
+          minimum: 0
+        sourceCount:
+          type: integer
+          minimum: 0
+        sourceStatus:
+          oneOf:
+            - $ref: "#/components/schemas/EvidenceSourceStatus"
+            - type: "null"
+        documentType:
+          oneOf:
+            - $ref: "#/components/schemas/EvidenceDocumentType"
+            - type: "null"
+        sourceUrl:
+          type: ["string", "null"]
+          format: uri
+      required: [resultType, id, title, summary, topic, recordDate, articlePublishedAt, sourcePublicationDate, path, eventCount, sourceCount, sourceStatus, documentType, sourceUrl]
+    EvidenceSearchResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/EvidenceSearchResult"
+      required: [results]
+    ArticleEventLinkInput:
+      type: object
+      properties:
+        articleId:
+          type: integer
+          minimum: 1
+        eventId:
+          type: integer
+          minimum: 1
+      required: [articleId, eventId]
+    EventSourceLinkInput:
+      type: object
+      properties:
+        eventId:
+          type: integer
+          minimum: 1
+        sourceDocumentId:
+          type: integer
+          minimum: 1
+        sourceRole:
+          $ref: "#/components/schemas/EvidenceSourceRole"
+      required: [eventId, sourceDocumentId, sourceRole]
+    EvidenceRelationshipResult:
+      type: object
+      properties:
+        linked:
+          type: boolean
+      required: [linked]
     PolicySource:
       type: object
       properties:

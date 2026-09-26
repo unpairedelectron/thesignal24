@@ -2,8 +2,11 @@ import { Router, type IRouter } from "express";
 import { and, asc, desc, eq, gte, inArray, like, lte, or } from "drizzle-orm";
 import {
   db,
+  articleEventsTable,
   decisionImpactRecordsTable,
   decisionImpactRevisionsTable,
+  eventSourcesTable,
+  evidenceEventsTable,
   issuesTable,
   policyRecordsTable,
   policySourcesTable,
@@ -161,7 +164,10 @@ function isIndexableStory(story: typeof storiesTable.$inferSelect) {
   );
 }
 
-function serializeStory(story: typeof storiesTable.$inferSelect) {
+function serializeStory(
+  story: typeof storiesTable.$inferSelect,
+  articlePublishedAt: Date | null = null,
+) {
   const recordFamily = getRecordFamily(story);
   return {
     id: story.id,
@@ -176,6 +182,8 @@ function serializeStory(story: typeof storiesTable.$inferSelect) {
     source: story.source,
     sourceUrl: story.sourceUrl,
     publishedOn: story.publishedOn,
+    recordDate: dateOnly(story.publishedOn),
+    articlePublishedAt: articlePublishedAt?.toISOString() ?? null,
     eyebrow: story.eyebrow,
     title: story.title,
     dek: story.dek,
@@ -206,6 +214,63 @@ function serializeStory(story: typeof storiesTable.$inferSelect) {
     aiDisclosure: story.aiDisclosure,
     correctionNote: story.correctionNote,
   };
+}
+
+async function addPublicEvidenceCounts<T extends { id: number }>(stories: T[]) {
+  if (stories.length === 0) return stories.map((story) => ({ ...story, eventCount: 0, sourceCount: 0 }));
+  const articleIds = stories.map((story) => story.id);
+  const articleEventLinks = await db
+    .select({
+      articleId: articleEventsTable.articleId,
+      eventId: articleEventsTable.eventId,
+    })
+    .from(articleEventsTable)
+    .innerJoin(
+      evidenceEventsTable,
+      eq(articleEventsTable.eventId, evidenceEventsTable.id),
+    )
+    .where(
+      and(
+        inArray(articleEventsTable.articleId, articleIds),
+        eq(evidenceEventsTable.workflowStatus, "published"),
+      ),
+    );
+  const eventIds = [...new Set(articleEventLinks.map((link) => link.eventId))];
+  const eventSources = eventIds.length
+    ? await db
+        .select({
+          eventId: eventSourcesTable.eventId,
+          sourceDocumentId: eventSourcesTable.sourceDocumentId,
+        })
+        .from(eventSourcesTable)
+        .where(inArray(eventSourcesTable.eventId, eventIds))
+    : [];
+  const eventsByArticle = new Map<number, Set<number>>();
+  const sourcesByEvent = new Map<number, Set<number>>();
+  for (const link of articleEventLinks) {
+    const linkedEvents = eventsByArticle.get(link.articleId) ?? new Set<number>();
+    linkedEvents.add(link.eventId);
+    eventsByArticle.set(link.articleId, linkedEvents);
+  }
+  for (const link of eventSources) {
+    const linkedSources = sourcesByEvent.get(link.eventId) ?? new Set<number>();
+    linkedSources.add(link.sourceDocumentId);
+    sourcesByEvent.set(link.eventId, linkedSources);
+  }
+  return stories.map((story) => {
+    const linkedEvents = eventsByArticle.get(story.id) ?? new Set<number>();
+    const linkedSources = new Set<number>();
+    for (const eventId of linkedEvents) {
+      for (const sourceId of sourcesByEvent.get(eventId) ?? []) {
+        linkedSources.add(sourceId);
+      }
+    }
+    return {
+      ...story,
+      eventCount: linkedEvents.size,
+      sourceCount: linkedSources.size,
+    };
+  });
 }
 
 async function recordRevision(
@@ -242,7 +307,12 @@ async function getIssuePayload(
           ),
     )
     .orderBy(storiesTable.sortOrder, storiesTable.id);
-  const serializedStories = stories.map(serializeStory);
+  const serializedStories = stories.map((story) =>
+    serializeStory(
+      story,
+      story.workflowStatus === "published" ? issue.publishedAt : null,
+    ),
+  );
   return {
     issue: serializeIssue(issue),
     stories: serializedStories,
@@ -368,7 +438,10 @@ router.get("/archive", async (req, res, next) => {
       );
     }
     const results = await db
-      .select({ story: storiesTable })
+      .select({
+        story: storiesTable,
+        articlePublishedAt: issuesTable.publishedAt,
+      })
       .from(storiesTable)
       .innerJoin(issuesTable, eq(storiesTable.issueId, issuesTable.id))
       .where(and(...conditions))
@@ -379,7 +452,11 @@ router.get("/archive", async (req, res, next) => {
         asc(storiesTable.id),
       )
       .limit(limit);
-    const serializedStories = results.map(({ story }) => serializeStory(story));
+    const serializedStories = await addPublicEvidenceCounts(
+      results.map(({ story, articlePublishedAt }) =>
+        serializeStory(story, articlePublishedAt),
+      ),
+    );
     res.json({
       stories: serializedStories,
       topics: [...new Set(serializedStories.map((story) => story.topic))],
@@ -394,7 +471,10 @@ router.get("/archive", async (req, res, next) => {
 router.get("/sitemap.xml", async (req, res, next) => {
   try {
     const results = await db
-      .select({ story: storiesTable })
+      .select({
+        story: storiesTable,
+        articlePublishedAt: issuesTable.publishedAt,
+      })
       .from(storiesTable)
       .innerJoin(issuesTable, eq(storiesTable.issueId, issuesTable.id))
       .where(
@@ -539,7 +619,10 @@ router.get("/stories/:storyId", async (req, res, next) => {
       return;
     }
     const [story] = await db
-      .select({ story: storiesTable })
+      .select({
+        story: storiesTable,
+        articlePublishedAt: issuesTable.publishedAt,
+      })
       .from(storiesTable)
       .innerJoin(issuesTable, eq(storiesTable.issueId, issuesTable.id))
       .where(
@@ -554,7 +637,7 @@ router.get("/stories/:storyId", async (req, res, next) => {
       res.status(404).json({ message: "Story not found" });
       return;
     }
-    res.json(serializeStory(story.story));
+    res.json(serializeStory(story.story, story.articlePublishedAt));
   } catch (error) {
     next(error);
   }

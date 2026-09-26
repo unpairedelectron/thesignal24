@@ -21,6 +21,7 @@ import type {
 
 import type {
   ArchiveResult,
+  ArticleEventLinkInput,
   CommunityLikeResponse,
   CommunityPost,
   CommunityPostDetail,
@@ -33,10 +34,19 @@ import type {
   DecisionImpactListResult,
   DecisionImpactRecord,
   DecisionImpactRevisions,
+  EditorEvidenceResponse,
   EditorSession,
+  EventSourceLinkInput,
+  EvidenceEventInput,
+  EvidenceEventRecord,
+  EvidenceEventResponse,
+  EvidenceEventsResponse,
+  EvidenceRelationshipResult,
+  EvidenceSearchResponse,
   GetArchiveParams,
   GetCommunityPostsParams,
   GetDecisionImpactsParams,
+  GetEvidenceEventsParams,
   GetPoliciesParams,
   HealthStatus,
   Issue,
@@ -46,7 +56,12 @@ import type {
   NewsletterStatus,
   PolicyListResult,
   PolicyRecord,
+  SearchEvidenceRecordsParams,
+  SourceDocument,
+  SourceDocumentInput,
+  SourceDocumentResponse,
   Story,
+  StoryEvidenceResponse,
   StoryInput,
   StoryRevisions
 } from './api.schemas';
@@ -960,6 +975,1312 @@ export function useGetArchive<TData = Awaited<ReturnType<typeof getArchive>>, TE
 
 
 
+
+export const getGetEvidenceEventsUrl = (params?: GetEvidenceEventsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/events?${stringifiedParams}` : `/api/events`
+}
+
+/**
+ * @summary List published events and their explicit evidence relationships
+ */
+export const getEvidenceEvents = async (params?: GetEvidenceEventsParams, options?: Parameters<typeof customFetch>[1]): Promise<EvidenceEventsResponse> => {
+
+  return customFetch<EvidenceEventsResponse>(getGetEvidenceEventsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetEvidenceEventsQueryKey = (params?: GetEvidenceEventsParams,) => {
+    return [
+    `/api/events`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetEvidenceEventsQueryOptions = <TData = Awaited<ReturnType<typeof getEvidenceEvents>>, TError = ErrorType<unknown>>(params?: GetEvidenceEventsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getEvidenceEvents>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetEvidenceEventsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getEvidenceEvents>>> = ({ signal }) => getEvidenceEvents(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getEvidenceEvents>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetEvidenceEventsQueryResult = NonNullable<Awaited<ReturnType<typeof getEvidenceEvents>>>
+export type GetEvidenceEventsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List published events and their explicit evidence relationships
+ */
+
+export function useGetEvidenceEvents<TData = Awaited<ReturnType<typeof getEvidenceEvents>>, TError = ErrorType<unknown>>(
+ params?: GetEvidenceEventsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getEvidenceEvents>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetEvidenceEventsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetEvidenceEventUrl = (eventId: number,) => {
+
+
+
+
+  return `/api/events/${eventId}`
+}
+
+/**
+ * @summary Get a published event and its explicit relationships
+ */
+export const getEvidenceEvent = async (eventId: number, options?: Parameters<typeof customFetch>[1]): Promise<EvidenceEventResponse> => {
+
+  return customFetch<EvidenceEventResponse>(getGetEvidenceEventUrl(eventId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetEvidenceEventQueryKey = (eventId: number,) => {
+    return [
+    `/api/events/${eventId}`
+    ] as const;
+    }
+
+
+export const getGetEvidenceEventQueryOptions = <TData = Awaited<ReturnType<typeof getEvidenceEvent>>, TError = ErrorType<void>>(eventId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getEvidenceEvent>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetEvidenceEventQueryKey(eventId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getEvidenceEvent>>> = ({ signal }) => getEvidenceEvent(eventId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: eventId !== null && eventId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getEvidenceEvent>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetEvidenceEventQueryResult = NonNullable<Awaited<ReturnType<typeof getEvidenceEvent>>>
+export type GetEvidenceEventQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get a published event and its explicit relationships
+ */
+
+export function useGetEvidenceEvent<TData = Awaited<ReturnType<typeof getEvidenceEvent>>, TError = ErrorType<void>>(
+ eventId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getEvidenceEvent>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetEvidenceEventQueryOptions(eventId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetStoryEvidenceUrl = (storyId: number,) => {
+
+
+
+
+  return `/api/stories/${storyId}/evidence`
+}
+
+/**
+ * @summary Get events and sources explicitly linked to a published article
+ */
+export const getStoryEvidence = async (storyId: number, options?: Parameters<typeof customFetch>[1]): Promise<StoryEvidenceResponse> => {
+
+  return customFetch<StoryEvidenceResponse>(getGetStoryEvidenceUrl(storyId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetStoryEvidenceQueryKey = (storyId: number,) => {
+    return [
+    `/api/stories/${storyId}/evidence`
+    ] as const;
+    }
+
+
+export const getGetStoryEvidenceQueryOptions = <TData = Awaited<ReturnType<typeof getStoryEvidence>>, TError = ErrorType<void>>(storyId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStoryEvidence>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetStoryEvidenceQueryKey(storyId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getStoryEvidence>>> = ({ signal }) => getStoryEvidence(storyId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: storyId !== null && storyId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getStoryEvidence>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetStoryEvidenceQueryResult = NonNullable<Awaited<ReturnType<typeof getStoryEvidence>>>
+export type GetStoryEvidenceQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get events and sources explicitly linked to a published article
+ */
+
+export function useGetStoryEvidence<TData = Awaited<ReturnType<typeof getStoryEvidence>>, TError = ErrorType<void>>(
+ storyId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStoryEvidence>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetStoryEvidenceQueryOptions(storyId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetSourceDocumentUrl = (sourceId: number,) => {
+
+
+
+
+  return `/api/sources/${sourceId}`
+}
+
+/**
+ * @summary Get a source document and its explicit event and article links
+ */
+export const getSourceDocument = async (sourceId: number, options?: Parameters<typeof customFetch>[1]): Promise<SourceDocumentResponse> => {
+
+  return customFetch<SourceDocumentResponse>(getGetSourceDocumentUrl(sourceId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSourceDocumentQueryKey = (sourceId: number,) => {
+    return [
+    `/api/sources/${sourceId}`
+    ] as const;
+    }
+
+
+export const getGetSourceDocumentQueryOptions = <TData = Awaited<ReturnType<typeof getSourceDocument>>, TError = ErrorType<void>>(sourceId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSourceDocument>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSourceDocumentQueryKey(sourceId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSourceDocument>>> = ({ signal }) => getSourceDocument(sourceId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: sourceId !== null && sourceId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSourceDocument>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSourceDocumentQueryResult = NonNullable<Awaited<ReturnType<typeof getSourceDocument>>>
+export type GetSourceDocumentQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get a source document and its explicit event and article links
+ */
+
+export function useGetSourceDocument<TData = Awaited<ReturnType<typeof getSourceDocument>>, TError = ErrorType<void>>(
+ sourceId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSourceDocument>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSourceDocumentQueryOptions(sourceId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSearchEvidenceRecordsUrl = (params: SearchEvidenceRecordsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/evidence-search?${stringifiedParams}` : `/api/evidence-search`
+}
+
+/**
+ * @summary Search published articles, events, and source documents separately
+ */
+export const searchEvidenceRecords = async (params: SearchEvidenceRecordsParams, options?: Parameters<typeof customFetch>[1]): Promise<EvidenceSearchResponse> => {
+
+  return customFetch<EvidenceSearchResponse>(getSearchEvidenceRecordsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getSearchEvidenceRecordsQueryKey = (params?: SearchEvidenceRecordsParams,) => {
+    return [
+    `/api/evidence-search`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getSearchEvidenceRecordsQueryOptions = <TData = Awaited<ReturnType<typeof searchEvidenceRecords>>, TError = ErrorType<unknown>>(params: SearchEvidenceRecordsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof searchEvidenceRecords>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getSearchEvidenceRecordsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof searchEvidenceRecords>>> = ({ signal }) => searchEvidenceRecords(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof searchEvidenceRecords>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type SearchEvidenceRecordsQueryResult = NonNullable<Awaited<ReturnType<typeof searchEvidenceRecords>>>
+export type SearchEvidenceRecordsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Search published articles, events, and source documents separately
+ */
+
+export function useSearchEvidenceRecords<TData = Awaited<ReturnType<typeof searchEvidenceRecords>>, TError = ErrorType<unknown>>(
+ params: SearchEvidenceRecordsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof searchEvidenceRecords>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getSearchEvidenceRecordsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetEditorEvidenceUrl = () => {
+
+
+
+
+  return `/api/editor/evidence`
+}
+
+/**
+ * @summary List evidence records and all stored relationships for editors
+ */
+export const getEditorEvidence = async ( options?: Parameters<typeof customFetch>[1]): Promise<EditorEvidenceResponse> => {
+
+  return customFetch<EditorEvidenceResponse>(getGetEditorEvidenceUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetEditorEvidenceQueryKey = () => {
+    return [
+    `/api/editor/evidence`
+    ] as const;
+    }
+
+
+export const getGetEditorEvidenceQueryOptions = <TData = Awaited<ReturnType<typeof getEditorEvidence>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getEditorEvidence>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetEditorEvidenceQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getEditorEvidence>>> = ({ signal }) => getEditorEvidence({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getEditorEvidence>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetEditorEvidenceQueryResult = NonNullable<Awaited<ReturnType<typeof getEditorEvidence>>>
+export type GetEditorEvidenceQueryError = ErrorType<void>
+
+
+/**
+ * @summary List evidence records and all stored relationships for editors
+ */
+
+export function useGetEditorEvidence<TData = Awaited<ReturnType<typeof getEditorEvidence>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getEditorEvidence>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetEditorEvidenceQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateEvidenceEventUrl = () => {
+
+
+
+
+  return `/api/editor/events`
+}
+
+/**
+ * @summary Create an event record
+ */
+export const createEvidenceEvent = async (evidenceEventInput: EvidenceEventInput, options?: Parameters<typeof customFetch>[1]): Promise<EvidenceEventRecord> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<EvidenceEventRecord>(getCreateEvidenceEventUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(evidenceEventInput)
+  }
+);}
+
+
+
+
+
+export const getCreateEvidenceEventMutationKey = () => ['createEvidenceEvent'] as const;
+
+export const getCreateEvidenceEventMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createEvidenceEvent>>, TError,CreateEvidenceEventMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createEvidenceEvent>>, TError,CreateEvidenceEventMutationVariables, TContext> => {
+
+const mutationKey = getCreateEvidenceEventMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createEvidenceEvent>>, CreateEvidenceEventMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createEvidenceEvent(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateEvidenceEventMutationResult = NonNullable<Awaited<ReturnType<typeof createEvidenceEvent>>>
+    export type CreateEvidenceEventMutationBody = BodyType<EvidenceEventInput>
+    export type CreateEvidenceEventMutationError = ErrorType<void>
+    export type CreateEvidenceEventMutationVariables = {data: BodyType<EvidenceEventInput>}
+
+    /**
+ * @summary Create an event record
+ */
+export const useCreateEvidenceEvent = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createEvidenceEvent>>, TError,CreateEvidenceEventMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createEvidenceEvent>>,
+        TError,
+        CreateEvidenceEventMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateEvidenceEventMutationOptions(options));
+    }
+
+export const getUpdateEvidenceEventUrl = (eventId: number,) => {
+
+
+
+
+  return `/api/editor/events/${eventId}`
+}
+
+/**
+ * @summary Update an event record
+ */
+export const updateEvidenceEvent = async (eventId: number,
+    evidenceEventInput: EvidenceEventInput, options?: Parameters<typeof customFetch>[1]): Promise<EvidenceEventRecord> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<EvidenceEventRecord>(getUpdateEvidenceEventUrl(eventId),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(evidenceEventInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateEvidenceEventMutationKey = () => ['updateEvidenceEvent'] as const;
+
+export const getUpdateEvidenceEventMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateEvidenceEvent>>, TError,UpdateEvidenceEventMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateEvidenceEvent>>, TError,UpdateEvidenceEventMutationVariables, TContext> => {
+
+const mutationKey = getUpdateEvidenceEventMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateEvidenceEvent>>, UpdateEvidenceEventMutationVariables> = (props) => {
+          const {eventId,data} = props ?? {};
+
+          return  updateEvidenceEvent(eventId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateEvidenceEventMutationResult = NonNullable<Awaited<ReturnType<typeof updateEvidenceEvent>>>
+    export type UpdateEvidenceEventMutationBody = BodyType<EvidenceEventInput>
+    export type UpdateEvidenceEventMutationError = ErrorType<void>
+    export type UpdateEvidenceEventMutationVariables = {eventId: number;data: BodyType<EvidenceEventInput>}
+
+    /**
+ * @summary Update an event record
+ */
+export const useUpdateEvidenceEvent = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateEvidenceEvent>>, TError,UpdateEvidenceEventMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateEvidenceEvent>>,
+        TError,
+        UpdateEvidenceEventMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateEvidenceEventMutationOptions(options));
+    }
+
+export const getDeleteEvidenceEventUrl = (eventId: number,) => {
+
+
+
+
+  return `/api/editor/events/${eventId}`
+}
+
+/**
+ * @summary Delete an event and cascade its relationship rows
+ */
+export const deleteEvidenceEvent = async (eventId: number, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getDeleteEvidenceEventUrl(eventId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteEvidenceEventMutationKey = () => ['deleteEvidenceEvent'] as const;
+
+export const getDeleteEvidenceEventMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteEvidenceEvent>>, TError,DeleteEvidenceEventMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteEvidenceEvent>>, TError,DeleteEvidenceEventMutationVariables, TContext> => {
+
+const mutationKey = getDeleteEvidenceEventMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteEvidenceEvent>>, DeleteEvidenceEventMutationVariables> = (props) => {
+          const {eventId} = props ?? {};
+
+          return  deleteEvidenceEvent(eventId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteEvidenceEventMutationResult = NonNullable<Awaited<ReturnType<typeof deleteEvidenceEvent>>>
+
+    export type DeleteEvidenceEventMutationError = ErrorType<void>
+    export type DeleteEvidenceEventMutationVariables = {eventId: number}
+
+    /**
+ * @summary Delete an event and cascade its relationship rows
+ */
+export const useDeleteEvidenceEvent = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteEvidenceEvent>>, TError,DeleteEvidenceEventMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteEvidenceEvent>>,
+        TError,
+        DeleteEvidenceEventMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDeleteEvidenceEventMutationOptions(options));
+    }
+
+export const getCreateSourceDocumentUrl = () => {
+
+
+
+
+  return `/api/editor/sources`
+}
+
+/**
+ * @summary Create a source document record
+ */
+export const createSourceDocument = async (sourceDocumentInput: SourceDocumentInput, options?: Parameters<typeof customFetch>[1]): Promise<SourceDocument> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<SourceDocument>(getCreateSourceDocumentUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(sourceDocumentInput)
+  }
+);}
+
+
+
+
+
+export const getCreateSourceDocumentMutationKey = () => ['createSourceDocument'] as const;
+
+export const getCreateSourceDocumentMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSourceDocument>>, TError,CreateSourceDocumentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createSourceDocument>>, TError,CreateSourceDocumentMutationVariables, TContext> => {
+
+const mutationKey = getCreateSourceDocumentMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createSourceDocument>>, CreateSourceDocumentMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createSourceDocument(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateSourceDocumentMutationResult = NonNullable<Awaited<ReturnType<typeof createSourceDocument>>>
+    export type CreateSourceDocumentMutationBody = BodyType<SourceDocumentInput>
+    export type CreateSourceDocumentMutationError = ErrorType<void>
+    export type CreateSourceDocumentMutationVariables = {data: BodyType<SourceDocumentInput>}
+
+    /**
+ * @summary Create a source document record
+ */
+export const useCreateSourceDocument = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSourceDocument>>, TError,CreateSourceDocumentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createSourceDocument>>,
+        TError,
+        CreateSourceDocumentMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateSourceDocumentMutationOptions(options));
+    }
+
+export const getUpdateSourceDocumentUrl = (sourceId: number,) => {
+
+
+
+
+  return `/api/editor/sources/${sourceId}`
+}
+
+/**
+ * @summary Update a source document record
+ */
+export const updateSourceDocument = async (sourceId: number,
+    sourceDocumentInput: SourceDocumentInput, options?: Parameters<typeof customFetch>[1]): Promise<SourceDocument> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<SourceDocument>(getUpdateSourceDocumentUrl(sourceId),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(sourceDocumentInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateSourceDocumentMutationKey = () => ['updateSourceDocument'] as const;
+
+export const getUpdateSourceDocumentMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSourceDocument>>, TError,UpdateSourceDocumentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateSourceDocument>>, TError,UpdateSourceDocumentMutationVariables, TContext> => {
+
+const mutationKey = getUpdateSourceDocumentMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateSourceDocument>>, UpdateSourceDocumentMutationVariables> = (props) => {
+          const {sourceId,data} = props ?? {};
+
+          return  updateSourceDocument(sourceId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateSourceDocumentMutationResult = NonNullable<Awaited<ReturnType<typeof updateSourceDocument>>>
+    export type UpdateSourceDocumentMutationBody = BodyType<SourceDocumentInput>
+    export type UpdateSourceDocumentMutationError = ErrorType<void>
+    export type UpdateSourceDocumentMutationVariables = {sourceId: number;data: BodyType<SourceDocumentInput>}
+
+    /**
+ * @summary Update a source document record
+ */
+export const useUpdateSourceDocument = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSourceDocument>>, TError,UpdateSourceDocumentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateSourceDocument>>,
+        TError,
+        UpdateSourceDocumentMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateSourceDocumentMutationOptions(options));
+    }
+
+export const getDeleteSourceDocumentUrl = (sourceId: number,) => {
+
+
+
+
+  return `/api/editor/sources/${sourceId}`
+}
+
+/**
+ * @summary Delete a source document and cascade its relationship rows
+ */
+export const deleteSourceDocument = async (sourceId: number, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getDeleteSourceDocumentUrl(sourceId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteSourceDocumentMutationKey = () => ['deleteSourceDocument'] as const;
+
+export const getDeleteSourceDocumentMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSourceDocument>>, TError,DeleteSourceDocumentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteSourceDocument>>, TError,DeleteSourceDocumentMutationVariables, TContext> => {
+
+const mutationKey = getDeleteSourceDocumentMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteSourceDocument>>, DeleteSourceDocumentMutationVariables> = (props) => {
+          const {sourceId} = props ?? {};
+
+          return  deleteSourceDocument(sourceId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteSourceDocumentMutationResult = NonNullable<Awaited<ReturnType<typeof deleteSourceDocument>>>
+
+    export type DeleteSourceDocumentMutationError = ErrorType<void>
+    export type DeleteSourceDocumentMutationVariables = {sourceId: number}
+
+    /**
+ * @summary Delete a source document and cascade its relationship rows
+ */
+export const useDeleteSourceDocument = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSourceDocument>>, TError,DeleteSourceDocumentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteSourceDocument>>,
+        TError,
+        DeleteSourceDocumentMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDeleteSourceDocumentMutationOptions(options));
+    }
+
+export const getLinkArticleToEventUrl = () => {
+
+
+
+
+  return `/api/editor/article-events`
+}
+
+/**
+ * @summary Explicitly link an article to an event
+ */
+export const linkArticleToEvent = async (articleEventLinkInput: ArticleEventLinkInput, options?: Parameters<typeof customFetch>[1]): Promise<EvidenceRelationshipResult> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<EvidenceRelationshipResult>(getLinkArticleToEventUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(articleEventLinkInput)
+  }
+);}
+
+
+
+
+
+export const getLinkArticleToEventMutationKey = () => ['linkArticleToEvent'] as const;
+
+export const getLinkArticleToEventMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof linkArticleToEvent>>, TError,LinkArticleToEventMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof linkArticleToEvent>>, TError,LinkArticleToEventMutationVariables, TContext> => {
+
+const mutationKey = getLinkArticleToEventMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof linkArticleToEvent>>, LinkArticleToEventMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  linkArticleToEvent(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type LinkArticleToEventMutationResult = NonNullable<Awaited<ReturnType<typeof linkArticleToEvent>>>
+    export type LinkArticleToEventMutationBody = BodyType<ArticleEventLinkInput>
+    export type LinkArticleToEventMutationError = ErrorType<void>
+    export type LinkArticleToEventMutationVariables = {data: BodyType<ArticleEventLinkInput>}
+
+    /**
+ * @summary Explicitly link an article to an event
+ */
+export const useLinkArticleToEvent = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof linkArticleToEvent>>, TError,LinkArticleToEventMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof linkArticleToEvent>>,
+        TError,
+        LinkArticleToEventMutationVariables,
+        TContext
+      > => {
+      return useMutation(getLinkArticleToEventMutationOptions(options));
+    }
+
+export const getUnlinkArticleFromEventUrl = (eventId: number,
+    storyId: number,) => {
+
+
+
+
+  return `/api/editor/article-events/${eventId}/${storyId}`
+}
+
+/**
+ * @summary Remove an explicit article-to-event relationship
+ */
+export const unlinkArticleFromEvent = async (eventId: number,
+    storyId: number, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getUnlinkArticleFromEventUrl(eventId,storyId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getUnlinkArticleFromEventMutationKey = () => ['unlinkArticleFromEvent'] as const;
+
+export const getUnlinkArticleFromEventMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unlinkArticleFromEvent>>, TError,UnlinkArticleFromEventMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof unlinkArticleFromEvent>>, TError,UnlinkArticleFromEventMutationVariables, TContext> => {
+
+const mutationKey = getUnlinkArticleFromEventMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof unlinkArticleFromEvent>>, UnlinkArticleFromEventMutationVariables> = (props) => {
+          const {eventId,storyId} = props ?? {};
+
+          return  unlinkArticleFromEvent(eventId,storyId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UnlinkArticleFromEventMutationResult = NonNullable<Awaited<ReturnType<typeof unlinkArticleFromEvent>>>
+
+    export type UnlinkArticleFromEventMutationError = ErrorType<void>
+    export type UnlinkArticleFromEventMutationVariables = {eventId: number;storyId: number}
+
+    /**
+ * @summary Remove an explicit article-to-event relationship
+ */
+export const useUnlinkArticleFromEvent = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unlinkArticleFromEvent>>, TError,UnlinkArticleFromEventMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof unlinkArticleFromEvent>>,
+        TError,
+        UnlinkArticleFromEventMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUnlinkArticleFromEventMutationOptions(options));
+    }
+
+export const getLinkSourceToEventUrl = () => {
+
+
+
+
+  return `/api/editor/event-sources`
+}
+
+/**
+ * @summary Explicitly link a source document to an event
+ */
+export const linkSourceToEvent = async (eventSourceLinkInput: EventSourceLinkInput, options?: Parameters<typeof customFetch>[1]): Promise<EvidenceRelationshipResult> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<EvidenceRelationshipResult>(getLinkSourceToEventUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(eventSourceLinkInput)
+  }
+);}
+
+
+
+
+
+export const getLinkSourceToEventMutationKey = () => ['linkSourceToEvent'] as const;
+
+export const getLinkSourceToEventMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof linkSourceToEvent>>, TError,LinkSourceToEventMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof linkSourceToEvent>>, TError,LinkSourceToEventMutationVariables, TContext> => {
+
+const mutationKey = getLinkSourceToEventMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof linkSourceToEvent>>, LinkSourceToEventMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  linkSourceToEvent(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type LinkSourceToEventMutationResult = NonNullable<Awaited<ReturnType<typeof linkSourceToEvent>>>
+    export type LinkSourceToEventMutationBody = BodyType<EventSourceLinkInput>
+    export type LinkSourceToEventMutationError = ErrorType<void>
+    export type LinkSourceToEventMutationVariables = {data: BodyType<EventSourceLinkInput>}
+
+    /**
+ * @summary Explicitly link a source document to an event
+ */
+export const useLinkSourceToEvent = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof linkSourceToEvent>>, TError,LinkSourceToEventMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof linkSourceToEvent>>,
+        TError,
+        LinkSourceToEventMutationVariables,
+        TContext
+      > => {
+      return useMutation(getLinkSourceToEventMutationOptions(options));
+    }
+
+export const getUnlinkSourceFromEventUrl = (eventId: number,
+    sourceId: number,) => {
+
+
+
+
+  return `/api/editor/event-sources/${eventId}/${sourceId}`
+}
+
+/**
+ * @summary Remove an explicit event-to-source relationship
+ */
+export const unlinkSourceFromEvent = async (eventId: number,
+    sourceId: number, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getUnlinkSourceFromEventUrl(eventId,sourceId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getUnlinkSourceFromEventMutationKey = () => ['unlinkSourceFromEvent'] as const;
+
+export const getUnlinkSourceFromEventMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unlinkSourceFromEvent>>, TError,UnlinkSourceFromEventMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof unlinkSourceFromEvent>>, TError,UnlinkSourceFromEventMutationVariables, TContext> => {
+
+const mutationKey = getUnlinkSourceFromEventMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof unlinkSourceFromEvent>>, UnlinkSourceFromEventMutationVariables> = (props) => {
+          const {eventId,sourceId} = props ?? {};
+
+          return  unlinkSourceFromEvent(eventId,sourceId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UnlinkSourceFromEventMutationResult = NonNullable<Awaited<ReturnType<typeof unlinkSourceFromEvent>>>
+
+    export type UnlinkSourceFromEventMutationError = ErrorType<void>
+    export type UnlinkSourceFromEventMutationVariables = {eventId: number;sourceId: number}
+
+    /**
+ * @summary Remove an explicit event-to-source relationship
+ */
+export const useUnlinkSourceFromEvent = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unlinkSourceFromEvent>>, TError,UnlinkSourceFromEventMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof unlinkSourceFromEvent>>,
+        TError,
+        UnlinkSourceFromEventMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUnlinkSourceFromEventMutationOptions(options));
+    }
 
 export const getGetPoliciesUrl = (params?: GetPoliciesParams,) => {
   const normalizedParams = new URLSearchParams();

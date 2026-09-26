@@ -83,6 +83,54 @@ export const DecisionImpactWorkflowStatus = {
   archived: 'archived',
 } as const;
 
+export type EvidenceEventWorkflowStatus = typeof EvidenceEventWorkflowStatus[keyof typeof EvidenceEventWorkflowStatus];
+
+
+export const EvidenceEventWorkflowStatus = {
+  draft: 'draft',
+  published: 'published',
+  archived: 'archived',
+} as const;
+
+export type EvidenceSourceStatus = typeof EvidenceSourceStatus[keyof typeof EvidenceSourceStatus];
+
+
+export const EvidenceSourceStatus = {
+  verified: 'verified',
+  unverified: 'unverified',
+  archived: 'archived',
+  unavailable: 'unavailable',
+} as const;
+
+export type EvidenceDocumentType = typeof EvidenceDocumentType[keyof typeof EvidenceDocumentType];
+
+
+export const EvidenceDocumentType = {
+  'official-document': 'official-document',
+  'court-record': 'court-record',
+  'government-data': 'government-data',
+  report: 'report',
+  'news-report': 'news-report',
+  other: 'other',
+} as const;
+
+export type EvidenceSourceRole = typeof EvidenceSourceRole[keyof typeof EvidenceSourceRole];
+
+
+export const EvidenceSourceRole = {
+  primary: 'primary',
+  secondary: 'secondary',
+} as const;
+
+export type EvidenceResultType = typeof EvidenceResultType[keyof typeof EvidenceResultType];
+
+
+export const EvidenceResultType = {
+  article: 'article',
+  event: 'event',
+  source: 'source',
+} as const;
+
 export type IssueStatus = typeof IssueStatus[keyof typeof IssueStatus];
 
 
@@ -129,6 +177,17 @@ export interface Story {
   source: string;
   sourceUrl: string | null;
   publishedOn: string | null;
+  /**
+     * @nullable
+     * @pattern ^\d{4}-\d{2}-\d{2}$
+     */
+  recordDate: string | null;
+  /** @nullable */
+  articlePublishedAt: string | null;
+  /** @minimum 0 */
+  eventCount?: number;
+  /** @minimum 0 */
+  sourceCount?: number;
   eyebrow: string;
   title: string;
   dek: string;
@@ -224,6 +283,207 @@ export interface ArchiveResult {
   topics: Topic[];
   kinds: StoryKind[];
   states: string[];
+}
+
+export interface EvidenceEventRecord {
+  id: number;
+  title: string;
+  topic: Topic;
+  /**
+     * @nullable
+     * @pattern ^\d{4}-\d{2}-\d{2}$
+     */
+  recordDate: string | null;
+  summary: string;
+  workflowStatus: EvidenceEventWorkflowStatus;
+}
+
+export interface EvidenceEventInput {
+  /** @minLength 1 */
+  title: string;
+  topic: Topic;
+  /** @nullable */
+  recordDate?: string | null;
+  summary: string;
+  workflowStatus?: EvidenceEventWorkflowStatus;
+}
+
+export interface SourceDocument {
+  id: number;
+  title: string;
+  publisher: string;
+  /**
+     * @nullable
+     * @pattern ^\d{4}-\d{2}-\d{2}$
+     */
+  publicationDate: string | null;
+  documentType: EvidenceDocumentType;
+  /** @nullable */
+  sourceUrl: string | null;
+  status: EvidenceSourceStatus;
+}
+
+export interface SourceDocumentInput {
+  /** @minLength 1 */
+  title: string;
+  /** @minLength 1 */
+  publisher: string;
+  /**
+     * @nullable
+     * @pattern ^\d{4}-\d{2}-\d{2}$
+     */
+  publicationDate?: string | null;
+  documentType: EvidenceDocumentType;
+  /** @nullable */
+  sourceUrl?: string | null;
+  status: EvidenceSourceStatus;
+}
+
+export interface EvidenceArticle {
+  id: number;
+  title: string;
+  topic: Topic;
+  kind: StoryKind;
+  /**
+     * @nullable
+     * @pattern ^\d{4}-\d{2}-\d{2}$
+     */
+  recordDate: string | null;
+  /** @nullable */
+  articlePublishedAt: string | null;
+  canonicalPath: string;
+  verificationStatus: VerificationStatus;
+  workflowStatus?: StoryWorkflowStatus;
+}
+
+export interface EventSourceRelationship {
+  sourceRole: EvidenceSourceRole;
+  sourceDocument: SourceDocument;
+}
+
+export interface EvidenceEventDetail {
+  event: EvidenceEventRecord;
+  articles: EvidenceArticle[];
+  primarySources: SourceDocument[];
+  secondarySources: SourceDocument[];
+  /** @minimum 0 */
+  articleCount: number;
+  /** @minimum 0 */
+  sourceCount: number;
+}
+
+export interface EvidenceEventsResponse {
+  events: EvidenceEventDetail[];
+}
+
+export interface EvidenceEventResponse {
+  event: EvidenceEventDetail;
+}
+
+export interface StoryEvidenceResponse {
+  events: EvidenceEventDetail[];
+}
+
+export interface SourceEventRelationship {
+  event: EvidenceEventRecord;
+  sourceRole: EvidenceSourceRole;
+}
+
+export interface SourceDocumentResponse {
+  sourceDocument: SourceDocument;
+  supportingEvents: SourceEventRelationship[];
+  citedByArticles: EvidenceArticle[];
+}
+
+export interface EvidenceAuditMetadata {
+  createdBy: string;
+  updatedBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EditorArticleEventLink {
+  article: EvidenceArticle;
+  linkedBy: string;
+  linkedAt: string;
+}
+
+export interface EditorEventSourceLink {
+  sourceDocument: SourceDocument;
+  sourceRole: EvidenceSourceRole;
+  linkedBy: string;
+  linkedAt: string;
+}
+
+export interface EditorEvidenceEvent {
+  event: EvidenceEventRecord;
+  audit: EvidenceAuditMetadata;
+  articleLinks: EditorArticleEventLink[];
+  sourceLinks: EditorEventSourceLink[];
+}
+
+export interface EditorSourceDocument {
+  sourceDocument: SourceDocument;
+  audit: EvidenceAuditMetadata;
+}
+
+export interface EditorEvidenceResponse {
+  events: EditorEvidenceEvent[];
+  sourceDocuments: EditorSourceDocument[];
+  articles: EvidenceArticle[];
+}
+
+export interface EvidenceSearchResult {
+  resultType: EvidenceResultType;
+  id: number;
+  title: string;
+  summary: string;
+  /** @nullable */
+  topic: string | null;
+  /**
+     * @nullable
+     * @pattern ^\d{4}-\d{2}-\d{2}$
+     */
+  recordDate: string | null;
+  /** @nullable */
+  articlePublishedAt: string | null;
+  /**
+     * @nullable
+     * @pattern ^\d{4}-\d{2}-\d{2}$
+     */
+  sourcePublicationDate: string | null;
+  path: string;
+  /** @minimum 0 */
+  eventCount: number;
+  /** @minimum 0 */
+  sourceCount: number;
+  sourceStatus: EvidenceSourceStatus | null;
+  documentType: EvidenceDocumentType | null;
+  /** @nullable */
+  sourceUrl: string | null;
+}
+
+export interface EvidenceSearchResponse {
+  results: EvidenceSearchResult[];
+}
+
+export interface ArticleEventLinkInput {
+  /** @minimum 1 */
+  articleId: number;
+  /** @minimum 1 */
+  eventId: number;
+}
+
+export interface EventSourceLinkInput {
+  /** @minimum 1 */
+  eventId: number;
+  /** @minimum 1 */
+  sourceDocumentId: number;
+  sourceRole: EvidenceSourceRole;
+}
+
+export interface EvidenceRelationshipResult {
+  linked: boolean;
 }
 
 export interface PolicySource {
@@ -530,6 +790,22 @@ state?: string;
  * @maximum 100
  */
 limit?: number;
+};
+
+export type GetEvidenceEventsParams = {
+topic?: Topic;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
+};
+
+export type SearchEvidenceRecordsParams = {
+/**
+ * @minLength 1
+ */
+q: string;
 };
 
 export type GetPoliciesParams = {

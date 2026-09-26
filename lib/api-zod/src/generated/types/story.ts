@@ -20,6 +20,17 @@ export interface Story {
   source: string;
   sourceUrl: string | null;
   publishedOn: Date | null;
+  /**
+     * @nullable
+     * @pattern ^\d{4}-\d{2}-\d{2}$
+     */
+  recordDate: string | null;
+  /** @nullable */
+  articlePublishedAt: Date | null;
+  /** @minimum 0 */
+  eventCount?: number;
+  /** @minimum 0 */
+  sourceCount?: number;
   eyebrow: string;
   title: string;
   dek: string;

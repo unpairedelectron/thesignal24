@@ -35,6 +35,14 @@ import {
 import { Link, Route, Router as WouterRouter, Switch, useLocation, useParams } from 'wouter';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { FOCUS_SOURCES } from '@/components/focus-source-desk';
+import {
+  ArticleEvidenceSection,
+  EditorEvidenceDesk,
+  EvidenceEventDetailPage,
+  EvidenceEventsPage,
+  EvidenceSearchPage,
+  EvidenceSourceDetailPage,
+} from '@/components/evidence-pages';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import {
@@ -171,12 +179,14 @@ function Header({ editor = false }: { editor?: boolean }) {
           {editor ? (
             <>
               <Link href="/" className="signal-kicker signal-link" data-testid="link-back-publication">Back to publication</Link>
-              <span className="signal-kicker text-accent">Editorial desk</span>
+              <Link href="/editor" className="signal-kicker signal-link" data-testid="link-editorial-desk">Editorial desk</Link>
+              <Link href="/editor/evidence" className="signal-kicker text-accent" data-testid="link-editor-evidence">Evidence graph</Link>
             </>
           ) : (
             <>
               <Link href="/archive" className="signal-kicker signal-link" data-testid="link-investigations">Investigations</Link>
               <a href="/#briefing" className="signal-kicker signal-link" data-testid="link-signals">Signals</a>
+              <Link href="/events" className="signal-kicker signal-link" data-testid="link-evidence-events">Evidence</Link>
               <Link href="/data" className="signal-kicker signal-link" data-testid="link-data">Data</Link>
               <Link href="/timeline" className="signal-kicker signal-link" data-testid="link-timeline">Timeline</Link>
               <Link href="/archive" className="signal-kicker signal-link" data-testid="link-archive">Archive</Link>
@@ -193,9 +203,14 @@ function Header({ editor = false }: { editor?: boolean }) {
         </div>
         <nav id="mobile-navigation" hidden={!mobileOpen} className="absolute left-0 right-0 top-full border-b border-foreground/20 bg-background p-5 shadow-md md:hidden" aria-label="Mobile navigation">
             <div className="flex flex-col gap-5">
-              {editor ? <Link href="/" onClick={close} className="signal-kicker signal-link">Back to publication</Link> : <>
+              {editor ? <>
+                 <Link href="/" onClick={close} className="signal-kicker signal-link">Back to publication</Link>
+                 <Link href="/editor" onClick={close} className="signal-kicker signal-link">Editorial desk</Link>
+                 <Link href="/editor/evidence" onClick={close} className="signal-kicker signal-link">Evidence graph</Link>
+              </> : <>
                  <Link href="/archive" onClick={close} className="signal-kicker signal-link">Investigations</Link>
                  <a href="/#briefing" onClick={close} className="signal-kicker signal-link">Signals</a>
+                 <Link href="/events" onClick={close} className="signal-kicker signal-link">Evidence</Link>
                  <Link href="/data" onClick={close} className="signal-kicker signal-link">Data</Link>
                  <Link href="/timeline" onClick={close} className="signal-kicker signal-link">Timeline</Link>
                  <Link href="/archive" onClick={close} className="signal-kicker signal-link">Archive</Link>
@@ -262,7 +277,7 @@ function SourceLine({ story, detail = false }: { story: Story; detail?: boolean 
     <p className="mt-1 text-sm font-medium">{story.source || 'Source not supplied'}</p>
     <p className="mt-1 font-mono-signal text-[10px] uppercase tracking-[.1em] text-muted-foreground">{story.kind}{story.state ? ` · ${story.state}` : ''}</p>
     <dl className="mt-3 grid gap-1 text-[11px] text-muted-foreground">
-      <div className="flex flex-wrap gap-2"><dt className="signal-kicker text-[9px]">Date attached to record</dt><dd>{formatDate(story.publishedOn)}</dd></div>
+      <div className="flex flex-wrap gap-2"><dt className="signal-kicker text-[9px]">Date attached to record</dt><dd>{formatDate(story.recordDate)}</dd></div>
       {story.sourcePublishedOn && <div className="flex flex-wrap gap-2"><dt className="signal-kicker text-[9px]">Source published</dt><dd>{formatDate(story.sourcePublishedOn)}</dd></div>}
       {story.sourceRetrievedOn && <div className="flex flex-wrap gap-2"><dt className="signal-kicker text-[9px]">Retrieved</dt><dd>{formatDate(story.sourceRetrievedOn)}</dd></div>}
     </dl>
@@ -274,7 +289,7 @@ function SourceLine({ story, detail = false }: { story: Story; detail?: boolean 
 function StoryCard({ story, compact = false }: { story: Story; compact?: boolean }) {
   return <article className={`story-hover group ${compact ? 'grid grid-cols-[112px_1fr] gap-4 border-b border-foreground/15 py-5 last:border-0 sm:grid-cols-[145px_1fr]' : ''}`} data-testid={`card-story-${story.id}`}>
     <Link href={storyPath(story)} className={compact ? 'block h-[112px] sm:h-[145px]' : 'block w-full'} data-testid={`link-story-art-${story.id}`}><StoryArt story={story} compact={compact} /></Link>
-    <div className={compact ? 'flex min-w-0 flex-col justify-between' : 'pt-5'}><div><p className="signal-kicker text-accent">{story.topic} / {story.kind}</p><Link href={storyPath(story)} className="mt-2 block" data-testid={`link-story-${story.id}`}><h3 className={`${compact ? 'text-[1.12rem] sm:text-[1.3rem]' : 'text-[2rem] sm:text-[2.7rem]'} font-display leading-[1.02] tracking-[-.025em] transition-colors group-hover:text-accent`}>{story.title}</h3></Link><p className={`mt-3 ${compact ? 'line-clamp-2 text-[.84rem]' : 'max-w-xl text-[1rem]'} leading-relaxed text-muted-foreground`}>{story.dek}</p></div><div className="mt-4"><SourceLine story={story} /></div></div>
+    <div className={compact ? 'flex min-w-0 flex-col justify-between' : 'pt-5'}><div><p className="signal-kicker text-accent">{story.topic} / {story.kind}</p><Link href={storyPath(story)} className="mt-2 block" data-testid={`link-story-${story.id}`}><h3 className={`${compact ? 'text-[1.12rem] sm:text-[1.3rem]' : 'text-[2rem] sm:text-[2.7rem]'} font-display leading-[1.02] tracking-[-.025em] transition-colors group-hover:text-accent`}>{story.title}</h3></Link><p className={`mt-3 ${compact ? 'line-clamp-2 text-[.84rem]' : 'max-w-xl text-[1rem]'} leading-relaxed text-muted-foreground`}>{story.dek}</p></div><div className="mt-4"><SourceLine story={story} /></div>{((story.eventCount ?? 0) + (story.sourceCount ?? 0)) > 0 && <p className="mt-3 signal-kicker text-muted-foreground">{story.eventCount ?? 0} explicitly linked {(story.eventCount ?? 0) === 1 ? 'event' : 'events'} · {story.sourceCount ?? 0} {(story.sourceCount ?? 0) === 1 ? 'source' : 'sources'}</p>}</div>
   </article>;
 }
 
@@ -1087,7 +1102,7 @@ function StoryDetail() {
           <h1 className="mt-4 max-w-4xl font-display text-5xl leading-[.94] tracking-[-.055em] sm:text-7xl lg:text-8xl" data-testid="heading-story">{story.title}</h1>
           <p className="mt-7 max-w-2xl text-lg leading-relaxed text-muted-foreground sm:text-xl">{story.dek}</p>
           <div className="mt-7 flex flex-wrap gap-x-5 gap-y-2 signal-kicker text-muted-foreground">
-            <span>Record date / as supplied · {formatDate(story.publishedOn)}</span>
+            <span>Record date / as supplied · {formatDate(story.recordDate)}</span>
             <span>{story.read} min read</span>
             {story.state && <span>{story.state}</span>}
           </div>
@@ -1095,6 +1110,7 @@ function StoryDetail() {
         <StoryArt story={story} />
       </div>
       <div id="record-evidence" className="mx-auto mt-12 article-reading-column"><SourceLine story={story} detail /></div>
+      <div className="signal-container"><ArticleEvidenceSection storyId={story.id} /></div>
       {story.aiDisclosure && <div className="mx-auto mt-6 article-reading-column border-l-2 border-accent bg-accent/10 px-5 py-4"><p className="signal-kicker text-accent">AI-assisted drafting disclosure</p><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{story.aiDisclosure}</p></div>}
       {story.correctionNote && <div className="mx-auto mt-6 article-reading-column border border-accent/40 bg-accent/5 px-5 py-4"><p className="signal-kicker text-accent">Correction note</p><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{story.correctionNote}</p></div>}
       <div className="mx-auto mt-10 grid max-w-[910px] gap-10 lg:grid-cols-[720px_150px] lg:items-start">
@@ -1666,8 +1682,28 @@ function SignInPage() {
     <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} forceRedirectUrl={`${basePath}/editor`} />
   </section></main>;
 }
+function EvidenceEventsRoute() {
+  return <main className="signal-page"><Header /><EvidenceEventsPage /></main>;
+}
+
+function EvidenceEventRoute() {
+  return <main className="signal-page"><Header /><EvidenceEventDetailPage /></main>;
+}
+
+function EvidenceSourceRoute() {
+  return <main className="signal-page"><Header /><EvidenceSourceDetailPage /></main>;
+}
+
+function EvidenceSearchRoute() {
+  return <main className="signal-page"><Header /><EvidenceSearchPage /></main>;
+}
+
+function EditorEvidenceAccessRoute() {
+  return <EditorAccessRoute />;
+}
+
 function AppRoutes() {
-  return <Switch><Route path="/" component={Home} /><Route path="/sign-in/*?" component={SignInPage} /><Route path="/sign-up/*?" component={SignUpPage} /><Route path="/community" component={CommunityPage} /><Route path="/community/:id" component={CommunityDetailPage} /><Route path="/policies" component={PoliciesPage} /><Route path="/policies/:slug" component={PolicyDetail} /><Route path="/archive" component={ArchivePage} /><Route path="/topics" component={TopicIndexPage} /><Route path="/topics/:slug" component={TopicPage} /><Route path="/timeline" component={TimelinePage} /><Route path="/search" component={SearchPage} /><Route path="/authors/:slug" component={AuthorPage} /><Route path="/data" component={DataIndexPage} /><Route path="/stories/:id" component={StoryDetail} /><Route path="/editor" component={EditorAccessRoute} /><Route path="/about" component={AboutPage} /><Route path="/editorial-standards" component={StandardsPage} /><Route path="/methodology" component={MethodologyPage} /><Route path="/:family/:slug" component={StoryDetail} /><Route component={NotFound} /></Switch>;
+  return <Switch><Route path="/" component={Home} /><Route path="/sign-in/*?" component={SignInPage} /><Route path="/sign-up/*?" component={SignUpPage} /><Route path="/community" component={CommunityPage} /><Route path="/community/:id" component={CommunityDetailPage} /><Route path="/policies" component={PoliciesPage} /><Route path="/policies/:slug" component={PolicyDetail} /><Route path="/archive" component={ArchivePage} /><Route path="/events" component={EvidenceEventsRoute} /><Route path="/events/:id" component={EvidenceEventRoute} /><Route path="/sources/:id" component={EvidenceSourceRoute} /><Route path="/topics" component={TopicIndexPage} /><Route path="/topics/:slug" component={TopicPage} /><Route path="/timeline" component={TimelinePage} /><Route path="/search" component={EvidenceSearchRoute} /><Route path="/authors/:slug" component={AuthorPage} /><Route path="/data" component={DataIndexPage} /><Route path="/stories/:id" component={StoryDetail} /><Route path="/editor/evidence" component={EditorEvidenceAccessRoute} /><Route path="/editor" component={EditorAccessRoute} /><Route path="/about" component={AboutPage} /><Route path="/editorial-standards" component={StandardsPage} /><Route path="/methodology" component={MethodologyPage} /><Route path="/:family/:slug" component={StoryDetail} /><Route component={NotFound} /></Switch>;
 }
 
 function ClerkProviderWithRouting() {
@@ -1913,6 +1949,8 @@ function SignUpPage() {
 }
 
 function EditorAccessRoute() {
+  const [location] = useLocation();
+  const evidence = location === "/editor/evidence";
   const { isLoaded, isSignedIn } = useUser();
   const { signOut } = useClerk();
   const session = useGetEditorSession({
@@ -1924,8 +1962,10 @@ function EditorAccessRoute() {
     },
   });
   useSeo({
-    title: 'Editorial desk — Signal Hub',
-    description: 'Private editorial workspace for preparing source-aware Signal Hub records.',
+    title: evidence ? 'Evidence graph — Signal Hub' : 'Editorial desk — Signal Hub',
+    description: evidence
+      ? 'Private editorial workspace for maintaining explicit article, event, and source relationships.'
+      : 'Private editorial workspace for preparing source-aware Signal Hub records.',
     robots: 'noindex, nofollow',
   });
 
@@ -1951,7 +1991,9 @@ function EditorAccessRoute() {
     </section></main>;
   }
 
-  return <EditorialDesk />;
+  return evidence
+    ? <main className="signal-page"><Header editor /><EditorEvidenceDesk /></main>
+    : <EditorialDesk />;
 }
 
 const clerkPubKey = publishableKeyFromHost(

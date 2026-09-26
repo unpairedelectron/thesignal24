@@ -20,6 +20,13 @@ export const HealthCheckResponse = zod.object({
 /**
  * @summary Get the current published issue
  */
+export const getCurrentIssueResponseStoriesItemRecordDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const getCurrentIssueResponseStoriesItemEventCountMin = 0;
+
+export const getCurrentIssueResponseStoriesItemSourceCountMin = 0;
+
+
+
 export const GetCurrentIssueResponse = zod.object({
   "issue": zod.object({
   "id": zod.number().int(),
@@ -39,6 +46,10 @@ export const GetCurrentIssueResponse = zod.object({
   "source": zod.string(),
   "sourceUrl": zod.string().url().nullable(),
   "publishedOn": zod.coerce.date().nullable(),
+  "recordDate": zod.string().regex(getCurrentIssueResponseStoriesItemRecordDateRegExp).nullable(),
+  "articlePublishedAt": zod.coerce.date().nullable(),
+  "eventCount": zod.number().int().min(getCurrentIssueResponseStoriesItemEventCountMin).optional(),
+  "sourceCount": zod.number().int().min(getCurrentIssueResponseStoriesItemSourceCountMin).optional(),
   "eyebrow": zod.string(),
   "title": zod.string(),
   "dek": zod.string(),
@@ -310,6 +321,13 @@ export const ToggleCommunityPostLikeResponse = zod.object({
 /**
  * @summary Get the current issue with editorial workflow fields
  */
+export const getEditorialIssueResponseStoriesItemRecordDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const getEditorialIssueResponseStoriesItemEventCountMin = 0;
+
+export const getEditorialIssueResponseStoriesItemSourceCountMin = 0;
+
+
+
 export const GetEditorialIssueResponse = zod.object({
   "issue": zod.object({
   "id": zod.number().int(),
@@ -329,6 +347,10 @@ export const GetEditorialIssueResponse = zod.object({
   "source": zod.string(),
   "sourceUrl": zod.string().url().nullable(),
   "publishedOn": zod.coerce.date().nullable(),
+  "recordDate": zod.string().regex(getEditorialIssueResponseStoriesItemRecordDateRegExp).nullable(),
+  "articlePublishedAt": zod.coerce.date().nullable(),
+  "eventCount": zod.number().int().min(getEditorialIssueResponseStoriesItemEventCountMin).optional(),
+  "sourceCount": zod.number().int().min(getEditorialIssueResponseStoriesItemSourceCountMin).optional(),
   "eyebrow": zod.string(),
   "title": zod.string(),
   "dek": zod.string(),
@@ -381,6 +403,13 @@ export const GetArchiveQueryParams = zod.object({
   "limit": zod.coerce.number().int().min(1).max(getArchiveQueryLimitMax).default(getArchiveQueryLimitDefault)
 })
 
+export const getArchiveResponseStoriesItemRecordDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const getArchiveResponseStoriesItemEventCountMin = 0;
+
+export const getArchiveResponseStoriesItemSourceCountMin = 0;
+
+
+
 export const GetArchiveResponse = zod.object({
   "stories": zod.array(zod.object({
   "id": zod.number().int(),
@@ -391,6 +420,10 @@ export const GetArchiveResponse = zod.object({
   "source": zod.string(),
   "sourceUrl": zod.string().url().nullable(),
   "publishedOn": zod.coerce.date().nullable(),
+  "recordDate": zod.string().regex(getArchiveResponseStoriesItemRecordDateRegExp).nullable(),
+  "articlePublishedAt": zod.coerce.date().nullable(),
+  "eventCount": zod.number().int().min(getArchiveResponseStoriesItemEventCountMin).optional(),
+  "sourceCount": zod.number().int().min(getArchiveResponseStoriesItemSourceCountMin).optional(),
   "eyebrow": zod.string(),
   "title": zod.string(),
   "dek": zod.string(),
@@ -419,6 +452,596 @@ export const GetArchiveResponse = zod.object({
   "kinds": zod.array(zod.enum(['Article', 'Paper note', 'Archive', 'Explainer'])),
   "states": zod.array(zod.string())
 })
+
+
+/**
+ * @summary List published events and their explicit evidence relationships
+ */
+export const getEvidenceEventsQueryLimitDefault = 100;
+export const getEvidenceEventsQueryLimitMax = 100;
+
+
+
+export const GetEvidenceEventsQueryParams = zod.object({
+  "topic": zod.enum(['Latest', 'Courts & Policy', 'States', 'History', 'Ground Reports', 'Data & Notes']).optional(),
+  "limit": zod.coerce.number().int().min(1).max(getEvidenceEventsQueryLimitMax).default(getEvidenceEventsQueryLimitDefault)
+})
+
+export const getEvidenceEventsResponseEventsItemEventRecordDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const getEvidenceEventsResponseEventsItemArticlesItemRecordDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const getEvidenceEventsResponseEventsItemPrimarySourcesItemPublicationDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const getEvidenceEventsResponseEventsItemSecondarySourcesItemPublicationDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const getEvidenceEventsResponseEventsItemArticleCountMin = 0;
+
+export const getEvidenceEventsResponseEventsItemSourceCountMin = 0;
+
+
+
+export const GetEvidenceEventsResponse = zod.object({
+  "events": zod.array(zod.object({
+  "event": zod.object({
+  "id": zod.number().int(),
+  "title": zod.string(),
+  "topic": zod.enum(['Latest', 'Courts & Policy', 'States', 'History', 'Ground Reports', 'Data & Notes']),
+  "recordDate": zod.string().regex(getEvidenceEventsResponseEventsItemEventRecordDateRegExp).nullable(),
+  "summary": zod.string(),
+  "workflowStatus": zod.enum(['draft', 'published', 'archived'])
+}),
+  "articles": zod.array(zod.object({
+  "id": zod.number().int(),
+  "title": zod.string(),
+  "topic": zod.enum(['Latest', 'Courts & Policy', 'States', 'History', 'Ground Reports', 'Data & Notes']),
+  "kind": zod.enum(['Article', 'Paper note', 'Archive', 'Explainer']),
+  "recordDate": zod.string().regex(getEvidenceEventsResponseEventsItemArticlesItemRecordDateRegExp).nullable(),
+  "articlePublishedAt": zod.coerce.date().nullable(),
+  "canonicalPath": zod.string(),
+  "verificationStatus": zod.enum(['unverified', 'source-linked', 'verified']),
+  "workflowStatus": zod.enum(['draft', 'review', 'scheduled', 'published', 'archived']).optional()
+})),
+  "primarySources": zod.array(zod.object({
+  "id": zod.number().int(),
+  "title": zod.string(),
+  "publisher": zod.string(),
+  "publicationDate": zod.string().regex(getEvidenceEventsResponseEventsItemPrimarySourcesItemPublicationDateRegExp).nullable(),
+  "documentType": zod.enum(['official-document', 'court-record', 'government-data', 'report', 'news-report', 'other']),
+  "sourceUrl": zod.string().url().nullable(),
+  "status": zod.enum(['verified', 'unverified', 'archived', 'unavailable'])
+})),
+  "secondarySources": zod.array(zod.object({
+  "id": zod.number().int(),
+  "title": zod.string(),
+  "publisher": zod.string(),
+  "publicationDate": zod.string().regex(getEvidenceEventsResponseEventsItemSecondarySourcesItemPublicationDateRegExp).nullable(),
+  "documentType": zod.enum(['official-document', 'court-record', 'government-data', 'report', 'news-report', 'other']),
+  "sourceUrl": zod.string().url().nullable(),
+  "status": zod.enum(['verified', 'unverified', 'archived', 'unavailable'])
+})),
+  "articleCount": zod.number().int().min(getEvidenceEventsResponseEventsItemArticleCountMin),
+  "sourceCount": zod.number().int().min(getEvidenceEventsResponseEventsItemSourceCountMin)
+}))
+})
+
+
+/**
+ * @summary Get a published event and its explicit relationships
+ */
+
+
+
+export const GetEvidenceEventParams = zod.object({
+  "eventId": zod.coerce.number().int().min(1)
+})
+
+export const getEvidenceEventResponseEventEventRecordDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const getEvidenceEventResponseEventArticlesItemRecordDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const getEvidenceEventResponseEventPrimarySourcesItemPublicationDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const getEvidenceEventResponseEventSecondarySourcesItemPublicationDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const getEvidenceEventResponseEventArticleCountMin = 0;
+
+export const getEvidenceEventResponseEventSourceCountMin = 0;
+
+
+
+export const GetEvidenceEventResponse = zod.object({
+  "event": zod.object({
+  "event": zod.object({
+  "id": zod.number().int(),
+  "title": zod.string(),
+  "topic": zod.enum(['Latest', 'Courts & Policy', 'States', 'History', 'Ground Reports', 'Data & Notes']),
+  "recordDate": zod.string().regex(getEvidenceEventResponseEventEventRecordDateRegExp).nullable(),
+  "summary": zod.string(),
+  "workflowStatus": zod.enum(['draft', 'published', 'archived'])
+}),
+  "articles": zod.array(zod.object({
+  "id": zod.number().int(),
+  "title": zod.string(),
+  "topic": zod.enum(['Latest', 'Courts & Policy', 'States', 'History', 'Ground Reports', 'Data & Notes']),
+  "kind": zod.enum(['Article', 'Paper note', 'Archive', 'Explainer']),
+  "recordDate": zod.string().regex(getEvidenceEventResponseEventArticlesItemRecordDateRegExp).nullable(),
+  "articlePublishedAt": zod.coerce.date().nullable(),
+  "canonicalPath": zod.string(),
+  "verificationStatus": zod.enum(['unverified', 'source-linked', 'verified']),
+  "workflowStatus": zod.enum(['draft', 'review', 'scheduled', 'published', 'archived']).optional()
+})),
+  "primarySources": zod.array(zod.object({
+  "id": zod.number().int(),
+  "title": zod.string(),
+  "publisher": zod.string(),
+  "publicationDate": zod.string().regex(getEvidenceEventResponseEventPrimarySourcesItemPublicationDateRegExp).nullable(),
+  "documentType": zod.enum(['official-document', 'court-record', 'government-data', 'report', 'news-report', 'other']),
+  "sourceUrl": zod.string().url().nullable(),
+  "status": zod.enum(['verified', 'unverified', 'archived', 'unavailable'])
+})),
+  "secondarySources": zod.array(zod.object({
+  "id": zod.number().int(),
+  "title": zod.string(),
+  "publisher": zod.string(),
+  "publicationDate": zod.string().regex(getEvidenceEventResponseEventSecondarySourcesItemPublicationDateRegExp).nullable(),
+  "documentType": zod.enum(['official-document', 'court-record', 'government-data', 'report', 'news-report', 'other']),
+  "sourceUrl": zod.string().url().nullable(),
+  "status": zod.enum(['verified', 'unverified', 'archived', 'unavailable'])
+})),
+  "articleCount": zod.number().int().min(getEvidenceEventResponseEventArticleCountMin),
+  "sourceCount": zod.number().int().min(getEvidenceEventResponseEventSourceCountMin)
+})
+})
+
+
+/**
+ * @summary Get events and sources explicitly linked to a published article
+ */
+export const GetStoryEvidenceParams = zod.object({
+  "storyId": zod.coerce.number().int()
+})
+
+export const getStoryEvidenceResponseEventsItemEventRecordDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const getStoryEvidenceResponseEventsItemArticlesItemRecordDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const getStoryEvidenceResponseEventsItemPrimarySourcesItemPublicationDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const getStoryEvidenceResponseEventsItemSecondarySourcesItemPublicationDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const getStoryEvidenceResponseEventsItemArticleCountMin = 0;
+
+export const getStoryEvidenceResponseEventsItemSourceCountMin = 0;
+
+
+
+export const GetStoryEvidenceResponse = zod.object({
+  "events": zod.array(zod.object({
+  "event": zod.object({
+  "id": zod.number().int(),
+  "title": zod.string(),
+  "topic": zod.enum(['Latest', 'Courts & Policy', 'States', 'History', 'Ground Reports', 'Data & Notes']),
+  "recordDate": zod.string().regex(getStoryEvidenceResponseEventsItemEventRecordDateRegExp).nullable(),
+  "summary": zod.string(),
+  "workflowStatus": zod.enum(['draft', 'published', 'archived'])
+}),
+  "articles": zod.array(zod.object({
+  "id": zod.number().int(),
+  "title": zod.string(),
+  "topic": zod.enum(['Latest', 'Courts & Policy', 'States', 'History', 'Ground Reports', 'Data & Notes']),
+  "kind": zod.enum(['Article', 'Paper note', 'Archive', 'Explainer']),
+  "recordDate": zod.string().regex(getStoryEvidenceResponseEventsItemArticlesItemRecordDateRegExp).nullable(),
+  "articlePublishedAt": zod.coerce.date().nullable(),
+  "canonicalPath": zod.string(),
+  "verificationStatus": zod.enum(['unverified', 'source-linked', 'verified']),
+  "workflowStatus": zod.enum(['draft', 'review', 'scheduled', 'published', 'archived']).optional()
+})),
+  "primarySources": zod.array(zod.object({
+  "id": zod.number().int(),
+  "title": zod.string(),
+  "publisher": zod.string(),
+  "publicationDate": zod.string().regex(getStoryEvidenceResponseEventsItemPrimarySourcesItemPublicationDateRegExp).nullable(),
+  "documentType": zod.enum(['official-document', 'court-record', 'government-data', 'report', 'news-report', 'other']),
+  "sourceUrl": zod.string().url().nullable(),
+  "status": zod.enum(['verified', 'unverified', 'archived', 'unavailable'])
+})),
+  "secondarySources": zod.array(zod.object({
+  "id": zod.number().int(),
+  "title": zod.string(),
+  "publisher": zod.string(),
+  "publicationDate": zod.string().regex(getStoryEvidenceResponseEventsItemSecondarySourcesItemPublicationDateRegExp).nullable(),
+  "documentType": zod.enum(['official-document', 'court-record', 'government-data', 'report', 'news-report', 'other']),
+  "sourceUrl": zod.string().url().nullable(),
+  "status": zod.enum(['verified', 'unverified', 'archived', 'unavailable'])
+})),
+  "articleCount": zod.number().int().min(getStoryEvidenceResponseEventsItemArticleCountMin),
+  "sourceCount": zod.number().int().min(getStoryEvidenceResponseEventsItemSourceCountMin)
+}))
+})
+
+
+/**
+ * @summary Get a source document and its explicit event and article links
+ */
+
+
+
+export const GetSourceDocumentParams = zod.object({
+  "sourceId": zod.coerce.number().int().min(1)
+})
+
+export const getSourceDocumentResponseSourceDocumentPublicationDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const getSourceDocumentResponseSupportingEventsItemEventRecordDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const getSourceDocumentResponseCitedByArticlesItemRecordDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+
+
+export const GetSourceDocumentResponse = zod.object({
+  "sourceDocument": zod.object({
+  "id": zod.number().int(),
+  "title": zod.string(),
+  "publisher": zod.string(),
+  "publicationDate": zod.string().regex(getSourceDocumentResponseSourceDocumentPublicationDateRegExp).nullable(),
+  "documentType": zod.enum(['official-document', 'court-record', 'government-data', 'report', 'news-report', 'other']),
+  "sourceUrl": zod.string().url().nullable(),
+  "status": zod.enum(['verified', 'unverified', 'archived', 'unavailable'])
+}),
+  "supportingEvents": zod.array(zod.object({
+  "event": zod.object({
+  "id": zod.number().int(),
+  "title": zod.string(),
+  "topic": zod.enum(['Latest', 'Courts & Policy', 'States', 'History', 'Ground Reports', 'Data & Notes']),
+  "recordDate": zod.string().regex(getSourceDocumentResponseSupportingEventsItemEventRecordDateRegExp).nullable(),
+  "summary": zod.string(),
+  "workflowStatus": zod.enum(['draft', 'published', 'archived'])
+}),
+  "sourceRole": zod.enum(['primary', 'secondary'])
+})),
+  "citedByArticles": zod.array(zod.object({
+  "id": zod.number().int(),
+  "title": zod.string(),
+  "topic": zod.enum(['Latest', 'Courts & Policy', 'States', 'History', 'Ground Reports', 'Data & Notes']),
+  "kind": zod.enum(['Article', 'Paper note', 'Archive', 'Explainer']),
+  "recordDate": zod.string().regex(getSourceDocumentResponseCitedByArticlesItemRecordDateRegExp).nullable(),
+  "articlePublishedAt": zod.coerce.date().nullable(),
+  "canonicalPath": zod.string(),
+  "verificationStatus": zod.enum(['unverified', 'source-linked', 'verified']),
+  "workflowStatus": zod.enum(['draft', 'review', 'scheduled', 'published', 'archived']).optional()
+}))
+})
+
+
+/**
+ * @summary Search published articles, events, and source documents separately
+ */
+
+
+
+export const SearchEvidenceRecordsQueryParams = zod.object({
+  "q": zod.coerce.string().min(1)
+})
+
+export const searchEvidenceRecordsResponseResultsItemRecordDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const searchEvidenceRecordsResponseResultsItemSourcePublicationDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const searchEvidenceRecordsResponseResultsItemEventCountMin = 0;
+
+export const searchEvidenceRecordsResponseResultsItemSourceCountMin = 0;
+
+
+
+export const SearchEvidenceRecordsResponse = zod.object({
+  "results": zod.array(zod.object({
+  "resultType": zod.enum(['article', 'event', 'source']),
+  "id": zod.number().int(),
+  "title": zod.string(),
+  "summary": zod.string(),
+  "topic": zod.string().nullable(),
+  "recordDate": zod.string().regex(searchEvidenceRecordsResponseResultsItemRecordDateRegExp).nullable(),
+  "articlePublishedAt": zod.coerce.date().nullable(),
+  "sourcePublicationDate": zod.string().regex(searchEvidenceRecordsResponseResultsItemSourcePublicationDateRegExp).nullable(),
+  "path": zod.string(),
+  "eventCount": zod.number().int().min(searchEvidenceRecordsResponseResultsItemEventCountMin),
+  "sourceCount": zod.number().int().min(searchEvidenceRecordsResponseResultsItemSourceCountMin),
+  "sourceStatus": zod.union([zod.enum(['verified', 'unverified', 'archived', 'unavailable']),zod.null()]),
+  "documentType": zod.union([zod.enum(['official-document', 'court-record', 'government-data', 'report', 'news-report', 'other']),zod.null()]),
+  "sourceUrl": zod.string().url().nullable()
+}))
+})
+
+
+/**
+ * @summary List evidence records and all stored relationships for editors
+ */
+export const getEditorEvidenceResponseEventsItemEventRecordDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const getEditorEvidenceResponseEventsItemArticleLinksItemArticleRecordDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const getEditorEvidenceResponseEventsItemSourceLinksItemSourceDocumentPublicationDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const getEditorEvidenceResponseSourceDocumentsItemSourceDocumentPublicationDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const getEditorEvidenceResponseArticlesItemRecordDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+
+
+export const GetEditorEvidenceResponse = zod.object({
+  "events": zod.array(zod.object({
+  "event": zod.object({
+  "id": zod.number().int(),
+  "title": zod.string(),
+  "topic": zod.enum(['Latest', 'Courts & Policy', 'States', 'History', 'Ground Reports', 'Data & Notes']),
+  "recordDate": zod.string().regex(getEditorEvidenceResponseEventsItemEventRecordDateRegExp).nullable(),
+  "summary": zod.string(),
+  "workflowStatus": zod.enum(['draft', 'published', 'archived'])
+}),
+  "audit": zod.object({
+  "createdBy": zod.string(),
+  "updatedBy": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}),
+  "articleLinks": zod.array(zod.object({
+  "article": zod.object({
+  "id": zod.number().int(),
+  "title": zod.string(),
+  "topic": zod.enum(['Latest', 'Courts & Policy', 'States', 'History', 'Ground Reports', 'Data & Notes']),
+  "kind": zod.enum(['Article', 'Paper note', 'Archive', 'Explainer']),
+  "recordDate": zod.string().regex(getEditorEvidenceResponseEventsItemArticleLinksItemArticleRecordDateRegExp).nullable(),
+  "articlePublishedAt": zod.coerce.date().nullable(),
+  "canonicalPath": zod.string(),
+  "verificationStatus": zod.enum(['unverified', 'source-linked', 'verified']),
+  "workflowStatus": zod.enum(['draft', 'review', 'scheduled', 'published', 'archived']).optional()
+}),
+  "linkedBy": zod.string(),
+  "linkedAt": zod.coerce.date()
+})),
+  "sourceLinks": zod.array(zod.object({
+  "sourceDocument": zod.object({
+  "id": zod.number().int(),
+  "title": zod.string(),
+  "publisher": zod.string(),
+  "publicationDate": zod.string().regex(getEditorEvidenceResponseEventsItemSourceLinksItemSourceDocumentPublicationDateRegExp).nullable(),
+  "documentType": zod.enum(['official-document', 'court-record', 'government-data', 'report', 'news-report', 'other']),
+  "sourceUrl": zod.string().url().nullable(),
+  "status": zod.enum(['verified', 'unverified', 'archived', 'unavailable'])
+}),
+  "sourceRole": zod.enum(['primary', 'secondary']),
+  "linkedBy": zod.string(),
+  "linkedAt": zod.coerce.date()
+}))
+})),
+  "sourceDocuments": zod.array(zod.object({
+  "sourceDocument": zod.object({
+  "id": zod.number().int(),
+  "title": zod.string(),
+  "publisher": zod.string(),
+  "publicationDate": zod.string().regex(getEditorEvidenceResponseSourceDocumentsItemSourceDocumentPublicationDateRegExp).nullable(),
+  "documentType": zod.enum(['official-document', 'court-record', 'government-data', 'report', 'news-report', 'other']),
+  "sourceUrl": zod.string().url().nullable(),
+  "status": zod.enum(['verified', 'unverified', 'archived', 'unavailable'])
+}),
+  "audit": zod.object({
+  "createdBy": zod.string(),
+  "updatedBy": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+})),
+  "articles": zod.array(zod.object({
+  "id": zod.number().int(),
+  "title": zod.string(),
+  "topic": zod.enum(['Latest', 'Courts & Policy', 'States', 'History', 'Ground Reports', 'Data & Notes']),
+  "kind": zod.enum(['Article', 'Paper note', 'Archive', 'Explainer']),
+  "recordDate": zod.string().regex(getEditorEvidenceResponseArticlesItemRecordDateRegExp).nullable(),
+  "articlePublishedAt": zod.coerce.date().nullable(),
+  "canonicalPath": zod.string(),
+  "verificationStatus": zod.enum(['unverified', 'source-linked', 'verified']),
+  "workflowStatus": zod.enum(['draft', 'review', 'scheduled', 'published', 'archived']).optional()
+}))
+})
+
+
+/**
+ * @summary Create an event record
+ */
+
+
+
+export const CreateEvidenceEventBody = zod.object({
+  "title": zod.string().min(1),
+  "topic": zod.enum(['Latest', 'Courts & Policy', 'States', 'History', 'Ground Reports', 'Data & Notes']),
+  "recordDate": zod.coerce.date().nullish(),
+  "summary": zod.string(),
+  "workflowStatus": zod.enum(['draft', 'published', 'archived']).optional()
+})
+
+export const createEvidenceEventResponseRecordDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+
+
+export const CreateEvidenceEventResponse = zod.object({
+  "id": zod.number().int(),
+  "title": zod.string(),
+  "topic": zod.enum(['Latest', 'Courts & Policy', 'States', 'History', 'Ground Reports', 'Data & Notes']),
+  "recordDate": zod.string().regex(createEvidenceEventResponseRecordDateRegExp).nullable(),
+  "summary": zod.string(),
+  "workflowStatus": zod.enum(['draft', 'published', 'archived'])
+})
+
+
+/**
+ * @summary Update an event record
+ */
+
+
+
+export const UpdateEvidenceEventParams = zod.object({
+  "eventId": zod.coerce.number().int().min(1)
+})
+
+
+
+
+export const UpdateEvidenceEventBody = zod.object({
+  "title": zod.string().min(1),
+  "topic": zod.enum(['Latest', 'Courts & Policy', 'States', 'History', 'Ground Reports', 'Data & Notes']),
+  "recordDate": zod.coerce.date().nullish(),
+  "summary": zod.string(),
+  "workflowStatus": zod.enum(['draft', 'published', 'archived']).optional()
+})
+
+export const updateEvidenceEventResponseRecordDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+
+
+export const UpdateEvidenceEventResponse = zod.object({
+  "id": zod.number().int(),
+  "title": zod.string(),
+  "topic": zod.enum(['Latest', 'Courts & Policy', 'States', 'History', 'Ground Reports', 'Data & Notes']),
+  "recordDate": zod.string().regex(updateEvidenceEventResponseRecordDateRegExp).nullable(),
+  "summary": zod.string(),
+  "workflowStatus": zod.enum(['draft', 'published', 'archived'])
+})
+
+
+/**
+ * @summary Delete an event and cascade its relationship rows
+ */
+
+
+
+export const DeleteEvidenceEventParams = zod.object({
+  "eventId": zod.coerce.number().int().min(1)
+})
+
+export const DeleteEvidenceEventResponse = zod.void()
+
+
+/**
+ * @summary Create a source document record
+ */
+
+
+export const createSourceDocumentBodyPublicationDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+
+
+export const CreateSourceDocumentBody = zod.object({
+  "title": zod.string().min(1),
+  "publisher": zod.string().min(1),
+  "publicationDate": zod.string().regex(createSourceDocumentBodyPublicationDateRegExp).nullish(),
+  "documentType": zod.enum(['official-document', 'court-record', 'government-data', 'report', 'news-report', 'other']),
+  "sourceUrl": zod.string().url().nullish(),
+  "status": zod.enum(['verified', 'unverified', 'archived', 'unavailable'])
+})
+
+export const createSourceDocumentResponsePublicationDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+
+
+export const CreateSourceDocumentResponse = zod.object({
+  "id": zod.number().int(),
+  "title": zod.string(),
+  "publisher": zod.string(),
+  "publicationDate": zod.string().regex(createSourceDocumentResponsePublicationDateRegExp).nullable(),
+  "documentType": zod.enum(['official-document', 'court-record', 'government-data', 'report', 'news-report', 'other']),
+  "sourceUrl": zod.string().url().nullable(),
+  "status": zod.enum(['verified', 'unverified', 'archived', 'unavailable'])
+})
+
+
+/**
+ * @summary Update a source document record
+ */
+
+
+
+export const UpdateSourceDocumentParams = zod.object({
+  "sourceId": zod.coerce.number().int().min(1)
+})
+
+
+
+export const updateSourceDocumentBodyPublicationDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+
+
+export const UpdateSourceDocumentBody = zod.object({
+  "title": zod.string().min(1),
+  "publisher": zod.string().min(1),
+  "publicationDate": zod.string().regex(updateSourceDocumentBodyPublicationDateRegExp).nullish(),
+  "documentType": zod.enum(['official-document', 'court-record', 'government-data', 'report', 'news-report', 'other']),
+  "sourceUrl": zod.string().url().nullish(),
+  "status": zod.enum(['verified', 'unverified', 'archived', 'unavailable'])
+})
+
+export const updateSourceDocumentResponsePublicationDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+
+
+export const UpdateSourceDocumentResponse = zod.object({
+  "id": zod.number().int(),
+  "title": zod.string(),
+  "publisher": zod.string(),
+  "publicationDate": zod.string().regex(updateSourceDocumentResponsePublicationDateRegExp).nullable(),
+  "documentType": zod.enum(['official-document', 'court-record', 'government-data', 'report', 'news-report', 'other']),
+  "sourceUrl": zod.string().url().nullable(),
+  "status": zod.enum(['verified', 'unverified', 'archived', 'unavailable'])
+})
+
+
+/**
+ * @summary Delete a source document and cascade its relationship rows
+ */
+
+
+
+export const DeleteSourceDocumentParams = zod.object({
+  "sourceId": zod.coerce.number().int().min(1)
+})
+
+export const DeleteSourceDocumentResponse = zod.void()
+
+
+/**
+ * @summary Explicitly link an article to an event
+ */
+
+
+
+
+export const LinkArticleToEventBody = zod.object({
+  "articleId": zod.number().int().min(1),
+  "eventId": zod.number().int().min(1)
+})
+
+export const LinkArticleToEventResponse = zod.object({
+  "linked": zod.boolean()
+})
+
+
+/**
+ * @summary Remove an explicit article-to-event relationship
+ */
+
+
+
+export const UnlinkArticleFromEventParams = zod.object({
+  "eventId": zod.coerce.number().int().min(1),
+  "storyId": zod.coerce.number().int()
+})
+
+export const UnlinkArticleFromEventResponse = zod.void()
+
+
+/**
+ * @summary Explicitly link a source document to an event
+ */
+
+
+
+
+export const LinkSourceToEventBody = zod.object({
+  "eventId": zod.number().int().min(1),
+  "sourceDocumentId": zod.number().int().min(1),
+  "sourceRole": zod.enum(['primary', 'secondary'])
+})
+
+export const LinkSourceToEventResponse = zod.object({
+  "linked": zod.boolean()
+})
+
+
+/**
+ * @summary Remove an explicit event-to-source relationship
+ */
+
+
+
+
+export const UnlinkSourceFromEventParams = zod.object({
+  "eventId": zod.coerce.number().int().min(1),
+  "sourceId": zod.coerce.number().int().min(1)
+})
+
+export const UnlinkSourceFromEventResponse = zod.void()
 
 
 /**
@@ -758,6 +1381,13 @@ export const GetStoryParams = zod.object({
   "storyId": zod.coerce.number().int()
 })
 
+export const getStoryResponseRecordDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const getStoryResponseEventCountMin = 0;
+
+export const getStoryResponseSourceCountMin = 0;
+
+
+
 export const GetStoryResponse = zod.object({
   "id": zod.number().int(),
   "issueId": zod.number().int(),
@@ -767,6 +1397,10 @@ export const GetStoryResponse = zod.object({
   "source": zod.string(),
   "sourceUrl": zod.string().url().nullable(),
   "publishedOn": zod.coerce.date().nullable(),
+  "recordDate": zod.string().regex(getStoryResponseRecordDateRegExp).nullable(),
+  "articlePublishedAt": zod.coerce.date().nullable(),
+  "eventCount": zod.number().int().min(getStoryResponseEventCountMin).optional(),
+  "sourceCount": zod.number().int().min(getStoryResponseSourceCountMin).optional(),
   "eyebrow": zod.string(),
   "title": zod.string(),
   "dek": zod.string(),
@@ -829,6 +1463,13 @@ export const UpdateStoryBody = zod.object({
   "revisionNote": zod.string().nullish()
 })
 
+export const updateStoryResponseRecordDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const updateStoryResponseEventCountMin = 0;
+
+export const updateStoryResponseSourceCountMin = 0;
+
+
+
 export const UpdateStoryResponse = zod.object({
   "id": zod.number().int(),
   "issueId": zod.number().int(),
@@ -838,6 +1479,10 @@ export const UpdateStoryResponse = zod.object({
   "source": zod.string(),
   "sourceUrl": zod.string().url().nullable(),
   "publishedOn": zod.coerce.date().nullable(),
+  "recordDate": zod.string().regex(updateStoryResponseRecordDateRegExp).nullable(),
+  "articlePublishedAt": zod.coerce.date().nullable(),
+  "eventCount": zod.number().int().min(updateStoryResponseEventCountMin).optional(),
+  "sourceCount": zod.number().int().min(updateStoryResponseSourceCountMin).optional(),
   "eyebrow": zod.string(),
   "title": zod.string(),
   "dek": zod.string(),
@@ -914,6 +1559,13 @@ export const CreateStoryBody = zod.object({
   "revisionNote": zod.string().nullish()
 })
 
+export const createStoryResponseRecordDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const createStoryResponseEventCountMin = 0;
+
+export const createStoryResponseSourceCountMin = 0;
+
+
+
 export const CreateStoryResponse = zod.object({
   "id": zod.number().int(),
   "issueId": zod.number().int(),
@@ -923,6 +1575,10 @@ export const CreateStoryResponse = zod.object({
   "source": zod.string(),
   "sourceUrl": zod.string().url().nullable(),
   "publishedOn": zod.coerce.date().nullable(),
+  "recordDate": zod.string().regex(createStoryResponseRecordDateRegExp).nullable(),
+  "articlePublishedAt": zod.coerce.date().nullable(),
+  "eventCount": zod.number().int().min(createStoryResponseEventCountMin).optional(),
+  "sourceCount": zod.number().int().min(createStoryResponseSourceCountMin).optional(),
   "eyebrow": zod.string(),
   "title": zod.string(),
   "dek": zod.string(),

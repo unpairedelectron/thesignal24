@@ -2,6 +2,7 @@
 - [Drizzle Zod compatibility](drizzle-zod-compatibility.md) — Drizzle-Zod schemas use the Zod v4 subpath while generated API schemas use the workspace’s root Zod entrypoint.
 - [Public archive imagery](public-archive-imagery.md) — use identifiable public-archive images with visible provenance instead of anonymous or misleading editorial visuals.
 - [Vite static canonical handling](vite-static-canonical.md) — a literal root canonical link in index.html is treated as a directory asset during Vite builds; set canonicals at runtime for this app.
+- [OpenAPI date-only fields](openapi-date-only-fields.md) — use a date pattern instead of `format: date` when generated Zod validation must preserve `YYYY-MM-DD` strings.
 - [Artifact build environment](artifact-build-environment.md) — standalone Vite builds for this artifact need the workflow-injected PORT and BASE_PATH values.
 - [Policy ledger record model](policy-ledger-model.md) — policy changes use dedicated records with independently traceable source rows, not story-only fields.
 - [Community contribution boundary](community-contribution-boundary.md) — participant posts stay separate from verified editorial records and need explicit contribution framing.
