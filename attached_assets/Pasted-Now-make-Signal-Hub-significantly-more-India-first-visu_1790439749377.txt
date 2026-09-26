@@ -1,0 +1,709 @@
+Now make Signal Hub significantly more India-first, visual, engaging and image-led.
+
+The evidence architecture that was just implemented must remain intact.
+
+Do NOT remove:
+
+- Article → Event → Source relationships
+- explicit source records
+- evidence pages
+- archive
+- timeline
+- data room
+- source status
+- editorial audit information
+
+Instead, redesign the PRESENTATION LAYER so Signal Hub feels like a premium Indian digital publication rather than a research database.
+
+The biggest problem to solve:
+
+The current design is too text-heavy and academically structured.
+
+Signal Hub needs to immediately attract an Indian internet user visually while maintaining credibility.
+
+Think:
+
+PREMIUM INDIAN INVESTIGATIVE JOURNALISM
++
+MODERN DIGITAL MAGAZINE
++
+DATA JOURNALISM
++
+EVIDENCE ARCHIVE
+
+==================================================
+
+1. INDIA-FIRST VISUAL IDENTITY
+   ==================================================
+
+The website should feel unmistakably relevant to India.
+
+Use visual references such as:
+
+- Indian cities
+- Indian streets
+- government buildings
+- Parliament
+- Supreme Court / High Courts
+- state secretariats
+- universities
+- public institutions
+- newspapers and documents
+- maps of India
+- state maps
+- archival photographs
+- official notices
+- court documents
+- policy documents
+- public demonstrations when editorially relevant
+- ordinary Indian citizens and communities
+- infrastructure
+- education
+- employment
+- public services
+
+Do NOT turn the site into a stereotypical "India" design.
+
+Avoid:
+
+- excessive saffron/green/orange
+- Indian flag colors everywhere
+- decorative mandalas
+- generic cultural imagery
+- patriotic graphics
+- cliché India stock photos
+
+The Indian identity should come from the JOURNALISM and imagery, not decoration.
+
+==================================================
+2. MAKE THE HOMEPAGE MUCH MORE VISUAL
+
+The homepage should have significantly more photography.
+
+Target approximately:
+
+60% information / 40% visual content.
+
+Do NOT create a wall of cards.
+
+Instead create an editorial magazine composition.
+
+HERO:
+
+Large 16:9 image occupying approximately 55–60% of the hero area.
+
+Overlay or adjacent:
+
+CATEGORY
+
+Large headline
+
+2–3 line summary
+
+DATE
+
+READ TIME
+
+VIEW INVESTIGATION →
+
+The image should be the first thing that attracts attention.
+
+Use realistic documentary-style Indian imagery.
+
+==================================================
+3. CREATE A “VISUAL SIGNALS” SECTION
+
+Immediately below the hero, create:
+
+VISUAL SIGNALS
+
+A horizontal collection of 3–5 visually strong stories.
+
+Each story should have:
+
+Large image
+Category
+Headline
+Short summary
+
+Images should occupy approximately 50–60% of each card.
+
+Use different aspect ratios to create editorial rhythm.
+
+Do not make every card identical.
+
+==================================================
+4. FEATURED INVESTIGATION
+
+Create a full-width cinematic investigation block.
+
+Large image on one side.
+
+Editorial content on the other.
+
+Example structure:
+
+[ LARGE IMAGE ]
+
+INVESTIGATION
+
+HOW [TOPIC] CHANGED INDIA
+
+Short editorial introduction.
+
+12 MIN READ
+
+EXPLORE INVESTIGATION →
+
+Use a subtle dark background if appropriate.
+
+This section should feel like the cover story of a premium magazine.
+
+==================================================
+5. INDIA MAP / REGIONAL STORIES
+
+Create a visually engaging section:
+
+INDIA IN FOCUS
+
+Use a stylized but geographically accurate map of India.
+
+Allow stories to be associated with states/regions.
+
+Show visual markers for:
+
+North
+South
+East
+West
+Northeast
+Central India
+
+When the user selects a region/state, display related stories.
+
+Important:
+
+Do not invent geographic data.
+
+Only display locations associated with actual archive records.
+
+The map should be editorial rather than dashboard-like.
+
+==================================================
+6. STATE-BASED DISCOVERY
+
+Indian users should be able to discover stories by state.
+
+Create:
+
+EXPLORE BY STATE
+
+Use a visually interesting grid.
+
+Examples:
+
+Uttar Pradesh
+Maharashtra
+Bihar
+West Bengal
+Rajasthan
+Madhya Pradesh
+Tamil Nadu
+Karnataka
+Gujarat
+Delhi
+Telangana
+Kerala
+And other states/UTs
+
+Each state can display:
+
+Story count
+Latest story
+Small representative image
+
+Only show counts from actual data.
+
+==================================================
+7. IMAGE-LED STORY CARDS
+
+Redesign article cards.
+
+Instead of:
+
+[icon]
+headline
+text
+metadata
+
+Use:
+
+[ LARGE IMAGE ]
+
+CATEGORY
+
+HEADLINE
+
+Short summary
+
+DATE · READ TIME
+
+SOURCE COUNT
+
+The image should occupy the majority of the card.
+
+Use rounded corners sparingly.
+
+Editorial cards should primarily use rectangular photography.
+
+==================================================
+8. CREATE A “THE DOCUMENT” FEATURE
+
+This should become one of Signal Hub's signature components.
+
+Show an actual source-document visual.
+
+For example:
+
+THE DOCUMENT
+
+[ DOCUMENT IMAGE / SCANNED PAGE ]
+
+DOCUMENT TITLE
+
+SOURCE:
+[Organization]
+
+DATE:
+[Date]
+
+VIEW SOURCE →
+
+The document preview should look visually compelling.
+
+Use:
+
+- government circulars
+- reports
+- court documents
+- official notices
+- policy documents
+
+Only use documents actually present in the source database.
+
+If no document image exists, show a tasteful document placeholder rather than fabricating one.
+
+==================================================
+9. CREATE “WHY IT MATTERS”
+
+For major investigations, create a visually distinct block:
+
+WHY IT MATTERS
+
+3–4 concise points.
+
+Each point can contain:
+
+NUMBER / ICON
+Short explanation
+Source reference
+
+Keep it extremely readable.
+
+This is particularly important for mobile users.
+
+==================================================
+10. VISUAL TIMELINE
+
+Keep the existing timeline architecture but make it much more visual.
+
+Each major event should support:
+
+DATE
+
+IMAGE / DOCUMENT THUMBNAIL
+
+EVENT TITLE
+
+1–2 line description
+
+SOURCE COUNT
+
+VIEW EVIDENCE →
+
+The timeline should feel like a historical visual story rather than a database list.
+
+==================================================
+11. ARTICLE PAGE — IMAGE-FIRST
+
+The article page should open with:
+
+CATEGORY
+
+Large headline
+
+Dek
+
+Author / date / reading time
+
+FULL-WIDTH HERO IMAGE
+
+IMAGE CAPTION
+
+Then article content.
+
+Use additional images throughout long articles.
+
+Target:
+
+One meaningful visual approximately every 3–5 content sections.
+
+Possible visuals:
+
+- photographs
+- document scans
+- charts
+- maps
+- timelines
+- quotations
+- infographics
+
+Do not add images just to fill space.
+
+==================================================
+12. INDIAN NEWS READING BEHAVIOR
+
+Optimize for mobile-first Indian browsing.
+
+Assume many users are:
+
+- on Android
+- on mobile data
+- scrolling quickly
+- discovering content through social media/search
+- attracted initially by imagery and headline
+- reading in short sessions
+
+Therefore:
+
+FAST VISUAL SCANNING
+
+Large headlines
+
+Strong thumbnails
+
+Short summaries
+
+Visible dates
+
+Clear categories
+
+Sticky/share functionality
+
+Progress indicator on long articles
+
+Readable body text
+
+Avoid enormous blocks of uninterrupted text.
+
+==================================================
+13. SOCIAL DISCOVERY
+
+Make every article visually shareable.
+
+Create a strong social-preview composition:
+
+Image
+Headline
+Signal Hub branding
+Category
+
+Design article hero images with a 16:9 social sharing composition in mind.
+
+The visual identity should remain recognizable when the article is shared on:
+
+WhatsApp
+Instagram
+X
+Facebook
+LinkedIn
+
+==================================================
+14. INDIAN LANGUAGE READINESS
+
+The initial UI can remain English.
+
+However, design the system so it can support:
+
+Hindi
+Marathi
+Bengali
+Tamil
+Telugu
+Kannada
+Malayalam
+Gujarati
+Punjabi
+
+Do not hard-code widths that will break when translated.
+
+Allow headlines to wrap naturally.
+
+Use fonts with strong Indian-language support.
+
+==================================================
+15. VISUAL CONTENT CATEGORIES
+
+Create visual treatment for:
+
+INVESTIGATION
+POLICY
+COURTS
+GOVERNMENT
+EDUCATION
+ECONOMY
+SOCIAL
+DATA
+HISTORY
+EXPLAINER
+
+Each category may have a subtle visual identity, but do not use excessive colors.
+
+==================================================
+16. HOMEPAGE INFORMATION HIERARCHY
+
+Use this approximate homepage order:
+
+HEADER
+
+↓
+BREAKING / LATEST SIGNAL STRIP
+
+↓
+HERO INVESTIGATION
+
+↓
+VISUAL SIGNALS
+
+↓
+LATEST STORIES
+
+↓
+FEATURED INVESTIGATION
+
+↓
+INDIA IN FOCUS
+
+↓
+THE DOCUMENT
+
+↓
+THE NUMBERS
+
+↓
+TIMELINE
+
+↓
+LATEST ARCHIVE
+
+↓
+NEWSLETTER / FOLLOW
+
+↓
+FOOTER
+
+The homepage should feel like a publication that keeps unfolding as the user scrolls.
+
+==================================================
+17. MORE PHOTOGRAPHY, LESS EMPTY SPACE
+
+Increase meaningful visual density.
+
+The current product has too much empty space and too many text-only sections.
+
+Where appropriate:
+
+Replace:
+
+TEXT
+TEXT
+TEXT
+
+with:
+
+IMAGE
+HEADLINE
+SUMMARY
+SOURCE
+
+However, maintain generous whitespace around important editorial content.
+
+The objective is:
+
+NOT crowded.
+
+NOT empty.
+
+VISUALLY RICH.
+
+==================================================
+18. IMAGE QUALITY
+
+Images must feel editorial and realistic.
+
+Prefer:
+
+Documentary photography
+Indian locations
+Real environments
+Archival material
+Government documents
+Maps
+Charts
+Data graphics
+
+Avoid:
+
+Generic smiling businesspeople
+AI-looking people
+Generic laptop photos
+Corporate meeting rooms
+Unrelated stock photography
+Overly dramatic political imagery
+
+Do not use imagery that makes unsupported claims about real people or organizations.
+
+==================================================
+19. SEARCH / ARCHIVE VISUAL IMPROVEMENT
+
+Keep the evidence-oriented archive.
+
+But make search results visually richer.
+
+Each result should optionally contain:
+
+THUMBNAIL
+
+CATEGORY
+
+TITLE
+
+SHORT DESCRIPTION
+
+DATE
+
+STATE
+
+SOURCE COUNT
+
+EVENT COUNT
+
+The archive should feel like a visual library rather than a spreadsheet.
+
+==================================================
+20. MOBILE HOMEPAGE
+
+Mobile should be especially visual.
+
+Structure:
+
+SIGNAL HUB
+
+Menu + Search
+
+Hero image
+
+Headline
+
+Summary
+
+Latest Signals
+
+Large visual story
+
+2-column image stories where space allows
+
+India in Focus
+
+Document
+
+Timeline
+
+Archive
+
+Newsletter
+
+Footer
+
+Images should never become tiny thumbnails.
+
+Use large, readable visual blocks.
+
+==================================================
+21. DESIGN PHILOSOPHY
+
+The final design should communicate:
+
+“Something important is happening here.”
+
+Not:
+
+“This is a database.”
+
+Not:
+
+“This is a SaaS application.”
+
+Not:
+
+“This is another generic news website.”
+
+Signal Hub should feel like:
+
+THE FRONT PAGE
++
+THE INVESTIGATION DESK
++
+THE ARCHIVE
++
+THE EVIDENCE ROOM
+
+==================================================
+22. FINAL QUALITY BAR
+
+Before considering the redesign complete, inspect the homepage at:
+
+390px
+768px
+1024px
+1440px
+
+Ask:
+
+Can I understand what Signal Hub is within 5 seconds?
+
+Does the homepage visually attract me before I read anything?
+
+Do the images make me want to investigate the stories?
+
+Does it feel relevant to an Indian audience?
+
+Does it look credible?
+
+Does it look premium?
+
+Does it feel like a publication rather than an application?
+
+Does the evidence architecture remain intact?
+
+If the answer to any is NO, refine the design.
+
+IMPORTANT:
+
+Do not populate empty data sections with fabricated content merely to make screenshots look better.
+
+Use placeholders only where necessary and clearly label them.
+
+Do not change the existing evidence/data architecture.
+
+This is a visual and UX transformation of the existing Signal Hub product.
