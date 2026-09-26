@@ -52,6 +52,7 @@ import {
   getGetEditorialIssueQueryKey,
   getGetEditorSessionQueryKey,
   getGetCurrentIssueQueryKey,
+  getGetEvidenceEventsQueryKey,
   getGetDecisionImpactsQueryKey,
   getGetLiveUpdatesQueryKey,
   getGetPoliciesQueryKey,
@@ -62,6 +63,7 @@ import {
   useCreateStory,
   useGetArchive,
   useGetCurrentIssue,
+  useGetEvidenceEvents,
   useGetDecisionImpacts,
   useGetDecisionImpactRevisions,
   useGetEditorialIssue,
@@ -359,17 +361,64 @@ function StoryCard({ story, compact = false }: { story: Story; compact?: boolean
   </article>;
 }
 */
+type StoryVisual = {
+  src: string;
+  alt: string;
+  credit: string;
+  width: number;
+  height: number;
+};
+
+function imageForText(value: string): StoryVisual | null {
+  const text = value.toLowerCase();
+  if (/\b(ambedkar|b\.?\s*r\.?\s*ambedkar)\b/.test(text)) {
+    return { src: `${basePath}/images/ambedkar-public.jpg`, alt: 'B. R. Ambedkar speaking at a public meeting in New Delhi', credit: 'Contextual archive visual / Wikimedia Commons', width: 460, height: 353 };
+  }
+  if (/\b(supreme court|high court|judgment|court order|writ petition|constitutional bench|legal order)\b/.test(text)) {
+    return { src: `${basePath}/images/supreme-court.jpg`, alt: 'Supreme Court of India building', credit: 'Contextual archive visual / Wikimedia Commons', width: 1280, height: 797 };
+  }
+  if (/\b(doctors?|resident doctors?|kolkata)\b/.test(text)) {
+    return { src: `${basePath}/images/doctors-movement.jpg`, alt: 'Public gathering during a doctors’ movement in Kolkata', credit: 'Contextual archive visual / Wikimedia Commons', width: 1920, height: 1080 };
+  }
+  if (/\bquit india\b/.test(text)) {
+    return { src: `${basePath}/images/quit-india.jpg`, alt: 'Archival portrait from the Quit India movement record', credit: 'Contextual archive visual / Wikimedia Commons', width: 1280, height: 1735 };
+  }
+  return null;
+}
+
+function imageForStory(story: Story) {
+  return imageForText(`${story.title} ${story.dek} ${story.source} ${story.state ?? ''}`);
+}
+
+function imageCaptionForStory(story: Story) {
+  const image = imageForStory(story);
+  return image
+    ? `${image.credit} · contextual archive visual, not evidence for this specific record.`
+    : 'No relevant archive photograph is available for this record.';
+}
+
+function StoryArt({ story, className = '', showCredit = true }: { story: Story; className?: string; showCredit?: boolean }) {
+  const image = imageForStory(story);
+  return <div className={`story-art relative m-0 overflow-hidden bg-muted ${className}`} data-testid={`visual-story-${story.id}`}>
+    {image ? <><img src={image.src} alt={image.alt} width={image.width} height={image.height} loading="lazy" className="h-full w-full object-cover story-art-image" />{showCredit && <p className="absolute inset-x-0 bottom-0 bg-primary/85 px-3 py-2 text-[9px] uppercase tracking-[.08em] text-primary-foreground/75">{image.credit} · not evidence for this record</p>}</> : <div aria-hidden="true" className="story-art-placeholder flex h-full min-h-[180px] flex-col items-center justify-center gap-4 p-6 text-center"><span className="signal-kicker text-accent">{story.topic} / {story.kind}</span><span className="max-w-sm font-display text-2xl leading-tight sm:text-3xl">{story.title}</span><span className="signal-kicker text-muted-foreground">No relevant archive photograph available</span></div>}
+  </div>;
+}
+
 function StoryCard({ story, compact = false }: { story: Story; compact?: boolean }) {
-  return <article className={`story-record-row story-hover group ${compact ? 'compact' : ''}`} data-testid={`card-story-${story.id}`}>
-    <div>
-      <p className="signal-kicker text-accent">{story.topic} / {story.kind}</p>
-      <Link href={storyPath(story)} className="mt-2 block" data-testid={`link-story-${story.id}`}>
-        <h3 className={`${compact ? 'text-[1.35rem]' : 'text-[2rem] sm:text-[2.7rem]'} max-w-3xl font-display leading-[1.02] tracking-[-.025em] transition-colors group-hover:text-accent`}>{story.title}</h3>
-      </Link>
-      <p className={`${compact ? 'line-clamp-2' : 'max-w-2xl'} mt-3 text-sm leading-relaxed text-muted-foreground`}>{story.dek}</p>
+  return <article className={`archive-visual-card story-hover group ${compact ? 'compact' : ''}`} data-testid={`card-story-${story.id}`}>
+    <Link href={storyPath(story)} className="archive-thumb block" data-testid={`link-story-art-${story.id}`}><StoryArt story={story} className="h-full" /></Link>
+    <div className="flex min-w-0 flex-col justify-between">
+      <div>
+        <div className="flex flex-wrap items-center justify-between gap-3"><p className="signal-kicker text-accent">{story.topic} / {story.kind}</p><time className="signal-kicker text-muted-foreground" dateTime={story.publishedOn ?? story.recordDate ?? undefined}>{story.publishedOn ? 'Published' : 'Record date'} / {formatDate(story.publishedOn ?? story.recordDate)}</time></div>
+        <Link href={storyPath(story)} className="mt-3 block" data-testid={`link-story-${story.id}`}><h3 className={`${compact ? 'text-2xl sm:text-3xl' : 'text-3xl sm:text-4xl'} max-w-3xl font-display leading-[1.02] tracking-[-.025em] transition-colors group-hover:text-accent`}>{story.title}</h3></Link>
+        <p className={`${compact ? 'line-clamp-2' : 'max-w-2xl'} mt-3 text-sm leading-relaxed text-muted-foreground`}>{story.dek}</p>
+      </div>
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-foreground/15 pt-3">
+        <span className="signal-kicker text-muted-foreground">{story.state ?? 'India'} · {story.read} min read</span>
+        <span className={`signal-status-badge ${story.verificationStatus === 'verified' ? 'is-verified' : story.verificationStatus === 'source-linked' ? 'is-source-linked' : 'is-unverified'}`}>{verificationLabel(story.verificationStatus)}</span>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 signal-kicker text-muted-foreground"><span>{story.sourceCount ?? 0} sources · {story.eventCount ?? 0} events</span><span>{story.sourceUrl ? 'Direct source available' : 'Direct source unavailable'}</span></div>
     </div>
-    <SourceLine story={story} />
-    {((story.eventCount ?? 0) + (story.sourceCount ?? 0)) > 0 && <p className="signal-kicker text-muted-foreground">{story.eventCount ?? 0} explicitly linked {(story.eventCount ?? 0) === 1 ? 'event' : 'events'} · {story.sourceCount ?? 0} {(story.sourceCount ?? 0) === 1 ? 'source' : 'sources'}</p>}
   </article>;
 }
 
@@ -529,7 +578,7 @@ function HomeIndex({ stories }: { stories: Story[] }) {
       <time className="signal-kicker text-muted-foreground" dateTime={DESK_SNAPSHOT_DATE}>As of 26 Sep 2026</time>
     </div>
     <div className="home-index grid-cols-2 sm:grid-cols-4">
-      <div className="home-scanline col-span-2 p-5 sm:col-span-1 sm:p-6"><p className="signal-kicker text-accent">Verified focus records</p><p className="home-number mt-5" data-testid="text-home-record-count">{stories.length}</p><p className="mt-3 text-xs text-muted-foreground">Published records with a source link and verified status</p></div>
+       <div className="home-scanline col-span-2 p-5 sm:col-span-1 sm:p-6"><p className="signal-kicker text-accent">Published focus records</p><p className="home-number mt-5" data-testid="text-home-record-count">{stories.length}</p><p className="mt-3 text-xs text-muted-foreground">Published records with status and source context kept visible</p></div>
       <div className="p-5 sm:p-6"><p className="signal-kicker text-accent">External leads</p><p className="home-number mt-5">{FOCUS_SOURCES.length}</p><p className="mt-3 text-xs text-muted-foreground">For editorial review; not Signal 24 reporting</p></div>
       <div className="p-5 sm:p-6"><p className="signal-kicker text-accent">Jurisdictions</p><p className="home-number mt-5">{jurisdictionCount}</p><p className="mt-3 text-xs text-muted-foreground">National and state-level source contexts</p></div>
       <div className="signal-note col-span-2 p-5 sm:col-span-1 sm:p-6"><p className="signal-kicker text-accent">Editorial rule</p><p className="mt-5 max-w-[15rem] font-display text-2xl leading-[.95]">No source. No certainty.</p><p className="mt-4 text-xs leading-relaxed text-muted-foreground">Signals can start a question. They cannot finish one.</p></div>
@@ -621,108 +670,114 @@ function HomeDecisionGrid({ stories }: { stories: Story[] }) {
   </section>;
 }
 
-function Home() {
-  const { data, isLoading, isError, refetch } = useGetCurrentIssue();
-  const decisionImpactQuery = useGetDecisionImpacts(
-    { limit: 100 },
-    { query: { queryKey: getGetDecisionImpactsQueryKey({ limit: 100 }) } },
-  );
-  const [activeTopic, setActiveTopic] = useState<Topic | 'All'>('All');
-  const [search, setSearch] = useState('');
-  const focusedStories = useMemo(
-    () => data?.stories.filter((story) => isFocusStory(story) && story.verificationStatus === 'verified') ?? [],
-    [data],
-  );
-  const focusTopics = useMemo(
-    () => [...new Set(focusedStories.map((story) => story.topic))],
-    [focusedStories],
-  );
-  useSeo({
-    title: 'Signal Hub — Follow the evidence',
-    description: 'A source-first public-interest newsroom and research archive for reservation policy, court records, official documents and data in India.',
-    canonicalPath: '/',
-    structuredData: { '@context': 'https://schema.org', '@graph': [organizationSchema, { '@type': 'WebSite', name: 'Signal Hub', url: '/' }] },
-  });
-  const stories = useMemo(() => {
-    if (!data) return [];
-    const q = search.trim().toLowerCase();
-    return focusedStories.filter((story) => (activeTopic === 'All' || story.topic === activeTopic) && (!q || `${story.title} ${story.dek} ${story.source} ${story.state}`.toLowerCase().includes(q)));
-  }, [activeTopic, data, focusedStories, search]);
-  if (isLoading) return <div className="signal-page"><Header /><LoadingBlock label="Assembling the current situation room…" /></div>;
-  if (isError) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message="The current issue could not be assembled. The published archive remains available." onRetry={() => void refetch()} /></div></div>;
-  if (!data) return <div className="signal-page"><Header /><div className="py-20"><EmptyState title="The current edition is not available." text="No published issue was returned. Check the archive for source-linked records." /></div></div>;
-  const [featured, ...rest] = stories;
-  const mediumStories = rest.slice(0, 2);
-  const smallStories = rest.slice(2, 6);
-  return <main className="signal-page"><Header />
-    <div className="home-marquee signal-container mt-7 border-b border-foreground/20 py-3" aria-label="Current focus">
-      <span className="signal-kicker text-accent">{focusedStories.length ? focusedStories.slice(0, 4).map((story) => story.title).join(' / ') : 'Current focus / UGC equity rules · open-category competition · state quota disputes · EWS eligibility'}</span>
+type MapFeature = { properties?: { NAME_1?: string }; geometry?: { type?: string; coordinates?: unknown } };
+function projectMapPoint(point: number[]) {
+  const x = ((point[0] - 68) / 30) * 1000;
+  const y = 950 - ((point[1] - 6) / 31) * 950;
+  return `${x.toFixed(1)},${y.toFixed(1)}`;
+}
+function mapPath(coords: unknown): string {
+  if (!Array.isArray(coords) || !coords.length) return '';
+  if (typeof coords[0] === 'number') return `M${projectMapPoint(coords as number[])} `;
+  if (Array.isArray(coords[0]) && typeof coords[0][0] === 'number') {
+    const points = (coords as number[][]).map(projectMapPoint);
+    return `M${points.join(' L')} Z`;
+  }
+  return (coords as unknown[]).map(mapPath).join(' ');
+}
+
+function IndiaFocus({ stories }: { stories: Story[] }) {
+  const [features, setFeatures] = useState<MapFeature[]>([]);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [geoStatus, setGeoStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [geoRetry, setGeoRetry] = useState(0);
+  useEffect(() => {
+    let cancelled = false;
+    setGeoStatus('loading');
+    fetch(`${basePath}/data/india-states-simplified.geojson`).then((response) => {
+      if (!response.ok) throw new Error(`GeoJSON request failed: ${response.status}`);
+      return response.json();
+    }).then((value: { features?: MapFeature[] }) => {
+      if (!Array.isArray(value.features) || value.features.length === 0) throw new Error('India map has no state features.');
+      if (!cancelled) {
+        setFeatures(value.features);
+        setGeoStatus('ready');
+      }
+    }).catch(() => {
+      if (!cancelled) {
+        setFeatures([]);
+        setGeoStatus('error');
+      }
+    });
+    return () => { cancelled = true; };
+  }, [geoRetry]);
+  const stateStories = useMemo(() => stories.filter((story) => story.state && story.state.toLowerCase() !== 'national'), [stories]);
+  const states = useMemo(() => Array.from(new Set(stateStories.map((story) => story.state as string))).sort(), [stateStories]);
+  const selectedStories = selected ? stateStories.filter((story) => story.state === selected) : stateStories.slice(0, 3);
+  const selectedLatest = selectedStories[0];
+  return <section className="map-shell mt-20 py-8 sm:mt-28 sm:py-12" id="india-in-focus" aria-labelledby="india-focus-title">
+    <div className="signal-container">
+      <div className="flex flex-col justify-between gap-5 border-b border-foreground/20 pb-6 sm:flex-row sm:items-end"><div><p className="signal-kicker text-accent">06 / India in focus</p><h2 id="india-focus-title" className="mt-3 font-display text-5xl leading-[.9] tracking-[-.05em] sm:text-7xl">Explore<br /><em className="font-normal text-accent">by state.</em></h2></div><p className="max-w-sm text-sm leading-relaxed text-muted-foreground">A navigation map built only from published archive records with a named state. National records stay outside the map.</p></div>
+      {states.length === 0 ? <div className="py-12"><EmptyState title="No state-linked records yet." text="The map will show markers only when published archive records carry a state." /></div> : <div className="grid gap-8 py-8 lg:grid-cols-[1.15fr_.85fr] lg:items-center">
+        <div className="overflow-hidden" data-testid="india-editorial-map">
+          {geoStatus === 'loading' && <div className="border border-dashed border-foreground/25 py-16 text-center" role="status" data-testid="status-india-map-loading"><div className="mx-auto h-8 w-40 animate-pulse bg-muted" /><p className="mt-4 signal-kicker text-muted-foreground">Loading the local India map…</p></div>}
+          {geoStatus === 'error' && <div className="border border-accent/50 bg-card px-6 py-10 text-center" role="alert" data-testid="status-india-map-error"><p className="signal-kicker text-accent">Map asset / unavailable</p><p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">The local state-boundary file could not be opened. Published state records remain available in the list.</p><button type="button" className="signal-button mt-5" onClick={() => setGeoRetry((value) => value + 1)} data-testid="button-retry-india-map">Try map again</button></div>}
+          {geoStatus === 'ready' && <><svg viewBox="0 0 1000 950" role="img" aria-label="Editorial map of India showing states with published archive records" className="india-map">{features.map((feature, index) => { const name = feature.properties?.NAME_1 ?? `state-${index}`; const active = states.includes(name); return <path key={`${name}-${index}`} d={mapPath(feature.geometry?.coordinates)} className={`${active ? 'is-active' : ''} ${selected === name ? 'is-selected' : ''}`} aria-label={name} role={active ? 'button' : undefined} tabIndex={active ? 0 : -1} aria-pressed={active ? selected === name : undefined} onClick={() => active && setSelected(selected === name ? null : name)} onKeyDown={(event) => { if (active && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); setSelected(selected === name ? null : name); } }} />; })}</svg><p className="mt-3 max-w-xl text-[10px] leading-relaxed text-muted-foreground">Map for editorial navigation only, not a legal boundary reference. <a href={`${basePath}/data/india-map-attribution.md`} className="signal-rule-link" target="_blank" rel="noopener noreferrer">Map attribution and boundary notice</a>.</p></>}
+        </div>
+        <div><p className="signal-kicker text-accent">States with published records / {states.length}</p><div className="mt-3 grid gap-0">{states.map((state) => <button key={state} type="button" className="map-state-button flex items-center justify-between gap-4 signal-kicker" aria-pressed={selected === state} onClick={() => setSelected(selected === state ? null : state)} data-testid={`button-map-state-${slugify(state)}`}><span>{state}</span><span className="text-muted-foreground">{stateStories.filter((story) => story.state === state).length}</span></button>)}</div></div>
+      </div>}
+      {selectedStories.length > 0 && <div className="border-t border-foreground/20 pt-6"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="signal-kicker text-accent">{selected ?? 'Recent state-linked records'}</p>{selectedLatest && <p className="mt-2 text-sm text-muted-foreground">Latest story context: {selectedLatest.title}</p>}</div>{selected && <button type="button" className="signal-kicker text-muted-foreground hover:text-accent" onClick={() => setSelected(null)} data-testid="button-clear-map-state">Show all states</button>}</div><div className="mt-4 grid gap-5 sm:grid-cols-3">{selectedStories.map((story) => <Link href={storyPath(story)} key={story.id} className="group"><p className="signal-kicker text-muted-foreground">{story.publishedOn ? 'Published' : 'Record date'} / {formatDate(story.recordDate ?? story.publishedOn)}</p><div className="mt-2 flex flex-wrap items-center gap-2"><span className={`signal-status-badge ${story.verificationStatus === 'verified' ? 'is-verified' : story.verificationStatus === 'source-linked' ? 'is-source-linked' : 'is-unverified'}`}>{verificationLabel(story.verificationStatus)}</span><span className="signal-kicker text-muted-foreground">{story.sourceUrl ? 'Direct source available' : 'Direct source unavailable'}</span></div><h3 className="mt-2 font-display text-2xl leading-tight group-hover:text-accent">{story.title}</h3><p className="mt-2 text-xs leading-relaxed text-muted-foreground">{story.dek}</p></Link>)}</div></div>}
     </div>
-    <section className="signal-container situation-hero mt-8 grid gap-10 border-b border-foreground/20 pb-10 pt-6 sm:pb-14 sm:pt-8 lg:grid-cols-[1.08fr_.92fr] lg:items-center lg:gap-14">
-      <div>
-        <div className="mb-6 flex flex-wrap items-center gap-3"><p className="signal-kicker text-accent">Issue {String(data.issue.issueNumber).padStart(3, '0')} / {formatDate(data.issue.issueDate)}</p><span className="signal-tag signal-tag--blue">India / policy focus</span></div>
-        <p className="signal-kicker text-muted-foreground">Current edition / {data.issue.title}</p>
-        <h1 className="situation-hero-title max-w-4xl font-display text-6xl font-semibold leading-[.91] tracking-[-.065em] sm:text-7xl lg:text-[6.6rem]" data-testid="heading-hero">Who gets<br /><em className="font-normal text-accent">to compete</em><br />in the open?</h1>
-        <p className="signal-reading-column mt-7 max-w-xl text-base text-muted-foreground">{data.issue.intro}</p>
-        <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground">Follow rules and court cases shaping open-category competition, UGC protections, EWS eligibility and state quota disputes. Reported claims, legal arguments and outcomes stay clearly separated.</p>
-        <div className="mt-8 flex flex-wrap gap-3">
-          <Link href="/topics/open-category-competition" className="signal-button" data-testid="link-read-briefing">Explore the open-category question <ArrowDownRight size={15} /></Link>
-          <a href="#focus-desk" className="signal-button signal-button--outline" data-testid="link-hero-live-desk">External source desk</a>
-        </div>
-      </div>
-      <figure className="hero-documentary relative m-0 min-h-[280px] overflow-hidden border border-foreground/20 sm:aspect-[4/3] sm:min-h-0">
-        <img src={`${basePath}/images/supreme-court.jpg`} alt="Supreme Court of India building" className="absolute inset-0 h-full w-full object-cover" />
-        <figcaption className="absolute inset-x-0 bottom-0 border-t border-foreground/15 bg-background/95 p-4 sm:p-5">
-          <p className="signal-kicker text-accent">Archive image / Supreme Court of India / Wikimedia Commons</p>
-          <p className="mt-2 font-display text-2xl leading-tight sm:text-3xl">Read the rule. Check the order. Track the open pool.</p>
-        </figcaption>
-      </figure>
-    </section>
-    {!featured ? focusedStories.length === 0 ? <section id="briefing" className="signal-container pt-8 sm:pt-12">
-      <div className="front-page-lead editorial-grid gap-y-7 py-7 sm:py-9">
-        <div className="col-span-12 lg:col-span-7 lg:pr-8">
-          <p className="signal-kicker text-accent">Front page / desk note</p>
-          <h2 className="mt-3 max-w-3xl font-display text-4xl leading-[.96] tracking-[-.04em] sm:text-6xl">Nothing is ready to be called a sourced investigation.</h2>
-          <p className="mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground">The current issue has no record that meets the front-page source and relevance checks. That gap stays visible; external monitoring leads remain separate from Signal Hub reporting.</p>
-        </div>
-        <div className="col-span-12 flex flex-col justify-center border-t border-foreground/20 pt-5 lg:col-span-5 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
-          <p className="signal-kicker text-accent">Current issue / focused records</p>
-          <p className="home-number mt-4" data-testid="text-home-record-count">{focusedStories.length}</p>
-          <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted-foreground">Published records with a direct source link and a clear connection to this issue.</p>
-          <Link href="/archive" className="mt-6 inline-flex items-center gap-2 signal-kicker text-accent hover:underline" data-testid="link-home-empty-archive">Browse the archive <ArrowUpRight size={13} /></Link>
-        </div>
-      </div>
-    </section> : <section id="briefing" className="signal-container pt-10 sm:pt-16">
-      <EmptyState title="No current record matches this view." text="Clear the current-issue search or topic filter to see the published source-linked records." />
-      <button type="button" onClick={() => { setActiveTopic('All'); setSearch(''); }} className="mt-5 signal-kicker text-accent hover:underline" data-testid="button-clear-current-filters">Clear current-issue filters</button>
-    </section> : <section id="briefing" className="signal-container pt-10 sm:pt-16">
-      <div className="front-page-lead editorial-grid gap-y-8 py-8 sm:py-10">
-        <article className="col-span-12 lg:col-span-7 lg:pr-6" data-testid={`card-story-lead-${featured.id}`}>
-          <p className="signal-kicker text-accent">{featured.topic} / {featured.kind}</p>
-          <Link href={storyPath(featured)} className="group mt-3 block" data-testid={`link-story-lead-${featured.id}`}><h2 className="max-w-4xl font-display text-5xl leading-[.92] tracking-[-.05em] group-hover:text-accent sm:text-7xl">{featured.title}</h2></Link>
-          <p className="mt-5 max-w-2xl text-lg leading-relaxed text-muted-foreground">{featured.dek}</p>
-          <div className="mt-6 max-w-xl"><SourceLine story={featured} /></div>
-        </article>
-        <div className="signal-note col-span-12 flex flex-col justify-center border-l-2 p-5 sm:p-7 lg:col-span-5" data-testid={`story-evidence-summary-${featured.id}`}>
-          <p className="signal-kicker text-accent">Evidence status / {verificationLabel(featured.verificationStatus)}</p>
-          <p className="mt-5 font-display text-3xl leading-tight">{featured.source || 'Source not supplied'}</p>
-          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">Record date / as supplied · {formatDate(featured.publishedOn)}</p>
-          <Link href={storyPath(featured)} className="mt-6 inline-flex items-center gap-2 signal-kicker text-accent hover:underline" data-testid={`link-story-lead-art-${featured.id}`}>Read this record <ArrowUpRight size={13} /></Link>
-        </div>
-      </div>
-      {mediumStories.length > 0 && <div className="editorial-grid border-b border-foreground/20 py-8">{mediumStories.map((story) => <article key={story.id} className="col-span-12 border-t border-foreground/18 pt-5 sm:col-span-6 lg:col-span-4 lg:first:col-start-1" data-testid={`card-story-medium-${story.id}`}><p className="signal-kicker text-accent">{story.topic} / {formatDate(story.publishedOn)}</p><Link href={storyPath(story)} className="group block" data-testid={`link-story-medium-${story.id}`}><h3 className="mt-3 font-display text-3xl leading-tight group-hover:text-accent">{story.title}</h3></Link><p className="mt-3 text-sm leading-relaxed text-muted-foreground">{story.dek}</p><p className="mt-4 signal-kicker text-muted-foreground">{story.source || 'Source not supplied'}</p></article>)}</div>}
-      {smallStories.length > 0 && <div className="editorial-grid py-2">{smallStories.map((story) => <article key={story.id} className="front-page-small col-span-12 py-5 sm:col-span-6 lg:col-span-3" data-testid={`card-story-small-${story.id}`}><p className="signal-kicker text-accent">{story.topic}</p><Link href={storyPath(story)} className="group block" data-testid={`link-story-small-${story.id}`}><h3 className="mt-2 font-display text-xl leading-tight group-hover:text-accent">{story.title}</h3></Link><p className="mt-3 line-clamp-2 text-sm leading-relaxed text-muted-foreground">{story.dek}</p><p className="mt-4 signal-kicker text-muted-foreground">{formatDate(story.publishedOn)}</p></article>)}</div>}
-      <div className="flex flex-wrap items-center gap-3 border-y border-foreground/20 py-5" aria-label="Filter current investigations">{['All', ...focusTopics].map((topic) => <button key={topic} type="button" onClick={() => setActiveTopic(topic as Topic | 'All')} className={`border px-4 py-2 signal-kicker transition-colors ${activeTopic === topic ? 'border-primary bg-primary text-primary-foreground' : 'border-foreground/20 hover:border-accent hover:text-accent'}`} aria-pressed={activeTopic === topic} data-testid={`button-topic-${String(topic).replace(/\W/g, '-').toLowerCase()}`}>{topic}</button>)}<label className="ml-auto flex items-center gap-2 border-b border-foreground/25 py-2 text-sm"><Search size={14} className="text-accent" /><input aria-label="Search current issue" data-testid="input-search-current" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search this issue" className="w-40 bg-transparent text-sm outline-none placeholder:text-muted-foreground" /></label></div>
-    </section>}
-    <LiveDesk />
-    {focusedStories.length > 0 && <HomeDecisionGrid stories={focusedStories} />}
-    <DecisionEvidenceSection records={decisionImpactQuery.data?.records ?? []} isLoading={decisionImpactQuery.isLoading} isError={decisionImpactQuery.isError} />
-    <section className="signal-container signal-editorial-section mt-24 sm:mt-36"><div className="grid gap-10 lg:grid-cols-[.8fr_1.2fr] lg:items-end lg:gap-20"><div><p className="signal-kicker text-accent">05 / How to read the record</p><h2 className="mt-4 max-w-md font-display text-5xl leading-[.9] tracking-[-.05em] sm:text-7xl">Facts have<br /><em className="font-normal text-accent">a chain of custody.</em></h2><p className="mt-6 max-w-sm text-sm leading-relaxed text-muted-foreground">Reservation is a constitutional guarantee, a question of representation, a response to discrimination and a lived reality in classrooms, offices and public life.</p></div><div className="border-l border-foreground/20 pl-6 sm:pl-10">{[['01', 'Source', 'Where did this come from?'], ['02', 'Context', 'What framework, state or history does it sit inside?'], ['03', 'Consequence', 'What can a reader responsibly do with it?']].map(([number, title, description], index) => <div key={number} className={`relative ${index < 2 ? 'pb-9' : ''}`}><span className="absolute -left-[29px] top-0 h-3 w-3 border-2 border-background bg-accent sm:-left-[45px]" /><p className="signal-kicker text-accent">{number}</p><h3 className="mt-2 font-display text-2xl">{title}</h3><p className="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">{description}</p></div>)}</div></div></section>
-    <PolicyLedger />
-    {focusedStories.length > 0 && <RecordCollections stories={focusedStories} />}
-    <TrustNote />
-    {focusedStories.length > 3 && <section className="signal-container pt-24 sm:pt-36"><div className="flex items-end justify-between border-b border-foreground/20 pb-5"><div><p className="signal-kicker text-accent">12 / The larger record</p><h2 className="mt-2 font-display text-4xl leading-none tracking-[-.04em] sm:text-5xl">Keep following.</h2></div><Link href="/archive" className="hidden items-center gap-2 text-[.68rem] font-bold uppercase tracking-[.13em] hover:text-accent sm:flex" data-testid="link-explore-archive">Explore all records <ChevronRight size={14} /></Link></div><div className="grid gap-7 py-8 sm:grid-cols-3">{focusedStories.slice(3, 6).map((story, index) => <Link href={storyPath(story)} key={story.id} className="group border-b border-foreground/15 pb-6 sm:border-b-0 sm:border-r sm:pr-6 last:border-0" data-testid={`link-follow-story-${story.id}`}><p className="signal-kicker text-accent">{story.topic} / 0{index + 1}</p><h3 className="mt-3 font-display text-2xl leading-[1.02] tracking-[-.03em] group-hover:text-accent">{story.title}</h3><p className="mt-3 text-sm leading-relaxed text-muted-foreground">{story.dek}</p><span className="mt-5 block signal-kicker text-muted-foreground">{story.kind} <ArrowUpRight size={12} className="ml-1 inline" /></span></Link>)}</div></section>}
-    <NewsletterSignup /><footer className="signal-container flex flex-col justify-between gap-8 py-10 sm:flex-row sm:items-end"><div><Link href="/" className="signal-link flex items-center gap-3"><BrandMark /><span className="font-display text-xl">SIGNAL <span className="text-accent">HUB</span></span></Link><p className="mt-3 max-w-xs text-xs leading-relaxed text-muted-foreground">A source-first public-interest newsroom for understanding reservation in India.</p></div><div className="flex flex-wrap gap-x-5 gap-y-2 signal-kicker text-[9px] text-muted-foreground"><Link href="/archive" className="signal-link">Archive</Link><Link href="/about" className="signal-link">About</Link><Link href="/editorial-standards" className="signal-link">Standards</Link><Link href="/methodology" className="signal-link">Methodology</Link><Link href="/editor" className="signal-link">Editorial desk</Link><span>© Signal Hub</span></div></footer>
+  </section>;
+}
+
+function DocumentFeature() {
+  const query = useGetEvidenceEvents(undefined, { query: { queryKey: getGetEvidenceEventsQueryKey(), staleTime: 60_000 } });
+  const source = query.data?.events.flatMap((event) => event.primarySources)[0] ?? query.data?.events.flatMap((event) => event.secondarySources)[0];
+  return <section className="signal-container mt-20 sm:mt-28" id="the-document" aria-labelledby="document-title">
+    <div className="grid gap-8 border-y-2 border-foreground py-8 lg:grid-cols-[.8fr_1.2fr] lg:items-center lg:gap-14">
+      <div><p className="signal-kicker text-accent">07 / The document</p><h2 id="document-title" className="mt-3 font-display text-5xl leading-[.9] tracking-[-.05em] sm:text-7xl">Read what<br /><em className="font-normal text-accent">the record says.</em></h2><p className="mt-5 max-w-md text-sm leading-relaxed text-muted-foreground">A source document returned by the public evidence archive, with its status and publication date kept intact.</p></div>
+      <article className="grid gap-6 sm:grid-cols-[.8fr_1.2fr] sm:items-center" data-testid="feature-the-document">
+        <div className="document-placeholder" aria-label={query.isLoading ? 'Loading source document preview' : query.isError ? 'Source document request failed' : source ? 'Source document preview unavailable' : 'No public source document returned'} />
+        <div>{query.isLoading ? <div role="status"><div className="h-3 w-40 animate-pulse bg-muted" /><p className="mt-4 signal-kicker text-muted-foreground">Loading published documents…</p></div> : query.isError ? <div role="alert"><p className="signal-kicker text-accent">Document archive / unavailable</p><h3 className="mt-3 font-display text-3xl leading-tight">The public document request failed.</h3><p className="mt-3 text-sm leading-relaxed text-muted-foreground">A missing document cannot be concluded from an unavailable request. Try again from the evidence archive.</p><Link href="/events" className="mt-6 inline-flex items-center gap-2 signal-kicker text-accent hover:underline">Open evidence archive <ArrowUpRight size={13} /></Link></div> : source ? <><p className="signal-kicker text-accent">{source.documentType} / {source.status}</p><h3 className="mt-3 font-display text-3xl leading-tight">{source.title}</h3><p className="mt-3 text-sm text-muted-foreground">{source.publisher} · Published {formatDate(source.publicationDate)}</p>{source.sourceUrl ? <a href={source.sourceUrl} target="_blank" rel="noopener noreferrer" className="mt-6 inline-flex items-center gap-2 signal-kicker text-accent hover:underline">View source <ExternalLink size={13} /></a> : <p className="mt-6 signal-kicker text-muted-foreground">Direct source link unavailable</p>}</> : <><p className="signal-kicker text-accent">No public document returned</p><h3 className="mt-3 font-display text-3xl leading-tight">Preview unavailable until a source document is published.</h3><p className="mt-3 text-sm leading-relaxed text-muted-foreground">This panel does not simulate a scan. It will open only a document that exists in the evidence archive.</p></>}</div>
+      </article>
+    </div>
+  </section>;
+}
+
+function Home() {
+  const issueQuery = useGetCurrentIssue();
+  const archiveParams = useMemo(() => ({ limit: 100 }), []);
+  const archiveQuery = useGetArchive(archiveParams, { query: { queryKey: getGetArchiveQueryKey(archiveParams) } });
+  const decisionImpactQuery = useGetDecisionImpacts({ limit: 100 }, { query: { queryKey: getGetDecisionImpactsQueryKey({ limit: 100 }) } });
+  useSeo({ title: 'Signal Hub — India, on the record', description: 'A source-first Indian newsroom for reservation policy, courts, public institutions, education and regional impact.', canonicalPath: '/', structuredData: { '@context': 'https://schema.org', '@graph': [organizationSchema, { '@type': 'WebSite', name: 'Signal Hub', url: '/' }] } });
+  const stories = useMemo(
+    () => [...(archiveQuery.data?.stories ?? issueQuery.data?.stories ?? [])]
+      .filter((story) => story.workflowStatus === 'published')
+      .sort((a, b) => (b.publishedOn ?? b.recordDate ?? '').localeCompare(a.publishedOn ?? a.recordDate ?? '')),
+    [archiveQuery.data, issueQuery.data],
+  );
+  if (issueQuery.isLoading || archiveQuery.isLoading) return <div className="signal-page"><Header /><LoadingBlock label="Assembling the India desk…" /></div>;
+  if (issueQuery.isError && archiveQuery.isError) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message="The current edition and archive could not be assembled." onRetry={() => { void issueQuery.refetch(); void archiveQuery.refetch(); }} /></div></div>;
+  const sourcedStories = stories.filter((story) => story.verificationStatus !== 'unverified' && Boolean(story.sourceUrl));
+  const featured = sourcedStories[0];
+  const visualStories = stories.filter((story) => story.id !== featured?.id).slice(0, 3);
+  const latestStories = stories.slice(0, 6);
+  const investigation = sourcedStories.find((story) => story.kind === 'Article' || story.kind === 'Explainer');
+  const featuredImage = featured ? imageForStory(featured) : null;
+  const measuredRecords = (decisionImpactQuery.data?.records ?? []).filter(isMeasuredDecisionImpact);
+  return <main className="signal-page"><Header />
+    <div className="signal-container mt-6 border-y border-foreground/20 py-3" aria-label="Latest published records"><div className="flex flex-wrap items-center gap-x-5 gap-y-2"><span className="signal-kicker text-accent">Latest / published records</span>{stories.slice(0, 3).map((story) => <Link key={story.id} href={storyPath(story)} className="inline-flex items-center gap-2 signal-kicker signal-link"><span className={`signal-status-badge ${story.verificationStatus === 'verified' ? 'is-verified' : story.verificationStatus === 'source-linked' ? 'is-source-linked' : 'is-unverified'}`}>{verificationLabel(story.verificationStatus)}</span>{story.title}</Link>)}{stories.length === 0 && <span className="signal-kicker text-muted-foreground">No published records in the current archive</span>}</div></div>
+    {featured ? <section className="signal-container visual-hero mt-7" data-testid={`card-home-hero-${featured.id}`}>{featuredImage ? <img src={featuredImage.src} alt={featuredImage.alt} width={featuredImage.width} height={featuredImage.height} className="absolute inset-0 h-full w-full object-cover" /> : <div className="story-art-placeholder absolute inset-0 flex items-center justify-center"><p className="signal-kicker text-accent">No relevant archive image available</p></div>}<div className="visual-hero-copy flex min-h-[440px] flex-col justify-end p-6 sm:min-h-[560px] sm:max-w-[72%] sm:p-12 lg:min-h-[680px] lg:max-w-[62%] lg:p-16"><p className="signal-kicker text-accent">{featured.topic} / {featured.kind}</p><Link href={storyPath(featured)} className="group mt-4 block"><h1 className="max-w-4xl font-display text-5xl leading-[.91] tracking-[-.055em] group-hover:text-accent sm:text-7xl lg:text-[6.8rem]" data-testid="heading-hero">{featured.title}</h1></Link><p className="mt-5 max-w-xl text-base leading-relaxed text-primary-foreground/75 sm:text-lg">{featured.dek}</p><div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 signal-kicker text-primary-foreground/70"><span>{formatDate(featured.publishedOn ?? featured.recordDate)}</span><span>{featured.read} min read</span><span>{verificationLabel(featured.verificationStatus)}</span></div><Link href={storyPath(featured)} className="mt-7 inline-flex w-fit items-center gap-2 signal-button bg-accent text-accent-foreground" data-testid="link-read-briefing">View investigation <ArrowUpRight size={14} /></Link></div>{featuredImage && <p className="hero-credit">{featuredImage.credit} · contextual, not evidence for this record</p>}</section> : <section className="signal-container mt-7 border-y-2 border-foreground py-0"><div className="grid min-h-[480px] items-stretch lg:grid-cols-[1fr_.72fr]"><div className="order-last flex flex-col justify-center py-16 lg:order-first lg:pr-12"><p className="signal-kicker text-accent">Front page / no source-linked lead</p><h1 className="mt-4 max-w-3xl font-display text-5xl leading-[.92] sm:text-7xl">The archive is waiting for its next sourced investigation.</h1><p className="mt-5 max-w-xl text-sm leading-relaxed text-muted-foreground">No published, source-linked record is available for the hero yet. The absence is part of the record.</p><Link href="/archive" className="mt-7 inline-flex w-fit items-center gap-2 signal-button">Browse the archive <ArrowUpRight size={14} /></Link></div><figure className="order-first relative m-0 min-h-[280px] overflow-hidden border-l border-foreground/15 lg:order-last"><img src={`${basePath}/images/supreme-court.jpg`} alt="Supreme Court of India building, contextual archive visual" width="1280" height="797" className="h-full w-full object-cover grayscale-[.2]" /><figcaption className="absolute inset-x-0 bottom-0 bg-primary/85 px-3 py-3 signal-kicker text-primary-foreground/75">Contextual archive visual / Wikimedia Commons · not evidence for a specific record</figcaption></figure></div></section>}
+    {visualStories.length > 0 && <section className="signal-container mt-16 sm:mt-24" id="visual-signals"><div className="flex items-end justify-between gap-4 border-b-2 border-foreground pb-4"><div><p className="signal-kicker text-accent">01 / Visual signals</p><h2 className="mt-2 font-display text-4xl sm:text-5xl">India, in the record.</h2></div><Link href="/archive" className="signal-kicker text-accent hover:underline">All stories <ArrowUpRight size={13} className="ml-1 inline" /></Link></div><div className="mt-5 grid gap-5 md:grid-cols-3">{visualStories.map((story) => <article key={story.id} className="visual-signal-card group" data-testid={`card-visual-signal-${story.id}`}><Link href={storyPath(story)} className="visual-signal-image block"><StoryArt story={story} className="h-full" /></Link><div className="flex flex-1 flex-col p-5"><div className="flex flex-wrap items-center justify-between gap-3"><p className="signal-kicker text-accent">{story.topic} / {story.kind}</p><span className={`signal-status-badge ${story.verificationStatus === 'verified' ? 'is-verified' : story.verificationStatus === 'source-linked' ? 'is-source-linked' : 'is-unverified'}`}>{verificationLabel(story.verificationStatus)}</span></div><Link href={storyPath(story)} className="mt-3 block"><h3 className="font-display text-3xl leading-tight group-hover:text-accent">{story.title}</h3></Link><p className="mt-3 line-clamp-3 text-sm leading-relaxed text-muted-foreground">{story.dek}</p><p className="mt-auto pt-6 signal-kicker text-muted-foreground">{story.publishedOn ? 'Published' : 'Record date'} / {formatDate(story.publishedOn ?? story.recordDate)} · {story.sourceCount ?? 0} sources · {story.eventCount ?? 0} events</p><p className="mt-2 signal-kicker text-muted-foreground">{story.sourceUrl ? 'Direct source available' : 'Direct source unavailable'}</p></div></article>)}</div></section>}
+    <section className="signal-container mt-20 sm:mt-28" id="latest-stories"><div className="flex items-end justify-between gap-4 border-b-2 border-foreground pb-4"><div><p className="signal-kicker text-accent">02 / Latest stories</p><h2 className="mt-2 font-display text-4xl sm:text-5xl">Follow the thread.</h2></div><Link href="/timeline" className="signal-kicker text-accent hover:underline">Open timeline <ArrowUpRight size={13} className="ml-1 inline" /></Link></div><div className="mt-2">{latestStories.length ? latestStories.map((story) => <StoryCard key={story.id} story={story} compact />) : <EmptyState title="No latest stories yet." text="Published records will appear here with their source and verification status." />}</div></section>
+    {investigation && <section className="signal-container mt-20 sm:mt-28" id="featured-investigation"><div className="grid overflow-hidden bg-primary text-primary-foreground lg:grid-cols-[1.08fr_.92fr]"><div className="min-h-[300px]"><StoryArt story={investigation} className="h-full min-h-[300px]" /></div><div className="flex flex-col justify-center p-7 sm:p-12"><p className="signal-kicker text-accent">03 / Featured investigation</p><div className="mt-3 flex flex-wrap gap-2"><span className="signal-status-badge">{verificationLabel(investigation.verificationStatus)}</span><span className="signal-kicker text-primary-foreground/70">{investigation.sourceUrl ? 'Direct source available' : 'Direct source unavailable'}</span></div><h2 className="mt-4 font-display text-4xl leading-[.94] sm:text-6xl">{investigation.title}</h2><p className="mt-5 text-sm leading-relaxed text-primary-foreground/70">{investigation.dek}</p><p className="mt-5 signal-kicker text-primary-foreground/65">{investigation.sourceCount ?? 0} sources · {investigation.eventCount ?? 0} events</p><Link href={storyPath(investigation)} className="mt-7 inline-flex w-fit items-center gap-2 signal-kicker text-accent hover:underline">Explore investigation <ArrowUpRight size={13} /></Link></div></div></section>}
+    <IndiaFocus stories={stories} />
+    <DocumentFeature />
+    <section className="signal-container mt-20 sm:mt-28" id="the-numbers"><div className="border-y-2 border-foreground py-8"><p className="signal-kicker text-accent">08 / The numbers</p><div className="mt-4 grid gap-8 lg:grid-cols-[.7fr_1.3fr]"><h2 className="font-display text-5xl leading-[.9] sm:text-7xl">No number<br /><em className="font-normal text-accent">without its frame.</em></h2>{measuredRecords.length ? <div className="grid gap-4 sm:grid-cols-2">{measuredRecords.slice(0, 4).map((record) => <article key={record.id} className="border-t border-foreground/20 pt-4"><p className="signal-kicker text-accent">{record.geography} · {record.decisionArea}</p><p className="mt-3 font-display text-4xl">{record.findingValue} <span className="text-base">{record.findingUnit}</span></p><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{record.definition}</p><p className="mt-3 signal-kicker text-muted-foreground">Source: {record.source}</p></article>)}</div> : <div className="border border-dashed border-foreground/25 p-6"><p className="font-display text-3xl">There is no measured movement signal to show yet.</p><p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">Only published verified records with a value, unit, definition, geography, date and source can appear here. No substitute estimate is shown.</p></div>}</div></div></section>
+    <section className="signal-container mt-20 sm:mt-28" id="timeline-preview"><div className="flex items-end justify-between gap-4 border-b-2 border-foreground pb-4"><div><p className="signal-kicker text-accent">09 / Visual timeline</p><h2 className="mt-2 font-display text-4xl sm:text-5xl">Dates, with context.</h2></div><Link href="/timeline" className="signal-kicker text-accent hover:underline">View full timeline <ArrowUpRight size={13} className="ml-1 inline" /></Link></div>{stories.length ? <div className="mt-2">{stories.slice(0, 3).map((story) => <Link key={story.id} href={storyPath(story)} className="timeline-visual-entry group"><time className="signal-kicker text-muted-foreground" dateTime={story.recordDate ?? story.publishedOn ?? undefined}>{story.publishedOn ? 'Published' : 'Record date'} / {formatDate(story.recordDate ?? story.publishedOn)}</time><span className="timeline-dot hidden md:block" /><div className="timeline-visual-thumb"><StoryArt story={story} className="h-full" /></div><div><div className="flex flex-wrap items-center gap-3"><p className="signal-kicker text-accent">{story.topic} / {story.kind}</p><span className={`signal-status-badge ${story.verificationStatus === 'verified' ? 'is-verified' : story.verificationStatus === 'source-linked' ? 'is-source-linked' : 'is-unverified'}`}>{verificationLabel(story.verificationStatus)}</span></div><h3 className="mt-2 font-display text-3xl leading-tight group-hover:text-accent">{story.title}</h3><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{story.dek}</p><p className="mt-3 signal-kicker text-muted-foreground">{story.sourceCount ?? 0} sources · {story.eventCount ?? 0} events · {story.sourceUrl ? 'Direct source available' : 'Direct source unavailable'}</p></div></Link>)}</div> : <div className="mt-2"><EmptyState title="No dated published records yet." text="The visual timeline will appear when the published archive returns a usable record date." /></div>}</section>
+    <section className="signal-container mt-20 sm:mt-28" id="archive-preview"><div className="flex items-end justify-between gap-4 border-b-2 border-foreground pb-4"><div><p className="signal-kicker text-accent">10 / Latest archive</p><h2 className="mt-2 font-display text-4xl sm:text-5xl">Keep the record close.</h2></div><Link href="/archive" className="signal-kicker text-accent hover:underline">Browse archive <ArrowUpRight size={13} className="ml-1 inline" /></Link></div><div className="mt-2">{stories.slice(0, 4).map((story) => <StoryCard key={story.id} story={story} compact />)}</div></section>
+    <LiveDesk /><DecisionEvidenceSection records={decisionImpactQuery.data?.records ?? []} isLoading={decisionImpactQuery.isLoading} isError={decisionImpactQuery.isError} /><NewsletterSignup /><footer className="signal-container flex flex-col justify-between gap-8 border-t border-foreground/20 py-10 sm:flex-row sm:items-end"><div><Link href="/" className="signal-link flex items-center gap-3"><BrandMark /><span className="font-display text-xl">The Signal <span className="text-accent">24</span></span></Link><p className="mt-3 max-w-xs text-xs leading-relaxed text-muted-foreground">A source-first public-interest newsroom for understanding India through the record.</p></div><div className="flex flex-wrap gap-x-5 gap-y-2 signal-kicker text-[9px] text-muted-foreground"><Link href="/archive" className="signal-link">Archive</Link><Link href="/events" className="signal-link">Evidence</Link><Link href="/data" className="signal-link">Data</Link><Link href="/about" className="signal-link">About</Link><span>© Signal Hub</span></div></footer>
   </main>;
 }
 
@@ -864,6 +919,7 @@ function TimelinePage() {
       date: record.effectiveDate || record.publishedOn,
       dateLabel: record.effectiveDate ? 'Effective date' : 'Published',
       kind: 'official' as const,
+      visual: imageForText(`${record.title} ${record.summary} ${record.authority}`),
       label: `Policy record / ${record.status}`,
       title: record.title,
       summary: record.summary,
@@ -871,16 +927,17 @@ function TimelinePage() {
       href: record.canonicalPath,
     }));
     const storyEntries = (archiveQuery.data?.stories ?? [])
-      .filter((story) => story.verificationStatus === 'verified' && Boolean(story.sourceUrl && story.publishedOn))
+      .filter((story) => story.workflowStatus === 'published' && Boolean(story.publishedOn ?? story.recordDate))
       .map((story) => ({
         id: `story-${story.id}`,
-        date: story.publishedOn!,
-        dateLabel: 'Signal 24 publication date',
+        date: story.publishedOn ?? story.recordDate!,
+        dateLabel: story.publishedOn ? 'Signal 24 publication date' : 'Record date / as supplied',
         kind: 'record' as const,
+        visual: imageForStory(story),
         label: `${story.kind} / ${verificationLabel(story.verificationStatus)}`,
         title: story.title,
         summary: story.dek,
-        source: story.source,
+        source: `${story.source} · ${story.sourceUrl ? 'Direct source available' : 'Direct source unavailable'} · ${story.sourceCount ?? 0} sources · ${story.eventCount ?? 0} events`,
         href: storyPath(story),
       }));
     const leadEntries = FOCUS_SOURCES.map((source, index) => ({
@@ -888,6 +945,7 @@ function TimelinePage() {
       date: source.date,
       dateLabel: 'External publication date',
       kind: 'lead' as const,
+      visual: imageForText(`${source.title} ${source.summary} ${source.lane} ${source.place}`),
       label: `External lead / ${source.lane}`,
       title: source.title,
       summary: source.summary,
@@ -911,13 +969,16 @@ function TimelinePage() {
       {loading ? <LoadingBlock label="Assembling dated source entries…" /> :
         !entries.length ? <EmptyState title="No dated entries are available." text="The timeline only uses dates attached to published records or attributed external sources." /> :
           <div className="border-t-2 border-foreground">
-            {entries.map((entry) => <article key={entry.id} className="grid gap-4 border-b border-foreground/20 py-6 md:grid-cols-[170px_1fr] md:gap-8" data-testid={`timeline-entry-${entry.id}`}>
-              <div><time className="font-display text-2xl leading-tight" dateTime={entry.date}>{formatDate(entry.date)}</time><p className="mt-2 signal-kicker text-muted-foreground">{entry.dateLabel}</p></div>
+            {entries.map((entry) => <article key={entry.id} className="timeline-visual-entry" data-testid={`timeline-entry-${entry.id}`}>
+              <time className="font-display text-2xl leading-tight" dateTime={entry.date}>{formatDate(entry.date)}<span className="mt-2 block signal-kicker text-muted-foreground">{entry.dateLabel}</span></time>
+              <span className="timeline-dot hidden md:block" />
+              <div className="timeline-visual-thumb">{entry.visual ? <img src={entry.visual.src} alt={entry.visual.alt} width={entry.visual.width} height={entry.visual.height} loading="lazy" /> : <div className="story-art-placeholder flex h-full min-h-[140px] items-center justify-center p-5 text-center"><p className="signal-kicker text-accent">No relevant archive image available</p></div>}</div>
               <div className={`border-l-2 pl-5 ${entry.kind === 'lead' ? 'border-secondary' : entry.kind === 'official' ? 'border-ring' : 'border-accent'}`}>
                 <p className="signal-kicker">{entry.label}</p>
                 <h2 className="mt-2 font-display text-2xl leading-tight sm:text-3xl">{entry.kind === 'lead' ? <a href={entry.href} target="_blank" rel="noopener noreferrer" className="hover:text-accent">{entry.title}</a> : <Link href={entry.href} className="hover:text-accent">{entry.title}</Link>}</h2>
                 <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted-foreground">{entry.summary}</p>
                 <p className="mt-4 signal-kicker text-muted-foreground">{entry.source}</p>
+                <p className="mt-3 signal-kicker text-accent">{entry.kind === 'lead' ? 'External lead / verify source' : 'View evidence →'}</p>
               </div>
             </article>)}
           </div>}
@@ -1257,6 +1318,29 @@ function ReadingProgress() {
   return <div className="reading-progress lg:hidden" aria-hidden="true"><span style={{ transform: `scaleX(${progress})` }} /></div>;
 }
 
+function ShareStory({ story }: { story: Story }) {
+  const [status, setStatus] = useState('');
+  async function share() {
+    const url = window.location.href;
+    const payload = { title: story.title, text: story.dek, url };
+    try {
+      if (navigator.share) await navigator.share(payload);
+      else {
+        await navigator.clipboard.writeText(url);
+        setStatus('Link copied');
+      }
+    } catch {
+      try {
+        await navigator.clipboard.writeText(url);
+        setStatus('Link copied');
+      } catch {
+        setStatus('Copy unavailable');
+      }
+    }
+  }
+  return <div className="share-row" aria-live="polite"><button type="button" className="share-button" onClick={() => void share()} data-testid={`button-share-story-${story.id}`}><Link2 size={13} /> Share record</button>{status && <span className="signal-kicker text-accent" data-testid={`status-share-story-${story.id}`}>{status}</span>}</div>;
+}
+
 /*
 // hint: Logic changed on both sides. Requires understanding intent of each change.
 function StoryDetail() {
@@ -1308,6 +1392,7 @@ function StoryDetail() {
   if (!Number.isFinite(storyId)) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message="That record address is not valid." /></div></div>;
   if (isLoading) return <div className="signal-page"><Header /><LoadingBlock label="Opening the source record…" /></div>;
   if (isError || !story) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message="This record may have moved or is not published yet." onRetry={() => void refetch()} /></div></div>;
+  const storyVisual = imageForStory(story);
   return <main className="signal-page">
     <Header />
     <ReadingProgress />
@@ -1417,7 +1502,12 @@ function StoryDetail() {
           <span className={`signal-tag ${story.verificationStatus === 'verified' ? 'signal-tag--blue' : 'signal-tag--amber'}`}>Verification / {verificationLabel(story.verificationStatus)}</span>
           <span className="signal-tag">{story.read} min read</span>
         </div>
+        <div className="mt-6"><ShareStory story={story} /></div>
       </header>
+      <figure className="mt-8 m-0 overflow-hidden bg-muted sm:mt-10">
+        <StoryArt story={story} className="aspect-[16/9] w-full" showCredit={false} />
+        <figcaption className="visual-caption px-3 py-3 signal-kicker text-muted-foreground">{imageCaptionForStory(story)}</figcaption>
+      </figure>
       <div id="record-evidence" className="mx-auto mt-8 article-reading-column"><SourceLine story={story} detail /></div>
       <div className="signal-container"><ArticleEvidenceSection storyId={story.id} /></div>
       {story.aiDisclosure && <div className="signal-note mt-6 max-w-3xl px-5 py-4"><p className="signal-kicker text-accent">AI-assisted drafting disclosure</p><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{story.aiDisclosure}</p></div>}
