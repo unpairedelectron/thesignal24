@@ -34,7 +34,7 @@ import {
 } from 'lucide-react';
 import { Link, Route, Router as WouterRouter, Switch, useLocation, useParams } from 'wouter';
 import { ErrorBoundary } from '@/components/error-boundary';
-import { FocusSourceDesk, FOCUS_SOURCES } from '@/components/focus-source-desk';
+import { FOCUS_SOURCES } from '@/components/focus-source-desk';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import {
@@ -142,7 +142,7 @@ type SeoConfig = {
   structuredData?: unknown;
 };
 function BrandMark() {
-  return <span className="signal-mark shrink-0" aria-label="Signal 24 mark"><span className="sr-only">Signal 24</span></span>;
+  return <span className="signal-mark shrink-0" aria-label="Signal Hub mark"><span className="sr-only">Signal Hub</span></span>;
 }
 
 function Header({ editor = false }: { editor?: boolean }) {
@@ -153,8 +153,8 @@ function Header({ editor = false }: { editor?: boolean }) {
     <>
       <div className="bg-primary py-2.5 text-primary-foreground">
         <div className="signal-container flex items-center justify-between gap-4">
-          <p className="signal-kicker flex items-center gap-2 text-[9px]"><span className="h-1.5 w-1.5 rounded-full bg-accent" /> A public-interest desk on UGC rules and open-category competition</p>
-          <p className="hidden signal-kicker opacity-60 sm:block">The Signal 24 / source desk</p>
+           <p className="signal-kicker flex items-center gap-2 text-[9px]"><span className="h-1.5 w-1.5 rounded-full bg-accent" /> Follow the evidence</p>
+           <p className="hidden signal-kicker opacity-60 sm:block">SIGNAL HUB / public-interest newsroom</p>
         </div>
       </div>
       <header className="signal-container relative z-30 flex items-center justify-between border-b border-foreground/20 py-5" onKeyDown={(event) => {
@@ -165,7 +165,7 @@ function Header({ editor = false }: { editor?: boolean }) {
       }}>
         <Link href="/" onClick={close} className="signal-link flex items-center gap-3" data-testid="link-brand">
           <BrandMark />
-          <span className="font-display text-[1.4rem] font-semibold leading-none tracking-[-.045em]">The Signal <span className="text-accent">24</span></span>
+          <span className="font-display text-[1.4rem] font-semibold leading-none tracking-[-.045em]">SIGNAL <span className="text-accent">HUB</span></span>
         </Link>
         <nav className="hidden items-center gap-7 md:flex" aria-label="Main navigation">
           {editor ? (
@@ -175,19 +175,18 @@ function Header({ editor = false }: { editor?: boolean }) {
             </>
           ) : (
             <>
-              <Link href="/" className="signal-kicker signal-link" data-testid="link-home">Home</Link>
-              <a href="/#briefing" className="signal-kicker signal-link" data-testid="link-latest">Latest</a>
-              <a href="/#live-desk" className="signal-kicker signal-link" data-testid="link-live-desk">Live desk</a>
-              <Link href="/policies" className="signal-kicker signal-link" data-testid="link-policy-ledger">Policy ledger</Link>
-              <a href="/#courtroom" className="signal-kicker signal-link" data-testid="link-courtroom">Courtroom</a>
-              <a href="/#data" className="signal-kicker signal-link" data-testid="link-data">Data</a>
+              <Link href="/archive" className="signal-kicker signal-link" data-testid="link-investigations">Investigations</Link>
+              <a href="/#briefing" className="signal-kicker signal-link" data-testid="link-signals">Signals</a>
+              <Link href="/data" className="signal-kicker signal-link" data-testid="link-data">Data</Link>
+              <Link href="/timeline" className="signal-kicker signal-link" data-testid="link-timeline">Timeline</Link>
               <Link href="/archive" className="signal-kicker signal-link" data-testid="link-archive">Archive</Link>
-              <Link href="/community" className="signal-kicker signal-link" data-testid="link-community">Community</Link>
+              <Link href="/topics" className="signal-kicker signal-link" data-testid="link-topics">Topics</Link>
+              <Link href="/about" className="signal-kicker signal-link" data-testid="link-about">About</Link>
             </>
           )}
         </nav>
         <div className="flex items-center gap-2">
-          {!editor && <Link href="/policies" className="hidden rounded-full bg-accent px-4 py-2 text-[.65rem] font-bold uppercase tracking-[.12em] text-accent-foreground transition-transform hover:-translate-y-0.5 sm:inline-block" data-testid="button-browse-archive">Explore the ledger</Link>}
+          {!editor && <><Link href="/search" className="hidden items-center gap-2 border-b border-foreground/30 px-1 py-2 signal-kicker sm:inline-flex" data-testid="link-search"><Search size={13} /> Search</Link><a href="/#newsletter" className="hidden rounded-full bg-accent px-4 py-2 text-[.65rem] font-bold uppercase tracking-[.12em] text-accent-foreground transition-transform hover:-translate-y-0.5 sm:inline-block" data-testid="link-subscribe">Subscribe</a></>}
           <button ref={mobileToggleRef} type="button" className="grid h-9 w-9 place-items-center md:hidden" aria-label={mobileOpen ? 'Close navigation' : 'Open navigation'} aria-expanded={mobileOpen} aria-controls="mobile-navigation" onClick={() => setMobileOpen((value) => !value)} data-testid="button-mobile-navigation">
             {mobileOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
@@ -195,16 +194,19 @@ function Header({ editor = false }: { editor?: boolean }) {
         <nav id="mobile-navigation" hidden={!mobileOpen} className="absolute left-0 right-0 top-full border-b border-foreground/20 bg-background p-5 shadow-md md:hidden" aria-label="Mobile navigation">
             <div className="flex flex-col gap-5">
               {editor ? <Link href="/" onClick={close} className="signal-kicker signal-link">Back to publication</Link> : <>
-                <Link href="/" onClick={close} className="signal-kicker signal-link">Home</Link>
-                <a href="/#briefing" onClick={close} className="signal-kicker signal-link">Latest</a>
-                <a href="/#live-desk" onClick={close} className="signal-kicker signal-link">Live desk</a>
-                <Link href="/policies" onClick={close} className="signal-kicker signal-link">Policy ledger</Link>
-                <a href="/#courtroom" onClick={close} className="signal-kicker signal-link">Courtroom</a>
-                <a href="/#data" onClick={close} className="signal-kicker signal-link">Data</a>
-                <Link href="/archive" onClick={close} className="signal-kicker signal-link">Archive</Link>
+                 <Link href="/archive" onClick={close} className="signal-kicker signal-link">Investigations</Link>
+                 <a href="/#briefing" onClick={close} className="signal-kicker signal-link">Signals</a>
+                 <Link href="/data" onClick={close} className="signal-kicker signal-link">Data</Link>
+                 <Link href="/timeline" onClick={close} className="signal-kicker signal-link">Timeline</Link>
+                 <Link href="/archive" onClick={close} className="signal-kicker signal-link">Archive</Link>
+                 <Link href="/topics" onClick={close} className="signal-kicker signal-link">Topics</Link>
+                 <Link href="/about" onClick={close} className="signal-kicker signal-link">About</Link>
+                 <div className="my-1 border-t border-foreground/15 pt-4" />
+                 <Link href="/policies" onClick={close} className="signal-kicker signal-link">Policy ledger</Link>
                  <Link href="/community" onClick={close} className="signal-kicker signal-link" data-testid="link-community-mobile">Community</Link>
-                <a href="/#documents" onClick={close} className="signal-kicker signal-link">Documents</a>
-                <Link href="/editorial-standards" onClick={close} className="signal-kicker signal-link">Standards</Link>
+                 <Link href="/editorial-standards" onClick={close} className="signal-kicker signal-link">Standards</Link>
+                 <Link href="/methodology" onClick={close} className="signal-kicker signal-link">Methodology</Link>
+                 <Link href="/search" onClick={close} className="signal-kicker signal-link">Search</Link>
               </>}
             </div>
           </nav>
@@ -228,20 +230,45 @@ function EmptyState({ title = 'No records match this view.', text = 'Try a broad
 function StoryArt({ story, compact = false }: { story: Story; compact?: boolean }) {
   const tone = story.tone || story.topic;
   const visual = ARCHIVE_VISUALS[Math.abs(story.sortOrder ?? story.id) % ARCHIVE_VISUALS.length];
-  return <div className={`story-art relative overflow-hidden border border-foreground/15 ${compact ? 'h-full min-h-[118px] sm:min-h-[142px]' : 'min-h-[270px]'} ${tone.includes('court') || tone.includes('policy') ? 'bg-[#314c5a]' : tone.includes('state') ? 'bg-[#52655b]' : tone.includes('history') ? 'bg-[#735d4e]' : tone.includes('data') ? 'bg-[#4d5370]' : 'bg-[#5f5369]'}`} aria-hidden="true">
-    <img src={visual.src} alt="" loading="lazy" decoding="async" className="story-art-image absolute inset-0 h-full w-full object-cover" />
-    <div className="absolute inset-0 bg-[#111827]/55 mix-blend-multiply" />
-    <div className="absolute inset-0 opacity-25" style={{ backgroundImage: 'linear-gradient(120deg, transparent 35%, rgba(244,237,218,.7) 36%, transparent 37%), linear-gradient(32deg, transparent 50%, rgba(244,237,218,.42) 51%, transparent 52%)', backgroundSize: '44px 44px' }} />
-    <div className="absolute left-4 top-4 max-w-[75%] signal-kicker text-[8px] leading-relaxed text-[#f2ede3]/80">Archive visual / {visual.caption.split(' / ')[1]}</div>
-    <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full border border-[#f2ede3]/50" /><div className="absolute right-5 top-7 h-28 w-28 rounded-full border border-[#f2ede3]/30" />
-    <div className="absolute bottom-5 left-5 flex items-end gap-1">{[20, 36, 28, 52, 34, 63, 44, 26].map((height, index) => <span key={`${height}-${index}`} className="block w-1 rounded-t-full bg-[#f2ede3]/80" style={{ height }} />)}</div>
-    <span className="absolute bottom-4 right-4 font-mono-signal text-[10px] uppercase tracking-[.2em] text-[#f2ede3]/85">S24 / {String(story.number ?? story.sortOrder).padStart(2, '0')}</span>
+  const [imageUnavailable, setImageUnavailable] = useState(false);
+  useEffect(() => setImageUnavailable(false), [visual.src]);
+  return <div
+    className={`story-art relative overflow-hidden border border-foreground/15 ${compact ? 'h-full min-h-[118px] sm:min-h-[142px]' : 'min-h-[270px]'} ${tone.includes('court') || tone.includes('policy') ? 'bg-[#314c5a]' : tone.includes('state') ? 'bg-[#52655b]' : tone.includes('history') ? 'bg-[#735d4e]' : tone.includes('data') ? 'bg-[#4d5370]' : 'bg-[#5f5369]'}`}
+    role="img"
+    aria-label={`${visual.caption}. Context image, not evidence for this record.`}
+  >
+    {imageUnavailable ? <div className="story-art-missing absolute inset-0 grid place-content-center gap-3 bg-card p-5 text-center">
+      <FileText className="mx-auto text-accent" size={24} />
+      <p className="signal-kicker text-accent">Archive image unavailable</p>
+      <p className="text-xs text-muted-foreground">{visual.caption}</p>
+    </div> : <img src={visual.src} alt="" loading="lazy" decoding="async" onError={() => setImageUnavailable(true)} className="story-art-image absolute inset-0 h-full w-full object-cover" />}
+    {!imageUnavailable && <>
+      <div className="absolute inset-0 bg-[#111827]/55 mix-blend-multiply" />
+      <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'linear-gradient(120deg, transparent 35%, rgba(244,237,218,.7) 36%, transparent 37%)', backgroundSize: '44px 44px' }} />
+      <div className="absolute left-4 top-4 max-w-[82%] signal-kicker text-[8px] leading-relaxed text-[#f2ede3]/90">
+        <span className="block">Archive visual / {visual.caption}</span>
+        <span className="mt-1 block text-[#f2ede3]/70">Context image · not evidence for this record</span>
+      </div>
+      <div className="absolute bottom-5 left-5 flex items-end gap-1" aria-hidden="true">{[20, 36, 28, 52, 34, 63, 44, 26].map((height, index) => <span key={`${height}-${index}`} className="block w-1 rounded-t-full bg-[#f2ede3]/80" style={{ height }} />)}</div>
+      <span className="absolute bottom-4 right-4 font-mono-signal text-[10px] uppercase tracking-[.2em] text-[#f2ede3]/85">S24 / {String(story.number ?? story.sortOrder).padStart(2, '0')}</span>
+    </>}
   </div>;
 }
 
 function SourceLine({ story, detail = false }: { story: Story; detail?: boolean }) {
   const verificationLabel = story.verificationStatus === 'verified' ? 'Verified' : story.verificationStatus === 'source-linked' ? 'Source linked' : 'Unverified';
-  return <div className={`source-stamp ${detail ? 'px-5 py-4' : 'pl-3'}`}><p className="signal-kicker text-accent">Source record</p><p className="mt-1 text-sm font-medium">{story.source || 'Source not supplied'}</p><p className="mt-1 font-mono-signal text-[10px] uppercase tracking-[.1em] text-muted-foreground">{story.kind} · {formatDate(story.publishedOn)}{story.state ? ` · ${story.state}` : ''}</p><p className="mt-2 signal-kicker text-muted-foreground">Verification / {verificationLabel}</p>{detail && story.verificationNotes && <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{story.verificationNotes}</p>}{detail && story.sourceUrl && <a href={story.sourceUrl} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-1 text-[.68rem] font-bold uppercase tracking-[.12em] text-accent hover:underline" data-testid={`link-source-${story.id}`}>Open source <ExternalLink size={12} /></a>}</div>;
+  return <div className={`source-stamp evidence-citation ${detail ? 'px-5 py-4' : 'pl-3'}`} data-testid={`citation-story-${story.id}`}>
+    <p className="signal-kicker text-accent">Evidence citation / {verificationLabel}</p>
+    <p className="mt-1 text-sm font-medium">{story.source || 'Source not supplied'}</p>
+    <p className="mt-1 font-mono-signal text-[10px] uppercase tracking-[.1em] text-muted-foreground">{story.kind}{story.state ? ` · ${story.state}` : ''}</p>
+    <dl className="mt-3 grid gap-1 text-[11px] text-muted-foreground">
+      <div className="flex flex-wrap gap-2"><dt className="signal-kicker text-[9px]">Date attached to record</dt><dd>{formatDate(story.publishedOn)}</dd></div>
+      {story.sourcePublishedOn && <div className="flex flex-wrap gap-2"><dt className="signal-kicker text-[9px]">Source published</dt><dd>{formatDate(story.sourcePublishedOn)}</dd></div>}
+      {story.sourceRetrievedOn && <div className="flex flex-wrap gap-2"><dt className="signal-kicker text-[9px]">Retrieved</dt><dd>{formatDate(story.sourceRetrievedOn)}</dd></div>}
+    </dl>
+    {detail && story.verificationNotes && <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{story.verificationNotes}</p>}
+    {story.sourceUrl ? <a href={story.sourceUrl} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-1 text-[.68rem] font-bold uppercase tracking-[.12em] text-accent hover:underline" data-testid={`link-source-${story.id}`}>Open direct source <ExternalLink size={12} /></a> : <p className="mt-3 signal-kicker text-muted-foreground">Direct source link unavailable</p>}
+  </div>;
 }
 
 function StoryCard({ story, compact = false }: { story: Story; compact?: boolean }) {
@@ -281,7 +308,7 @@ function LiveDesk({ onSelect }: { onSelect?: (update: LiveUpdate) => void }) {
         <h2 className="mt-3 max-w-3xl font-display text-5xl leading-[.92] tracking-[-.05em] sm:text-7xl">What is moving<br /><em className="font-normal text-accent">right now.</em></h2>
       </div>
       <div className="max-w-sm text-sm leading-relaxed text-muted-foreground">
-        <p>External feeds are monitored for leads. This is not published Signal 24 reporting: every item remains unreviewed until the editorial desk checks the source and builds a record.</p>
+        <p>External feeds are monitored for leads. This is not published Signal Hub reporting: every item remains unreviewed until the editorial desk checks the source and builds a record.</p>
         <button type="button" onClick={() => void refetch()} className="mt-4 inline-flex items-center gap-2 signal-kicker text-accent disabled:opacity-50" disabled={isFetching} data-testid="button-refresh-live-desk"><RefreshCw size={13} className={isFetching ? 'animate-spin' : ''} /> {isFetching ? 'Refreshing' : 'Refresh feeds'}</button>
       </div>
     </div>
@@ -349,9 +376,9 @@ function TrustNote() {
 function InfoPage({ page }: { page: 'about' | 'standards' | 'methodology' }) {
   const content = {
     about: {
-      eyebrow: 'The Signal 24 / about',
+      eyebrow: 'Signal Hub / about',
       title: <>A permanent record<br /><em className="font-normal text-accent">for a difficult debate.</em></>,
-      intro: 'The Signal 24 is India’s reservation and representation monitor: a public-interest publication and research archive for policy, courts, documents, data and the histories behind them.',
+      intro: 'Signal Hub is India’s reservation and representation monitor: a public-interest newsroom and research archive for policy, courts, documents, data and the histories behind them.',
       sections: [
         ['What this is', 'A source-first place to follow reservation-related developments without reducing a national question to a daily outrage cycle. The archive is designed to help readers understand what happened, where it came from, what changed, and what remains uncertain.'],
         ['What this is not', 'It is not a party publication, a campaign platform, or a substitute for the original judgment, notification, report or dataset. It does not rank governments or communities.'],
@@ -359,7 +386,7 @@ function InfoPage({ page }: { page: 'about' | 'standards' | 'methodology' }) {
       ],
     },
     standards: {
-      eyebrow: 'The Signal 24 / editorial standards',
+      eyebrow: 'Signal Hub / editorial standards',
       title: <>Every claim has a source.<br /><em className="font-normal text-accent">Every number has a document.</em></>,
       intro: 'The subject demands a higher standard than speed alone. We distinguish reporting, documents, analysis and opinion so a reader can tell what kind of record they are reading.',
       sections: [
@@ -371,7 +398,7 @@ function InfoPage({ page }: { page: 'about' | 'standards' | 'methodology' }) {
       ],
     },
     methodology: {
-      eyebrow: 'The Signal 24 / methodology',
+      eyebrow: 'Signal Hub / methodology',
       title: <>A record is only useful<br /><em className="font-normal text-accent">when its frame is visible.</em></>,
       intro: 'The archive preserves source type, date, state, record type and verification context because numbers and claims change meaning when their definitions disappear.',
       sections: [
@@ -384,7 +411,7 @@ function InfoPage({ page }: { page: 'about' | 'standards' | 'methodology' }) {
   }[page];
 
   useSeo({
-    title: `${content.eyebrow.split(' / ')[1]} — The Signal 24`,
+    title: `${content.eyebrow.split(' / ')[1]} — Signal Hub`,
     description: content.intro,
     canonicalPath: `/${page === 'standards' ? 'editorial-standards' : page}`,
     structuredData: {
@@ -392,7 +419,7 @@ function InfoPage({ page }: { page: 'about' | 'standards' | 'methodology' }) {
       '@graph': [
         { '@type': 'WebPage', name: content.eyebrow, description: content.intro },
         organizationSchema,
-        { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'The Signal 24', item: '/' }, { '@type': 'ListItem', position: 2, name: content.eyebrow.split(' / ')[1], item: `/${page === 'standards' ? 'editorial-standards' : page}` }] },
+        { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'Signal Hub', item: '/' }, { '@type': 'ListItem', position: 2, name: content.eyebrow.split(' / ')[1], item: `/${page === 'standards' ? 'editorial-standards' : page}` }] },
       ],
     },
   });
@@ -403,8 +430,8 @@ function HomeIndex({ stories }: { stories: Story[] }) {
   const jurisdictionCount = new Set(FOCUS_SOURCES.map((source) => source.place.split('/')[0].trim())).size;
   return <section className="signal-container mt-8" aria-label="Current edition index">
     <div className="home-index grid-cols-2 sm:grid-cols-4">
-      <div className="home-scanline col-span-2 p-5 sm:col-span-1 sm:p-6"><p className="signal-kicker text-accent">Focused records</p><p className="home-number mt-5" data-testid="text-home-record-count">{stories.length}</p><p className="mt-3 text-xs text-muted-foreground">Published Signal 24 records with a source link</p></div>
-      <div className="p-5 sm:p-6"><p className="signal-kicker text-accent">External leads</p><p className="home-number mt-5">{FOCUS_SOURCES.length}</p><p className="mt-3 text-xs text-muted-foreground">Links for editorial review, not Signal 24 reporting</p></div>
+      <div className="home-scanline col-span-2 p-5 sm:col-span-1 sm:p-6"><p className="signal-kicker text-accent">Focused records</p><p className="home-number mt-5" data-testid="text-home-record-count">{stories.length}</p><p className="mt-3 text-xs text-muted-foreground">Published Signal Hub records with a source link</p></div>
+      <div className="p-5 sm:p-6"><p className="signal-kicker text-accent">External leads</p><p className="home-number mt-5">{FOCUS_SOURCES.length}</p><p className="mt-3 text-xs text-muted-foreground">Links for editorial review, not Signal Hub reporting</p></div>
       <div className="p-5 sm:p-6"><p className="signal-kicker text-accent">Jurisdictions</p><p className="home-number mt-5">{jurisdictionCount}</p><p className="mt-3 text-xs text-muted-foreground">National and state-level source contexts</p></div>
       <div className="col-span-2 bg-primary p-5 text-primary-foreground sm:col-span-1 sm:p-6"><p className="signal-kicker text-secondary">The rule</p><p className="mt-5 max-w-[15rem] font-display text-2xl leading-[.95]">No source. No certainty.</p><p className="mt-4 text-xs leading-relaxed text-primary-foreground/65">Signals can start a question. They cannot finish one.</p></div>
     </div>
@@ -512,10 +539,10 @@ function Home() {
     [focusedStories],
   );
   useSeo({
-    title: 'Open-category rules, court cases and reservation policy — The Signal 24',
-    description: 'Follow UGC equity rules, open-category competition, EWS eligibility and state reservation disputes across India with source-linked context.',
+    title: 'Signal Hub — Follow the evidence',
+    description: 'A source-first public-interest newsroom and research archive for reservation policy, court records, official documents and data in India.',
     canonicalPath: '/',
-    structuredData: { '@context': 'https://schema.org', '@graph': [organizationSchema, { '@type': 'WebSite', name: 'The Signal 24', url: '/' }] },
+    structuredData: { '@context': 'https://schema.org', '@graph': [organizationSchema, { '@type': 'WebSite', name: 'Signal Hub', url: '/' }] },
   });
   const stories = useMemo(() => {
     if (!data) return [];
@@ -526,16 +553,48 @@ function Home() {
   if (isError) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message="The current issue could not be assembled. The published archive remains available." onRetry={() => void refetch()} /></div></div>;
   if (!data) return <div className="signal-page"><Header /><div className="py-20"><EmptyState title="The current edition is not available." text="No published issue was returned. Check the archive for source-linked records." /></div></div>;
   const [featured, ...rest] = stories;
+  const mediumStories = rest.slice(0, 2);
+  const smallStories = rest.slice(2, 6);
   return <main className="signal-page"><Header />
-    <div className="home-marquee signal-container mt-4 py-2"><span className="signal-kicker text-accent">UGC EQUITY RULES / OPEN-CATEGORY COMPETITION / MAHARASHTRA / MADHYA PRADESH / EWS ELIGIBILITY / SOURCE FIRST / UGC EQUITY RULES / OPEN-CATEGORY COMPETITION / MAHARASHTRA / MADHYA PRADESH / EWS ELIGIBILITY / SOURCE FIRST / </span></div>
-    <section className="signal-container situation-hero mt-5 grid overflow-hidden px-5 py-8 sm:px-10 sm:py-14 lg:grid-cols-[1.06fr_.94fr] lg:gap-10 lg:px-14 lg:py-16">
-      <div className="relative z-[1] reveal"><div className="mb-7 flex flex-wrap items-center gap-3"><span className="h-px w-10 bg-accent" /><p className="signal-kicker text-secondary">Issue {String(data.issue.issueNumber).padStart(3, '0')} / {formatDate(data.issue.issueDate)}</p><span className="signal-kicker text-primary-foreground/45">India / policy focus</span></div><h1 className="situation-hero-title max-w-4xl font-display text-[3.8rem] font-semibold leading-[.84] tracking-[-.075em] sm:text-[6.6rem] lg:text-[8rem]" data-testid="heading-hero">Who gets<br /><em className="font-normal text-accent">to compete</em><br />in the open?</h1><p className="mt-8 max-w-xl border-l-2 border-accent pl-4 text-base leading-relaxed text-primary-foreground/72 sm:mt-10 sm:pl-5">Follow rules and court cases shaping open-category competition, UGC protections, EWS eligibility and state quota disputes. Reported claims, legal arguments and outcomes stay clearly separated.</p><div className="mt-8 flex flex-wrap gap-3"><a href="#focus-desk" className="inline-flex items-center gap-3 bg-accent px-5 py-3 text-[.68rem] font-bold uppercase tracking-[.14em] text-accent-foreground transition-transform hover:-translate-y-1" data-testid="link-read-briefing">Enter the focus desk <ArrowDownRight size={15} /></a><a href="#live-desk" className="inline-flex items-center gap-2 border border-primary-foreground/30 px-5 py-3 signal-kicker text-primary-foreground/75 hover:border-accent hover:text-accent" data-testid="link-hero-live-desk">Watch the live desk</a></div></div>
-      <div className="relative mt-12 min-h-[300px] border-l border-primary-foreground/25 pl-5 sm:min-h-[390px] sm:pl-10 lg:mt-0"><div className="hero-documentary absolute inset-4 overflow-hidden border border-primary-foreground/30 sm:inset-8"><img src="/images/supreme-court.jpg" alt="" className="h-full w-full object-cover" /><div className="absolute inset-0 bg-primary/70 mix-blend-multiply" /><div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/20 to-transparent" /><div className="absolute bottom-5 left-5 max-w-[15rem] text-primary-foreground"><p className="signal-kicker text-[8px] text-secondary">Archive image / Supreme Court of India / Wikimedia Commons</p><p className="mt-2 font-display text-3xl leading-[.9]">Read the rule. Check the order. Track the open pool.</p></div></div><div className="relative z-[1] mx-auto mt-16 flex h-[170px] w-[170px] items-center justify-center rounded-full border border-primary-foreground/35 sm:mt-20 sm:h-[230px] sm:w-[230px]"><div className="absolute inset-7 rounded-full border border-primary-foreground/25" /><div className="absolute inset-16 rounded-full border border-accent/80" /><div className="absolute inset-[35%] bg-accent" /><div className="absolute h-px w-[130%] rotate-[24deg] bg-primary-foreground/35" /><div className="absolute h-px w-[130%] -rotate-[24deg] bg-primary-foreground/15" /><span className="absolute -right-8 top-[28%] signal-kicker text-[9px] text-primary-foreground/75">Law</span><span className="absolute -bottom-2 left-[16%] signal-kicker text-[9px] text-primary-foreground/75">Open pool</span></div><div className="absolute bottom-0 right-0 flex items-end gap-2"><span className="signal-kicker mb-1 text-primary-foreground/65 [writing-mode:vertical-rl]">Focused records / {focusedStories.length}</span><div className="broadcast-bars"><span /><span /><span /><span /><span /><span /><span /></div></div></div>
+    <section className="signal-container pt-10 sm:pt-16">
+      <div className="flex flex-col justify-between gap-6 border-y border-foreground/20 py-5 sm:flex-row sm:items-end">
+        <div><p className="signal-kicker text-accent">SIGNAL HUB / current issue</p><h1 className="mt-3 max-w-4xl font-display text-5xl leading-[.9] tracking-[-.06em] sm:text-8xl" data-testid="heading-hero">{data.issue.title}</h1></div>
+        <div className="max-w-sm"><p className="signal-kicker text-muted-foreground">Issue {String(data.issue.issueNumber).padStart(3, '0')} / {formatDate(data.issue.issueDate)}</p><p className="mt-3 text-sm leading-relaxed text-muted-foreground">{data.issue.intro}</p></div>
+      </div>
+      <div className="home-marquee mt-5 py-2" aria-label="Latest signals"><span className="signal-kicker text-accent">{focusedStories.length ? focusedStories.slice(0, 4).map((story) => story.title).join(' / ') : 'Current issue / no source-linked investigation published / monitored items remain external leads / '}</span></div>
     </section>
-    <HomeIndex stories={focusedStories} />
-    <FocusSourceDesk />
+    {!featured ? focusedStories.length === 0 ? <section id="briefing" className="signal-container pt-8 sm:pt-12">
+      <div className="front-page-lead editorial-grid gap-y-7 py-7 sm:py-9">
+        <div className="col-span-12 lg:col-span-7 lg:pr-8">
+          <p className="signal-kicker text-accent">Front page / desk note</p>
+          <h2 className="mt-3 max-w-3xl font-display text-4xl leading-[.96] tracking-[-.04em] sm:text-6xl">Nothing is ready to be called a sourced investigation.</h2>
+          <p className="mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground">The current issue has no record that meets the front-page source and relevance checks. That gap stays visible; external monitoring leads remain separate from Signal Hub reporting.</p>
+        </div>
+        <div className="col-span-12 flex flex-col justify-center border-t border-foreground/20 pt-5 lg:col-span-5 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
+          <p className="signal-kicker text-accent">Current issue / focused records</p>
+          <p className="home-number mt-4" data-testid="text-home-record-count">{focusedStories.length}</p>
+          <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted-foreground">Published records with a direct source link and a clear connection to this issue.</p>
+          <Link href="/archive" className="mt-6 inline-flex items-center gap-2 signal-kicker text-accent hover:underline" data-testid="link-home-empty-archive">Browse the archive <ArrowUpRight size={13} /></Link>
+        </div>
+      </div>
+    </section> : <section id="briefing" className="signal-container pt-10 sm:pt-16">
+      <EmptyState title="No current record matches this view." text="Clear the current-issue search or topic filter to see the published source-linked records." />
+      <button type="button" onClick={() => { setActiveTopic('All'); setSearch(''); }} className="mt-5 signal-kicker text-accent hover:underline" data-testid="button-clear-current-filters">Clear current-issue filters</button>
+    </section> : <section id="briefing" className="signal-container pt-10 sm:pt-16">
+      <div className="front-page-lead editorial-grid gap-y-8 py-8 sm:py-10">
+        <article className="col-span-12 lg:col-span-7 lg:pr-6" data-testid={`card-story-lead-${featured.id}`}>
+          <p className="signal-kicker text-accent">{featured.topic} / {featured.kind}</p>
+          <Link href={storyPath(featured)} className="group mt-3 block" data-testid={`link-story-lead-${featured.id}`}><h2 className="max-w-4xl font-display text-5xl leading-[.92] tracking-[-.05em] group-hover:text-accent sm:text-7xl">{featured.title}</h2></Link>
+          <p className="mt-5 max-w-2xl text-lg leading-relaxed text-muted-foreground">{featured.dek}</p>
+          <div className="mt-6 max-w-xl"><SourceLine story={featured} /></div>
+        </article>
+        <Link href={storyPath(featured)} className="col-span-12 lg:col-span-5" data-testid={`link-story-lead-art-${featured.id}`}><StoryArt story={featured} /></Link>
+      </div>
+      {mediumStories.length > 0 && <div className="editorial-grid border-b border-foreground/20 py-8">{mediumStories.map((story) => <article key={story.id} className="col-span-12 border-t border-foreground/18 pt-5 sm:col-span-6 lg:col-span-4 lg:first:col-start-1" data-testid={`card-story-medium-${story.id}`}><p className="signal-kicker text-accent">{story.topic} / {formatDate(story.publishedOn)}</p><Link href={storyPath(story)} className="group block" data-testid={`link-story-medium-${story.id}`}><h3 className="mt-3 font-display text-3xl leading-tight group-hover:text-accent">{story.title}</h3></Link><p className="mt-3 text-sm leading-relaxed text-muted-foreground">{story.dek}</p><p className="mt-4 signal-kicker text-muted-foreground">{story.source || 'Source not supplied'}</p></article>)}</div>}
+      {smallStories.length > 0 && <div className="editorial-grid py-2">{smallStories.map((story) => <article key={story.id} className="front-page-small col-span-12 py-5 sm:col-span-6 lg:col-span-3" data-testid={`card-story-small-${story.id}`}><p className="signal-kicker text-accent">{story.topic}</p><Link href={storyPath(story)} className="group block" data-testid={`link-story-small-${story.id}`}><h3 className="mt-2 font-display text-xl leading-tight group-hover:text-accent">{story.title}</h3></Link><p className="mt-3 line-clamp-2 text-sm leading-relaxed text-muted-foreground">{story.dek}</p><p className="mt-4 signal-kicker text-muted-foreground">{formatDate(story.publishedOn)}</p></article>)}</div>}
+      <div className="flex flex-wrap items-center gap-3 border-y border-foreground/20 py-5" aria-label="Filter current investigations">{['All', ...focusTopics].map((topic) => <button key={topic} type="button" onClick={() => setActiveTopic(topic as Topic | 'All')} className={`border px-4 py-2 signal-kicker transition-colors ${activeTopic === topic ? 'border-primary bg-primary text-primary-foreground' : 'border-foreground/20 hover:border-accent hover:text-accent'}`} aria-pressed={activeTopic === topic} data-testid={`button-topic-${String(topic).replace(/\W/g, '-').toLowerCase()}`}>{topic}</button>)}<label className="ml-auto flex items-center gap-2 border-b border-foreground/25 py-2 text-sm"><Search size={14} className="text-accent" /><input aria-label="Search current issue" data-testid="input-search-current" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search this issue" className="w-40 bg-transparent text-sm outline-none placeholder:text-muted-foreground" /></label></div>
+    </section>}
     <LiveDesk />
-    <section id="briefing" className="signal-container pt-24 sm:pt-36"><div className="flex flex-col justify-between gap-6 border-y-2 border-primary py-6 sm:flex-row sm:items-end"><div><p className="signal-kicker text-accent">03 / Signal 24 records</p><h2 className="mt-3 max-w-3xl font-display text-5xl leading-[.88] tracking-[-.055em] sm:text-7xl">What the verified<br /><em className="font-normal text-accent">focus says.</em></h2></div><p className="max-w-sm text-sm leading-relaxed text-muted-foreground">Only published records with a source link and a direct connection to open-category rules, UGC equity regulations, EWS or the named state disputes appear here.</p></div><div className="flex flex-wrap items-center gap-2 border-b border-foreground/20 py-5" aria-label="Filter focused records by topic">{['All', ...focusTopics].map((topic) => <button key={topic} type="button" onClick={() => setActiveTopic(topic as Topic | 'All')} className={`rounded-none border px-4 py-2 signal-kicker transition-colors ${activeTopic === topic ? 'border-primary bg-primary text-primary-foreground' : 'border-foreground/20 hover:border-accent hover:text-accent'}`} aria-pressed={activeTopic === topic} data-testid={`button-topic-${String(topic).replace(/\W/g, '-').toLowerCase()}`}>{topic}</button>)}<label className="ml-auto flex items-center gap-2 border-b border-foreground/25 py-2 text-sm"><Search size={14} className="text-accent" /><input aria-label="Search current edition" data-testid="input-search-current" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search focused records" className="w-40 bg-transparent text-sm outline-none placeholder:text-muted-foreground" /></label></div>{!featured ? <div className="border border-dashed border-foreground/25 p-6"><p className="signal-kicker text-accent">No on-focus Signal 24 records published</p><p className="mt-3 max-w-2xl font-display text-2xl leading-tight">The older general reservation records remain in the archive. This front-page briefing is reserved for source-linked reporting and documents on the current focus.</p><Link href="/archive" className="mt-5 inline-flex items-center gap-2 signal-kicker text-accent hover:underline">Browse the full archive <ArrowUpRight size={13} /></Link></div> : <div className="grid gap-8 pt-8 lg:grid-cols-[1.18fr_.82fr] lg:gap-10"><StoryCard story={featured} />{rest.slice(0, 3).length > 0 && <div className="border-t border-foreground/20 lg:border-t-0">{rest.slice(0, 3).map((story) => <StoryCard key={story.id} story={story} compact />)}</div>}</div>}</section>
     {focusedStories.length > 0 && <HomeDecisionGrid stories={focusedStories} />}
     <DecisionEvidenceSection records={decisionImpactQuery.data?.records ?? []} isLoading={decisionImpactQuery.isLoading} isError={decisionImpactQuery.isError} />
     <section className="signal-container mt-24 bg-primary px-5 py-12 text-primary-foreground sm:mt-36 sm:px-12 sm:py-20"><div className="grid gap-12 lg:grid-cols-[.8fr_1.2fr] lg:items-end lg:gap-20"><div><p className="signal-kicker text-secondary">05 / How to read the room</p><h2 className="mt-4 max-w-md font-display text-5xl leading-[.88] tracking-[-.05em] sm:text-7xl">Facts have<br /><em className="font-normal text-accent">a chain of custody.</em></h2><p className="mt-6 max-w-sm text-sm leading-relaxed text-primary-foreground/65">Reservation is a constitutional guarantee, a question of representation, a response to discrimination and a lived reality in classrooms, offices and public life.</p></div><div className="relative border-l border-primary-foreground/25 pl-6 sm:pl-10">{[['01', 'Source', 'Where did this come from?'], ['02', 'Context', 'What framework, state or history does it sit inside?'], ['03', 'Consequence', 'What can a reader responsibly do with it?']].map(([number, title, description], index) => <div key={number} className={`relative ${index < 2 ? 'pb-9' : ''}`}><span className="absolute -left-[29px] top-0 h-3 w-3 border-2 border-primary bg-accent sm:-left-[45px]" /><p className="signal-kicker text-secondary">{number}</p><h3 className="mt-2 font-display text-2xl">{title}</h3><p className="mt-2 max-w-md text-sm leading-relaxed text-primary-foreground/60">{description}</p></div>)}</div></div></section>
@@ -543,7 +602,200 @@ function Home() {
     {focusedStories.length > 0 && <RecordCollections stories={focusedStories} />}
     <TrustNote />
     {focusedStories.length > 3 && <section className="signal-container pt-24 sm:pt-36"><div className="flex items-end justify-between border-b border-foreground/20 pb-5"><div><p className="signal-kicker text-accent">12 / The larger record</p><h2 className="mt-2 font-display text-4xl leading-none tracking-[-.04em] sm:text-5xl">Keep following.</h2></div><Link href="/archive" className="hidden items-center gap-2 text-[.68rem] font-bold uppercase tracking-[.13em] hover:text-accent sm:flex" data-testid="link-explore-archive">Explore all records <ChevronRight size={14} /></Link></div><div className="grid gap-7 py-8 sm:grid-cols-3">{focusedStories.slice(3, 6).map((story, index) => <Link href={storyPath(story)} key={story.id} className="group border-b border-foreground/15 pb-6 sm:border-b-0 sm:border-r sm:pr-6 last:border-0" data-testid={`link-follow-story-${story.id}`}><p className="signal-kicker text-accent">{story.topic} / 0{index + 1}</p><h3 className="mt-3 font-display text-2xl leading-[1.02] tracking-[-.03em] group-hover:text-accent">{story.title}</h3><p className="mt-3 text-sm leading-relaxed text-muted-foreground">{story.dek}</p><span className="mt-5 block signal-kicker text-muted-foreground">{story.kind} <ArrowUpRight size={12} className="ml-1 inline" /></span></Link>)}</div></section>}
-    <NewsletterSignup /><footer className="signal-container flex flex-col justify-between gap-8 py-10 sm:flex-row sm:items-end"><div><Link href="/" className="signal-link flex items-center gap-3"><BrandMark /><span className="font-display text-xl">The Signal <span className="text-accent">24</span></span></Link><p className="mt-3 max-w-xs text-xs leading-relaxed text-muted-foreground">A source-first public-interest information system for understanding reservation in India.</p></div><div className="flex flex-wrap gap-x-5 gap-y-2 signal-kicker text-[9px] text-muted-foreground"><Link href="/archive" className="signal-link">Archive</Link><Link href="/about" className="signal-link">About</Link><Link href="/editorial-standards" className="signal-link">Standards</Link><Link href="/methodology" className="signal-link">Methodology</Link><Link href="/editor" className="signal-link">Editorial desk</Link><span>© Signal 24</span></div></footer>
+    <NewsletterSignup /><footer className="signal-container flex flex-col justify-between gap-8 py-10 sm:flex-row sm:items-end"><div><Link href="/" className="signal-link flex items-center gap-3"><BrandMark /><span className="font-display text-xl">SIGNAL <span className="text-accent">HUB</span></span></Link><p className="mt-3 max-w-xs text-xs leading-relaxed text-muted-foreground">A source-first public-interest newsroom for understanding reservation in India.</p></div><div className="flex flex-wrap gap-x-5 gap-y-2 signal-kicker text-[9px] text-muted-foreground"><Link href="/archive" className="signal-link">Archive</Link><Link href="/about" className="signal-link">About</Link><Link href="/editorial-standards" className="signal-link">Standards</Link><Link href="/methodology" className="signal-link">Methodology</Link><Link href="/editor" className="signal-link">Editorial desk</Link><span>© Signal Hub</span></div></footer>
+  </main>;
+}
+
+function TopicIndexPage() {
+  const params = useMemo(() => ({ limit: 100 }), []);
+  const { data, isLoading, isError, refetch } = useGetArchive(params, {
+    query: { queryKey: getGetArchiveQueryKey(params) },
+  });
+  const topics = useMemo(() => {
+    const stories = data?.stories ?? [];
+    return Array.from(new Set(stories.map((story) => story.topic))).map((topic) => ({
+      topic,
+      records: stories.filter((story) => story.topic === topic),
+    }));
+  }, [data]);
+  useSeo({
+    title: 'Topics — Signal Hub',
+    description: 'Browse Signal Hub archive records by topic, with each record’s evidence status and source visible.',
+    canonicalPath: '/topics',
+  });
+  return <main className="signal-page">
+    <Header />
+    <section className="signal-container pt-14 sm:pt-24">
+      <p className="signal-kicker text-accent">SIGNAL HUB / topics</p>
+      <h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">Follow a subject<br /><em className="font-normal text-accent">through the record.</em></h1>
+      <p className="mt-7 max-w-2xl text-lg leading-relaxed text-muted-foreground">Topic pages group published archive records. Each record keeps its own source, date and verification status; a topic label is not evidence of a connection.</p>
+    </section>
+    <section className="signal-container mt-16 border-t border-foreground/20 py-8 sm:mt-24 sm:py-12">
+      {isLoading ? <LoadingBlock label="Reading the published archive…" /> :
+        isError ? <ErrorState message="Topics could not be assembled from the archive." onRetry={() => void refetch()} /> :
+          topics.length === 0 ? <EmptyState title="No topics are published yet." text="The index will appear when published archive records are available." /> :
+            <div className="editorial-grid">
+              {topics.map(({ topic, records }) => <Link key={topic} href={`/topics/${encodeURIComponent(topic)}`} className="col-span-12 border-b border-foreground/20 py-7 sm:col-span-6 lg:col-span-4" data-testid={`link-topic-${slugify(topic)}`}>
+                <p className="signal-kicker text-accent">{records.length} {records.length === 1 ? 'record' : 'records'}</p>
+                <h2 className="mt-3 font-display text-3xl leading-tight">{topic}</h2>
+                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{records[0]?.dek ?? 'No description supplied.'}</p>
+                <span className="mt-5 inline-flex items-center gap-2 signal-kicker text-accent">Open topic <ArrowUpRight size={13} /></span>
+              </Link>)}
+            </div>}
+    </section>
+    <footer className="signal-container border-t border-foreground/20 py-8"><Link href="/archive" className="signal-kicker signal-link">Browse all records</Link></footer>
+  </main>;
+}
+
+function TopicPage() {
+  const params = useParams<{ slug?: string }>();
+  const topic = decodeURIComponent(params.slug ?? '') as Topic;
+  const archiveParams = useMemo(() => ({ limit: 100 }), []);
+  const { data, isLoading, isError, refetch } = useGetArchive(archiveParams, { query: { queryKey: getGetArchiveQueryKey(archiveParams) } });
+  const records = useMemo(() => (data?.stories ?? []).filter((story) => story.topic === topic), [data, topic]);
+  const sourceDocuments = useMemo(() => {
+    const byUrl = new Map<string, Story>();
+    for (const story of records) {
+      if (story.sourceUrl) byUrl.set(story.sourceUrl, story);
+    }
+    return Array.from(byUrl.values());
+  }, [records]);
+  const otherTopics = useMemo(() => (data?.topics ?? []).filter((item) => item !== topic), [data, topic]);
+  useSeo({
+    title: `${topic || 'Topic'} — Signal Hub`,
+    description: `Published Signal Hub records on ${topic || 'this topic'}, with evidence status and direct sources visible.`,
+    canonicalPath: params.slug ? `/topics/${params.slug}` : undefined,
+  });
+  if (!topic) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message="That topic address is not valid." /></div></div>;
+  return <main className="signal-page">
+    <Header />
+    <section className="signal-container pt-14 sm:pt-24">
+      <Link href="/topics" className="signal-kicker signal-link inline-flex items-center gap-2 text-muted-foreground"><ArrowLeft size={13} /> All topics</Link>
+      <p className="mt-12 signal-kicker text-accent">SIGNAL HUB / topic investigation</p>
+      <h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">{topic}</h1>
+      <p className="mt-7 max-w-2xl text-lg leading-relaxed text-muted-foreground">A topic view assembled from the published archive. Dates, direct sources and missing relationships remain explicit.</p>
+    </section>
+    {isLoading ? <LoadingBlock label="Assembling the topic record…" /> :
+      isError ? <div className="signal-container py-16"><ErrorState message="This topic could not be assembled from the archive." onRetry={() => void refetch()} /></div> :
+        <>
+          <section className="signal-container mt-16 border-y border-foreground/20 py-8 sm:mt-24 sm:py-12">
+            <div className="editorial-grid gap-y-8">
+              <div className="col-span-12 lg:col-span-3">
+                <p className="signal-kicker text-accent">Key facts / archive count</p>
+                <p className="mt-4 font-display text-5xl">{records.length}</p>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{records.length === 1 ? 'published archive record' : 'published archive records'} under this topic.</p>
+              </div>
+              <div className="col-span-12 lg:col-span-9">
+                <p className="signal-kicker text-accent">Relationship map / archive data only</p>
+                <div className="mt-5 grid gap-4 sm:grid-cols-4">
+                  <div className="border-t-2 border-primary pt-3"><p className="signal-kicker text-muted-foreground">Topic</p><p className="mt-2 font-display text-xl">{topic}</p></div>
+                  <div className="border-t-2 border-foreground/25 pt-3"><p className="signal-kicker text-muted-foreground">Events</p><p className="mt-2 text-sm leading-relaxed">Not separately catalogued</p></div>
+                  <div className="border-t-2 border-foreground/25 pt-3"><p className="signal-kicker text-muted-foreground">Direct source documents</p><p className="mt-2 font-display text-xl">{sourceDocuments.length}</p></div>
+                  <div className="border-t-2 border-accent pt-3"><p className="signal-kicker text-muted-foreground">Archive records</p><p className="mt-2 font-display text-xl">{records.length}</p></div>
+                </div>
+                <p className="mt-5 text-xs leading-relaxed text-muted-foreground">The archive does not yet store event-to-document links as structured records. This map shows only topic membership and direct source links; it does not infer event relationships.</p>
+                {sourceDocuments.length > 0 && <ul className="mt-5 divide-y divide-foreground/15 border-y border-foreground/15">
+                  {sourceDocuments.map((story) => <li key={story.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+                    <span className="text-sm">{story.source || 'Direct source document'}</span>
+                    <a href={story.sourceUrl!} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 signal-kicker text-accent hover:underline">Open source <ExternalLink size={12} /></a>
+                  </li>)}
+                </ul>}
+              </div>
+            </div>
+          </section>
+          <section className="signal-container py-10 sm:py-16">
+            <div className="flex flex-wrap items-end justify-between gap-4 border-b border-foreground/20 pb-5">
+              <div><p className="signal-kicker text-accent">Latest developments / records in this topic</p><h2 className="mt-2 font-display text-4xl">The archive</h2></div>
+              <Link href="/timeline" className="signal-kicker text-accent hover:underline">View dated records <ArrowUpRight size={12} className="ml-1 inline" /></Link>
+            </div>
+            {records.length === 0 ? <div className="pt-8"><EmptyState title="No records in this topic." text="Return to the topics index or browse the full archive." /></div> :
+              <div className="border-t border-foreground/20">
+                {records.map((story) => <article key={story.id} className="grid gap-5 border-b border-foreground/20 py-7 md:grid-cols-[.25fr_1fr_.62fr] md:gap-10" data-testid={`card-topic-record-${story.id}`}>
+                  <div><p className="signal-kicker text-accent">Record date / as supplied</p><p className="mt-2 font-mono-signal text-xs">{formatDate(story.publishedOn)}</p><p className="mt-2 signal-kicker text-muted-foreground">{story.kind}</p></div>
+                  <div><Link href={storyPath(story)} className="group"><h3 className="font-display text-3xl leading-tight group-hover:text-accent">{story.title}</h3></Link><p className="mt-3 text-sm leading-relaxed text-muted-foreground">{story.dek}</p></div>
+                  <SourceLine story={story} />
+                </article>)}
+              </div>}
+          </section>
+          {otherTopics.length > 0 && <section className="signal-container border-t border-foreground/20 py-8">
+            <p className="signal-kicker text-accent">Other indexed topics</p>
+            <div className="mt-4 flex flex-wrap gap-x-6 gap-y-3">{otherTopics.map((item) => <Link key={item} href={`/topics/${encodeURIComponent(item)}`} className="signal-kicker signal-link">{item}</Link>)}</div>
+          </section>}
+        </>}
+  </main>;
+}
+
+function TimelinePage() {
+  const params = useMemo(() => ({ limit: 100 }), []);
+  const { data, isLoading, isError, refetch } = useGetArchive(params, { query: { queryKey: getGetArchiveQueryKey(params) } });
+  const records = useMemo(() => [...(data?.stories ?? [])].filter((story) => story.publishedOn).sort((a, b) => String(b.publishedOn).localeCompare(String(a.publishedOn))), [data]);
+  const undatedCount = (data?.stories ?? []).filter((story) => !story.publishedOn).length;
+  useSeo({
+    title: 'Timeline — Signal Hub',
+    description: 'Dates attached to published Signal Hub records, with source publication dates shown separately.',
+    canonicalPath: '/timeline',
+  });
+  return <main className="signal-page">
+    <Header />
+    <section className="signal-container pt-14 sm:pt-24">
+      <p className="signal-kicker text-accent">SIGNAL HUB / timeline</p>
+      <h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">Dates with<br /><em className="font-normal text-accent">their meaning.</em></h1>
+      <p className="mt-7 max-w-2xl text-lg leading-relaxed text-muted-foreground">This page orders dates attached to archive records. Their meaning is shown as supplied; no event date is inferred. Source publication dates appear separately when available.</p>
+    </section>
+    <section className="signal-container mt-16 border-t border-foreground/20 py-10 sm:mt-24 sm:py-16">
+      {isLoading ? <LoadingBlock label="Ordering dated records…" /> :
+        isError ? <ErrorState message="The timeline could not be assembled from the archive." onRetry={() => void refetch()} /> :
+          records.length === 0 ? <EmptyState title="No dated records are available." text="The timeline will begin when the archive supplies record dates." /> :
+            <div className="timeline-rule grid gap-8">
+              {records.map((story) => <article key={story.id} className="relative grid gap-4 pl-8 md:grid-cols-[.28fr_1fr_.68fr] md:gap-10" data-testid={`timeline-record-${story.id}`}>
+                <span className="timeline-dot absolute left-0 top-0" />
+                <div>
+                  <p className="signal-kicker text-accent">Record date / as supplied</p>
+                  <time className="mt-2 block font-mono-signal text-xs" dateTime={story.publishedOn ?? undefined}>{formatDate(story.publishedOn)}</time>
+                  {story.sourcePublishedOn && <p className="mt-2 signal-kicker text-[9px] text-muted-foreground">Source published / {formatDate(story.sourcePublishedOn)}</p>}
+                </div>
+                <div>
+                  <p className="signal-kicker text-muted-foreground">{story.topic} / {story.kind}</p>
+                  <Link href={storyPath(story)} className="group mt-2 block"><h2 className="font-display text-3xl leading-tight group-hover:text-accent">{story.title}</h2></Link>
+                  <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{story.dek}</p>
+                </div>
+                <SourceLine story={story} />
+              </article>)}
+            </div>}
+      {undatedCount > 0 && <p className="mt-10 border-l-2 border-accent pl-4 text-sm leading-relaxed text-muted-foreground">Evidence gap / {undatedCount} archive {undatedCount === 1 ? 'record has' : 'records have'} no date attached and is not placed on this list.</p>}
+    </section>
+  </main>;
+}
+
+function SearchPage() {
+  const [query, setQuery] = useState('');
+  const params = useMemo(() => ({ ...(query.trim() ? { q: query.trim() } : {}), limit: 100 }), [query]);
+  const { data, isLoading, isError, refetch } = useGetArchive(params, { query: { queryKey: getGetArchiveQueryKey(params) } });
+  const records = data?.stories ?? [];
+  useSeo({ title: 'Search — Signal Hub', description: 'Search published Signal Hub archive records, sources and dates.', canonicalPath: '/search' });
+  return <main className="signal-page">
+    <Header />
+    <section className="signal-container pt-14 sm:pt-24">
+      <p className="signal-kicker text-accent">SIGNAL HUB / search</p>
+      <h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">Find the<br /><em className="font-normal text-accent">source trail.</em></h1>
+      <label className="mt-10 flex max-w-3xl items-center gap-3 border-b-2 border-primary py-4">
+        <Search size={20} className="text-accent" /><span className="sr-only">Search the archive</span>
+        <input autoFocus type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search titles, sources, places and topics" className="w-full bg-transparent text-lg outline-none placeholder:text-muted-foreground" data-testid="input-search-archive" />
+      </label>
+    </section>
+    <section className="signal-container py-10 sm:py-16">
+      {isLoading ? <LoadingBlock label="Searching published records…" /> :
+        isError ? <ErrorState message="Search is temporarily unavailable." onRetry={() => void refetch()} /> :
+          !query.trim() ? <EmptyState title="Start with a name, place or source." text="Search only returns published archive records. The source trail remains visible in every result." /> :
+            records.length === 0 ? <EmptyState title="No record found." text="Try a broader term, or browse the archive without a search." /> :
+              <div className="border-t border-foreground/20">
+                {records.map((story) => <article key={story.id} className="grid gap-5 border-b border-foreground/20 py-7 md:grid-cols-[.24fr_1fr_.7fr] md:gap-10" data-testid={`search-result-${story.id}`}>
+                  <div><p className="signal-kicker text-accent">Record date / as supplied</p><p className="mt-2 font-mono-signal text-xs">{formatDate(story.publishedOn)}</p><p className="mt-2 signal-kicker text-muted-foreground">{story.topic}</p></div>
+                  <div><Link href={storyPath(story)} className="group"><h2 className="font-display text-3xl leading-tight group-hover:text-accent">{story.title}</h2></Link><p className="mt-3 text-sm leading-relaxed text-muted-foreground">{story.dek}</p></div>
+                  <SourceLine story={story} />
+                </article>)}
+              </div>}
+    </section>
   </main>;
 }
 
@@ -553,24 +805,69 @@ function ArchivePage() {
   const [kind, setKind] = useState('');
   const [state, setState] = useState('');
   const [year, setYear] = useState('');
+  const [organization, setOrganization] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(true);
   const params = useMemo(() => ({ ...(query ? { q: query } : {}), ...(topic ? { topic: topic as Topic } : {}), ...(kind ? { kind: kind as StoryKind } : {}), ...(state ? { state } : {}), limit: 100 }), [kind, query, state, topic]);
   const { data, isLoading, isError, refetch } = useGetArchive(params, { query: { queryKey: getGetArchiveQueryKey(params) } });
   useSeo({
-    title: 'The archive — The Signal 24',
+    title: 'The archive — Signal Hub',
     description: 'Search published reporting, court and policy developments, historical documents, research notes and state context.',
     canonicalPath: '/archive',
-    structuredData: { '@context': 'https://schema.org', '@graph': [organizationSchema, { '@type': 'CollectionPage', name: 'The Signal 24 archive', description: 'Published reservation reporting and research.' }, { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'The Signal 24', item: '/' }, { '@type': 'ListItem', position: 2, name: 'Archive', item: '/archive' }] }] },
+    structuredData: { '@context': 'https://schema.org', '@graph': [organizationSchema, { '@type': 'CollectionPage', name: 'Signal Hub archive', description: 'Published reservation reporting and research.' }, { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'Signal Hub', item: '/' }, { '@type': 'ListItem', position: 2, name: 'Archive', item: '/archive' }] }] },
   });
-  const clear = () => { setQuery(''); setTopic(''); setKind(''); setState(''); setYear(''); };
+  const clear = () => { setQuery(''); setTopic(''); setKind(''); setState(''); setYear(''); setOrganization(''); };
   if (isLoading) return <div className="signal-page"><Header /><LoadingBlock label="Indexing records and sources…" /></div>;
   if (isError) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message="The search index could not be reached." onRetry={() => void refetch()} /></div></div>;
   if (!data) return <div className="signal-page"><Header /><div className="py-20"><EmptyState /></div></div>;
   const years = Array.from(new Set(data.stories.map((story) => story.publishedOn?.slice(0, 4)).filter(Boolean))).sort().reverse() as string[];
-  const records = data.stories.filter((story) => !year || story.publishedOn?.startsWith(year));
-  return <main className="signal-page"><Header /><section className="signal-container pt-14 sm:pt-24"><div className="max-w-4xl"><p className="signal-kicker text-accent">The Signal 24 / archive</p><h1 className="mt-4 font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">A record you<br /><em className="font-normal text-accent">can return to.</em></h1><p className="mt-7 max-w-2xl text-lg leading-relaxed text-muted-foreground">Search reporting, court and policy developments, historical documents, research notes and state context. The archive is a work in progress, built to make difficult conversations easier to verify and remember.</p></div></section>
-    <section className="signal-container archive-grid mt-16 border-y border-foreground/20 py-6 sm:mt-24"><div className="flex items-center justify-between gap-4"><div className="flex items-center gap-3"><SlidersHorizontal size={16} className="text-accent" /><p className="signal-kicker">Filter the archive</p></div><button type="button" onClick={() => setFiltersOpen((value) => !value)} className="inline-flex items-center gap-2 signal-kicker text-muted-foreground md:hidden" data-testid="button-toggle-filters">{filtersOpen ? 'Hide' : 'Show'} filters <ChevronDown size={14} /></button></div><div className={`${filtersOpen ? 'grid' : 'hidden'} mt-5 gap-3 md:grid md:grid-cols-[1.6fr_1fr_1fr_1fr_1fr_auto]`}><label className="flex items-center gap-2 border border-foreground/20 bg-card px-3 py-2"><Search size={15} className="shrink-0 text-accent" /><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search title, source or place" className="w-full bg-transparent text-sm outline-none" data-testid="input-archive-search" /></label><SelectFilter label="Topic" value={topic} options={data.topics.length ? data.topics : TOPICS} onChange={setTopic} testId="select-archive-topic" /><SelectFilter label="Record type" value={kind} options={data.kinds.length ? data.kinds : KINDS} onChange={setKind} testId="select-archive-kind" /><SelectFilter label="State" value={state} options={data.states.length ? ['All states', ...data.states] : INDIA_STATES} onChange={(value) => setState(value === 'All states' ? '' : value)} testId="select-archive-state" /><SelectFilter label="Published year" value={year} options={years} onChange={setYear} testId="select-archive-year" /><button type="button" onClick={clear} className="border border-foreground/20 px-4 py-2 signal-kicker text-muted-foreground hover:border-accent hover:text-accent" data-testid="button-clear-filters">Clear</button></div><div className="mt-5 flex items-center justify-between border-t border-foreground/15 pt-4"><p className="signal-kicker text-muted-foreground">{records.length} {records.length === 1 ? 'record' : 'records'} / source labels shown</p>{(query || topic || kind || state || year) && <p className="signal-kicker text-accent">Filtered view</p>}</div></section>
-    <section className="signal-container py-12 sm:py-16">{records.length === 0 ? <EmptyState title="No record found here." text="Clear one of the filters and try again. The archive grows with each edition." /> : <div className="grid gap-x-10 gap-y-10 md:grid-cols-2">{records.map((story) => <StoryCard key={story.id} story={story} />)}</div>}</section><footer className="signal-container flex justify-between gap-6 border-t border-foreground/20 py-8"><Link href="/" className="signal-kicker signal-link inline-flex items-center gap-2"><ArrowLeft size={13} /> Current edition</Link><p className="signal-kicker text-muted-foreground">Built for careful reading</p></footer>
+  const organizations = Array.from(new Set(data.stories.map((story) => story.source).filter(Boolean))).sort();
+  const records = data.stories.filter((story) =>
+    (!year || story.publishedOn?.startsWith(year)) &&
+    (!organization || story.source === organization),
+  );
+  return <main className="signal-page">
+    <Header />
+    <section className="signal-container pt-14 sm:pt-24">
+      <div className="max-w-4xl">
+        <p className="signal-kicker text-accent">Signal Hub / archive</p>
+        <h1 className="mt-4 font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">A record you<br /><em className="font-normal text-accent">can return to.</em></h1>
+        <p className="mt-7 max-w-2xl text-lg leading-relaxed text-muted-foreground">Everything currently in the published archive: reporting, court and policy records, historical documents, research notes and state context. Each entry keeps its source status visible.</p>
+      </div>
+    </section>
+    <section className="signal-container archive-grid mt-16 border-y border-foreground/20 py-6 sm:mt-24">
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3"><SlidersHorizontal size={16} className="text-accent" /><p className="signal-kicker">Filter the archive</p></div>
+        <button type="button" onClick={() => setFiltersOpen((value) => !value)} className="inline-flex items-center gap-2 signal-kicker text-muted-foreground md:hidden" data-testid="button-toggle-filters">{filtersOpen ? 'Hide' : 'Show'} filters <ChevronDown size={14} /></button>
+      </div>
+      <div className={`${filtersOpen ? 'grid' : 'hidden'} mt-5 gap-3 md:grid md:grid-cols-[1.4fr_1fr_1fr_1fr_1fr_1fr_auto]`}>
+        <label className="flex items-center gap-2 border border-foreground/20 bg-card px-3 py-2"><Search size={15} className="shrink-0 text-accent" /><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search title, source or place" className="w-full bg-transparent text-sm outline-none" data-testid="input-archive-search" /></label>
+        <SelectFilter label="Topic" value={topic} options={data.topics.length ? data.topics : TOPICS} onChange={setTopic} testId="select-archive-topic" allLabel="All topics" />
+        <SelectFilter label="Record type" value={kind} options={data.kinds.length ? data.kinds : KINDS} onChange={setKind} testId="select-archive-kind" allLabel="All types" />
+        <SelectFilter label="State" value={state} options={data.states.length ? data.states.filter((item) => item !== 'All states') : INDIA_STATES.filter((item) => item !== 'All states')} onChange={setState} testId="select-archive-state" allLabel="All states" />
+        <SelectFilter label="Organization / source" value={organization} options={organizations} onChange={setOrganization} testId="select-archive-organization" allLabel="All sources" />
+        <SelectFilter label="Record year" value={year} options={years} onChange={setYear} testId="select-archive-year" allLabel="All years" />
+        <button type="button" onClick={clear} className="border border-foreground/20 px-4 py-2 signal-kicker text-muted-foreground hover:border-accent hover:text-accent" data-testid="button-clear-filters">Clear</button>
+      </div>
+      {years.length > 0 && <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-foreground/15 pt-4">
+        <span className="signal-kicker text-muted-foreground">Browse by record year</span>
+        {years.map((item) => <button key={item} type="button" onClick={() => setYear(year === item ? '' : item)} aria-pressed={year === item} className={`font-mono-signal text-xs ${year === item ? 'text-accent underline underline-offset-4' : 'text-muted-foreground hover:text-accent'}`} data-testid={`button-archive-year-${item}`}>{item}</button>)}
+      </div>}
+      <div className="mt-5 flex items-center justify-between gap-4 border-t border-foreground/15 pt-4">
+        <p className="signal-kicker text-muted-foreground">{records.length} {records.length === 1 ? 'record' : 'records'} / source labels shown</p>
+        {(query || topic || kind || state || year || organization) && <p className="signal-kicker text-accent">Filtered view</p>}
+      </div>
+    </section>
+    <section className="signal-container py-12 sm:py-16">
+      {records.length === 0 ? <EmptyState title="No record found here." text="Clear one of the filters and try again. The archive grows with each edition." /> :
+        <div className="border-t border-foreground/20">
+          {records.map((story) => <article key={story.id} className="grid gap-5 border-b border-foreground/20 py-7 md:grid-cols-[.22fr_1fr_.62fr] md:gap-10" data-testid={`archive-record-${story.id}`}>
+            <div><p className="signal-kicker text-accent">Record date / as supplied</p><time className="mt-2 block font-mono-signal text-xs" dateTime={story.publishedOn ?? undefined}>{formatDate(story.publishedOn)}</time><p className="mt-2 signal-kicker text-muted-foreground">{story.state || 'National'}</p></div>
+            <div><p className="signal-kicker text-muted-foreground">{story.topic} / {story.kind}</p><Link href={storyPath(story)} className="group mt-2 block" data-testid={`link-story-${story.id}`}><h2 className="font-display text-3xl leading-tight group-hover:text-accent">{story.title}</h2></Link><p className="mt-3 text-sm leading-relaxed text-muted-foreground">{story.dek}</p></div>
+            <SourceLine story={story} />
+          </article>)}
+        </div>}
+    </section>
+    <footer className="signal-container flex justify-between gap-6 border-t border-foreground/20 py-8"><Link href="/" className="signal-kicker signal-link inline-flex items-center gap-2"><ArrowLeft size={13} /> Current edition</Link><p className="signal-kicker text-muted-foreground">Built for careful reading</p></footer>
   </main>;
 }
 
@@ -609,15 +906,15 @@ function PoliciesPage() {
   }), [effectiveFrom, effectiveTo, query, sector, state, status]);
   const { data, isLoading, isError, refetch } = useGetPolicies(params, { query: { queryKey: getGetPoliciesQueryKey(params) } });
   useSeo({
-    title: 'Policy ledger — The Signal 24',
+    title: 'Policy ledger — Signal Hub',
     description: 'Search source-linked records of reservation policy changes, with frameworks, legal basis, court status and first-class sources.',
     canonicalPath: '/policies',
     structuredData: {
       '@context': 'https://schema.org',
       '@graph': [
         organizationSchema,
-        { '@type': 'CollectionPage', name: 'The Signal 24 policy ledger', description: 'Source-linked records of reservation policy changes.', url: '/policies' },
-        { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'The Signal 24', item: '/' }, { '@type': 'ListItem', position: 2, name: 'Policy ledger', item: '/policies' }] },
+        { '@type': 'CollectionPage', name: 'Signal Hub policy ledger', description: 'Source-linked records of reservation policy changes.', url: '/policies' },
+        { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'Signal Hub', item: '/' }, { '@type': 'ListItem', position: 2, name: 'Policy ledger', item: '/policies' }] },
       ],
     },
   });
@@ -628,7 +925,7 @@ function PoliciesPage() {
   const activeFilters = Boolean(query || state || sector || status || effectiveFrom || effectiveTo);
   return <main className="signal-page"><Header />
     <section className="signal-container pt-14 sm:pt-24">
-      <div className="max-w-4xl"><p className="signal-kicker text-accent">The Signal 24 / policy ledger</p><h1 className="mt-4 font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">What changed,<br /><em className="font-normal text-accent">and when?</em></h1><p className="mt-7 max-w-2xl text-lg leading-relaxed text-muted-foreground">A permanent, source-linked record of reservation policy changes. Search by subject, state or sector, then follow the framework, authority and documents behind each entry.</p></div>
+      <div className="max-w-4xl"><p className="signal-kicker text-accent">Signal Hub / policy ledger</p><h1 className="mt-4 font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">What changed,<br /><em className="font-normal text-accent">and when?</em></h1><p className="mt-7 max-w-2xl text-lg leading-relaxed text-muted-foreground">A permanent, source-linked record of reservation policy changes. Search by subject, state or sector, then follow the framework, authority and documents behind each entry.</p></div>
     </section>
     <section className="signal-container archive-grid mt-16 border-y border-foreground/20 py-6 sm:mt-24" aria-label="Filter policy ledger">
       <div className="flex items-center justify-between gap-4"><div className="flex items-center gap-3"><SlidersHorizontal size={16} className="text-accent" /><p className="signal-kicker">Filter the ledger</p></div><button type="button" onClick={() => setFiltersOpen((value) => !value)} className="inline-flex items-center gap-2 signal-kicker text-muted-foreground md:hidden" data-testid="button-toggle-policy-filters">{filtersOpen ? 'Hide' : 'Show'} filters <ChevronDown size={14} /></button></div>
@@ -660,15 +957,15 @@ function PolicyDetail() {
     return {
       '@context': 'https://schema.org',
       '@graph': [
-        { '@type': 'Article', '@id': `${url}#policy`, headline: record.title, description: record.summary, datePublished: record.publishedOn, dateModified: record.publishedOn, mainEntityOfPage: url, author: { '@type': 'Organization', name: 'The Signal 24' }, publisher: { ...organizationSchema, url: absoluteSiteUrl('/') } },
-        { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'The Signal 24', item: absoluteSiteUrl('/') }, { '@type': 'ListItem', position: 2, name: 'Policy ledger', item: absoluteSiteUrl('/policies') }, { '@type': 'ListItem', position: 3, name: record.title, item: url }] },
+        { '@type': 'Article', '@id': `${url}#policy`, headline: record.title, description: record.summary, datePublished: record.publishedOn, dateModified: record.publishedOn, mainEntityOfPage: url, author: { '@type': 'Organization', name: 'Signal Hub' }, publisher: { ...organizationSchema, url: absoluteSiteUrl('/') } },
+        { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'Signal Hub', item: absoluteSiteUrl('/') }, { '@type': 'ListItem', position: 2, name: 'Policy ledger', item: absoluteSiteUrl('/policies') }, { '@type': 'ListItem', position: 3, name: record.title, item: url }] },
         organizationSchema,
       ],
     };
   }, [record]);
   useSeo({
-    title: record ? `${record.title} — The Signal 24` : 'Policy record — The Signal 24',
-    description: record?.summary ?? 'A source-linked policy record from The Signal 24.',
+    title: record ? `${record.title} — Signal Hub` : 'Policy record — Signal Hub',
+    description: record?.summary ?? 'A source-linked policy record from Signal Hub.',
     canonicalPath: record?.canonicalPath,
     robots: record ? 'index, follow' : 'noindex, follow',
     type: record ? 'article' : 'website',
@@ -708,8 +1005,26 @@ function PolicyDetail() {
   </main>;
 }
 
-function SelectFilter({ label, value, options, onChange, testId }: { label: string; value: string; options: string[]; onChange: (value: string) => void; testId: string }) {
-  return <label className="relative border border-foreground/20 bg-card px-3 py-2"><span className="signal-kicker block text-[9px] text-muted-foreground">{label}</span><select value={value} onChange={(event) => onChange(event.target.value)} className="w-full appearance-none bg-transparent pt-1 text-sm outline-none" data-testid={testId}><option value="">All {label.toLowerCase()}</option>{options.filter(Boolean).map((option) => <option key={option} value={option}>{option}</option>)}</select><ChevronDown size={14} className="pointer-events-none absolute right-3 bottom-3 text-muted-foreground" /></label>;
+function SelectFilter({ label, value, options, onChange, testId, allLabel }: { label: string; value: string; options: string[]; onChange: (value: string) => void; testId: string; allLabel?: string }) {
+  return <label className="relative border border-foreground/20 bg-card px-3 py-2"><span className="signal-kicker block text-[9px] text-muted-foreground">{label}</span><select value={value} onChange={(event) => onChange(event.target.value)} className="w-full appearance-none bg-transparent pt-1 text-sm outline-none" data-testid={testId}><option value="">{allLabel ?? `All ${label.toLowerCase()}`}</option>{options.filter(Boolean).map((option) => <option key={option} value={option}>{option}</option>)}</select><ChevronDown size={14} className="pointer-events-none absolute right-3 bottom-3 text-muted-foreground" /></label>;
+}
+
+function ReadingProgress() {
+  const [progress, setProgress] = useState(0);
+  useEffect(() => {
+    const update = () => {
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      setProgress(max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0);
+    };
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update);
+    return () => {
+      window.removeEventListener('scroll', update);
+      window.removeEventListener('resize', update);
+    };
+  }, []);
+  return <div className="reading-progress lg:hidden" aria-hidden="true"><span style={{ transform: `scaleX(${progress})` }} /></div>;
 }
 
 function StoryDetail() {
@@ -721,16 +1036,12 @@ function StoryDetail() {
   const structuredData = useMemo(() => {
     if (!story) return null;
     const url = absoluteSiteUrl(recordPath ?? '/');
-    const isDataset = story.recordFamily === 'data';
     const recordSchema = story.indexable ? {
       '@type': story.kind === 'Article' ? 'NewsArticle' : 'Article',
       '@id': `${url}#record`,
       headline: story.title,
       description: story.dek,
-      datePublished: story.publishedOn ?? undefined,
-      dateModified: story.publishedOn ?? undefined,
       mainEntityOfPage: url,
-      author: { '@type': 'Person', name: 'The Signal 24 editorial desk', url: absoluteSiteUrl('/authors/signal-24') },
       publisher: { ...organizationSchema, url: absoluteSiteUrl('/') },
     } : {
       '@type': 'WebPage',
@@ -745,20 +1056,18 @@ function StoryDetail() {
         {
           '@type': 'BreadcrumbList',
           itemListElement: [
-            { '@type': 'ListItem', position: 1, name: 'The Signal 24', item: absoluteSiteUrl('/') },
+            { '@type': 'ListItem', position: 1, name: 'Signal Hub', item: absoluteSiteUrl('/') },
             { '@type': 'ListItem', position: 2, name: 'Archive', item: absoluteSiteUrl('/archive') },
             { '@type': 'ListItem', position: 3, name: story.title, item: url },
           ],
         },
         { ...organizationSchema, url: absoluteSiteUrl('/') },
-        { '@type': 'Person', name: 'The Signal 24 editorial desk', url: absoluteSiteUrl('/authors/signal-24') },
-        ...(isDataset ? [{ '@type': 'Dataset', name: story.title, description: story.dek, url, creator: { '@type': 'Organization', name: 'The Signal 24' }, isAccessibleForFree: true }] : []),
       ],
     };
   }, [recordPath, story]);
   useSeo({
-    title: story ? `${story.title} — The Signal 24` : 'Record — The Signal 24',
-    description: story?.dek ?? 'A source record from The Signal 24 reservation archive.',
+    title: story ? `${story.title} — Signal Hub` : 'Record — Signal Hub',
+    description: story?.dek ?? 'A source record from the Signal Hub reservation archive.',
     canonicalPath: story?.indexable ? recordPath : undefined,
     robots: story?.indexable ? 'index, follow' : 'noindex, follow',
     type: story?.indexable ? 'article' : 'website',
@@ -767,7 +1076,48 @@ function StoryDetail() {
   if (!Number.isFinite(storyId)) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message="That record address is not valid." /></div></div>;
   if (isLoading) return <div className="signal-page"><Header /><LoadingBlock label="Opening the source record…" /></div>;
   if (isError || !story) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message="This record may have moved or is not published yet." onRetry={() => void refetch()} /></div></div>;
-  return <main className="signal-page"><Header /><article className="signal-container py-12 sm:py-20"><Link href="/archive" className="signal-kicker signal-link inline-flex items-center gap-2 text-muted-foreground" data-testid="link-back-archive"><ArrowLeft size={13} /> Back to the archive</Link><div className="mt-12 grid gap-10 lg:grid-cols-[1fr_.7fr] lg:items-end"><div><p className="signal-kicker text-accent">{story.topic} / {story.kind}</p><h1 className="mt-4 max-w-4xl font-display text-5xl leading-[.94] tracking-[-.055em] sm:text-7xl lg:text-8xl" data-testid="heading-story">{story.title}</h1><p className="mt-7 max-w-2xl text-lg leading-relaxed text-muted-foreground sm:text-xl">{story.dek}</p><div className="mt-7 flex flex-wrap gap-x-5 gap-y-2 signal-kicker text-muted-foreground"><span>Published {formatDate(story.publishedOn)}</span><span>{story.time}</span><span>{story.read} min read</span>{story.state && <span>{story.state}</span>}</div></div><StoryArt story={story} /></div><div className="mx-auto mt-12 w-full max-w-2xl"><SourceLine story={story} detail /></div>{story.aiDisclosure && <div className="mx-auto mt-6 max-w-2xl border-l-2 border-accent bg-accent/10 px-5 py-4"><p className="signal-kicker text-accent">AI-assisted drafting disclosure</p><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{story.aiDisclosure}</p></div>}{story.correctionNote && <div className="mx-auto mt-6 max-w-2xl border border-accent/40 bg-accent/5 px-5 py-4"><p className="signal-kicker text-accent">Correction note</p><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{story.correctionNote}</p></div>}<div className="story-body mx-auto mt-10 max-w-2xl text-[1.08rem] leading-[1.85] text-foreground/85">{story.body.split(/\n{2,}/).map((paragraph, index) => <p key={`${story.id}-${index}`} className={index === 0 ? 'first-letter:font-display first-letter:text-5xl first-letter:leading-[.8] first-letter:text-accent' : ''}>{paragraph}</p>)}</div><div className="mx-auto mt-12 flex max-w-2xl flex-wrap items-center justify-between gap-4 border-t border-foreground/20 pt-5"><p className="signal-kicker text-muted-foreground">End of record / {story.source}</p><div className="flex flex-wrap items-center gap-4">{story.sourceUrl && <a href={story.sourceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 signal-kicker text-accent" data-testid="link-open-source-bottom">View source <ExternalLink size={13} /></a>}<Link href="/editorial-standards#corrections" className="signal-kicker text-muted-foreground hover:text-accent" data-testid="link-report-correction">Report a correction</Link></div></div></article></main>;
+  return <main className="signal-page">
+    <Header />
+    <ReadingProgress />
+    <article className="signal-container py-12 sm:py-20">
+      <Link href="/archive" className="signal-kicker signal-link inline-flex items-center gap-2 text-muted-foreground" data-testid="link-back-archive"><ArrowLeft size={13} /> Back to the archive</Link>
+      <div className="mt-12 grid gap-10 lg:grid-cols-[1fr_.7fr] lg:items-end">
+        <div>
+          <p className="signal-kicker text-accent">{story.topic} / {story.kind}</p>
+          <h1 className="mt-4 max-w-4xl font-display text-5xl leading-[.94] tracking-[-.055em] sm:text-7xl lg:text-8xl" data-testid="heading-story">{story.title}</h1>
+          <p className="mt-7 max-w-2xl text-lg leading-relaxed text-muted-foreground sm:text-xl">{story.dek}</p>
+          <div className="mt-7 flex flex-wrap gap-x-5 gap-y-2 signal-kicker text-muted-foreground">
+            <span>Record date / as supplied · {formatDate(story.publishedOn)}</span>
+            <span>{story.read} min read</span>
+            {story.state && <span>{story.state}</span>}
+          </div>
+        </div>
+        <StoryArt story={story} />
+      </div>
+      <div id="record-evidence" className="mx-auto mt-12 article-reading-column"><SourceLine story={story} detail /></div>
+      {story.aiDisclosure && <div className="mx-auto mt-6 article-reading-column border-l-2 border-accent bg-accent/10 px-5 py-4"><p className="signal-kicker text-accent">AI-assisted drafting disclosure</p><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{story.aiDisclosure}</p></div>}
+      {story.correctionNote && <div className="mx-auto mt-6 article-reading-column border border-accent/40 bg-accent/5 px-5 py-4"><p className="signal-kicker text-accent">Correction note</p><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{story.correctionNote}</p></div>}
+      <div className="mx-auto mt-10 grid max-w-[910px] gap-10 lg:grid-cols-[720px_150px] lg:items-start">
+        <div id="record-body" className="story-body article-reading-column text-[1.08rem] leading-[1.85] text-foreground/85">
+          {story.body.split(/\n{2,}/).map((paragraph, index) => <p key={`${story.id}-${index}`} className={index === 0 ? 'first-letter:font-display first-letter:text-5xl first-letter:leading-[.8] first-letter:text-accent' : ''}>{paragraph}</p>)}
+        </div>
+        <aside className="article-rail hidden lg:block">
+          <p className="signal-kicker text-accent">On this record</p>
+          <a href="#record-body" className="mt-4 block signal-kicker text-muted-foreground hover:text-accent">Reading</a>
+          <a href="#record-evidence" className="mt-3 block signal-kicker text-muted-foreground hover:text-accent">Evidence</a>
+          <p className="mt-6 border-t border-foreground/15 pt-4 signal-kicker text-muted-foreground">Dates</p>
+          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">The date above is attached to this archive record. A source publication date appears separately only when supplied.</p>
+        </aside>
+      </div>
+      <div className="mx-auto mt-12 flex article-reading-column flex-wrap items-center justify-between gap-4 border-t border-foreground/20 pt-5">
+        <p className="signal-kicker text-muted-foreground">End of record / {story.source}</p>
+        <div className="flex flex-wrap items-center gap-4">
+          {story.sourceUrl && <a href={story.sourceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 signal-kicker text-accent" data-testid="link-open-source-bottom">View source <ExternalLink size={13} /></a>}
+          <Link href="/editorial-standards#corrections" className="signal-kicker text-muted-foreground hover:text-accent" data-testid="link-report-correction">Report a correction</Link>
+        </div>
+      </div>
+    </article>
+  </main>;
 }
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
@@ -792,8 +1142,8 @@ function Editor() {
   const hydrated = useRef(false);
   useEffect(() => { if (data && !hydrated.current) { hydrated.current = true; setWorkingIssue(data.issue); setStories(data.stories); setIssueForm({ issueDate: data.issue.issueDate, issueNumber: data.issue.issueNumber, title: data.issue.title, intro: data.issue.intro }); } }, [data]);
   useSeo({
-    title: 'Editorial desk — The Signal 24',
-    description: 'Private editorial workspace for preparing source-aware Signal 24 records.',
+    title: 'Editorial desk — Signal Hub',
+    description: 'Private editorial workspace for preparing source-aware Signal Hub records.',
     robots: 'noindex, nofollow',
   });
   if (isLoading) return <div className="signal-page"><Header editor /><LoadingBlock label="Loading the editorial desk…" /></div>;
@@ -1065,7 +1415,7 @@ function EditorialDesk() {
       setIssueForm({ issueDate: data.issue.issueDate, issueNumber: data.issue.issueNumber, title: data.issue.title, intro: data.issue.intro });
     }
   }, [data]);
-  useEffect(() => { document.title = 'Editorial desk — The Signal 24'; }, []);
+  useEffect(() => { document.title = 'Editorial desk — Signal Hub'; }, []);
 
   if (isLoading) return <div className="signal-page"><Header editor /><LoadingBlock label="Loading the editorial desk…" /></div>;
   if (isError) return <div className="signal-page"><Header editor /><div className="py-20"><ErrorState message="The editorial workspace could not be loaded." onRetry={() => void refetch()} /></div></div>;
@@ -1129,21 +1479,21 @@ function AuthorPage() {
   const path = '/authors/signal-24';
   const validAuthor = params.slug === 'signal-24';
   useSeo({
-    title: 'The Signal 24 editorial desk — The Signal 24',
-    description: 'Meet the editorial desk behind The Signal 24, a source-first publication and research archive on reservation in India.',
+    title: 'Signal Hub editorial desk — Signal Hub',
+    description: 'Meet the editorial desk behind Signal Hub, a source-first publication and research archive on reservation in India.',
     canonicalPath: validAuthor ? path : undefined,
     robots: validAuthor ? 'index, follow' : 'noindex, follow',
     structuredData: {
       '@context': 'https://schema.org',
       '@graph': [
-        { '@type': 'Person', name: 'The Signal 24 editorial desk', description: 'The editorial desk responsible for sourcing, reviewing and presenting The Signal 24 archive.', url: path, worksFor: organizationSchema },
+        { '@type': 'Person', name: 'Signal Hub editorial desk', description: 'The editorial desk responsible for sourcing, reviewing and presenting the Signal Hub archive.', url: path, worksFor: organizationSchema },
         organizationSchema,
-        { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'The Signal 24', item: '/' }, { '@type': 'ListItem', position: 2, name: 'Authors', item: path }] },
+        { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'Signal Hub', item: '/' }, { '@type': 'ListItem', position: 2, name: 'Authors', item: path }] },
       ],
     },
   });
   if (!validAuthor) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message="That author page does not exist." /></div></div>;
-  return <main className="signal-page"><Header /><section className="signal-container pt-14 sm:pt-24"><p className="signal-kicker text-accent">The Signal 24 / author</p><h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">The editorial<br /><em className="font-normal text-accent">desk.</em></h1><p className="mt-8 max-w-2xl text-lg leading-relaxed text-muted-foreground">The Signal 24 editorial desk keeps reporting, documents, analysis and opinion distinct, and names the source and date behind each published record.</p></section><section className="signal-container mt-16 border-y border-foreground/20 py-10 sm:mt-24 sm:py-14"><div className="grid gap-8 lg:grid-cols-[.7fr_1.3fr]"><div><p className="signal-kicker text-accent">Source first / always</p><h2 className="mt-3 font-display text-4xl leading-none">A byline with a responsibility.</h2></div><p className="max-w-2xl text-base leading-relaxed text-muted-foreground">The desk is a publication identity rather than a claim that every record has one author. Individual bylines, disclosures and corrections belong on the record when they are available.</p></div></section><footer className="signal-container flex justify-between gap-6 border-t border-foreground/20 py-8"><Link href="/archive" className="signal-kicker signal-link">Browse the archive</Link><Link href="/editorial-standards" className="signal-kicker signal-link">Editorial standards</Link></footer></main>;
+  return <main className="signal-page"><Header /><section className="signal-container pt-14 sm:pt-24"><p className="signal-kicker text-accent">Signal Hub / author</p><h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">The editorial<br /><em className="font-normal text-accent">desk.</em></h1><p className="mt-8 max-w-2xl text-lg leading-relaxed text-muted-foreground">The Signal Hub editorial desk keeps reporting, documents, analysis and opinion distinct, and names the source and date behind each published record.</p></section><section className="signal-container mt-16 border-y border-foreground/20 py-10 sm:mt-24 sm:py-14"><div className="grid gap-8 lg:grid-cols-[.7fr_1.3fr]"><div><p className="signal-kicker text-accent">Source first / always</p><h2 className="mt-3 font-display text-4xl leading-none">A byline with a responsibility.</h2></div><p className="max-w-2xl text-base leading-relaxed text-muted-foreground">The desk is a publication identity rather than a claim that every record has one author. Individual bylines, disclosures and corrections belong on the record when they are available.</p></div></section><footer className="signal-container flex justify-between gap-6 border-t border-foreground/20 py-8"><Link href="/archive" className="signal-kicker signal-link">Browse the archive</Link><Link href="/editorial-standards" className="signal-kicker signal-link">Editorial standards</Link></footer></main>;
 }
 
 const COMMUNITY_TOPICS = ['general', 'caste', 'policy', 'representation', 'migration', 'violence', 'work', 'education', 'culture'] as CommunityTopic[];
@@ -1220,7 +1570,7 @@ function CommunityComposer({ onClose }: { onClose: () => void }) {
   }
   return <section className="community-composer border-2 border-primary bg-card p-5 sm:p-8" aria-labelledby="community-composer-title">
     <div className="flex items-start justify-between gap-5">
-      <div><p className="signal-kicker text-accent">Share with the noticeboard</p><h2 id="community-composer-title" className="mt-2 font-display text-3xl leading-none sm:text-4xl">Put something in the room.</h2><p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">Use your name. Add context. Links are welcome. This is a public participant contribution, not an automatic Signal 24 report.</p></div>
+      <div><p className="signal-kicker text-accent">Share with the noticeboard</p><h2 id="community-composer-title" className="mt-2 font-display text-3xl leading-none sm:text-4xl">Put something in the room.</h2><p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">Use your name. Add context. Links are welcome. This is a public participant contribution, not an automatic Signal Hub report.</p></div>
       <button type="button" onClick={onClose} className="grid h-9 w-9 shrink-0 place-items-center border border-foreground/20 text-muted-foreground hover:border-accent hover:text-accent" aria-label="Close share form" data-testid="button-close-community-composer"><X size={17} /></button>
     </div>
     <form onSubmit={submit} className="mt-7 grid gap-5">
@@ -1241,8 +1591,8 @@ function CommunityComposer({ onClose }: { onClose: () => void }) {
 
 function CommunityPage() {
   useSeo({
-    title: 'Community noticeboard — The Signal 24',
-    description: 'Public participant contributions about reservation, representation and related policy. Contributions are not Signal 24 reporting.',
+    title: 'Community noticeboard — Signal Hub',
+    description: 'Public participant contributions about reservation, representation and related policy. Contributions are not Signal Hub reporting.',
     canonicalPath: '/community',
     robots: 'noindex, follow',
   });
@@ -1253,11 +1603,11 @@ function CommunityPage() {
   const params = useMemo<GetCommunityPostsParams>(() => ({ topic: topic ? topic as CommunityTopic : undefined, state: state || undefined, sort, limit: 50 }), [topic, state, sort]);
   const { data, isLoading, isError, refetch, isFetching } = useGetCommunityPosts(params, { query: { queryKey: getGetCommunityPostsQueryKey(params) } });
   const posts = data?.posts ?? [];
-  useSeo({ title: 'Community noticeboard — The Signal 24', description: 'A public discussion space for lived thoughts, articles, links and creative pieces from across India.', canonicalPath: '/community' });
+  useSeo({ title: 'Community noticeboard — Signal Hub', description: 'A public discussion space for lived thoughts, articles, links and creative pieces from across India.', canonicalPath: '/community' });
   return <main className="signal-page"><Header /><section className="signal-container pt-12 sm:pt-20">
     <div className="grid gap-8 border-b-2 border-primary pb-10 lg:grid-cols-[1fr_.58fr] lg:items-end">
-      <div><p className="signal-kicker text-accent">The Signal 24 / community</p><h1 className="mt-4 max-w-4xl font-display text-6xl leading-[.88] tracking-[-.065em] sm:text-8xl">The national<br /><em className="font-normal text-accent">noticeboard.</em></h1><p className="mt-7 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">A separate public room for lived thoughts, articles, links and creative pieces. Read across disagreement, geography and experience.</p></div>
-      <div className="border-l-2 border-accent pl-5"><p className="signal-kicker text-accent">Important distinction</p><p className="mt-3 text-sm leading-relaxed">These are public participant contributions. They are not automatically Signal 24 reporting, and they do not carry the archive’s source verification.</p><button type="button" onClick={() => setComposerOpen((open) => !open)} className="mt-6 inline-flex items-center gap-2 rounded-full bg-accent px-5 py-3 signal-kicker text-accent-foreground" data-testid="button-open-community-composer">{composerOpen ? 'Close share form' : 'Share a thought'} <Plus size={14} /></button></div>
+      <div><p className="signal-kicker text-accent">Signal Hub / community</p><h1 className="mt-4 max-w-4xl font-display text-6xl leading-[.88] tracking-[-.065em] sm:text-8xl">The national<br /><em className="font-normal text-accent">noticeboard.</em></h1><p className="mt-7 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">A separate public room for lived thoughts, articles, links and creative pieces. Read across disagreement, geography and experience.</p></div>
+      <div className="border-l-2 border-accent pl-5"><p className="signal-kicker text-accent">Important distinction</p><p className="mt-3 text-sm leading-relaxed">These are public participant contributions. They are not automatically Signal Hub reporting, and they do not carry the archive’s source verification.</p><button type="button" onClick={() => setComposerOpen((open) => !open)} className="mt-6 inline-flex items-center gap-2 rounded-full bg-accent px-5 py-3 signal-kicker text-accent-foreground" data-testid="button-open-community-composer">{composerOpen ? 'Close share form' : 'Share a thought'} <Plus size={14} /></button></div>
     </div>
     {composerOpen && <div className="mt-8"><CommunityComposer onClose={() => setComposerOpen(false)} /></div>}
   </section>
@@ -1280,7 +1630,7 @@ function CommunityDetailPage() {
   const [authorName, setAuthorName] = useState('');
   const [replyBody, setReplyBody] = useState('');
   const [replyError, setReplyError] = useState(false);
-  useSeo({ title: data?.post ? `${data.post.title} — Community — The Signal 24` : 'Community post — The Signal 24', description: data?.post?.body.slice(0, 155) ?? 'A public participant contribution in The Signal 24 community.', robots: 'noindex, follow' });
+  useSeo({ title: data?.post ? `${data.post.title} — Community — Signal Hub` : 'Community post — Signal Hub', description: data?.post?.body.slice(0, 155) ?? 'A public participant contribution in the Signal Hub community.', robots: 'noindex, follow' });
   function like() {
     if (!data?.post) return;
     likeMutation.mutate({ postId }, { onSuccess: () => { void queryClient.invalidateQueries({ queryKey: getGetCommunityPostsQueryKey() }); void queryClient.invalidateQueries({ queryKey: getGetCommunityPostQueryKey(postId) }); } });
@@ -1299,7 +1649,7 @@ function CommunityDetailPage() {
   const post = data.post;
   return <main className="signal-page"><Header /><article className="signal-container py-12 sm:py-20">
     <Link href="/community" className="signal-kicker inline-flex items-center gap-2 text-muted-foreground hover:text-accent" data-testid="link-back-community"><ArrowLeft size={13} /> Back to community</Link>
-    <div className="mt-12 grid gap-10 lg:grid-cols-[1fr_.48fr]"><div><div className="flex flex-wrap items-center gap-2"><span className="signal-kicker text-accent">{post.kind}</span><span className="text-muted-foreground">/</span><span className="signal-kicker text-muted-foreground">{post.topic}</span>{post.state && <><span className="text-muted-foreground">/</span><span className="signal-kicker text-muted-foreground">{post.state}</span></>}</div><h1 className="mt-5 max-w-4xl font-display text-5xl leading-[.92] tracking-[-.055em] sm:text-7xl" data-testid="heading-community-post">{post.title}</h1><p className="mt-6 signal-kicker text-muted-foreground">Shared by {post.authorName} · {communityDate(post.createdAt)}</p></div><aside className="border-l-2 border-accent pl-5"><p className="signal-kicker text-accent">Community record</p><p className="mt-3 text-sm leading-relaxed text-muted-foreground">A public participant contribution. It is not automatically Signal 24 reporting or a verified archive record.</p><button type="button" onClick={like} disabled={likeMutation.isPending} className={`mt-6 inline-flex items-center gap-2 rounded-full border px-4 py-2 signal-kicker hover:border-accent hover:text-accent disabled:opacity-50 ${post.likedByViewer ? 'border-accent text-accent' : 'border-foreground/25'}`} data-testid="button-like-community-detail"><Heart size={14} fill={post.likedByViewer ? 'currentColor' : 'none'} /> {post.likedByViewer ? 'Liked' : 'Like'} · {post.likeCount}</button></aside></div>
+    <div className="mt-12 grid gap-10 lg:grid-cols-[1fr_.48fr]"><div><div className="flex flex-wrap items-center gap-2"><span className="signal-kicker text-accent">{post.kind}</span><span className="text-muted-foreground">/</span><span className="signal-kicker text-muted-foreground">{post.topic}</span>{post.state && <><span className="text-muted-foreground">/</span><span className="signal-kicker text-muted-foreground">{post.state}</span></>}</div><h1 className="mt-5 max-w-4xl font-display text-5xl leading-[.92] tracking-[-.055em] sm:text-7xl" data-testid="heading-community-post">{post.title}</h1><p className="mt-6 signal-kicker text-muted-foreground">Shared by {post.authorName} · {communityDate(post.createdAt)}</p></div><aside className="border-l-2 border-accent pl-5"><p className="signal-kicker text-accent">Community record</p><p className="mt-3 text-sm leading-relaxed text-muted-foreground">A public participant contribution. It is not automatically Signal Hub reporting or a verified archive record.</p><button type="button" onClick={like} disabled={likeMutation.isPending} className={`mt-6 inline-flex items-center gap-2 rounded-full border px-4 py-2 signal-kicker hover:border-accent hover:text-accent disabled:opacity-50 ${post.likedByViewer ? 'border-accent text-accent' : 'border-foreground/25'}`} data-testid="button-like-community-detail"><Heart size={14} fill={post.likedByViewer ? 'currentColor' : 'none'} /> {post.likedByViewer ? 'Liked' : 'Like'} · {post.likeCount}</button></aside></div>
     <div className="story-body mt-12 max-w-3xl whitespace-pre-line text-[1.08rem] leading-[1.85] text-foreground/85" data-testid="text-community-detail-body">{post.body}</div>
     {post.linkUrl && <a href={post.linkUrl} target="_blank" rel="noopener noreferrer" className="mt-8 inline-flex items-center gap-2 border-b border-accent pb-1 signal-kicker text-accent hover:border-primary hover:text-primary" data-testid="link-community-external"><Link2 size={14} /> Open shared link <ExternalLink size={13} /></a>}
     <section className="mt-16 border-t-2 border-primary pt-8" aria-labelledby="community-replies-title"><div className="flex items-end justify-between gap-4"><div><p className="signal-kicker text-accent">Responses</p><h2 id="community-replies-title" className="mt-2 font-display text-4xl">The reply line.</h2></div><span className="signal-kicker text-muted-foreground">{data.replies.length} replies</span></div>
@@ -1310,14 +1660,14 @@ function CommunityDetailPage() {
 }
 
 function SignInPage() {
-  useSeo({ title: 'Editor sign in — The Signal 24', description: 'Sign in to access the private Signal 24 editorial desk.', robots: 'noindex, nofollow' });
+  useSeo({ title: 'Editor sign in — Signal Hub', description: 'Sign in to access the private Signal Hub editorial desk.', robots: 'noindex, nofollow' });
   return <main className="signal-page"><section className="signal-container flex min-h-[100dvh] flex-col items-center justify-center gap-8 py-12">
-    <Link href="/" className="signal-link font-display text-2xl">The Signal <span className="text-accent">24</span></Link>
+    <Link href="/" className="signal-link font-display text-2xl">SIGNAL <span className="text-accent">HUB</span></Link>
     <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} forceRedirectUrl={`${basePath}/editor`} />
   </section></main>;
 }
 function AppRoutes() {
-  return <Switch><Route path="/" component={Home} /><Route path="/sign-in/*?" component={SignInPage} /><Route path="/sign-up/*?" component={SignUpPage} /><Route path="/community" component={CommunityPage} /><Route path="/community/:id" component={CommunityDetailPage} /><Route path="/policies" component={PoliciesPage} /><Route path="/policies/:slug" component={PolicyDetail} /><Route path="/archive" component={ArchivePage} /><Route path="/authors/:slug" component={AuthorPage} /><Route path="/data" component={DataIndexPage} /><Route path="/stories/:id" component={StoryDetail} /><Route path="/editor" component={EditorAccessRoute} /><Route path="/about" component={AboutPage} /><Route path="/editorial-standards" component={StandardsPage} /><Route path="/methodology" component={MethodologyPage} /><Route path="/:family/:slug" component={StoryDetail} /><Route component={NotFound} /></Switch>;
+  return <Switch><Route path="/" component={Home} /><Route path="/sign-in/*?" component={SignInPage} /><Route path="/sign-up/*?" component={SignUpPage} /><Route path="/community" component={CommunityPage} /><Route path="/community/:id" component={CommunityDetailPage} /><Route path="/policies" component={PoliciesPage} /><Route path="/policies/:slug" component={PolicyDetail} /><Route path="/archive" component={ArchivePage} /><Route path="/topics" component={TopicIndexPage} /><Route path="/topics/:slug" component={TopicPage} /><Route path="/timeline" component={TimelinePage} /><Route path="/search" component={SearchPage} /><Route path="/authors/:slug" component={AuthorPage} /><Route path="/data" component={DataIndexPage} /><Route path="/stories/:id" component={StoryDetail} /><Route path="/editor" component={EditorAccessRoute} /><Route path="/about" component={AboutPage} /><Route path="/editorial-standards" component={StandardsPage} /><Route path="/methodology" component={MethodologyPage} /><Route path="/:family/:slug" component={StoryDetail} /><Route component={NotFound} /></Switch>;
 }
 
 function ClerkProviderWithRouting() {
@@ -1392,7 +1742,7 @@ function useSeo({ title, description, canonicalPath, robots = 'index, follow', t
       ? pathname.slice(basePath.length) || '/'
       : pathname;
     upsertMeta('property', 'og:url', absoluteSiteUrl(canonicalPath ?? currentPath));
-    upsertMeta('property', 'og:site_name', 'The Signal 24');
+    upsertMeta('property', 'og:site_name', 'Signal Hub');
     upsertMeta('name', 'twitter:title', title);
     upsertMeta('name', 'twitter:description', description);
 
@@ -1426,8 +1776,8 @@ function slugify(value: string) {
 
 const organizationSchema = {
   '@type': 'Organization',
-  name: 'The Signal 24',
-  description: 'A source-first public-interest publication and research archive on reservation and representation in India.',
+  name: 'Signal Hub',
+  description: 'A source-first public-interest newsroom and research archive for reservation policy, court records, official documents and data in India.',
   url: absoluteSiteUrl('/'),
 };
 
@@ -1442,25 +1792,51 @@ function recordFamilyForStory(story: Story) {
 
 function DataIndexPage() {
   const path = '/data';
-  const params = useMemo(() => ({ topic: 'Data & Notes' as Topic, limit: 100 }), []);
+  const params = useMemo(() => ({ limit: 100 }), []);
   const { data, isLoading, isError, refetch } = useGetArchive(params, {
     query: { queryKey: getGetArchiveQueryKey(params) },
   });
-  const records = data?.stories.filter((story) => story.recordFamily === 'data' || story.topic === 'Data & Notes') ?? [];
+  const records = data?.stories.filter((story) =>
+    story.recordFamily === 'data' && Boolean(story.sourceUrl) && story.verificationStatus !== 'unverified',
+  ) ?? [];
   useSeo({
-    title: 'Data room — The Signal 24',
-    description: 'A source-linked data room for understanding reservation and representation in India.',
+    title: 'Data room — Signal Hub',
+    description: 'Browse source-linked and reviewed data records on reservation and representation in India.',
     canonicalPath: path,
     structuredData: {
       '@context': 'https://schema.org',
       '@graph': [
-        { '@type': 'CollectionPage', name: 'The Signal 24 data room', description: 'Published data records and methodology notes on reservation and representation in India.', url: path, mainEntity: records.map((story) => ({ '@type': 'Dataset', name: story.title, description: story.dek, url: story.canonicalPath || storyPath(story), creator: organizationSchema, isAccessibleForFree: true })) },
+        { '@type': 'CollectionPage', name: 'Signal Hub data room', description: 'Published data records and methodology notes on reservation and representation in India.', url: path, mainEntity: records.map((story) => ({ '@type': 'Dataset', name: story.title, description: story.dek, url: story.canonicalPath || storyPath(story), creator: organizationSchema, isAccessibleForFree: true })) },
         organizationSchema,
-        { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'The Signal 24', item: '/' }, { '@type': 'ListItem', position: 2, name: 'Data', item: path }] },
+        { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'Signal Hub', item: '/' }, { '@type': 'ListItem', position: 2, name: 'Data', item: path }] },
       ],
     },
   });
-  return <main className="signal-page"><Header /><section className="signal-container pt-14 sm:pt-24"><p className="signal-kicker text-accent">The Signal 24 / data room</p><h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">Numbers need<br /><em className="font-normal text-accent">a denominator.</em></h1><p className="mt-8 max-w-2xl text-lg leading-relaxed text-muted-foreground">Published data records show the value, unit, year, geography, definition, source and last verified date beside every comparison.</p></section><section className="signal-container mt-16 border-y border-dashed border-foreground/25 py-12 sm:mt-24 sm:py-16" aria-labelledby="data-room-records-title"><p className="signal-kicker text-accent">Data room / source-linked records</p><h2 id="data-room-records-title" className="mt-3 font-display text-3xl leading-tight">Published datasets and notes</h2>{isLoading ? <div className="mt-6" role="status" aria-live="polite">Loading published data records…</div> : isError ? <div className="mt-6"><ErrorState message="Published data records could not be loaded." onRetry={() => void refetch()} /></div> : records.length === 0 ? <><p className="mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground">No source-linked data record has been published yet. Records will appear here when their source, method and verification notes are ready.</p><Link href="/methodology" className="mt-7 inline-flex items-center gap-2 signal-kicker text-accent hover:underline">Read the methodology <ArrowUpRight size={13} /></Link></> : <div className="mt-7 grid gap-6 md:grid-cols-2">{records.map((story) => <StoryCard key={story.id} story={story} />)}</div>}</section></main>;
+  return <main className="signal-page">
+    <Header />
+    <section className="signal-container pt-14 sm:pt-24">
+      <p className="signal-kicker text-accent">Signal Hub / data room</p>
+      <h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">Numbers need<br /><em className="font-normal text-accent">a denominator.</em></h1>
+      <p className="mt-8 max-w-2xl text-lg leading-relaxed text-muted-foreground">Data records appear here only when their source and verification status are visible. A chart needs a defined value, unit, date, geography and denominator; none is inferred to fill a gap.</p>
+    </section>
+    <section className="signal-container mt-16 border-y border-foreground/20 py-10 sm:mt-24 sm:py-14" aria-labelledby="data-room-records-title">
+      <p className="signal-kicker text-accent">Data room / source-linked records</p>
+      <h2 id="data-room-records-title" className="mt-3 font-display text-3xl leading-tight">Published datasets and notes</h2>
+      {isLoading ? <div className="mt-6" role="status" aria-live="polite">Loading published data records…</div> :
+        isError ? <div className="mt-6"><ErrorState message="Published data records could not be loaded." onRetry={() => void refetch()} /></div> :
+          records.length === 0 ? <>
+            <p className="mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground">No reviewed, source-linked dataset is published yet. The current archive contains no data record that meets this bar, so no chart or numeric comparison is shown.</p>
+            <Link href="/methodology" className="mt-7 inline-flex items-center gap-2 signal-kicker text-accent hover:underline">Read the methodology <ArrowUpRight size={13} /></Link>
+          </> :
+            <div className="mt-7 border-t border-foreground/20">
+              {records.map((story) => <article key={story.id} className="grid gap-5 border-b border-foreground/20 py-7 md:grid-cols-[.25fr_1fr_.62fr] md:gap-10" data-testid={`data-record-${story.id}`}>
+                <div><p className="signal-kicker text-accent">Record date / as supplied</p><time className="mt-2 block font-mono-signal text-xs" dateTime={story.publishedOn ?? undefined}>{formatDate(story.publishedOn)}</time><p className="mt-2 signal-kicker text-muted-foreground">{story.verificationStatus}</p></div>
+                <div><p className="signal-kicker text-muted-foreground">{story.kind} / {story.state || 'National'}</p><Link href={storyPath(story)} className="group mt-2 block"><h3 className="font-display text-3xl leading-tight group-hover:text-accent">{story.title}</h3></Link><p className="mt-3 text-sm leading-relaxed text-muted-foreground">{story.dek}</p></div>
+                <SourceLine story={story} detail />
+              </article>)}
+            </div>}
+    </section>
+  </main>;
 }
 
 function ClerkQueryClientCacheInvalidator() {
@@ -1529,9 +1905,9 @@ const clerkAppearance = {
 };
 
 function SignUpPage() {
-  useSeo({ title: 'Editor account — The Signal 24', description: 'Create an account to request access to the private Signal 24 editorial desk.', robots: 'noindex, nofollow' });
+  useSeo({ title: 'Editor account — Signal Hub', description: 'Create an account to request access to the private Signal Hub editorial desk.', robots: 'noindex, nofollow' });
   return <main className="signal-page"><section className="signal-container flex min-h-[100dvh] flex-col items-center justify-center gap-8 py-12">
-    <Link href="/" className="signal-link font-display text-2xl">The Signal <span className="text-accent">24</span></Link>
+    <Link href="/" className="signal-link font-display text-2xl">SIGNAL <span className="text-accent">HUB</span></Link>
     <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} forceRedirectUrl={`${basePath}/editor`} />
   </section></main>;
 }
@@ -1548,8 +1924,8 @@ function EditorAccessRoute() {
     },
   });
   useSeo({
-    title: 'Editorial desk — The Signal 24',
-    description: 'Private editorial workspace for preparing source-aware Signal 24 records.',
+    title: 'Editorial desk — Signal Hub',
+    description: 'Private editorial workspace for preparing source-aware Signal Hub records.',
     robots: 'noindex, nofollow',
   });
 
