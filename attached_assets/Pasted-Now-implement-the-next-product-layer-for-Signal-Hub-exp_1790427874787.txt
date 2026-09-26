@@ -1,0 +1,368 @@
+Now implement the next product layer for Signal Hub: **explicit Event → Source → Article relationships**.
+
+Do NOT redesign the visual system again.
+Do NOT add decorative features.
+Do NOT infer relationships from article text.
+
+The goal is to make Signal Hub's evidence architecture explicit, traceable and auditable.
+
+## 1. DEFINE THE RELATIONSHIP MODEL
+
+Create explicit relationships between:
+
+ARTICLE
+→ EVENT
+→ SOURCE DOCUMENT
+
+A single article may reference multiple events.
+
+A single event may have multiple source documents.
+
+A single source document may support multiple events.
+
+Use real relational references / IDs in the underlying data model.
+
+Do not create relationships simply because two records have similar titles, dates or keywords.
+
+## 2. ARTICLE PAGE
+
+Add a clearly visible section:
+
+EVIDENCE
+
+For every linked event show:
+
+EVENT
+[Event title]
+
+Record date:
+[Date]
+
+Supported by:
+[Source 1]
+[Source 2]
+
+Each source should display:
+
+Source type
+Source name
+Document title
+Publication date
+Source status
+
+CTA:
+
+VIEW SOURCE →
+
+Do not imply that a source supports an event unless an explicit relationship exists.
+
+## 3. EVENT PAGE / EVENT PANEL
+
+Create an event detail component containing:
+
+EVENT
+
+Title
+
+Record date
+
+Summary
+
+RELATED ARTICLES
+
+List every article explicitly connected to the event.
+
+PRIMARY SOURCES
+
+List every source document explicitly connected to the event.
+
+SECONDARY SOURCES
+
+List secondary material separately.
+
+This distinction is important.
+
+## 4. SOURCE DOCUMENT COMPONENT
+
+Create a reusable source record component:
+
+SOURCE DOCUMENT
+
+[Document title]
+
+Publisher:
+[Organization]
+
+Publication date:
+[Date]
+
+Document type:
+Official document / Court record / Government data / Report / News report / Other
+
+Status:
+Verified
+Unverified
+Archived
+Unavailable
+
+Relationship:
+
+SUPPORTS
+[Event title]
+
+Optional:
+
+CITED BY
+[Article title]
+
+CTA:
+
+VIEW ORIGINAL →
+
+Never fabricate a URL.
+
+If a source URL does not exist, show:
+
+SOURCE LINK UNAVAILABLE
+
+## 5. EVIDENCE CHAIN
+
+For investigations, visually represent the evidence chain:
+
+ARTICLE
+
+↓
+
+EVENT
+
+↓
+
+SOURCE DOCUMENT
+
+↓
+
+ORIGINAL RECORD
+
+Use a subtle vertical relationship diagram.
+
+Each node should be clickable.
+
+The design should feel like an investigative research tool rather than a SaaS workflow diagram.
+
+## 6. SOURCE CONFIDENCE
+
+Do not create a fake numerical “confidence score”.
+
+Instead use explicit source status labels:
+
+PRIMARY SOURCE
+SECONDARY SOURCE
+OFFICIAL RECORD
+ARCHIVED RECORD
+UNVERIFIED
+SOURCE LINK UNAVAILABLE
+
+Only use these labels when the underlying record supports them.
+
+## 7. TIMELINE INTEGRATION
+
+Timeline events should display:
+
+EVENT DATE
+
+EVENT TITLE
+
+SOURCE COUNT
+
+Example:
+
+26 SEP 2026
+Policy change announced
+
+3 SOURCE RECORDS
+
+[View evidence →]
+
+The source count must come from actual relationships.
+
+Do not display “3 sources” unless three source records are explicitly linked.
+
+## 8. TOPIC PAGE
+
+Update the topic relationship map.
+
+Instead of showing only:
+
+TOPIC → EVENT
+
+show:
+
+TOPIC
+│
+├── EVENT
+│     ├── ARTICLE
+│     ├── SOURCE
+│     └── SOURCE
+│
+├── EVENT
+│     └── SOURCE
+│
+└── EVENT
+
+Clearly distinguish:
+
+Documented relationship
+
+Not separately catalogued
+
+No linked source
+
+Do not visually imply evidence where none exists.
+
+## 9. ARCHIVE
+
+Add relationship metadata where available.
+
+Example:
+
+12 SEP 2026
+Government circular issued
+
+ARTICLE
+2 SOURCES
+1 EVENT
+
+Only show counts based on actual relational data.
+
+## 10. SEARCH
+
+Search results should optionally expose:
+
+ARTICLE
+EVENT
+SOURCE
+
+Allow the user to understand whether a result is:
+
+An article
+An event record
+A source document
+
+Do not merge these concepts into one generic content type.
+
+## 11. EMPTY STATES
+
+Create honest states for incomplete relationships.
+
+Example:
+
+NO SOURCES LINKED
+
+“This record has not yet been connected to a source document.”
+
+Another:
+
+NO ARTICLES LINKED
+
+“This event currently has no associated published analysis.”
+
+Another:
+
+SOURCE LINK UNAVAILABLE
+
+“The original source has been recorded, but a directly accessible link is currently unavailable.”
+
+Avoid language implying that the information is false or true. The interface should simply describe the current evidence state.
+
+## 12. EDITOR / ADMIN WORKFLOW
+
+Create an internal relationship-management interface.
+
+An editor should be able to:
+
+Create event
+Create source
+Link article → event
+Link event → source
+Remove relationship
+View all relationships for a record
+
+Use explicit actions such as:
+
+LINK SOURCE
+
+LINK EVENT
+
+REMOVE LINK
+
+Do not automatically generate relationships.
+
+## 13. DATA INTEGRITY RULES
+
+Implement these rules:
+
+1. Every relationship must reference an existing record.
+2. Deleted records cannot leave broken relationships.
+3. Duplicate relationships should be prevented.
+4. Source publication date must remain separate from event record date.
+5. Article publication date must remain separate from both.
+6. Missing source URLs must remain visibly missing.
+7. “Today”, “recent”, or other relative dates must not be stored as factual record dates.
+8. Relationship counts must be calculated from actual linked records.
+
+## 14. VISUAL DESIGN
+
+Keep the existing Signal Hub visual language.
+
+Evidence relationships should use:
+
+* thin editorial rules
+* subtle connecting lines
+* compact metadata
+* serif titles
+* restrained accent color
+* generous spacing
+* document-style source references
+
+Avoid:
+
+* colorful node graphs
+* giant dashboard widgets
+* generic SaaS relationship diagrams
+* excessive cards
+* decorative icons
+
+## 15. PRODUCT PRINCIPLE
+
+Signal Hub should make the following distinction extremely clear:
+
+WHAT WAS REPORTED
+
+WHAT EVENT WAS RECORDED
+
+WHAT SOURCE DOCUMENT SUPPORTS IT
+
+WHAT IS NOT YET DOCUMENTED
+
+The design must never blur these four states.
+
+## 16. VERIFICATION
+
+After implementation:
+
+* run typecheck
+* run production build
+* verify article → event relationships
+* verify event → source relationships
+* verify source → article relationships
+* test records with zero sources
+* test records with multiple sources
+* test records with no associated article
+* verify deleted relationships do not leave broken references
+* verify date labels remain unambiguous
+
+Do not create demo relationships just to make the interface look populated.
+
+Use the current archive data only.
+
+The result should make Signal Hub feel less like a news website and more like a **traceable public evidence archive**.
