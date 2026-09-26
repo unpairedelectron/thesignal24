@@ -33,8 +33,6 @@ import {
 } from "@workspace/api-zod";
 import { requireEditor } from "../middlewares/editorAuth";
 
-const router: IRouter = Router();
-
 const topics = new Set([
   "Latest",
   "Courts & Policy",
@@ -134,11 +132,15 @@ function serializeArticle(
   };
 }
 
-async function getEventDetails(events: EventRow[], includeUnpublishedArticles = false) {
+async function getEventDetails(
+  events: EventRow[],
+  database: typeof db,
+  includeUnpublishedArticles = false,
+) {
   if (events.length === 0) return [];
   const eventIds = events.map((event) => event.id);
   const [sourceLinks, articleLinks] = await Promise.all([
-    db
+    database
       .select({
         eventId: eventSourcesTable.eventId,
         sourceRole: eventSourcesTable.sourceRole,
@@ -151,7 +153,7 @@ async function getEventDetails(events: EventRow[], includeUnpublishedArticles = 
       )
       .where(inArray(eventSourcesTable.eventId, eventIds))
       .orderBy(asc(sourceDocumentsTable.publisher), asc(sourceDocumentsTable.title)),
-    db
+    database
       .select({
         eventId: articleEventsTable.eventId,
         story: storiesTable,
@@ -207,8 +209,8 @@ async function getEventDetails(events: EventRow[], includeUnpublishedArticles = 
   });
 }
 
-async function isPublishedStory(storyId: number) {
-  const [story] = await db
+async function isPublishedStory(storyId: number, database: typeof db) {
+  const [story] = await database
     .select({ id: storiesTable.id })
     .from(storiesTable)
     .innerJoin(issuesTable, eq(storiesTable.issueId, issuesTable.id))
@@ -227,6 +229,10 @@ function isUniqueViolation(error: unknown) {
   return typeof error === "object" && error !== null && "code" in error &&
     (error as { code?: string }).code === "23505";
 }
+
+export function createEvidenceRouter(database: typeof db = db): IRouter {
+const router: IRouter = Router();
+const db = database;
 
 router.get("/events", async (req, res, next): Promise<void> => {
   try {
@@ -249,7 +255,11 @@ router.get("/events", async (req, res, next): Promise<void> => {
       )
       .orderBy(desc(evidenceEventsTable.recordDate), asc(evidenceEventsTable.id))
       .limit(limit);
-    res.json(GetEvidenceEventsResponse.parse({ events: await getEventDetails(events) }));
+    res.json(
+      GetEvidenceEventsResponse.parse({
+        events: await getEventDetails(events, database),
+      }),
+    );
   } catch (error) {
     next(error);
   }
@@ -276,7 +286,7 @@ router.get("/events/:eventId", async (req, res, next): Promise<void> => {
       res.status(404).json({ message: "Event not found" });
       return;
     }
-    const [detail] = await getEventDetails([event]);
+    const [detail] = await getEventDetails([event], database);
     res.json(GetEvidenceEventResponse.parse({ event: detail }));
   } catch (error) {
     next(error);
@@ -290,7 +300,7 @@ router.get("/stories/:storyId/evidence", async (req, res, next): Promise<void> =
       res.status(400).json({ message: "Invalid article id" });
       return;
     }
-    if (!(await isPublishedStory(storyId))) {
+    if (!(await isPublishedStory(storyId, database))) {
       res.status(404).json({ message: "Article not found" });
       return;
     }
@@ -308,7 +318,10 @@ router.get("/stories/:storyId/evidence", async (req, res, next): Promise<void> =
         ),
       )
       .orderBy(desc(evidenceEventsTable.recordDate), asc(evidenceEventsTable.id));
-    const events = await getEventDetails(links.map((link) => link.event));
+    const events = await getEventDetails(
+      links.map((link) => link.event),
+      database,
+    );
     res.json(GetStoryEvidenceResponse.parse({ events }));
   } catch (error) {
     next(error);
@@ -352,7 +365,10 @@ router.get("/sources/:sourceId", async (req, res, next): Promise<void> => {
       res.status(404).json({ message: "Source document not found" });
       return;
     }
-    const details = await getEventDetails(eventLinks.map((link) => link.event));
+    const details = await getEventDetails(
+      eventLinks.map((link) => link.event),
+      database,
+    );
     const citedArticles = new Map<number, ReturnType<typeof serializeArticle>>();
     for (const detail of details) {
       for (const article of detail.articles) citedArticles.set(article.id, article);
@@ -1060,4 +1076,7 @@ router.delete(
   },
 );
 
-export default router;
+return router;
+}
+
+export default createEvidenceRouter();

@@ -244,6 +244,7 @@ paths:
       operationId: getEvidenceEvents
       tags: [evidence]
       summary: List published events and their explicit evidence relationships
+      description: Returns published events only, with explicitly linked published articles and their stored source links. Draft event links and editor audit metadata are not included.
       parameters:
         - name: topic
           in: query
@@ -270,6 +271,7 @@ paths:
       operationId: getEvidenceEvent
       tags: [evidence]
       summary: Get a published event and its explicit relationships
+      description: Returns a published event only, with explicitly linked published articles and stored source links. Draft event links and editor audit metadata are not included.
       parameters:
         - name: eventId
           in: path
@@ -291,6 +293,7 @@ paths:
       operationId: getStoryEvidence
       tags: [evidence]
       summary: Get events and sources explicitly linked to a published article
+      description: Returns only explicitly linked published events and their public evidence relationships.
       parameters:
         - $ref: "#/components/parameters/StoryId"
       responses:
@@ -307,6 +310,7 @@ paths:
       operationId: getSourceDocument
       tags: [evidence]
       summary: Get a source document and its explicit event and article links
+      description: A source is public only when explicitly linked to a published event; returned events and cited articles include published records only.
       parameters:
         - name: sourceId
           in: path
@@ -328,6 +332,7 @@ paths:
       operationId: searchEvidenceRecords
       tags: [evidence]
       summary: Search published articles, events, and source documents separately
+      description: Searches published articles and events, plus sources explicitly linked to published events. Draft records and editor audit metadata are excluded.
       parameters:
         - name: q
           in: query
@@ -347,6 +352,7 @@ paths:
       operationId: getEditorEvidence
       tags: [evidence, editor]
       summary: List evidence records and all stored relationships for editors
+      description: Requires verified editor access. Includes draft records, all stored relationships, and editor-only audit metadata.
       responses:
         "200":
           description: Editorial evidence graph
