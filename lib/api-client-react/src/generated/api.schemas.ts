@@ -382,6 +382,7 @@ export interface EvidenceEventResponse {
 
 export interface StoryEvidenceResponse {
   events: EvidenceEventDetail[];
+  directSources: SourceDocument[];
 }
 
 export interface SourceEventRelationship {
@@ -415,6 +416,13 @@ export interface EditorEventSourceLink {
   linkedAt: string;
 }
 
+export interface EditorArticleSourceLink {
+  article: EvidenceArticle;
+  sourceDocument: SourceDocument;
+  linkedBy: string;
+  linkedAt: string;
+}
+
 export interface EditorEvidenceEvent {
   event: EvidenceEventRecord;
   audit: EvidenceAuditMetadata;
@@ -431,6 +439,7 @@ export interface EditorEvidenceResponse {
   events: EditorEvidenceEvent[];
   sourceDocuments: EditorSourceDocument[];
   articles: EvidenceArticle[];
+  articleSourceLinks: EditorArticleSourceLink[];
 }
 
 export interface EvidenceSearchResult {
@@ -472,6 +481,13 @@ export interface ArticleEventLinkInput {
   articleId: number;
   /** @minimum 1 */
   eventId: number;
+}
+
+export interface ArticleSourceLinkInput {
+  /** @minimum 1 */
+  articleId: number;
+  /** @minimum 1 */
+  sourceDocumentId: number;
 }
 
 export interface EventSourceLinkInput {

@@ -22,6 +22,7 @@ import type {
 import type {
   ArchiveResult,
   ArticleEventLinkInput,
+  ArticleSourceLinkInput,
   CommunityLikeResponse,
   CommunityPost,
   CommunityPostDetail,
@@ -1155,8 +1156,8 @@ export const getGetStoryEvidenceUrl = (storyId: number,) => {
 }
 
 /**
- * Returns only explicitly linked published events and their public evidence relationships.
- * @summary Get events and sources explicitly linked to a published article
+ * Returns explicitly linked published events and directly cited source documents for a published article. Draft records and inferred relationships are excluded.
+ * @summary Get events and directly cited sources for a published article
  */
 export const getStoryEvidence = async (storyId: number, options?: Parameters<typeof customFetch>[1]): Promise<StoryEvidenceResponse> => {
 
@@ -1203,7 +1204,7 @@ export type GetStoryEvidenceQueryError = ErrorType<void>
 
 
 /**
- * @summary Get events and sources explicitly linked to a published article
+ * @summary Get events and directly cited sources for a published article
  */
 
 export function useGetStoryEvidence<TData = Awaited<ReturnType<typeof getStoryEvidence>>, TError = ErrorType<void>>(
@@ -1233,7 +1234,7 @@ export const getGetSourceDocumentUrl = (sourceId: number,) => {
 }
 
 /**
- * A source is public only when explicitly linked to a published event; returned events and cited articles include published records only.
+ * A source is public when explicitly linked to a published event or published article; returned events and cited articles include published records only.
  * @summary Get a source document and its explicit event and article links
  */
 export const getSourceDocument = async (sourceId: number, options?: Parameters<typeof customFetch>[1]): Promise<SourceDocumentResponse> => {
@@ -1318,7 +1319,7 @@ export const getSearchEvidenceRecordsUrl = (params: SearchEvidenceRecordsParams,
 }
 
 /**
- * Searches published articles and events, plus sources explicitly linked to published events. Draft records and editor audit metadata are excluded.
+ * Searches published articles and events, plus sources explicitly linked to published events or published articles. Draft records and editor audit metadata are excluded.
  * @summary Search published articles, events, and source documents separately
  */
 export const searchEvidenceRecords = async (params: SearchEvidenceRecordsParams, options?: Parameters<typeof customFetch>[1]): Promise<EvidenceSearchResponse> => {
@@ -2129,6 +2130,170 @@ export const useUnlinkArticleFromEvent = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getUnlinkArticleFromEventMutationOptions(options));
+    }
+
+export const getLinkArticleToSourceUrl = () => {
+
+
+
+
+  return `/api/editor/article-sources`
+}
+
+/**
+ * @summary Explicitly link an article directly to a source document
+ */
+export const linkArticleToSource = async (articleSourceLinkInput: ArticleSourceLinkInput, options?: Parameters<typeof customFetch>[1]): Promise<EvidenceRelationshipResult> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<EvidenceRelationshipResult>(getLinkArticleToSourceUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(articleSourceLinkInput)
+  }
+);}
+
+
+
+
+
+export const getLinkArticleToSourceMutationKey = () => ['linkArticleToSource'] as const;
+
+export const getLinkArticleToSourceMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof linkArticleToSource>>, TError,LinkArticleToSourceMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof linkArticleToSource>>, TError,LinkArticleToSourceMutationVariables, TContext> => {
+
+const mutationKey = getLinkArticleToSourceMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof linkArticleToSource>>, LinkArticleToSourceMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  linkArticleToSource(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type LinkArticleToSourceMutationResult = NonNullable<Awaited<ReturnType<typeof linkArticleToSource>>>
+    export type LinkArticleToSourceMutationBody = BodyType<ArticleSourceLinkInput>
+    export type LinkArticleToSourceMutationError = ErrorType<void>
+    export type LinkArticleToSourceMutationVariables = {data: BodyType<ArticleSourceLinkInput>}
+
+    /**
+ * @summary Explicitly link an article directly to a source document
+ */
+export const useLinkArticleToSource = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof linkArticleToSource>>, TError,LinkArticleToSourceMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof linkArticleToSource>>,
+        TError,
+        LinkArticleToSourceMutationVariables,
+        TContext
+      > => {
+      return useMutation(getLinkArticleToSourceMutationOptions(options));
+    }
+
+export const getUnlinkArticleFromSourceUrl = (storyId: number,
+    sourceId: number,) => {
+
+
+
+
+  return `/api/editor/article-sources/${storyId}/${sourceId}`
+}
+
+/**
+ * @summary Remove an explicit direct article-to-source relationship
+ */
+export const unlinkArticleFromSource = async (storyId: number,
+    sourceId: number, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getUnlinkArticleFromSourceUrl(storyId,sourceId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getUnlinkArticleFromSourceMutationKey = () => ['unlinkArticleFromSource'] as const;
+
+export const getUnlinkArticleFromSourceMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unlinkArticleFromSource>>, TError,UnlinkArticleFromSourceMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof unlinkArticleFromSource>>, TError,UnlinkArticleFromSourceMutationVariables, TContext> => {
+
+const mutationKey = getUnlinkArticleFromSourceMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof unlinkArticleFromSource>>, UnlinkArticleFromSourceMutationVariables> = (props) => {
+          const {storyId,sourceId} = props ?? {};
+
+          return  unlinkArticleFromSource(storyId,sourceId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UnlinkArticleFromSourceMutationResult = NonNullable<Awaited<ReturnType<typeof unlinkArticleFromSource>>>
+
+    export type UnlinkArticleFromSourceMutationError = ErrorType<void>
+    export type UnlinkArticleFromSourceMutationVariables = {storyId: number;sourceId: number}
+
+    /**
+ * @summary Remove an explicit direct article-to-source relationship
+ */
+export const useUnlinkArticleFromSource = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unlinkArticleFromSource>>, TError,UnlinkArticleFromSourceMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof unlinkArticleFromSource>>,
+        TError,
+        UnlinkArticleFromSourceMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUnlinkArticleFromSourceMutationOptions(options));
     }
 
 export const getLinkSourceToEventUrl = () => {

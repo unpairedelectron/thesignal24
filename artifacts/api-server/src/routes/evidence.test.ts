@@ -5,6 +5,7 @@ import express, { type Express } from "express";
 import { test } from "node:test";
 import {
   articleEventsTable,
+  articleSourcesTable,
   db,
   eventSourcesTable,
   evidenceEventsTable,
@@ -36,6 +37,14 @@ async function close(server: ReturnType<Express["listen"]>) {
 async function getJson(baseUrl: string, path: string) {
   const response = await fetch(`${baseUrl}${path}`);
   return { response, body: (await response.json()) as Record<string, any> };
+}
+
+async function postJson(baseUrl: string, path: string, body: unknown) {
+  return fetch(`${baseUrl}${path}`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
 }
 
 function collectKeys(value: unknown): string[] {
@@ -137,7 +146,12 @@ test("public evidence routes exclude draft-only records, links, and audit data",
         ])
         .returning({ id: evidenceEventsTable.id });
 
-      const [sharedSource, draftOnlySource] = await tx
+      const [
+        sharedSource,
+        draftOnlySource,
+        publishedDirectOnlySource,
+        draftDirectOnlySource,
+      ] = await tx
         .insert(sourceDocumentsTable)
         .values([
           {
@@ -156,6 +170,26 @@ test("public evidence routes exclude draft-only records, links, and audit data",
             publicationDate: "2098-01-02",
             documentType: "report",
             sourceUrl: "https://example.com/draft-only",
+            status: "verified",
+            createdBy: auditMarker,
+            updatedBy: auditMarker,
+          },
+          {
+            title: `${token} published direct-only source`,
+            publisher: `${token} direct publisher`,
+            publicationDate: "2098-01-03",
+            documentType: "report",
+            sourceUrl: "https://example.com/published-direct",
+            status: "verified",
+            createdBy: auditMarker,
+            updatedBy: auditMarker,
+          },
+          {
+            title: `${token} draft direct-only source`,
+            publisher: `${token} draft direct publisher`,
+            publicationDate: "2098-01-04",
+            documentType: "report",
+            sourceUrl: "https://example.com/draft-direct",
             status: "verified",
             createdBy: auditMarker,
             updatedBy: auditMarker,
@@ -202,6 +236,18 @@ test("public evidence routes exclude draft-only records, links, and audit data",
           eventId: draftEvent.id,
           sourceDocumentId: draftOnlySource.id,
           sourceRole: "secondary",
+          createdBy: auditMarker,
+        },
+      ]);
+      await tx.insert(articleSourcesTable).values([
+        {
+          articleId: publishedArticle.id,
+          sourceDocumentId: publishedDirectOnlySource.id,
+          createdBy: auditMarker,
+        },
+        {
+          articleId: draftArticle.id,
+          sourceDocumentId: draftDirectOnlySource.id,
           createdBy: auditMarker,
         },
       ]);
@@ -278,6 +324,12 @@ test("public evidence routes exclude draft-only records, links, and audit data",
           ),
           [publishedEvent.id],
         );
+        assert.deepEqual(
+          publishedArticleEvidence.body.directSources.map(
+            (source: any) => source.id,
+          ),
+          [publishedDirectOnlySource.id],
+        );
         assert.equal(draftArticleEvidence.response.status, 404);
 
         const sharedSourceDetail = await getJson(
@@ -287,6 +339,14 @@ test("public evidence routes exclude draft-only records, links, and audit data",
         const draftOnlySourceDetail = await getJson(
           baseUrl,
           `/sources/${draftOnlySource.id}`,
+        );
+        const publishedDirectOnlySourceDetail = await getJson(
+          baseUrl,
+          `/sources/${publishedDirectOnlySource.id}`,
+        );
+        const draftDirectOnlySourceDetail = await getJson(
+          baseUrl,
+          `/sources/${draftDirectOnlySource.id}`,
         );
         assert.deepEqual(
           sharedSourceDetail.body.supportingEvents.map(
@@ -301,6 +361,18 @@ test("public evidence routes exclude draft-only records, links, and audit data",
           [publishedArticle.id],
         );
         assert.equal(draftOnlySourceDetail.response.status, 404);
+        assert.equal(publishedDirectOnlySourceDetail.response.status, 200);
+        assert.deepEqual(
+          publishedDirectOnlySourceDetail.body.supportingEvents,
+          [],
+        );
+        assert.deepEqual(
+          publishedDirectOnlySourceDetail.body.citedByArticles.map(
+            (article: any) => article.id,
+          ),
+          [publishedArticle.id],
+        );
+        assert.equal(draftDirectOnlySourceDetail.response.status, 404);
 
         const search = await getJson(
           baseUrl,
@@ -345,16 +417,108 @@ test("public evidence routes exclude draft-only records, links, and audit data",
               record.id === draftOnlySource.id,
           ),
         );
+        assert(
+          searchRecords.some(
+            (record: any) =>
+              record.resultType === "source" &&
+              record.id === publishedDirectOnlySource.id,
+          ),
+        );
+        assert(
+          !searchRecords.some(
+            (record: any) =>
+              record.resultType === "source" &&
+              record.id === draftDirectOnlySource.id,
+          ),
+        );
         const publishedArticleResult = searchRecords.find(
           (record: any) =>
             record.resultType === "article" &&
             record.id === publishedArticle.id,
         );
         assert.equal(publishedArticleResult.eventCount, 1);
-        assert.equal(publishedArticleResult.sourceCount, 1);
+        assert.equal(publishedArticleResult.sourceCount, 2);
 
         const editorResponse = await getJson(baseUrl, "/editor/evidence");
         assert.equal(editorResponse.response.status, 401);
+
+        const editorApp = express();
+        const editorAuth: express.RequestHandler = (req, _res, next) => {
+          req.editorIdentity = {
+            id: "test-editor",
+            displayName: "Test editor",
+          };
+          next();
+        };
+        editorApp.use(express.json());
+        editorApp.use(
+          "/api",
+          createEvidenceRouter(tx as unknown as typeof db, editorAuth),
+        );
+        editorApp.use(
+          (
+            error: unknown,
+            _req: unknown,
+            res: express.Response,
+            _next: unknown,
+          ) => {
+            res.status(500).json({
+              message:
+                error instanceof Error ? error.message : "Unexpected test error",
+            });
+          },
+        );
+        const {
+          server: editorServer,
+          baseUrl: editorBaseUrl,
+        } = await listen(editorApp);
+        try {
+          const directLinkInput = {
+            articleId: publishedArticle.id,
+            sourceDocumentId: sharedSource.id,
+          };
+          const createDirectLink = await postJson(
+            editorBaseUrl,
+            "/editor/article-sources",
+            directLinkInput,
+          );
+          assert.equal(createDirectLink.status, 201);
+          assert.deepEqual(await createDirectLink.json(), { linked: true });
+
+          const duplicateDirectLink = await postJson(
+            editorBaseUrl,
+            "/editor/article-sources",
+            directLinkInput,
+          );
+          assert.equal(duplicateDirectLink.status, 400);
+
+          const editorGraph = await getJson(editorBaseUrl, "/editor/evidence");
+          const directEditorLink = editorGraph.body.articleSourceLinks.find(
+            (link: any) =>
+              link.article.id === publishedArticle.id &&
+              link.sourceDocument.id === sharedSource.id,
+          );
+          assert.equal(directEditorLink.linkedBy, "test-editor");
+
+          const removeDirectLink = await fetch(
+            `${editorBaseUrl}/editor/article-sources/${publishedArticle.id}/${sharedSource.id}`,
+            { method: "DELETE" },
+          );
+          assert.equal(removeDirectLink.status, 204);
+          const updatedEditorGraph = await getJson(
+            editorBaseUrl,
+            "/editor/evidence",
+          );
+          assert(
+            !updatedEditorGraph.body.articleSourceLinks.some(
+              (link: any) =>
+                link.article.id === publishedArticle.id &&
+                link.sourceDocument.id === sharedSource.id,
+            ),
+          );
+        } finally {
+          await close(editorServer);
+        }
 
         const publicPayloads = [
           events.body,
@@ -364,6 +528,8 @@ test("public evidence routes exclude draft-only records, links, and audit data",
           draftArticleEvidence.body,
           sharedSourceDetail.body,
           draftOnlySourceDetail.body,
+          publishedDirectOnlySourceDetail.body,
+          draftDirectOnlySourceDetail.body,
           search.body,
         ];
         const publicKeys = new Set(collectKeys(publicPayloads));

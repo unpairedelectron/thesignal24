@@ -27,9 +27,11 @@ import {
   useGetSourceDocument,
   useGetStoryEvidence,
   useLinkArticleToEvent,
+  useLinkArticleToSource,
   useLinkSourceToEvent,
   useSearchEvidenceRecords,
   useUnlinkArticleFromEvent,
+  useUnlinkArticleFromSource,
   useUnlinkSourceFromEvent,
   useUpdateEvidenceEvent,
   useUpdateSourceDocument,
@@ -516,7 +518,7 @@ export function EvidenceSourceDetailPage() {
     source ? `${source.title} — Signal Hub` : "Source document — Signal Hub",
     source
       ? `${source.publisher} source document record with publication metadata and explicit event/article links.`
-      : "A source document record and its explicitly linked events and articles.",
+      : "A source document record and its explicitly linked published events and articles.",
   );
 
   if (!Number.isInteger(sourceId) || sourceId <= 0) {
@@ -524,7 +526,7 @@ export function EvidenceSourceDetailPage() {
   }
   if (query.isLoading) return <EvidencePageMessage title="Opening source record" text="Loading published evidence…" />;
   if (query.isError || !data || !source) {
-    return <EvidencePageMessage title="Source document not found" text="This source may not have a published event relationship or may have moved." />;
+    return <EvidencePageMessage title="Source document not found" text="This source may not have a published article or event relationship, or may have moved." />;
   }
 
   return (
@@ -614,6 +616,7 @@ export function ArticleEvidenceSection({ storyId }: { storyId: number }) {
   }
   if (query.isLoading) return null;
   const events = query.data?.events ?? [];
+  const directSources = query.data?.directSources ?? [];
   return (
     <section className="mt-12 border-t border-foreground/20 pt-8" aria-labelledby="article-evidence-title">
       <div className="flex flex-wrap items-end justify-between gap-3">
@@ -641,10 +644,22 @@ export function ArticleEvidenceSection({ storyId }: { storyId: number }) {
             </div>
           ))}
         </div>
-      ) : (
+      ) : !directSources.length ? (
         <p className="mt-5 border border-dashed border-foreground/25 p-5 text-sm leading-relaxed text-muted-foreground">
           No event or source documents are explicitly linked to this article yet.
         </p>
+      ) : null}
+      {directSources.length > 0 && (
+        <div className="mt-8 border-t border-foreground/15 pt-6">
+          <p className="signal-kicker text-accent">
+            Directly cited source documents · {directSources.length}
+          </p>
+          <div className="mt-4 grid gap-3 lg:grid-cols-2">
+            {directSources.map((source) => (
+              <SourceLinkCard key={source.id} source={source} />
+            ))}
+          </div>
+        </div>
       )}
       <p className="mt-5 signal-kicker text-muted-foreground">
         These links are editorially maintained; they are not inferred from article text.
@@ -709,6 +724,8 @@ export function EditorEvidenceDesk() {
   const [articleId, setArticleId] = useState("");
   const [eventId, setEventId] = useState("");
   const [sourceDocumentId, setSourceDocumentId] = useState("");
+  const [directArticleId, setDirectArticleId] = useState("");
+  const [directSourceDocumentId, setDirectSourceDocumentId] = useState("");
   const [sourceRole, setSourceRole] = useState<EvidenceSourceRole>("primary");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -720,7 +737,9 @@ export function EditorEvidenceDesk() {
   const updateSource = useUpdateSourceDocument();
   const deleteSource = useDeleteSourceDocument();
   const linkArticle = useLinkArticleToEvent();
+  const linkArticleSource = useLinkArticleToSource();
   const unlinkArticle = useUnlinkArticleFromEvent();
+  const unlinkArticleSource = useUnlinkArticleFromSource();
   const linkSource = useLinkSourceToEvent();
   const unlinkSource = useUnlinkSourceFromEvent();
 
@@ -823,6 +842,29 @@ export function EditorEvidenceDesk() {
     );
   }
 
+  function submitDirectSourceLink(formEvent: FormEvent<HTMLFormElement>) {
+    formEvent.preventDefault();
+    const selectedArticleId = Number(directArticleId);
+    const selectedSourceId = Number(directSourceDocumentId);
+    if (!selectedArticleId || !selectedSourceId) return;
+    linkArticleSource.mutate(
+      {
+        data: {
+          articleId: selectedArticleId,
+          sourceDocumentId: selectedSourceId,
+        },
+      },
+      {
+        onSuccess: () => {
+          void refresh("Source document directly linked to article.");
+          setDirectSourceDocumentId("");
+        },
+        onError: (reason) =>
+          failure("Source document could not be directly linked.", reason),
+      },
+    );
+  }
+
   function removeEvent(id: number) {
     if (!window.confirm("Delete this event and all article/source relationships attached to it? This cannot be undone.")) return;
     deleteEvent.mutate(
@@ -839,7 +881,7 @@ export function EditorEvidenceDesk() {
   }
 
   function removeSource(id: number) {
-    if (!window.confirm("Delete this source document and all event relationships attached to it? This cannot be undone.")) return;
+    if (!window.confirm("Delete this source document and all article and event relationships attached to it? This cannot be undone.")) return;
     deleteSource.mutate(
       { sourceId: id },
       {
@@ -858,6 +900,11 @@ export function EditorEvidenceDesk() {
   );
   const alreadyLinkedSources = new Set(
     selectedEvent?.sourceLinks.map((link) => link.sourceDocument.id) ?? [],
+  );
+  const alreadyLinkedDirectSources = new Set(
+    query.data?.articleSourceLinks
+      .filter((link) => String(link.article.id) === directArticleId)
+      .map((link) => link.sourceDocument.id) ?? [],
   );
 
   if (query.isLoading) {
@@ -999,6 +1046,27 @@ export function EditorEvidenceDesk() {
                 <button type="submit" disabled={!eventId || !sourceDocumentId || linkSource.isPending} className="inline-flex items-center justify-center gap-2 rounded-full border border-foreground/25 px-4 py-3 signal-kicker disabled:opacity-40"><Link2 size={13} /> Link source</button>
               </div>
             </form>
+            <form onSubmit={submitDirectSourceLink} className="mt-5 grid gap-3 border-t border-foreground/15 pt-4">
+              <p className="signal-kicker text-accent">Direct article citation · independent of events</p>
+              <label className="grid gap-2 text-sm">Article
+                <select value={directArticleId} onChange={(e) => {
+                  setDirectArticleId(e.target.value);
+                  setDirectSourceDocumentId("");
+                }} className="editor-input">
+                  <option value="">Choose an article</option>
+                  {articles.map((article) => <option key={article.id} value={article.id}>{article.title} · {humanize(article.workflowStatus ?? "draft")}</option>)}
+                </select>
+              </label>
+              <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+                <label className="grid gap-2 text-sm">Source document
+                  <select value={directSourceDocumentId} onChange={(e) => setDirectSourceDocumentId(e.target.value)} className="editor-input" disabled={!directArticleId}>
+                    <option value="">Choose a source document</option>
+                    {sources.filter((item) => !alreadyLinkedDirectSources.has(item.sourceDocument.id)).map((item) => <option key={item.sourceDocument.id} value={item.sourceDocument.id}>{item.sourceDocument.title}</option>)}
+                  </select>
+                </label>
+                <button type="submit" disabled={!directArticleId || !directSourceDocumentId || linkArticleSource.isPending} className="inline-flex items-center justify-center gap-2 rounded-full border border-foreground/25 px-4 py-3 signal-kicker disabled:opacity-40"><Link2 size={13} /> Link source directly</button>
+              </div>
+            </form>
           </section>
 
           <section>
@@ -1052,6 +1120,42 @@ export function EditorEvidenceDesk() {
                 </article>
               ))}
             </div> : <p className="py-6 text-sm text-muted-foreground">No event records have been created.</p>}
+          </section>
+
+          <section>
+            <div className="border-b border-foreground/20 pb-3">
+              <p className="signal-kicker text-accent">Direct article citations</p>
+              <h2 className="mt-1 font-display text-2xl">Article/source relationships</h2>
+            </div>
+            {query.data.articleSourceLinks.length ? (
+              <div className="mt-3 divide-y divide-foreground/15">
+                {query.data.articleSourceLinks.map((link) => (
+                  <article key={`${link.article.id}-${link.sourceDocument.id}`} className="flex flex-wrap items-start justify-between gap-3 py-4">
+                    <div>
+                      <Link href={link.article.canonicalPath} className="font-display text-xl hover:text-accent">{link.article.title}</Link>
+                      <p className="mt-1 text-sm text-muted-foreground">Direct source: {link.sourceDocument.title}</p>
+                      <p className="mt-2 signal-kicker text-muted-foreground">Linked by {link.linkedBy} · {displayDate(link.linkedAt)}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => unlinkArticleSource.mutate(
+                        { storyId: link.article.id, sourceId: link.sourceDocument.id },
+                        {
+                          onSuccess: () => void refresh("Direct article/source link removed."),
+                          onError: (reason) => failure("Direct article/source link could not be removed.", reason),
+                        },
+                      )}
+                      className="text-destructive"
+                      aria-label={`Unlink ${link.sourceDocument.title} from ${link.article.title}`}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <p className="py-6 text-sm text-muted-foreground">No direct article/source links have been created.</p>
+            )}
           </section>
 
           <section>

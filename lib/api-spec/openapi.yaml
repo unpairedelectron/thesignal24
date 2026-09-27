@@ -292,8 +292,8 @@ paths:
     get:
       operationId: getStoryEvidence
       tags: [evidence]
-      summary: Get events and sources explicitly linked to a published article
-      description: Returns only explicitly linked published events and their public evidence relationships.
+      summary: Get events and directly cited sources for a published article
+      description: Returns explicitly linked published events and directly cited source documents for a published article. Draft records and inferred relationships are excluded.
       parameters:
         - $ref: "#/components/parameters/StoryId"
       responses:
@@ -310,7 +310,7 @@ paths:
       operationId: getSourceDocument
       tags: [evidence]
       summary: Get a source document and its explicit event and article links
-      description: A source is public only when explicitly linked to a published event; returned events and cited articles include published records only.
+      description: A source is public when explicitly linked to a published event or published article; returned events and cited articles include published records only.
       parameters:
         - name: sourceId
           in: path
@@ -332,7 +332,7 @@ paths:
       operationId: searchEvidenceRecords
       tags: [evidence]
       summary: Search published articles, events, and source documents separately
-      description: Searches published articles and events, plus sources explicitly linked to published events. Draft records and editor audit metadata are excluded.
+      description: Searches published articles and events, plus sources explicitly linked to published events or published articles. Draft records and editor audit metadata are excluded.
       parameters:
         - name: q
           in: query
@@ -553,6 +553,54 @@ paths:
             type: integer
             minimum: 1
         - $ref: "#/components/parameters/StoryId"
+      responses:
+        "204":
+          description: Relationship removed
+        "404":
+          description: Relationship not found
+        "401":
+          description: Sign-in required
+        "403":
+          description: Verified editor access required
+  /editor/article-sources:
+    post:
+      operationId: linkArticleToSource
+      tags: [evidence, editor]
+      summary: Explicitly link an article directly to a source document
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ArticleSourceLinkInput"
+      responses:
+        "201":
+          description: Article-to-source relationship created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvidenceRelationshipResult"
+        "400":
+          description: Invalid or duplicate relationship
+        "404":
+          description: Article or source document not found
+        "401":
+          description: Sign-in required
+        "403":
+          description: Verified editor access required
+  /editor/article-sources/{storyId}/{sourceId}:
+    delete:
+      operationId: unlinkArticleFromSource
+      tags: [evidence, editor]
+      summary: Remove an explicit direct article-to-source relationship
+      parameters:
+        - $ref: "#/components/parameters/StoryId"
+        - name: sourceId
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
       responses:
         "204":
           description: Relationship removed
@@ -1584,7 +1632,11 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/EvidenceEventDetail"
-      required: [events]
+        directSources:
+          type: array
+          items:
+            $ref: "#/components/schemas/SourceDocument"
+      required: [events, directSources]
     SourceEventRelationship:
       type: object
       properties:
@@ -1645,6 +1697,19 @@ components:
           type: string
           format: date-time
       required: [sourceDocument, sourceRole, linkedBy, linkedAt]
+    EditorArticleSourceLink:
+      type: object
+      properties:
+        article:
+          $ref: "#/components/schemas/EvidenceArticle"
+        sourceDocument:
+          $ref: "#/components/schemas/SourceDocument"
+        linkedBy:
+          type: string
+        linkedAt:
+          type: string
+          format: date-time
+      required: [article, sourceDocument, linkedBy, linkedAt]
     EditorEvidenceEvent:
       type: object
       properties:
@@ -1684,7 +1749,11 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/EvidenceArticle"
-      required: [events, sourceDocuments, articles]
+        articleSourceLinks:
+          type: array
+          items:
+            $ref: "#/components/schemas/EditorArticleSourceLink"
+      required: [events, sourceDocuments, articles, articleSourceLinks]
     EvidenceSearchResult:
       type: object
       properties:
@@ -1745,6 +1814,16 @@ components:
           type: integer
           minimum: 1
       required: [articleId, eventId]
+    ArticleSourceLinkInput:
+      type: object
+      properties:
+        articleId:
+          type: integer
+          minimum: 1
+        sourceDocumentId:
+          type: integer
+          minimum: 1
+      required: [articleId, sourceDocumentId]
     EventSourceLinkInput:
       type: object
       properties:

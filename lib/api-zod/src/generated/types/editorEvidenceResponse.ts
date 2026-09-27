@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { EditorArticleSourceLink } from './editorArticleSourceLink';
 import type { EditorEvidenceEvent } from './editorEvidenceEvent';
 import type { EditorSourceDocument } from './editorSourceDocument';
 import type { EvidenceArticle } from './evidenceArticle';
@@ -13,4 +14,5 @@ export interface EditorEvidenceResponse {
   events: EditorEvidenceEvent[];
   sourceDocuments: EditorSourceDocument[];
   articles: EvidenceArticle[];
+  articleSourceLinks: EditorArticleSourceLink[];
 }

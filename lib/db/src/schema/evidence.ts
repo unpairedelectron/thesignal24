@@ -96,6 +96,28 @@ export const eventSourcesTable = pgTable(
   }),
 );
 
+export const articleSourcesTable = pgTable(
+  "publication_article_sources",
+  {
+    id: serial("id").primaryKey(),
+    articleId: integer("article_id")
+      .notNull()
+      .references(() => storiesTable.id, { onDelete: "cascade" }),
+    sourceDocumentId: integer("source_document_id")
+      .notNull()
+      .references(() => sourceDocumentsTable.id, { onDelete: "cascade" }),
+    createdBy: text("created_by").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => ({
+    articleSourceIndex: uniqueIndex(
+      "publication_article_sources_article_source_idx",
+    ).on(table.articleId, table.sourceDocumentId),
+  }),
+);
+
 export const insertEvidenceEventSchema = createInsertSchema(
   evidenceEventsTable,
 ).omit({
@@ -122,6 +144,12 @@ export const insertEventSourceSchema = createInsertSchema(
   id: true,
   createdAt: true,
 });
+export const insertArticleSourceSchema = createInsertSchema(
+  articleSourcesTable,
+).omit({
+  id: true,
+  createdAt: true,
+});
 
 export type EvidenceEvent = typeof evidenceEventsTable.$inferSelect;
 export type InsertEvidenceEvent = z.infer<typeof insertEvidenceEventSchema>;
@@ -131,3 +159,5 @@ export type ArticleEvent = typeof articleEventsTable.$inferSelect;
 export type InsertArticleEvent = z.infer<typeof insertArticleEventSchema>;
 export type EventSource = typeof eventSourcesTable.$inferSelect;
 export type InsertEventSource = z.infer<typeof insertEventSourceSchema>;
+export type ArticleSource = typeof articleSourcesTable.$inferSelect;
+export type InsertArticleSource = z.infer<typeof insertArticleSourceSchema>;

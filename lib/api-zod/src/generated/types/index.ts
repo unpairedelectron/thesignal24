@@ -8,6 +8,7 @@
 
 export * from './archiveResult';
 export * from './articleEventLinkInput';
+export * from './articleSourceLinkInput';
 export * from './communityLikeResponse';
 export * from './communityPost';
 export * from './communityPostDetail';
@@ -38,6 +39,7 @@ export * from './discoveryItemInput';
 export * from './discoveryItemReviewInput';
 export * from './discoveryItemStatus';
 export * from './editorArticleEventLink';
+export * from './editorArticleSourceLink';
 export * from './editorContentSourcesResponse';
 export * from './editorDiscoveryItemsResponse';
 export * from './editorEventSourceLink';

@@ -590,8 +590,8 @@ export const GetEvidenceEventResponse = zod.object({
 
 
 /**
- * Returns only explicitly linked published events and their public evidence relationships.
- * @summary Get events and sources explicitly linked to a published article
+ * Returns explicitly linked published events and directly cited source documents for a published article. Draft records and inferred relationships are excluded.
+ * @summary Get events and directly cited sources for a published article
  */
 export const GetStoryEvidenceParams = zod.object({
   "storyId": zod.coerce.number().int()
@@ -605,6 +605,7 @@ export const getStoryEvidenceResponseEventsItemArticleCountMin = 0;
 
 export const getStoryEvidenceResponseEventsItemSourceCountMin = 0;
 
+export const getStoryEvidenceResponseDirectSourcesItemPublicationDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
 
 
 export const GetStoryEvidenceResponse = zod.object({
@@ -648,12 +649,21 @@ export const GetStoryEvidenceResponse = zod.object({
 })),
   "articleCount": zod.number().int().min(getStoryEvidenceResponseEventsItemArticleCountMin),
   "sourceCount": zod.number().int().min(getStoryEvidenceResponseEventsItemSourceCountMin)
+})),
+  "directSources": zod.array(zod.object({
+  "id": zod.number().int(),
+  "title": zod.string(),
+  "publisher": zod.string(),
+  "publicationDate": zod.string().regex(getStoryEvidenceResponseDirectSourcesItemPublicationDateRegExp).nullable(),
+  "documentType": zod.enum(['official-document', 'court-record', 'government-data', 'report', 'news-report', 'other']),
+  "sourceUrl": zod.string().url().nullable(),
+  "status": zod.enum(['verified', 'unverified', 'archived', 'unavailable'])
 }))
 })
 
 
 /**
- * A source is public only when explicitly linked to a published event; returned events and cited articles include published records only.
+ * A source is public when explicitly linked to a published event or published article; returned events and cited articles include published records only.
  * @summary Get a source document and its explicit event and article links
  */
 
@@ -704,7 +714,7 @@ export const GetSourceDocumentResponse = zod.object({
 
 
 /**
- * Searches published articles and events, plus sources explicitly linked to published events. Draft records and editor audit metadata are excluded.
+ * Searches published articles and events, plus sources explicitly linked to published events or published articles. Draft records and editor audit metadata are excluded.
  * @summary Search published articles, events, and source documents separately
  */
 
@@ -751,6 +761,8 @@ export const getEditorEvidenceResponseEventsItemArticleLinksItemArticleRecordDat
 export const getEditorEvidenceResponseEventsItemSourceLinksItemSourceDocumentPublicationDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
 export const getEditorEvidenceResponseSourceDocumentsItemSourceDocumentPublicationDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
 export const getEditorEvidenceResponseArticlesItemRecordDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const getEditorEvidenceResponseArticleSourceLinksItemArticleRecordDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const getEditorEvidenceResponseArticleSourceLinksItemSourceDocumentPublicationDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
 
 
 export const GetEditorEvidenceResponse = zod.object({
@@ -826,6 +838,30 @@ export const GetEditorEvidenceResponse = zod.object({
   "canonicalPath": zod.string(),
   "verificationStatus": zod.enum(['unverified', 'source-linked', 'verified']),
   "workflowStatus": zod.enum(['draft', 'review', 'scheduled', 'published', 'archived']).optional()
+})),
+  "articleSourceLinks": zod.array(zod.object({
+  "article": zod.object({
+  "id": zod.number().int(),
+  "title": zod.string(),
+  "topic": zod.enum(['Latest', 'Courts & Policy', 'States', 'History', 'Ground Reports', 'Data & Notes']),
+  "kind": zod.enum(['Article', 'Paper note', 'Archive', 'Explainer']),
+  "recordDate": zod.string().regex(getEditorEvidenceResponseArticleSourceLinksItemArticleRecordDateRegExp).nullable(),
+  "articlePublishedAt": zod.coerce.date().nullable(),
+  "canonicalPath": zod.string(),
+  "verificationStatus": zod.enum(['unverified', 'source-linked', 'verified']),
+  "workflowStatus": zod.enum(['draft', 'review', 'scheduled', 'published', 'archived']).optional()
+}),
+  "sourceDocument": zod.object({
+  "id": zod.number().int(),
+  "title": zod.string(),
+  "publisher": zod.string(),
+  "publicationDate": zod.string().regex(getEditorEvidenceResponseArticleSourceLinksItemSourceDocumentPublicationDateRegExp).nullable(),
+  "documentType": zod.enum(['official-document', 'court-record', 'government-data', 'report', 'news-report', 'other']),
+  "sourceUrl": zod.string().url().nullable(),
+  "status": zod.enum(['verified', 'unverified', 'archived', 'unavailable'])
+}),
+  "linkedBy": zod.string(),
+  "linkedAt": zod.coerce.date()
 }))
 })
 
@@ -1015,6 +1051,37 @@ export const UnlinkArticleFromEventParams = zod.object({
 })
 
 export const UnlinkArticleFromEventResponse = zod.void()
+
+
+/**
+ * @summary Explicitly link an article directly to a source document
+ */
+
+
+
+
+export const LinkArticleToSourceBody = zod.object({
+  "articleId": zod.number().int().min(1),
+  "sourceDocumentId": zod.number().int().min(1)
+})
+
+export const LinkArticleToSourceResponse = zod.object({
+  "linked": zod.boolean()
+})
+
+
+/**
+ * @summary Remove an explicit direct article-to-source relationship
+ */
+
+
+
+export const UnlinkArticleFromSourceParams = zod.object({
+  "storyId": zod.coerce.number().int(),
+  "sourceId": zod.coerce.number().int().min(1)
+})
+
+export const UnlinkArticleFromSourceResponse = zod.void()
 
 
 /**
