@@ -1287,6 +1287,74 @@ paths:
           description: Verified editor access required
         "404":
           description: Candidate not found
+  /editor/image-candidates/{candidateId}/recheck:
+    post:
+      operationId: recheckEditorImageCandidateSource
+      tags: [editor, evidence]
+      summary: Compare a saved candidate with current Commons terms
+      description: Requires verified editor access. This preview does not modify the saved candidate.
+      parameters:
+        - name: candidateId
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        "200":
+          description: Current terms and fields that differ from the saved snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EditorImageCandidateSourceRecheckPreview"
+        "400":
+          description: Invalid candidate ID
+        "401":
+          description: Sign-in required
+        "403":
+          description: Verified editor access required
+        "404":
+          description: Candidate or original Commons file not found
+        "502":
+          description: Wikimedia Commons is unavailable
+  /editor/image-candidates/{candidateId}/recheck/apply:
+    post:
+      operationId: applyEditorImageCandidateSourceRecheck
+      tags: [editor, evidence]
+      summary: Apply a confirmed Commons rights-metadata change
+      description: Requires verified editor access. The server rechecks the source against the preview; changed rights terms reset review to pending.
+      parameters:
+        - name: candidateId
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EditorImageCandidateSourceRecheckInput"
+      responses:
+        "200":
+          description: Candidate after applying the confirmed source metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EditorImageCandidateSourceRecheckApplyResponse"
+        "400":
+          description: Invalid candidate or preview data
+        "401":
+          description: Sign-in required
+        "403":
+          description: Verified editor access required
+        "404":
+          description: Candidate or original Commons file not found
+        "409":
+          description: Candidate or source metadata changed since the preview
+        "502":
+          description: Wikimedia Commons is unavailable
   /editor/image-candidates/{candidateId}/rights:
     patch:
       operationId: reviewEditorImageCandidateRights
@@ -2753,6 +2821,45 @@ components:
           minLength: 1
           maxLength: 2000
       required: [rightsStatus, reviewNotes]
+    EditorImageCandidateRightsMetadata:
+      type: object
+      properties:
+        license:
+          type: string
+        licenseUrl:
+          type: ["string", "null"]
+          format: uri
+        creator:
+          type: string
+        credit:
+          type: string
+        copyright:
+          type: string
+        usageRights:
+          type: string
+      required: [license, licenseUrl, creator, credit, copyright, usageRights]
+    EditorImageCandidateSourceRecheckPreview:
+      type: object
+      properties:
+        candidateId:
+          type: integer
+        checkedAt:
+          type: string
+          format: date-time
+        currentMetadata:
+          $ref: "#/components/schemas/EditorImageCandidateRightsMetadata"
+        changedFields:
+          type: array
+          items:
+            type: string
+            enum: [license, licenseUrl, creator, credit, copyright, usageRights]
+      required: [candidateId, checkedAt, currentMetadata, changedFields]
+    EditorImageCandidateSourceRecheckInput:
+      type: object
+      properties:
+        expectedMetadata:
+          $ref: "#/components/schemas/EditorImageCandidateRightsMetadata"
+      required: [expectedMetadata]
     EditorImageCandidate:
       type: object
       properties:
@@ -2814,6 +2921,14 @@ components:
           type: string
           format: date-time
       required: [id, discoveryItemId, source, fileTitle, imageUrl, thumbnailUrl, filePageUrl, license, licenseUrl, creator, credit, copyright, usageRights, altText, caption, rightsStatus, reviewNotes, reviewedBy, reviewedAt, discoveredAt, createdBy, createdAt, updatedBy, updatedAt]
+    EditorImageCandidateSourceRecheckApplyResponse:
+      type: object
+      properties:
+        candidate:
+          $ref: "#/components/schemas/EditorImageCandidate"
+        rightsTermsChanged:
+          type: boolean
+      required: [candidate, rightsTermsChanged]
     EditorImageCandidatesResponse:
       type: object
       properties:

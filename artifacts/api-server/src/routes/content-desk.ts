@@ -1,4 +1,4 @@
-import { asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, isNull } from "drizzle-orm";
 import { Router, type IRouter, type RequestHandler } from "express";
 import {
   CreateEditorDiscoveryItemImageCandidateBody,
@@ -20,6 +20,11 @@ import {
   UpdateEditorImageCandidateBody,
   UpdateEditorImageCandidateParams,
   UpdateEditorImageCandidateResponse,
+  ApplyEditorImageCandidateSourceRecheckBody,
+  ApplyEditorImageCandidateSourceRecheckParams,
+  ApplyEditorImageCandidateSourceRecheckResponse,
+  RecheckEditorImageCandidateSourceParams,
+  RecheckEditorImageCandidateSourceResponse,
   UpdateEditorContentSourceBody,
   UpdateEditorContentSourceParams,
   UpdateEditorContentSourceResponse,
@@ -29,6 +34,7 @@ import {
 } from "@workspace/api-zod";
 import type {
   ContentSourceInput,
+  EditorImageCandidateRightsMetadata,
   EditorImageCandidateSearchResult,
 } from "@workspace/api-zod";
 import {
@@ -248,6 +254,50 @@ function serializeImageCandidate(candidate: ContentImageCandidate) {
     createdAt: candidate.createdAt.toISOString(),
     updatedAt: candidate.updatedAt.toISOString(),
   };
+}
+
+const imageRightsMetadataFields = [
+  "license",
+  "licenseUrl",
+  "creator",
+  "credit",
+  "copyright",
+  "usageRights",
+] as const satisfies readonly (keyof EditorImageCandidateRightsMetadata)[];
+
+function candidateRightsMetadata(
+  candidate: ContentImageCandidate,
+): EditorImageCandidateRightsMetadata {
+  return {
+    license: candidate.license,
+    licenseUrl: candidate.licenseUrl,
+    creator: candidate.creator,
+    credit: candidate.credit,
+    copyright: candidate.copyright,
+    usageRights: candidate.usageRights,
+  };
+}
+
+function sourceRightsMetadata(
+  source: EditorImageCandidateSearchResult,
+): EditorImageCandidateRightsMetadata {
+  return {
+    license: source.license,
+    licenseUrl: source.licenseUrl,
+    creator: source.creator,
+    credit: source.credit,
+    copyright: source.copyright,
+    usageRights: source.usageRights,
+  };
+}
+
+function changedImageRightsMetadataFields(
+  saved: EditorImageCandidateRightsMetadata,
+  current: EditorImageCandidateRightsMetadata,
+) {
+  return imageRightsMetadataFields.filter(
+    (field) => saved[field] !== current[field],
+  );
 }
 
 function validateSourceInput(
@@ -748,6 +798,178 @@ export function createContentDeskRouter(
         UpdateEditorImageCandidateResponse.parse(
           serializeImageCandidate(candidate),
         ),
+      );
+    },
+  );
+
+  router.post(
+    "/editor/image-candidates/:candidateId/recheck",
+    async (req, res): Promise<void> => {
+      const params = RecheckEditorImageCandidateSourceParams.safeParse(
+        req.params,
+      );
+      if (!params.success) {
+        res.status(400).json({ message: params.error.message });
+        return;
+      }
+      const [candidate] = await database
+        .select()
+        .from(contentImageCandidatesTable)
+        .where(eq(contentImageCandidatesTable.id, params.data.candidateId))
+        .limit(1);
+      if (!candidate) {
+        res.status(404).json({ message: "Image candidate not found." });
+        return;
+      }
+
+      let sourceFile: EditorImageCandidateSearchResult | null;
+      try {
+        sourceFile = await commonsClient.getFileByTitle(candidate.fileTitle);
+      } catch {
+        req.log?.warn("Wikimedia Commons candidate recheck failed");
+        res.status(502).json({
+          message:
+            "Wikimedia Commons could not be reached. Saved image terms were not changed.",
+        });
+        return;
+      }
+      if (!sourceFile) {
+        res.status(404).json({
+          message:
+            "The Commons file is no longer available. Saved image terms were not changed.",
+        });
+        return;
+      }
+
+      const currentMetadata = sourceRightsMetadata(sourceFile);
+      res.json(
+        RecheckEditorImageCandidateSourceResponse.parse({
+          candidateId: candidate.id,
+          checkedAt: new Date().toISOString(),
+          currentMetadata,
+          changedFields: changedImageRightsMetadataFields(
+            candidateRightsMetadata(candidate),
+            currentMetadata,
+          ),
+        }),
+      );
+    },
+  );
+
+  router.post(
+    "/editor/image-candidates/:candidateId/recheck/apply",
+    async (req, res): Promise<void> => {
+      const params = ApplyEditorImageCandidateSourceRecheckParams.safeParse(
+        req.params,
+      );
+      const parsed = ApplyEditorImageCandidateSourceRecheckBody.safeParse(
+        req.body,
+      );
+      if (!params.success) {
+        res.status(400).json({ message: params.error.message });
+        return;
+      }
+      if (!parsed.success) {
+        res.status(400).json({ message: parsed.error.message });
+        return;
+      }
+      const editorId = req.editorIdentity?.id;
+      if (!editorId) {
+        res.status(403).json({ message: "Verified editor identity is required." });
+        return;
+      }
+      const [candidate] = await database
+        .select()
+        .from(contentImageCandidatesTable)
+        .where(eq(contentImageCandidatesTable.id, params.data.candidateId))
+        .limit(1);
+      if (!candidate) {
+        res.status(404).json({ message: "Image candidate not found." });
+        return;
+      }
+      let sourceFile: EditorImageCandidateSearchResult | null;
+      try {
+        sourceFile = await commonsClient.getFileByTitle(candidate.fileTitle);
+      } catch {
+        req.log?.warn("Wikimedia Commons candidate apply check failed");
+        res.status(502).json({
+          message:
+            "Wikimedia Commons could not be reached. Saved image terms were not changed.",
+        });
+        return;
+      }
+      if (!sourceFile) {
+        res.status(404).json({
+          message:
+            "The Commons file is no longer available. Saved image terms were not changed.",
+        });
+        return;
+      }
+
+      const currentMetadata = sourceRightsMetadata(sourceFile);
+      if (
+        changedImageRightsMetadataFields(
+          parsed.data.expectedMetadata,
+          currentMetadata,
+        ).length > 0
+      ) {
+        res.status(409).json({
+          message:
+            "Commons terms changed since the comparison. Recheck the file before applying.",
+        });
+        return;
+      }
+
+      const rightsTermsChanged =
+        changedImageRightsMetadataFields(
+          candidateRightsMetadata(candidate),
+          currentMetadata,
+        ).length > 0;
+      if (!rightsTermsChanged) {
+        res.json(
+          ApplyEditorImageCandidateSourceRecheckResponse.parse({
+            candidate: serializeImageCandidate(candidate),
+            rightsTermsChanged: false,
+          }),
+        );
+        return;
+      }
+
+      const [updatedCandidate] = await database
+        .update(contentImageCandidatesTable)
+        .set({
+          ...currentMetadata,
+          rightsStatus: "pending",
+          reviewNotes: "",
+          reviewedBy: null,
+          reviewedAt: null,
+          updatedBy: editorId,
+        })
+        .where(
+          and(
+            eq(contentImageCandidatesTable.id, candidate.id),
+            eq(contentImageCandidatesTable.license, candidate.license),
+            candidate.licenseUrl === null
+              ? isNull(contentImageCandidatesTable.licenseUrl)
+              : eq(contentImageCandidatesTable.licenseUrl, candidate.licenseUrl),
+            eq(contentImageCandidatesTable.creator, candidate.creator),
+            eq(contentImageCandidatesTable.credit, candidate.credit),
+            eq(contentImageCandidatesTable.copyright, candidate.copyright),
+            eq(contentImageCandidatesTable.usageRights, candidate.usageRights),
+          ),
+        )
+        .returning();
+      if (!updatedCandidate) {
+        res.status(409).json({
+          message: "The candidate changed while applying. Recheck it before applying.",
+        });
+        return;
+      }
+      res.json(
+        ApplyEditorImageCandidateSourceRecheckResponse.parse({
+          candidate: serializeImageCandidate(updatedCandidate),
+          rightsTermsChanged: true,
+        }),
       );
     },
   );

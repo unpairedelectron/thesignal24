@@ -1,16 +1,21 @@
-import { useState, type FormEvent } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   getGetEditorDiscoveryItemImageCandidatesQueryKey,
+  useApplyEditorImageCandidateSourceRecheck,
   useCreateEditorDiscoveryItemImageCandidate,
   useGetEditorDiscoveryItemImageCandidates,
+  useRecheckEditorImageCandidateSource,
   useReviewEditorImageCandidateRights,
   useSearchEditorCommonsImages,
   useUpdateEditorImageCandidate,
 } from "@workspace/api-client-react";
 import type {
   EditorImageCandidate,
+  EditorImageCandidateRightsMetadata,
   EditorImageCandidateSearchResult,
+  EditorImageCandidateSourceRecheckPreview,
+  EditorImageCandidateSourceRecheckPreviewChangedFieldsItem,
   ImageCandidateRightsDecision,
 } from "@workspace/api-client-react";
 
@@ -25,6 +30,38 @@ type CandidateDraft = {
   caption: string;
   reviewNotes: string;
 };
+
+const rightsFieldLabels: Record<
+  EditorImageCandidateSourceRecheckPreviewChangedFieldsItem,
+  string
+> = {
+  license: "License",
+  licenseUrl: "License terms URL",
+  creator: "Creator / artist",
+  credit: "Required credit",
+  copyright: "Copyright statement",
+  usageRights: "Usage rights and restrictions",
+};
+
+function rightsMetadataValue(
+  field: keyof EditorImageCandidateRightsMetadata,
+  value: string | null,
+): ReactNode {
+  if (!value?.trim()) return <span className="italic">Not supplied</span>;
+  if (field === "licenseUrl") {
+    return (
+      <a
+        href={value}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="break-all text-accent hover:underline"
+      >
+        {value}
+      </a>
+    );
+  }
+  return value;
+}
 
 function candidateDraft(candidate: EditorImageCandidate): CandidateDraft {
   return {
@@ -163,6 +200,12 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [drafts, setDrafts] = useState<Record<number, CandidateDraft>>({});
+  const [sourcePreviews, setSourcePreviews] = useState<
+    Record<number, EditorImageCandidateSourceRecheckPreview>
+  >({});
+  const [sourcePreviewsNeedRefresh, setSourcePreviewsNeedRefresh] = useState<
+    Record<number, boolean>
+  >({});
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const candidatesQuery = useGetEditorDiscoveryItemImageCandidates(itemId, {
@@ -173,6 +216,8 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
   });
   const search = useSearchEditorCommonsImages();
   const updateCandidate = useUpdateEditorImageCandidate();
+  const recheckSource = useRecheckEditorImageCandidateSource();
+  const applySourceRecheck = useApplyEditorImageCandidateSourceRecheck();
   const reviewRights = useReviewEditorImageCandidateRights();
   const candidates = candidatesQuery.data?.candidates ?? [];
   const searchResults = search.data?.results ?? [];
@@ -205,6 +250,104 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
     });
   }
 
+  function clearSourcePreview(candidateId: number) {
+    setSourcePreviews((current) => {
+      const next = { ...current };
+      delete next[candidateId];
+      return next;
+    });
+    setSourcePreviewsNeedRefresh((current) => {
+      const next = { ...current };
+      delete next[candidateId];
+      return next;
+    });
+  }
+
+  function recheckCommonsTerms(candidate: EditorImageCandidate) {
+    setError("");
+    setNotice("");
+    setSourcePreviewsNeedRefresh((current) =>
+      current[candidate.id]
+        ? { ...current, [candidate.id]: true }
+        : current,
+    );
+    recheckSource.mutate(
+      { candidateId: candidate.id },
+      {
+        onSuccess: (preview) => {
+          setSourcePreviews((current) => ({
+            ...current,
+            [candidate.id]: preview,
+          }));
+          setSourcePreviewsNeedRefresh((current) => ({
+            ...current,
+            [candidate.id]: false,
+          }));
+          setNotice(
+            preview.changedFields.length === 0
+              ? "Commons rights terms match the saved snapshot. No metadata was changed."
+              : "Commons terms differ from the saved snapshot. Compare them below before applying.",
+          );
+        },
+        onError: (reason) =>
+          {
+            setSourcePreviewsNeedRefresh((current) => ({
+              ...current,
+              [candidate.id]: true,
+            }));
+            setError(
+              errorMessage(
+                reason,
+                "Commons could not be checked. Saved image terms were not changed.",
+              ),
+            );
+          },
+      },
+    );
+  }
+
+  function applyCommonsTerms(
+    candidate: EditorImageCandidate,
+    preview: EditorImageCandidateSourceRecheckPreview,
+    hasUnsavedMetadata: boolean,
+  ) {
+    if (hasUnsavedMetadata) {
+      setError("Save the image metadata before applying Commons terms.");
+      return;
+    }
+    setError("");
+    applySourceRecheck.mutate(
+      {
+        candidateId: candidate.id,
+        data: { expectedMetadata: preview.currentMetadata },
+      },
+      {
+        onSuccess: (result) => {
+          clearDraft(candidate.id);
+          clearSourcePreview(candidate.id);
+          void invalidateCandidates();
+          setNotice(
+            result.rightsTermsChanged
+              ? "Current Commons terms saved. The previous rights decision was cleared and review is pending."
+              : "No rights terms changed. The saved snapshot and review decision remain unchanged.",
+          );
+        },
+        onError: (reason) => {
+          setSourcePreviewsNeedRefresh((current) => ({
+            ...current,
+            [candidate.id]: true,
+          }));
+          setError(
+            errorMessage(
+              reason,
+              "Commons terms could not be applied. Saved image terms were not changed; recheck before trying again.",
+            ),
+          );
+        },
+      },
+    );
+  }
+
   function saveMetadata(candidate: EditorImageCandidate, draft: CandidateDraft) {
     setError("");
     updateCandidate.mutate(
@@ -224,8 +367,18 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
       {
         onSuccess: () => {
           clearDraft(candidate.id);
+          if (sourcePreviews[candidate.id]) {
+            setSourcePreviewsNeedRefresh((current) => ({
+              ...current,
+              [candidate.id]: true,
+            }));
+          }
           void invalidateCandidates();
-          setNotice("Image metadata saved. Rights remain pending if rights terms changed.");
+          setNotice(
+            sourcePreviews[candidate.id]
+              ? "Image metadata saved. Recheck the source comparison before recording a rights decision."
+              : "Image metadata saved. Rights remain pending if rights terms changed.",
+          );
         },
         onError: (reason) =>
           setError(errorMessage(reason, "Image metadata could not be saved.")),
@@ -241,6 +394,18 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
   ) {
     if (hasUnsavedMetadata) {
       setError("Save the image metadata before recording a rights decision.");
+      return;
+    }
+    if (
+      decision === "approved" &&
+      ((recheckSource.isPending &&
+        recheckSource.variables?.candidateId === candidate.id) ||
+        sourcePreviewsNeedRefresh[candidate.id] ||
+        (sourcePreviews[candidate.id]?.changedFields.length ?? 0) > 0)
+    ) {
+      setError(
+        "Recheck Commons and resolve or refresh the comparison before approving rights.",
+      );
       return;
     }
     setError("");
@@ -393,9 +558,24 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
                   const savingThisCandidate =
                     updateCandidate.isPending &&
                     updateCandidate.variables?.candidateId === candidate.id;
+                  const recheckingThisCandidate =
+                    recheckSource.isPending &&
+                    recheckSource.variables?.candidateId === candidate.id;
+                  const applyingThisCandidate =
+                    applySourceRecheck.isPending &&
+                    applySourceRecheck.variables?.candidateId === candidate.id;
                   const reviewingThisCandidate =
                     reviewRights.isPending &&
                     reviewRights.variables?.candidateId === candidate.id;
+                  const sourcePreview = sourcePreviews[candidate.id];
+                  const sourcePreviewNeedsRefresh =
+                    sourcePreviewsNeedRefresh[candidate.id] === true;
+                  const sourceTermsChanged =
+                    (sourcePreview?.changedFields.length ?? 0) > 0;
+                  const rightsApprovalBlocked =
+                    sourceTermsChanged ||
+                    sourcePreviewNeedsRefresh ||
+                    recheckingThisCandidate;
 
                   return (
                     <article key={candidate.id} className="grid gap-4 py-5 sm:grid-cols-[180px_1fr]">
@@ -462,6 +642,141 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
                             </dd>
                           </div>
                         </dl>
+
+                        <div className="mt-4 border border-foreground/15 p-3">
+                          <div className="flex flex-wrap items-center justify-between gap-3">
+                            <button
+                              type="button"
+                              className="signal-rule-link"
+                              disabled={
+                                metadataDirty ||
+                                savingThisCandidate ||
+                                recheckingThisCandidate ||
+                                applyingThisCandidate
+                              }
+                              onClick={() => recheckCommonsTerms(candidate)}
+                            >
+                              {recheckingThisCandidate
+                                ? "Checking Commons…"
+                                : "Recheck current Commons terms"}
+                            </button>
+                            <p className="max-w-2xl text-xs leading-relaxed text-muted-foreground">
+                              This read-only check compares the original file page
+                              with the saved rights snapshot. It does not change
+                              saved metadata.
+                            </p>
+                          </div>
+                          {metadataDirty && (
+                            <p className="mt-2 text-xs text-muted-foreground">
+                              Save or discard image metadata changes before rechecking.
+                            </p>
+                          )}
+                          {sourcePreviewNeedsRefresh && !sourcePreview && (
+                            <p className="mt-2 text-xs text-destructive" role="status">
+                              Current Commons terms could not be confirmed. Retry the
+                              recheck before approving rights.
+                            </p>
+                          )}
+
+                          {sourcePreview && (
+                            <section
+                              className="mt-3 border-t border-foreground/15 pt-3"
+                              aria-label={`Commons rights comparison for ${candidate.fileTitle}`}
+                            >
+                              <p className="signal-kicker text-muted-foreground">
+                                Commons checked{" "}
+                                {new Date(sourcePreview.checkedAt).toLocaleString()}
+                              </p>
+                              {sourcePreviewNeedsRefresh && (
+                                <p className="mt-2 text-sm text-destructive" role="status">
+                                  The saved candidate changed after this comparison.
+                                  Recheck before applying terms or approving rights.
+                                </p>
+                              )}
+                              {sourcePreview.changedFields.length === 0 ? (
+                                <p className="mt-2 text-sm text-muted-foreground">
+                                  No rights-term changes found. The saved snapshot and
+                                  any existing review decision remain unchanged.
+                                </p>
+                              ) : (
+                                <>
+                                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                                    Review each difference below. Applying the current
+                                    terms will clear the previous rights decision and
+                                    return this candidate to pending review.
+                                  </p>
+                                  <ul className="mt-3 divide-y divide-foreground/15 border-y border-foreground/15">
+                                    {sourcePreview.changedFields.map((field) => (
+                                      <li key={field} className="py-3">
+                                        <p className="signal-kicker text-foreground">
+                                          {rightsFieldLabels[field]}
+                                        </p>
+                                        <div className="mt-2 grid gap-3 text-xs leading-relaxed sm:grid-cols-2">
+                                          <div className="min-w-0">
+                                            <p className="font-semibold text-muted-foreground">
+                                              Saved
+                                            </p>
+                                            <p className="mt-1 break-words text-foreground">
+                                              {rightsMetadataValue(
+                                                field,
+                                                candidate[field],
+                                              )}
+                                            </p>
+                                          </div>
+                                          <div className="min-w-0">
+                                            <p className="font-semibold text-muted-foreground">
+                                              Current Commons
+                                            </p>
+                                            <p className="mt-1 break-words text-foreground">
+                                              {rightsMetadataValue(
+                                                field,
+                                                sourcePreview.currentMetadata[field],
+                                              )}
+                                            </p>
+                                          </div>
+                                        </div>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                  <button
+                                    type="button"
+                                    className="signal-button mt-3"
+                                    disabled={
+                                      metadataDirty ||
+                                      sourcePreviewNeedsRefresh ||
+                                      savingThisCandidate ||
+                                      recheckingThisCandidate ||
+                                      applyingThisCandidate
+                                    }
+                                    onClick={() =>
+                                      applyCommonsTerms(
+                                        candidate,
+                                        sourcePreview,
+                                        metadataDirty,
+                                      )
+                                    }
+                                  >
+                                    {applyingThisCandidate
+                                      ? "Applying terms…"
+                                      : "Apply current terms and reset rights review"}
+                                  </button>
+                                </>
+                              )}
+                              {sourcePreview.changedFields.length === 0 &&
+                                !sourcePreviewNeedsRefresh && (
+                                  <button
+                                    type="button"
+                                    className="signal-rule-link mt-3"
+                                    onClick={() =>
+                                      clearSourcePreview(candidate.id)
+                                    }
+                                  >
+                                    Close comparison
+                                  </button>
+                                )}
+                            </section>
+                          )}
+                        </div>
 
                         <div className="mt-4 grid gap-3 md:grid-cols-2">
                           <label className="grid gap-1 signal-kicker text-muted-foreground">
@@ -596,6 +911,7 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
                               !rightsFieldsReady ||
                               !draft.reviewNotes.trim() ||
                               metadataDirty ||
+                              rightsApprovalBlocked ||
                               reviewingThisCandidate
                             }
                             onClick={() =>
@@ -629,6 +945,12 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
                             Reject for rights use
                           </button>
                         </div>
+                        {rightsApprovalBlocked && (
+                          <p className="mt-3 text-xs leading-relaxed text-muted-foreground" role="status">
+                            Rights approval is paused until the Commons comparison
+                            is rechecked and any changed terms are resolved.
+                          </p>
+                        )}
                         {candidate.rightsStatus === "approved" && (
                           <p className="mt-3 signal-kicker text-muted-foreground">
                             Rights were reviewed by an editor. This candidate remains

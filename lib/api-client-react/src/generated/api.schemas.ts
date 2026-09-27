@@ -1095,6 +1095,39 @@ export interface EditorImageCandidateRightsReviewInput {
   reviewNotes: string;
 }
 
+export interface EditorImageCandidateRightsMetadata {
+  license: string;
+  /** @nullable */
+  licenseUrl: string | null;
+  creator: string;
+  credit: string;
+  copyright: string;
+  usageRights: string;
+}
+
+export type EditorImageCandidateSourceRecheckPreviewChangedFieldsItem = typeof EditorImageCandidateSourceRecheckPreviewChangedFieldsItem[keyof typeof EditorImageCandidateSourceRecheckPreviewChangedFieldsItem];
+
+
+export const EditorImageCandidateSourceRecheckPreviewChangedFieldsItem = {
+  license: 'license',
+  licenseUrl: 'licenseUrl',
+  creator: 'creator',
+  credit: 'credit',
+  copyright: 'copyright',
+  usageRights: 'usageRights',
+} as const;
+
+export interface EditorImageCandidateSourceRecheckPreview {
+  candidateId: number;
+  checkedAt: string;
+  currentMetadata: EditorImageCandidateRightsMetadata;
+  changedFields: EditorImageCandidateSourceRecheckPreviewChangedFieldsItem[];
+}
+
+export interface EditorImageCandidateSourceRecheckInput {
+  expectedMetadata: EditorImageCandidateRightsMetadata;
+}
+
 export type EditorImageCandidateSource = typeof EditorImageCandidateSource[keyof typeof EditorImageCandidateSource];
 
 
@@ -1130,6 +1163,11 @@ export interface EditorImageCandidate {
   createdAt: string;
   updatedBy: string;
   updatedAt: string;
+}
+
+export interface EditorImageCandidateSourceRecheckApplyResponse {
+  candidate: EditorImageCandidate;
+  rightsTermsChanged: boolean;
 }
 
 export interface EditorImageCandidatesResponse {

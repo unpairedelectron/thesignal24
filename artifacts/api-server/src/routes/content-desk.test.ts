@@ -3,6 +3,7 @@ import { once } from "node:events";
 import express, { type Express, type RequestHandler } from "express";
 import { test } from "node:test";
 import { db } from "@workspace/db";
+import type { EditorImageCandidateSearchResult } from "@workspace/api-zod";
 import {
   createWikimediaCommonsClient,
   type WikimediaCommonsClient,
@@ -114,6 +115,7 @@ test("Wikimedia Commons adapter normalizes source metadata and rejects external 
 
 test("image search is rejected by the editor guard before calling Commons", async () => {
   let searchCalled = false;
+  let fileLookupCalled = false;
   const editorGuard: RequestHandler = (_req, res) => {
     res.status(403).json({ message: "Verified editor access is required." });
   };
@@ -122,7 +124,10 @@ test("image search is rejected by the editor guard before calling Commons", asyn
       searchCalled = true;
       return [];
     },
-    getFileByTitle: async () => null,
+    getFileByTitle: async () => {
+      fileLookupCalled = true;
+      return null;
+    },
   };
   const app = express();
   app.use(express.json());
@@ -138,6 +143,13 @@ test("image search is rejected by the editor guard before calling Commons", asyn
     );
     assert.equal(response.response.status, 403);
     assert.equal(searchCalled, false);
+    const recheckResponse = await requestJson(
+      baseUrl,
+      "/editor/image-candidates/1/recheck",
+      "POST",
+    );
+    assert.equal(recheckResponse.response.status, 403);
+    assert.equal(fileLookupCalled, false);
   } finally {
     await close(server);
   }
@@ -153,7 +165,7 @@ test("editor source registry and manual discovery queue validate and retain revi
         };
         next();
       };
-      const commonsResult = {
+      const commonsResult: EditorImageCandidateSearchResult = {
         source: "Wikimedia Commons" as const,
         fileTitle: "File:Signal Hub test image.jpg",
         imageUrl: "https://upload.wikimedia.org/wikipedia/commons/0/00/test.jpg",
@@ -168,10 +180,20 @@ test("editor source registry and manual discovery queue validate and retain revi
         copyright: "Source copyright statement",
         usageRights: "CC BY-SA 4.0; attribution required.",
       };
+      let currentCommonsResult: EditorImageCandidateSearchResult | null =
+        commonsResult;
+      let commonsLookupError = false;
       const commonsClient: WikimediaCommonsClient = {
-        searchImages: async () => [commonsResult],
-        getFileByTitle: async (title) =>
-          title === commonsResult.fileTitle ? commonsResult : null,
+        searchImages: async () =>
+          currentCommonsResult ? [currentCommonsResult] : [],
+        getFileByTitle: async (title) => {
+          if (commonsLookupError) {
+            throw new Error("Simulated Wikimedia Commons outage");
+          }
+          return title === commonsResult.fileTitle
+            ? currentCommonsResult
+            : null;
+        },
       };
       const app = express();
       app.use(express.json());
@@ -404,6 +426,208 @@ test("editor source registry and manual discovery queue validate and retain revi
         assert.equal(changedRightsTerms.body.rightsStatus, "pending");
         assert.equal(changedRightsTerms.body.reviewedBy, null);
         assert.equal(changedRightsTerms.body.reviewedAt, null);
+
+        const savedRightsMetadata = {
+          license: changedRightsTerms.body.license,
+          licenseUrl: changedRightsTerms.body.licenseUrl,
+          creator: changedRightsTerms.body.creator,
+          credit: changedRightsTerms.body.credit,
+          copyright: changedRightsTerms.body.copyright,
+          usageRights: changedRightsTerms.body.usageRights,
+        };
+        currentCommonsResult = {
+          ...commonsResult,
+          ...savedRightsMetadata,
+        };
+        const reapprovedImageRights = await requestJson(
+          baseUrl,
+          `/editor/image-candidates/${createdImageCandidate.body.id}/rights`,
+          "PATCH",
+          {
+            rightsStatus: "approved",
+            reviewNotes: "Rechecked the current Commons file page.",
+          },
+        );
+        assert.equal(reapprovedImageRights.response.status, 200);
+        assert.equal(reapprovedImageRights.body.rightsStatus, "approved");
+
+        const unchangedSourcePreview = await requestJson(
+          baseUrl,
+          `/editor/image-candidates/${createdImageCandidate.body.id}/recheck`,
+          "POST",
+        );
+        assert.equal(unchangedSourcePreview.response.status, 200);
+        assert.deepEqual(unchangedSourcePreview.body.changedFields, []);
+        const unchangedSourceApply = await requestJson(
+          baseUrl,
+          `/editor/image-candidates/${createdImageCandidate.body.id}/recheck/apply`,
+          "POST",
+          {
+            expectedMetadata: unchangedSourcePreview.body.currentMetadata,
+          },
+        );
+        assert.equal(unchangedSourceApply.response.status, 200);
+        assert.equal(unchangedSourceApply.body.rightsTermsChanged, false);
+        assert.equal(
+          unchangedSourceApply.body.candidate.rightsStatus,
+          "approved",
+        );
+        assert.equal(
+          unchangedSourceApply.body.candidate.reviewedAt,
+          reapprovedImageRights.body.reviewedAt,
+        );
+
+        const changedCommonsTerms: EditorImageCandidateSearchResult = {
+          ...currentCommonsResult!,
+          license: "CC BY 3.0",
+          licenseUrl: "https://creativecommons.org/licenses/by/3.0/",
+          creator: "Updated Commons Artist",
+          credit: "Updated photo credit",
+          copyright: "Updated copyright notice",
+          usageRights: "Updated Commons usage terms.",
+        };
+        currentCommonsResult = changedCommonsTerms;
+        const changedSourcePreview = await requestJson(
+          baseUrl,
+          `/editor/image-candidates/${createdImageCandidate.body.id}/recheck`,
+          "POST",
+        );
+        assert.equal(changedSourcePreview.response.status, 200);
+        assert.deepEqual(changedSourcePreview.body.changedFields, [
+          "license",
+          "licenseUrl",
+          "creator",
+          "credit",
+          "copyright",
+          "usageRights",
+        ]);
+        const beforeApplyingSourceChanges = await requestJson(
+          baseUrl,
+          `/editor/discovery-items/${createdLead.body.id}/image-candidates`,
+          "GET",
+        );
+        assert.equal(
+          beforeApplyingSourceChanges.body.candidates[0].rightsStatus,
+          "approved",
+        );
+        assert.equal(
+          beforeApplyingSourceChanges.body.candidates[0].license,
+          savedRightsMetadata.license,
+        );
+
+        currentCommonsResult = {
+          ...changedCommonsTerms,
+          credit: "A newer credit statement on Commons.",
+        };
+        const staleSourceApply = await requestJson(
+          baseUrl,
+          `/editor/image-candidates/${createdImageCandidate.body.id}/recheck/apply`,
+          "POST",
+          {
+            expectedMetadata: changedSourcePreview.body.currentMetadata,
+          },
+        );
+        assert.equal(staleSourceApply.response.status, 409);
+        const afterStaleSourceApply = await requestJson(
+          baseUrl,
+          `/editor/discovery-items/${createdLead.body.id}/image-candidates`,
+          "GET",
+        );
+        assert.equal(
+          afterStaleSourceApply.body.candidates[0].rightsStatus,
+          "approved",
+        );
+        assert.equal(
+          afterStaleSourceApply.body.candidates[0].credit,
+          savedRightsMetadata.credit,
+        );
+
+        const latestSourcePreview = await requestJson(
+          baseUrl,
+          `/editor/image-candidates/${createdImageCandidate.body.id}/recheck`,
+          "POST",
+        );
+        const appliedSourceChanges = await requestJson(
+          baseUrl,
+          `/editor/image-candidates/${createdImageCandidate.body.id}/recheck/apply`,
+          "POST",
+          {
+            expectedMetadata: latestSourcePreview.body.currentMetadata,
+          },
+        );
+        assert.equal(appliedSourceChanges.response.status, 200);
+        assert.equal(appliedSourceChanges.body.rightsTermsChanged, true);
+        assert.equal(
+          appliedSourceChanges.body.candidate.rightsStatus,
+          "pending",
+        );
+        assert.equal(appliedSourceChanges.body.candidate.reviewNotes, "");
+        assert.equal(appliedSourceChanges.body.candidate.reviewedBy, null);
+        assert.equal(appliedSourceChanges.body.candidate.reviewedAt, null);
+        assert.equal(
+          appliedSourceChanges.body.candidate.credit,
+          "A newer credit statement on Commons.",
+        );
+
+        const stablePreviewBeforeOutage = await requestJson(
+          baseUrl,
+          `/editor/image-candidates/${createdImageCandidate.body.id}/recheck`,
+          "POST",
+        );
+        commonsLookupError = true;
+        const failedSourceApply = await requestJson(
+          baseUrl,
+          `/editor/image-candidates/${createdImageCandidate.body.id}/recheck/apply`,
+          "POST",
+          {
+            expectedMetadata: stablePreviewBeforeOutage.body.currentMetadata,
+          },
+        );
+        assert.equal(failedSourceApply.response.status, 502);
+        commonsLookupError = false;
+        const afterFailedSourceApply = await requestJson(
+          baseUrl,
+          `/editor/discovery-items/${createdLead.body.id}/image-candidates`,
+          "GET",
+        );
+        assert.equal(
+          afterFailedSourceApply.body.candidates[0].license,
+          appliedSourceChanges.body.candidate.license,
+        );
+        assert.equal(
+          afterFailedSourceApply.body.candidates[0].rightsStatus,
+          "pending",
+        );
+
+        currentCommonsResult = null;
+        const removedSourceRecheck = await requestJson(
+          baseUrl,
+          `/editor/image-candidates/${createdImageCandidate.body.id}/recheck`,
+          "POST",
+        );
+        assert.equal(removedSourceRecheck.response.status, 404);
+        const removedSourceApply = await requestJson(
+          baseUrl,
+          `/editor/image-candidates/${createdImageCandidate.body.id}/recheck/apply`,
+          "POST",
+          {
+            expectedMetadata: stablePreviewBeforeOutage.body.currentMetadata,
+          },
+        );
+        assert.equal(removedSourceApply.response.status, 404);
+        const afterRemovedSourceRecheck = await requestJson(
+          baseUrl,
+          `/editor/discovery-items/${createdLead.body.id}/image-candidates`,
+          "GET",
+        );
+        assert.equal(
+          afterRemovedSourceRecheck.body.candidates[0].credit,
+          appliedSourceChanges.body.candidate.credit,
+        );
+        assert.equal(
+          afterRemovedSourceRecheck.body.candidates[0].rightsStatus,
+          "pending",
+        );
 
         const imageCandidates = await requestJson(
           baseUrl,

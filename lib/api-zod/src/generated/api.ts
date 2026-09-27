@@ -2175,6 +2175,85 @@ export const UpdateEditorImageCandidateResponse = zod.object({
 
 
 /**
+ * Requires verified editor access. This preview does not modify the saved candidate.
+ * @summary Compare a saved candidate with current Commons terms
+ */
+
+
+
+export const RecheckEditorImageCandidateSourceParams = zod.object({
+  "candidateId": zod.coerce.number().int().min(1)
+})
+
+export const RecheckEditorImageCandidateSourceResponse = zod.object({
+  "candidateId": zod.number().int(),
+  "checkedAt": zod.coerce.date(),
+  "currentMetadata": zod.object({
+  "license": zod.string(),
+  "licenseUrl": zod.string().url().nullable(),
+  "creator": zod.string(),
+  "credit": zod.string(),
+  "copyright": zod.string(),
+  "usageRights": zod.string()
+}),
+  "changedFields": zod.array(zod.enum(['license', 'licenseUrl', 'creator', 'credit', 'copyright', 'usageRights']))
+})
+
+
+/**
+ * Requires verified editor access. The server rechecks the source against the preview; changed rights terms reset review to pending.
+ * @summary Apply a confirmed Commons rights-metadata change
+ */
+
+
+
+export const ApplyEditorImageCandidateSourceRecheckParams = zod.object({
+  "candidateId": zod.coerce.number().int().min(1)
+})
+
+export const ApplyEditorImageCandidateSourceRecheckBody = zod.object({
+  "expectedMetadata": zod.object({
+  "license": zod.string(),
+  "licenseUrl": zod.string().url().nullable(),
+  "creator": zod.string(),
+  "credit": zod.string(),
+  "copyright": zod.string(),
+  "usageRights": zod.string()
+})
+})
+
+export const ApplyEditorImageCandidateSourceRecheckResponse = zod.object({
+  "candidate": zod.object({
+  "id": zod.number().int(),
+  "discoveryItemId": zod.number().int(),
+  "source": zod.enum(['Wikimedia Commons']),
+  "fileTitle": zod.string(),
+  "imageUrl": zod.string().url(),
+  "thumbnailUrl": zod.string().url(),
+  "filePageUrl": zod.string().url(),
+  "license": zod.string(),
+  "licenseUrl": zod.string().url().nullable(),
+  "creator": zod.string(),
+  "credit": zod.string(),
+  "copyright": zod.string(),
+  "usageRights": zod.string(),
+  "altText": zod.string(),
+  "caption": zod.string(),
+  "rightsStatus": zod.enum(['pending', 'approved', 'rejected']),
+  "reviewNotes": zod.string(),
+  "reviewedBy": zod.string().nullable(),
+  "reviewedAt": zod.coerce.date().nullable(),
+  "discoveredAt": zod.coerce.date(),
+  "createdBy": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedBy": zod.string(),
+  "updatedAt": zod.coerce.date()
+}),
+  "rightsTermsChanged": zod.boolean()
+})
+
+
+/**
  * Requires verified editor access. Approval is an editor decision only; it does not publish or attach the image to an article.
  * @summary Record an editor's image rights decision
  */
