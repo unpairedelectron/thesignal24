@@ -18,29 +18,65 @@ import {
 const mapUrl = new URL('../../public/data/india-states-simplified.geojson', import.meta.url);
 const mapData = JSON.parse(await readFile(mapUrl, 'utf8'));
 
-test('published state names resolve to named GeoJSON features, including current aliases', () => {
+test('all current states and union territories resolve to named GeoJSON features', () => {
   const features = parseStateMap(mapData);
   const mapNames = new Set(features.map(getMapFeatureName).filter(Boolean).map(stateNameKey));
 
   const currentNames = [
     'Andaman and Nicobar Islands',
     'Andhra Pradesh',
+    'Arunachal Pradesh',
+    'Assam',
+    'Bihar',
+    'Chandigarh',
+    'Chhattisgarh',
     'Dadra and Nagar Haveli and Daman and Diu',
+    'Delhi',
+    'Goa',
+    'Gujarat',
+    'Haryana',
+    'Himachal Pradesh',
+    'Jammu and Kashmir',
+    'Jharkhand',
+    'Karnataka',
+    'Kerala',
+    'Ladakh',
+    'Lakshadweep',
+    'Madhya Pradesh',
+    'Maharashtra',
+    'Manipur',
+    'Meghalaya',
+    'Mizoram',
+    'Nagaland',
     'Odisha',
+    'Puducherry',
+    'Punjab',
+    'Rajasthan',
+    'Sikkim',
+    'Tamil Nadu',
+    'Telangana',
+    'Tripura',
+    'Uttar Pradesh',
     'Uttarakhand',
     'West Bengal',
   ];
+  assert.equal(features.length, 36);
+  assert.equal(new Set(features.map((feature) => feature.properties.shapeISO)).size, 36);
   for (const stateName of currentNames) {
     assert.ok(mapNames.has(stateNameKey(stateName)), `${stateName} should match a map feature`);
   }
+  assert.deepEqual(getUnmappedStateNames(currentNames, features), []);
 
   assert.equal(canonicalStateName('Orissa'), 'Odisha');
   assert.equal(canonicalStateName('Uttaranchal'), 'Uttarakhand');
+  assert.equal(canonicalStateName('Andaman and Nicobar'), 'Andaman and Nicobar Islands');
   assert.equal(canonicalStateName('Dadra and Nagar Haveli'), 'Dadra and Nagar Haveli and Daman and Diu');
   assert.equal(canonicalStateName('Daman and Diu'), 'Dadra and Nagar Haveli and Daman and Diu');
-  assert.ok(mapNames.has(stateNameKey('Orissa')));
-  assert.ok(mapNames.has(stateNameKey('Uttaranchal')));
-  assert.deepEqual(getUnmappedStateNames(currentNames, features), []);
+  assert.equal(canonicalStateName('Mahārāshtra'), 'Maharashtra');
+  assert.equal(canonicalStateName('Telangāna'), 'Telangana');
+  for (const legacyName of ['Orissa', 'Uttaranchal', 'Andaman and Nicobar', 'Dadra and Nagar Haveli', 'Daman and Diu']) {
+    assert.ok(mapNames.has(stateNameKey(legacyName)), `${legacyName} should resolve to its current feature`);
+  }
   assert.ok(features.every((feature) => mapPath(feature.geometry.coordinates).length > 0));
 });
 
@@ -96,7 +132,8 @@ test('missing or malformed GeoJSON is rejected without affecting the text state 
     assert.throws(() => parseStateMap(invalid));
   }
   assert.deepEqual(getStateNames(getStateLinkedStories(stories)), ['Odisha', 'Uttarakhand']);
-  assert.deepEqual(getUnmappedStateNames(['Telangana'], mapData.features), ['Telangana']);
+  assert.deepEqual(getUnmappedStateNames(['Telangana'], mapData.features), []);
+  assert.deepEqual(getUnmappedStateNames(['Atlantis'], mapData.features), ['Atlantis']);
 });
 
 test('mapped states expose Enter and Space keyboard activation', () => {

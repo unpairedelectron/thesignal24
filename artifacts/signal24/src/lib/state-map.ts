@@ -16,7 +16,8 @@ const STATE_NAME_ALIASES: Record<string, string> = {
 
 export function canonicalStateName(stateName: string): string {
   const trimmed = stateName.trim().replace(/\s+/g, ' ');
-  return STATE_NAME_ALIASES[trimmed.toLocaleLowerCase('en-IN')] ?? trimmed;
+  const normalized = trimmed.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  return STATE_NAME_ALIASES[normalized.toLocaleLowerCase('en-IN')] ?? normalized;
 }
 
 export function stateNameKey(stateName: string): string {
