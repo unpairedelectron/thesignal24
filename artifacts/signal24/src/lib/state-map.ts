@@ -100,6 +100,12 @@ export function searchWithSelectedState(search: string, selectedState: string | 
   return query ? `?${query}` : '';
 }
 
+export function urlWithSelectedState(currentUrl: string, selectedState: string): string {
+  const url = new URL(currentUrl);
+  url.search = searchWithSelectedState(url.search, selectedState);
+  return url.toString();
+}
+
 export function isMapSelectionKey(key: string): boolean {
   return key === 'Enter' || key === ' ';
 }

@@ -13,6 +13,7 @@ import {
   ChevronDown,
   ChevronRight,
   CircleAlert,
+  Copy,
   Database,
   ExternalLink,
   FileText,
@@ -59,6 +60,7 @@ import {
   searchWithSelectedState,
   stateNameKey,
   toggleStateSelection,
+  urlWithSelectedState,
   type MapFeature,
 } from '@/lib/state-map';
 import {
@@ -700,6 +702,7 @@ function IndiaFocus({ stories }: { stories: Story[] }) {
   const [features, setFeatures] = useState<MapFeature[]>([]);
   const [geoStatus, setGeoStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [geoRetry, setGeoRetry] = useState(0);
+  const [copyStatus, setCopyStatus] = useState('');
   const [location, setLocation] = useLocation();
   const search = useSearch();
   const stateStories = useMemo(() => getStateLinkedStories(stories), [stories]);
@@ -708,6 +711,15 @@ function IndiaFocus({ stories }: { stories: Story[] }) {
   const toggleSelectedState = (stateName: string) => {
     const nextSelected = toggleStateSelection(selected, stateName);
     setLocation(`${location}${searchWithSelectedState(search, nextSelected)}${window.location.hash}`);
+  };
+  const copySelectedStateLink = async () => {
+    if (!selected) return;
+    try {
+      await navigator.clipboard.writeText(urlWithSelectedState(window.location.href, selected));
+      setCopyStatus('State link copied');
+    } catch {
+      setCopyStatus('Unable to copy state link');
+    }
   };
   useEffect(() => {
     let cancelled = false;
@@ -748,7 +760,7 @@ function IndiaFocus({ stories }: { stories: Story[] }) {
       </div>}
       {unmappedStates.length > 0 && <p className="mt-3 border-l-2 border-accent px-3 py-2 text-xs leading-relaxed text-muted-foreground" role="note" data-testid="note-unmapped-map-states">No matching boundary is available for {unmappedStates.join(', ')}. These records can still be selected from the state list.</p>}
       <p className="mt-3 max-w-xl text-[10px] leading-relaxed text-muted-foreground">Map for editorial navigation only, not a legal boundary reference. <a href={`${basePath}/data/india-map-attribution.md`} className="signal-rule-link" target="_blank" rel="noopener noreferrer">Map attribution and boundary notice</a>.</p>
-      {selectedStories.length > 0 && <div className="border-t border-foreground/20 pt-6"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="signal-kicker text-accent">{selected ?? 'Recent state-linked records'}</p>{selectedLatest && <p className="mt-2 text-sm text-muted-foreground">Latest story context: {selectedLatest.title}</p>}</div>{selected && <button type="button" className="signal-kicker text-muted-foreground hover:text-accent" onClick={() => setLocation(`${location}${searchWithSelectedState(search, null)}${window.location.hash}`)} data-testid="button-clear-map-state">Show all states</button>}</div><div className="mt-4 grid gap-5 sm:grid-cols-3">{selectedStories.map((story) => <Link href={storyPath(story)} key={story.id} className="group"><p className="signal-kicker text-muted-foreground">{story.publishedOn ? 'Published' : 'Record date'} / {formatDate(story.recordDate ?? story.publishedOn)}</p><h3 className="mt-2 font-display text-2xl leading-tight group-hover:text-accent">{story.title}</h3><div className="mt-2 flex flex-wrap items-center gap-2"><span className={`signal-status-badge ${story.verificationStatus === 'verified' ? 'is-verified' : story.verificationStatus === 'source-linked' ? 'is-source-linked' : 'is-unverified'}`}>{verificationLabel(story.verificationStatus)}</span><span className="signal-kicker text-muted-foreground">{story.sourceUrl ? 'Direct source available' : 'Direct source unavailable'}</span></div><p className="mt-2 text-xs leading-relaxed text-muted-foreground">{story.dek}</p></Link>)}</div></div>}
+      {selectedStories.length > 0 && <div className="border-t border-foreground/20 pt-6"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="signal-kicker text-accent">{selected ?? 'Recent state-linked records'}</p>{selectedLatest && <p className="mt-2 text-sm text-muted-foreground">Latest story context: {selectedLatest.title}</p>}</div><div className="flex flex-wrap items-center gap-4">{selected && <><button type="button" className="inline-flex items-center gap-2 signal-kicker text-muted-foreground hover:text-accent" onClick={() => void copySelectedStateLink()} data-testid="button-copy-map-state-link"><Copy size={13} /> Copy state link</button><button type="button" className="signal-kicker text-muted-foreground hover:text-accent" onClick={() => setLocation(`${location}${searchWithSelectedState(search, null)}${window.location.hash}`)} data-testid="button-clear-map-state">Show all states</button></>}</div></div>{selected && copyStatus && <p className="mt-3 signal-kicker text-accent" role="status" aria-live="polite" data-testid="status-copy-map-state-link">{copyStatus}</p>}<div className="mt-4 grid gap-5 sm:grid-cols-3">{selectedStories.map((story) => <Link href={storyPath(story)} key={story.id} className="group"><p className="signal-kicker text-muted-foreground">{story.publishedOn ? 'Published' : 'Record date'} / {formatDate(story.recordDate ?? story.publishedOn)}</p><h3 className="mt-2 font-display text-2xl leading-tight group-hover:text-accent">{story.title}</h3><div className="mt-2 flex flex-wrap items-center gap-2"><span className={`signal-status-badge ${story.verificationStatus === 'verified' ? 'is-verified' : story.verificationStatus === 'source-linked' ? 'is-source-linked' : 'is-unverified'}`}>{verificationLabel(story.verificationStatus)}</span><span className="signal-kicker text-muted-foreground">{story.sourceUrl ? 'Direct source available' : 'Direct source unavailable'}</span></div><p className="mt-2 text-xs leading-relaxed text-muted-foreground">{story.dek}</p></Link>)}</div></div>}
     </div>
   </section>;
 }

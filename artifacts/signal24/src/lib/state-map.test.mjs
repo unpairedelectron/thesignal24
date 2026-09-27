@@ -15,6 +15,7 @@ import {
   searchWithSelectedState,
   stateNameKey,
   toggleStateSelection,
+  urlWithSelectedState,
 } from './state-map.ts';
 
 const mapUrl = new URL('../../public/data/india-states-simplified.geojson', import.meta.url);
@@ -133,6 +134,16 @@ test('state selections round-trip through stable URL search values', () => {
   );
   assert.equal(searchWithSelectedState('', 'Mahārāshtra'), '?state=Maharashtra');
   assert.equal(searchWithSelectedState('?state=Odisha', null), '');
+});
+
+test('copied state URLs preserve the current page, other query values, and hash', () => {
+  assert.equal(
+    urlWithSelectedState(
+      'https://signal24.example/archive?topic=States&page=2&state=Orissa#india-in-focus',
+      'Maharashtra',
+    ),
+    'https://signal24.example/archive?topic=States&page=2&state=Maharashtra#india-in-focus',
+  );
 });
 
 test('missing or malformed GeoJSON is rejected without affecting the text state list', () => {
