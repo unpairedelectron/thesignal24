@@ -4,6 +4,7 @@ import { test } from 'node:test';
 import {
   canonicalStateName,
   getMapFeatureName,
+  getSelectedStateFromSearch,
   getStateLinkedStories,
   getStateNames,
   getStoriesForState,
@@ -11,6 +12,7 @@ import {
   isMapSelectionKey,
   mapPath,
   parseStateMap,
+  searchWithSelectedState,
   stateNameKey,
   toggleStateSelection,
 } from './state-map.ts';
@@ -111,6 +113,26 @@ test('state-list and map selection return the same records and selection behavio
 
   assert.equal(toggleStateSelection('Odisha', 'Orissa'), null);
   assert.equal(toggleStateSelection(null, 'Uttaranchal'), 'Uttarakhand');
+});
+
+test('state selections round-trip through stable URL search values', () => {
+  const states = ['Odisha', 'Uttarakhand', 'Atlantis'];
+
+  assert.equal(getSelectedStateFromSearch('?topic=States&state=Orissa', states), 'Odisha');
+  assert.equal(getSelectedStateFromSearch('?state=Atlantis', states), 'Atlantis');
+  assert.equal(getSelectedStateFromSearch('?state=Kerala', states), null);
+  assert.equal(getSelectedStateFromSearch('?topic=States', states), null);
+
+  assert.equal(
+    searchWithSelectedState('?topic=States&state=Orissa', 'Odisha'),
+    '?topic=States&state=Odisha',
+  );
+  assert.equal(
+    searchWithSelectedState('?topic=States&state=Odisha', null),
+    '?topic=States',
+  );
+  assert.equal(searchWithSelectedState('', 'Mahārāshtra'), '?state=Maharashtra');
+  assert.equal(searchWithSelectedState('?state=Odisha', null), '');
 });
 
 test('missing or malformed GeoJSON is rejected without affecting the text state list', () => {

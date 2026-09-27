@@ -79,6 +79,27 @@ export function toggleStateSelection(
     : canonicalStateName(stateName);
 }
 
+export function getSelectedStateFromSearch(
+  search: string,
+  stateNames: string[],
+): string | null {
+  const requestedState = new URLSearchParams(search).get('state')?.trim();
+  if (!requestedState) return null;
+  const requestedKey = stateNameKey(requestedState);
+  return stateNames.find((stateName) => stateNameKey(stateName) === requestedKey) ?? null;
+}
+
+export function searchWithSelectedState(search: string, selectedState: string | null): string {
+  const params = new URLSearchParams(search);
+  if (selectedState) {
+    params.set('state', canonicalStateName(selectedState));
+  } else {
+    params.delete('state');
+  }
+  const query = params.toString();
+  return query ? `?${query}` : '';
+}
+
 export function isMapSelectionKey(key: string): boolean {
   return key === 'Enter' || key === ' ';
 }

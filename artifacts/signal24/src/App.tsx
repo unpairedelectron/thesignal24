@@ -32,7 +32,7 @@ import {
   SlidersHorizontal,
   X,
 } from 'lucide-react';
-import { Link, Route, Router as WouterRouter, Switch, useLocation, useParams } from 'wouter';
+import { Link, Route, Router as WouterRouter, Switch, useLocation, useParams, useSearch } from 'wouter';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { FOCUS_SOURCES } from '@/components/focus-source-desk';
 import {
@@ -47,6 +47,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import {
   canonicalStateName,
+  getSelectedStateFromSearch,
   getMapFeatureName,
   getStateLinkedStories,
   getStateNames,
@@ -55,6 +56,7 @@ import {
   isMapSelectionKey,
   mapPath,
   parseStateMap,
+  searchWithSelectedState,
   stateNameKey,
   toggleStateSelection,
   type MapFeature,
@@ -686,9 +688,17 @@ function HomeDecisionGrid({ stories }: { stories: Story[] }) {
 
 function IndiaFocus({ stories }: { stories: Story[] }) {
   const [features, setFeatures] = useState<MapFeature[]>([]);
-  const [selected, setSelected] = useState<string | null>(null);
   const [geoStatus, setGeoStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [geoRetry, setGeoRetry] = useState(0);
+  const [location, setLocation] = useLocation();
+  const search = useSearch();
+  const stateStories = useMemo(() => getStateLinkedStories(stories), [stories]);
+  const states = useMemo(() => getStateNames(stateStories), [stateStories]);
+  const selected = getSelectedStateFromSearch(search, states);
+  const toggleSelectedState = (stateName: string) => {
+    const nextSelected = toggleStateSelection(selected, stateName);
+    setLocation(`${location}${searchWithSelectedState(search, nextSelected)}${window.location.hash}`);
+  };
   useEffect(() => {
     let cancelled = false;
     setGeoStatus('loading');
@@ -709,8 +719,6 @@ function IndiaFocus({ stories }: { stories: Story[] }) {
     });
     return () => { cancelled = true; };
   }, [geoRetry]);
-  const stateStories = useMemo(() => getStateLinkedStories(stories), [stories]);
-  const states = useMemo(() => getStateNames(stateStories), [stateStories]);
   const unmappedStates = useMemo(
     () => geoStatus === 'ready' ? getUnmappedStateNames(states, features) : [],
     [features, geoStatus, states],
@@ -724,13 +732,13 @@ function IndiaFocus({ stories }: { stories: Story[] }) {
         <div className="overflow-hidden" data-testid="india-editorial-map">
           {geoStatus === 'loading' && <div className="border border-dashed border-foreground/25 py-16 text-center" role="status" data-testid="status-india-map-loading"><div className="mx-auto h-8 w-40 animate-pulse bg-muted" /><p className="mt-4 signal-kicker text-muted-foreground">Loading the local India map…</p></div>}
           {geoStatus === 'error' && <div className="border border-accent/50 bg-card px-6 py-10 text-center" role="alert" data-testid="status-india-map-error"><p className="signal-kicker text-accent">Map asset / unavailable</p><p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">The local state-boundary file is missing or malformed. Published state records remain available in the list.</p><button type="button" className="signal-button mt-5" onClick={() => setGeoRetry((value) => value + 1)} data-testid="button-retry-india-map">Try map again</button></div>}
-          {geoStatus === 'ready' && <svg viewBox="0 0 1000 950" role="group" aria-label="Map shapes for states with published archive records" className="india-map">{features.map((feature, index) => { const featureName = getMapFeatureName(feature); const stateName = featureName ? canonicalStateName(featureName) : null; const active = Boolean(stateName && states.some((name) => stateNameKey(name) === stateNameKey(stateName))); const isSelected = Boolean(stateName && selected && stateNameKey(selected) === stateNameKey(stateName)); return <path key={`${featureName ?? 'state'}-${index}`} data-testid={active && stateName ? `map-state-shape-${slugify(stateName)}` : undefined} d={mapPath(feature.geometry?.coordinates)} className={`${active ? 'is-active' : ''} ${isSelected ? 'is-selected' : ''}`} aria-label={active && stateName ? `Select ${stateName}` : undefined} role={active ? 'button' : undefined} tabIndex={active ? 0 : undefined} aria-pressed={active ? isSelected : undefined} onClick={() => active && stateName && setSelected((current) => toggleStateSelection(current, stateName))} onKeyDown={(event) => { if (active && stateName && isMapSelectionKey(event.key)) { event.preventDefault(); setSelected((current) => toggleStateSelection(current, stateName)); } }} />; })}</svg>}
+          {geoStatus === 'ready' && <svg viewBox="0 0 1000 950" role="group" aria-label="Map shapes for states with published archive records" className="india-map">{features.map((feature, index) => { const featureName = getMapFeatureName(feature); const stateName = featureName ? canonicalStateName(featureName) : null; const active = Boolean(stateName && states.some((name) => stateNameKey(name) === stateNameKey(stateName))); const isSelected = Boolean(stateName && selected && stateNameKey(selected) === stateNameKey(stateName)); return <path key={`${featureName ?? 'state'}-${index}`} data-testid={active && stateName ? `map-state-shape-${slugify(stateName)}` : undefined} d={mapPath(feature.geometry?.coordinates)} className={`${active ? 'is-active' : ''} ${isSelected ? 'is-selected' : ''}`} aria-label={active && stateName ? `Select ${stateName}` : undefined} role={active ? 'button' : undefined} tabIndex={active ? 0 : undefined} aria-pressed={active ? isSelected : undefined} onClick={() => active && stateName && toggleSelectedState(stateName)} onKeyDown={(event) => { if (active && stateName && isMapSelectionKey(event.key)) { event.preventDefault(); toggleSelectedState(stateName); } }} />; })}</svg>}
         </div>
-        <div><p className="signal-kicker text-accent">States with published records / {states.length}</p><div className="mt-3 grid gap-0">{states.map((state) => <button key={state} type="button" className="map-state-button flex items-center justify-between gap-4 signal-kicker" aria-pressed={Boolean(selected && stateNameKey(selected) === stateNameKey(state))} onClick={() => setSelected((current) => toggleStateSelection(current, state))} data-testid={`button-map-state-${slugify(state)}`}><span>{state}</span><span className="text-muted-foreground">{getStoriesForState(stateStories, state).length}</span></button>)}</div></div>
+        <div><p className="signal-kicker text-accent">States with published records / {states.length}</p><div className="mt-3 grid gap-0">{states.map((state) => <button key={state} type="button" className="map-state-button flex items-center justify-between gap-4 signal-kicker" aria-pressed={Boolean(selected && stateNameKey(selected) === stateNameKey(state))} onClick={() => toggleSelectedState(state)} data-testid={`button-map-state-${slugify(state)}`}><span>{state}</span><span className="text-muted-foreground">{getStoriesForState(stateStories, state).length}</span></button>)}</div></div>
       </div>}
       {unmappedStates.length > 0 && <p className="mt-3 border-l-2 border-accent px-3 py-2 text-xs leading-relaxed text-muted-foreground" role="note" data-testid="note-unmapped-map-states">No matching boundary is available for {unmappedStates.join(', ')}. These records can still be selected from the state list.</p>}
       <p className="mt-3 max-w-xl text-[10px] leading-relaxed text-muted-foreground">Map for editorial navigation only, not a legal boundary reference. <a href={`${basePath}/data/india-map-attribution.md`} className="signal-rule-link" target="_blank" rel="noopener noreferrer">Map attribution and boundary notice</a>.</p>
-      {selectedStories.length > 0 && <div className="border-t border-foreground/20 pt-6"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="signal-kicker text-accent">{selected ?? 'Recent state-linked records'}</p>{selectedLatest && <p className="mt-2 text-sm text-muted-foreground">Latest story context: {selectedLatest.title}</p>}</div>{selected && <button type="button" className="signal-kicker text-muted-foreground hover:text-accent" onClick={() => setSelected(null)} data-testid="button-clear-map-state">Show all states</button>}</div><div className="mt-4 grid gap-5 sm:grid-cols-3">{selectedStories.map((story) => <Link href={storyPath(story)} key={story.id} className="group"><p className="signal-kicker text-muted-foreground">{story.publishedOn ? 'Published' : 'Record date'} / {formatDate(story.recordDate ?? story.publishedOn)}</p><div className="mt-2 flex flex-wrap items-center gap-2"><span className={`signal-status-badge ${story.verificationStatus === 'verified' ? 'is-verified' : story.verificationStatus === 'source-linked' ? 'is-source-linked' : 'is-unverified'}`}>{verificationLabel(story.verificationStatus)}</span><span className="signal-kicker text-muted-foreground">{story.sourceUrl ? 'Direct source available' : 'Direct source unavailable'}</span></div><h3 className="mt-2 font-display text-2xl leading-tight group-hover:text-accent">{story.title}</h3><p className="mt-2 text-xs leading-relaxed text-muted-foreground">{story.dek}</p></Link>)}</div></div>}
+      {selectedStories.length > 0 && <div className="border-t border-foreground/20 pt-6"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="signal-kicker text-accent">{selected ?? 'Recent state-linked records'}</p>{selectedLatest && <p className="mt-2 text-sm text-muted-foreground">Latest story context: {selectedLatest.title}</p>}</div>{selected && <button type="button" className="signal-kicker text-muted-foreground hover:text-accent" onClick={() => setLocation(`${location}${searchWithSelectedState(search, null)}${window.location.hash}`)} data-testid="button-clear-map-state">Show all states</button>}</div><div className="mt-4 grid gap-5 sm:grid-cols-3">{selectedStories.map((story) => <Link href={storyPath(story)} key={story.id} className="group"><p className="signal-kicker text-muted-foreground">{story.publishedOn ? 'Published' : 'Record date'} / {formatDate(story.recordDate ?? story.publishedOn)}</p><div className="mt-2 flex flex-wrap items-center gap-2"><span className={`signal-status-badge ${story.verificationStatus === 'verified' ? 'is-verified' : story.verificationStatus === 'source-linked' ? 'is-source-linked' : 'is-unverified'}`}>{verificationLabel(story.verificationStatus)}</span><span className="signal-kicker text-muted-foreground">{story.sourceUrl ? 'Direct source available' : 'Direct source unavailable'}</span></div><h3 className="mt-2 font-display text-2xl leading-tight group-hover:text-accent">{story.title}</h3><p className="mt-2 text-xs leading-relaxed text-muted-foreground">{story.dek}</p></Link>)}</div></div>}
     </div>
   </section>;
 }
