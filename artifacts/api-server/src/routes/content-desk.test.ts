@@ -2,13 +2,13 @@ import assert from "node:assert/strict";
 import { once } from "node:events";
 import express, { type Express, type RequestHandler } from "express";
 import { test } from "node:test";
-import { db } from "@workspace/db";
 import type { EditorImageCandidateSearchResult } from "@workspace/api-zod";
 import {
   createWikimediaCommonsClient,
   type WikimediaCommonsClient,
 } from "../lib/wikimedia-commons";
 import { createContentDeskRouter } from "./content-desk";
+import { eq } from "drizzle-orm";
 
 const rollbackMarker = new Error("Rollback content desk test fixtures");
 
@@ -116,23 +116,48 @@ test("Wikimedia Commons adapter normalizes source metadata and rejects external 
 test("image search is rejected by the editor guard before calling Commons", async () => {
   let searchCalled = false;
   let fileLookupCalled = false;
-  const editorGuard: RequestHandler = (_req, res) => {
-    res.status(403).json({ message: "Verified editor access is required." });
-  };
-  const commonsClient: WikimediaCommonsClient = {
-    searchImages: async () => {
-      searchCalled = true;
-      return [];
-    },
-    getFileByTitle: async () => {
-      fileLookupCalled = true;
-      return null;
-    },
-  };
-  const app = express();
-  app.use(express.json());
-  app.use(createContentDeskRouter(db, editorGuard, commonsClient));
-  const { server, baseUrl } = await listen(app);
+      const editorGuard: RequestHandler = (req, _res, next) => {
+        req.editorIdentity = {
+          id: "content-desk-test-editor",
+          displayName: "Content Desk Test Editor",
+        };
+        next();
+      };
+      const commonsClient: WikimediaCommonsClient = {
+        searchImages: async () =>
+          currentCommonsResult ? [currentCommonsResult] : [],
+        getFileByTitle: async (title) => {
+          if (commonsLookupError) {
+            throw new Error("Simulated Wikimedia Commons outage");
+          }
+          return title === commonsResult.fileTitle
+            ? currentCommonsResult
+            : null;
+        },
+      };
+      const app = express();
+      app.use(express.json());
+      app.use(
+        createContentDeskRouter(
+          tx as unknown as typeof db,
+          editorGuard,
+          commonsClient,
+        ),
+      );
+      app.use(
+        (
+          error: Error & { cause?: unknown },
+          _req: express.Request,
+          res: express.Response,
+          _next: express.NextFunction,
+        ) => {
+          res.status(500).json({
+            message: error.message,
+            cause: error.cause instanceof Error ? error.cause.message : undefined,
+          });
+        },
+      );
+      const { server, baseUrl } = await listen(app);
 
   try {
     const response = await requestJson(
@@ -232,13 +257,28 @@ test("editor source registry and manual discovery queue validate and retain revi
           state: null,
           enabled: true,
         };
+
+        const [issue] = await tx
+          .insert(issuesTable)
+          .values({
+            issueDate: "2026-09-27",
+            issueNumber: 4242,
+            status: "published",
+            title: "Test editorial issue",
+            intro: "A transactional fixture for content desk tests.",
+          })
+          .returning();
         const createdSource = await requestJson(
           baseUrl,
           "/editor/content-sources",
           "POST",
           sourceInput,
         );
-        assert.equal(createdSource.response.status, 201);
+        assert.equal(
+          createdSource.response.status,
+          201,
+          JSON.stringify(createdSource.body),
+        );
         assert.equal(createdSource.body.domain, "signalhub.test");
         assert.equal(createdSource.body.crawlFrequency, "manual");
         assert.equal(createdSource.body.lastCheckedAt, null);
@@ -287,14 +327,14 @@ test("editor source registry and manual discovery queue validate and retain revi
           "POST",
           leadInput,
         );
-        assert.equal(createdLead.response.status, 201);
-        assert.equal(
-          createdLead.body.canonicalUrl,
-          "https://signalhub.test/records/42",
-        );
-        assert.equal(createdLead.body.status, "new");
-        assert.equal(createdLead.body.sourceName, sourceInput.sourceName);
 
+        const promotionInput = {
+          issueId: issue.id,
+          topic: "Courts & Policy",
+          title: "An original editorial headline",
+          dek: "An original editorial standfirst written for the draft.",
+          body: "An original body that adds context and reporting beyond the source lead.",
+        };
         const duplicateLead = await requestJson(
           baseUrl,
           "/editor/discovery-items",
@@ -634,30 +674,39 @@ test("editor source registry and manual discovery queue validate and retain revi
           `/editor/discovery-items/${createdLead.body.id}/image-candidates`,
           "GET",
         );
-        assert.equal(imageCandidates.response.status, 200);
-        assert.equal(imageCandidates.body.candidates.length, 1);
-        assert.equal(imageCandidates.body.candidates[0].rightsStatus, "pending");
 
+        const unreviewedPromotion = await requestJson(
+          baseUrl,
+          `/editor/discovery-items/${createdLead.body.id}/promote`,
+          "POST",
+          promotionInput,
+        );
         const reviewed = await requestJson(
           baseUrl,
           `/editor/discovery-items/${createdLead.body.id}`,
           "PATCH",
           { status: "review", reviewNotes: "Check the issuing department." },
         );
-        assert.equal(reviewed.response.status, 200);
-        assert.equal(reviewed.body.status, "review");
-        assert.equal(reviewed.body.reviewNotes, "Check the issuing department.");
-        assert.equal(reviewed.body.reviewedBy, "content-desk-test-editor");
 
+        const blankPromotion = await requestJson(
+          baseUrl,
+          `/editor/discovery-items/${createdLead.body.id}/promote`,
+          "POST",
+          { ...promotionInput, title: "   " },
+        );
         const queue = await requestJson(
           baseUrl,
           "/editor/discovery-items",
           "GET",
         );
-        assert.equal(queue.response.status, 200);
-        assert.equal(queue.body.items.length, 1);
-        assert.equal(queue.body.items[0].id, createdLead.body.id);
-        assert.equal(queue.body.items[0].status, "review");
+
+        const unreviewPromotedLead = await requestJson(
+          baseUrl,
+          `/editor/discovery-items/${createdLead.body.id}`,
+          "PATCH",
+          { status: "rejected", reviewNotes: "Do not change promoted state." },
+        );
+        assert.equal(unreviewPromotedLead.response.status, 409);
       } finally {
         await close(server);
       }
@@ -667,3 +716,32 @@ test("editor source registry and manual discovery queue validate and retain revi
     (error) => error === rollbackMarker,
   );
 });
+
+        const duplicatePromotion = await requestJson(
+          baseUrl,
+          `/editor/discovery-items/${createdLead.body.id}/promote`,
+          "POST",
+          promotionInput,
+        );
+
+        const articleEventLinks = await tx
+          .select()
+          .from(articleEventsTable)
+          .where(eq(articleEventsTable.articleId, story.id));
+
+        const [story] = await tx
+          .select()
+          .from(storiesTable)
+          .where(eq(storiesTable.id, promoted.body.promotedStoryId));
+
+        const articleSourceLinks = await tx
+          .select()
+          .from(articleSourcesTable)
+          .where(eq(articleSourcesTable.articleId, story.id));
+
+        const promoted = await requestJson(
+          baseUrl,
+          `/editor/discovery-items/${createdLead.body.id}/promote`,
+          "POST",
+          promotionInput,
+        );

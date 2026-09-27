@@ -39,6 +39,7 @@ import type {
   DecisionImpactRecord,
   DecisionImpactRevisions,
   DiscoveryItemInput,
+  DiscoveryItemPromotionInput,
   DiscoveryItemReviewInput,
   EditorContentSourcesResponse,
   EditorDiscoveryItemsResponse,
@@ -95,7 +96,6 @@ type AwaitedInput<T> = PromiseLike<T> | T;
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
-
 const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKey: K } => {
   const result = { queryKey } as T & { queryKey: K };
   for (const key of Object.keys(query)) {
@@ -112,8 +112,6 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
 };
 
 export const getHealthCheckUrl = () => {
-
-
 
 
   return `/api/healthz`
@@ -135,9 +133,6 @@ export const healthCheck = async ( options?: Parameters<typeof customFetch>[1]):
 );}
 
 
-
-
-
 export const getHealthCheckQueryKey = () => {
     return [
     `/api/healthz`
@@ -153,11 +148,7 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
   const queryKey =  queryOptions?.queryKey ?? getHealthCheckQueryKey();
 
 
-
     const queryFn: QueryFunction<Awaited<ReturnType<typeof healthCheck>>> = ({ signal }) => healthCheck({ signal, ...requestOptions });
-
-
-
 
 
    return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof healthCheck>>, TError, TData> & { queryKey: QueryKey }
@@ -184,14 +175,7 @@ export function useHealthCheck<TData = Awaited<ReturnType<typeof healthCheck>>, 
 }
 
 
-
-
-
-
-
 export const getGetCurrentIssueUrl = () => {
-
-
 
 
   return `/api/issues/current`
@@ -212,9 +196,6 @@ export const getCurrentIssue = async ( options?: Parameters<typeof customFetch>[
 );}
 
 
-
-
-
 export const getGetCurrentIssueQueryKey = () => {
     return [
     `/api/issues/current`
@@ -230,11 +211,7 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
   const queryKey =  queryOptions?.queryKey ?? getGetCurrentIssueQueryKey();
 
 
-
     const queryFn: QueryFunction<Awaited<ReturnType<typeof getCurrentIssue>>> = ({ signal }) => getCurrentIssue({ signal, ...requestOptions });
-
-
-
 
 
    return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCurrentIssue>>, TError, TData> & { queryKey: QueryKey }
@@ -261,14 +238,7 @@ export function useGetCurrentIssue<TData = Awaited<ReturnType<typeof getCurrentI
 }
 
 
-
-
-
-
-
 export const getGetLiveUpdatesUrl = () => {
-
-
 
 
   return `/api/updates/live`
@@ -290,9 +260,6 @@ export const getLiveUpdates = async ( options?: Parameters<typeof customFetch>[1
 );}
 
 
-
-
-
 export const getGetLiveUpdatesQueryKey = () => {
     return [
     `/api/updates/live`
@@ -308,11 +275,7 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
   const queryKey =  queryOptions?.queryKey ?? getGetLiveUpdatesQueryKey();
 
 
-
     const queryFn: QueryFunction<Awaited<ReturnType<typeof getLiveUpdates>>> = ({ signal }) => getLiveUpdates({ signal, ...requestOptions });
-
-
-
 
 
    return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getLiveUpdates>>, TError, TData> & { queryKey: QueryKey }
@@ -337,11 +300,6 @@ export function useGetLiveUpdates<TData = Awaited<ReturnType<typeof getLiveUpdat
 
   return withQueryKey(query, queryOptions.queryKey);
 }
-
-
-
-
-
 
 
 export const getGetCommunityPostsUrl = (params?: GetCommunityPostsParams,) => {
@@ -374,9 +332,6 @@ export const getCommunityPosts = async (params?: GetCommunityPostsParams, option
 );}
 
 
-
-
-
 export const getGetCommunityPostsQueryKey = (params?: GetCommunityPostsParams,) => {
     return [
     `/api/community/posts`, ...(params ? [params] : [])
@@ -392,11 +347,7 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
   const queryKey =  queryOptions?.queryKey ?? getGetCommunityPostsQueryKey(params);
 
 
-
     const queryFn: QueryFunction<Awaited<ReturnType<typeof getCommunityPosts>>> = ({ signal }) => getCommunityPosts(params, { signal, ...requestOptions });
-
-
-
 
 
    return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCommunityPosts>>, TError, TData> & { queryKey: QueryKey }
@@ -423,14 +374,7 @@ export function useGetCommunityPosts<TData = Awaited<ReturnType<typeof getCommun
 }
 
 
-
-
-
-
-
 export const getCreateCommunityPostUrl = () => {
-
-
 
 
   return `/api/community/posts`
@@ -465,9 +409,6 @@ return customFetch<CommunityPost>(getCreateCommunityPostUrl(),
 );}
 
 
-
-
-
 export const getCreateCommunityPostMutationKey = () => ['createCommunityPost'] as const;
 
 export const getCreateCommunityPostMutationOptions = <TError = ErrorType<unknown>,
@@ -482,17 +423,11 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       : {mutation: { mutationKey, }, request: undefined};
 
 
-
-
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof createCommunityPost>>, CreateCommunityPostMutationVariables> = (props) => {
           const {data} = props ?? {};
 
           return  createCommunityPost(data,requestOptions)
         }
-
-
-
-
 
 
   return  { mutationFn, ...mutationOptions }}
@@ -519,8 +454,6 @@ export const useCreateCommunityPost = <TError = ErrorType<unknown>,
 export const getGetCommunityPostUrl = (postId: number,) => {
 
 
-
-
   return `/api/community/posts/${postId}`
 }
 
@@ -539,9 +472,6 @@ export const getCommunityPost = async (postId: number, options?: Parameters<type
 );}
 
 
-
-
-
 export const getGetCommunityPostQueryKey = (postId: number,) => {
     return [
     `/api/community/posts/${postId}`
@@ -557,11 +487,7 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
   const queryKey =  queryOptions?.queryKey ?? getGetCommunityPostQueryKey(postId);
 
 
-
     const queryFn: QueryFunction<Awaited<ReturnType<typeof getCommunityPost>>> = ({ signal }) => getCommunityPost(postId, { signal, ...requestOptions });
-
-
-
 
 
    return  { queryKey, queryFn, enabled: postId !== null && postId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCommunityPost>>, TError, TData> & { queryKey: QueryKey }
@@ -588,14 +514,7 @@ export function useGetCommunityPost<TData = Awaited<ReturnType<typeof getCommuni
 }
 
 
-
-
-
-
-
 export const getCreateCommunityReplyUrl = (postId: number,) => {
-
-
 
 
   return `/api/community/posts/${postId}/replies`
@@ -631,9 +550,6 @@ return customFetch<CommunityReply>(getCreateCommunityReplyUrl(postId),
 );}
 
 
-
-
-
 export const getCreateCommunityReplyMutationKey = () => ['createCommunityReply'] as const;
 
 export const getCreateCommunityReplyMutationOptions = <TError = ErrorType<unknown>,
@@ -648,17 +564,11 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       : {mutation: { mutationKey, }, request: undefined};
 
 
-
-
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof createCommunityReply>>, CreateCommunityReplyMutationVariables> = (props) => {
           const {postId,data} = props ?? {};
 
           return  createCommunityReply(postId,data,requestOptions)
         }
-
-
-
-
 
 
   return  { mutationFn, ...mutationOptions }}
@@ -685,8 +595,6 @@ export const useCreateCommunityReply = <TError = ErrorType<unknown>,
 export const getToggleCommunityPostLikeUrl = (postId: number,) => {
 
 
-
-
   return `/api/community/posts/${postId}/like`
 }
 
@@ -705,9 +613,6 @@ export const toggleCommunityPostLike = async (postId: number, options?: Paramete
 );}
 
 
-
-
-
 export const getToggleCommunityPostLikeMutationKey = () => ['toggleCommunityPostLike'] as const;
 
 export const getToggleCommunityPostLikeMutationOptions = <TError = ErrorType<unknown>,
@@ -722,17 +627,11 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       : {mutation: { mutationKey, }, request: undefined};
 
 
-
-
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof toggleCommunityPostLike>>, ToggleCommunityPostLikeMutationVariables> = (props) => {
           const {postId} = props ?? {};
 
           return  toggleCommunityPostLike(postId,requestOptions)
         }
-
-
-
-
 
 
   return  { mutationFn, ...mutationOptions }}
@@ -759,8 +658,6 @@ export const useToggleCommunityPostLike = <TError = ErrorType<unknown>,
 export const getGetEditorialIssueUrl = () => {
 
 
-
-
   return `/api/editor/issues/current`
 }
 
@@ -779,9 +676,6 @@ export const getEditorialIssue = async ( options?: Parameters<typeof customFetch
 );}
 
 
-
-
-
 export const getGetEditorialIssueQueryKey = () => {
     return [
     `/api/editor/issues/current`
@@ -797,11 +691,7 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
   const queryKey =  queryOptions?.queryKey ?? getGetEditorialIssueQueryKey();
 
 
-
     const queryFn: QueryFunction<Awaited<ReturnType<typeof getEditorialIssue>>> = ({ signal }) => getEditorialIssue({ signal, ...requestOptions });
-
-
-
 
 
    return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getEditorialIssue>>, TError, TData> & { queryKey: QueryKey }
@@ -828,14 +718,7 @@ export function useGetEditorialIssue<TData = Awaited<ReturnType<typeof getEditor
 }
 
 
-
-
-
-
-
 export const getGetEditorSessionUrl = () => {
-
-
 
 
   return `/api/editor/session`
@@ -856,9 +739,6 @@ export const getEditorSession = async ( options?: Parameters<typeof customFetch>
 );}
 
 
-
-
-
 export const getGetEditorSessionQueryKey = () => {
     return [
     `/api/editor/session`
@@ -874,11 +754,7 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
   const queryKey =  queryOptions?.queryKey ?? getGetEditorSessionQueryKey();
 
 
-
     const queryFn: QueryFunction<Awaited<ReturnType<typeof getEditorSession>>> = ({ signal }) => getEditorSession({ signal, ...requestOptions });
-
-
-
 
 
    return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getEditorSession>>, TError, TData> & { queryKey: QueryKey }
@@ -903,11 +779,6 @@ export function useGetEditorSession<TData = Awaited<ReturnType<typeof getEditorS
 
   return withQueryKey(query, queryOptions.queryKey);
 }
-
-
-
-
-
 
 
 export const getGetArchiveUrl = (params?: GetArchiveParams,) => {
@@ -940,9 +811,6 @@ export const getArchive = async (params?: GetArchiveParams, options?: Parameters
 );}
 
 
-
-
-
 export const getGetArchiveQueryKey = (params?: GetArchiveParams,) => {
     return [
     `/api/archive`, ...(params ? [params] : [])
@@ -958,11 +826,7 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
   const queryKey =  queryOptions?.queryKey ?? getGetArchiveQueryKey(params);
 
 
-
     const queryFn: QueryFunction<Awaited<ReturnType<typeof getArchive>>> = ({ signal }) => getArchive(params, { signal, ...requestOptions });
-
-
-
 
 
    return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getArchive>>, TError, TData> & { queryKey: QueryKey }
@@ -987,11 +851,6 @@ export function useGetArchive<TData = Awaited<ReturnType<typeof getArchive>>, TE
 
   return withQueryKey(query, queryOptions.queryKey);
 }
-
-
-
-
-
 
 
 export const getGetEvidenceEventsUrl = (params?: GetEvidenceEventsParams,) => {
@@ -1025,9 +884,6 @@ export const getEvidenceEvents = async (params?: GetEvidenceEventsParams, option
 );}
 
 
-
-
-
 export const getGetEvidenceEventsQueryKey = (params?: GetEvidenceEventsParams,) => {
     return [
     `/api/events`, ...(params ? [params] : [])
@@ -1043,11 +899,7 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
   const queryKey =  queryOptions?.queryKey ?? getGetEvidenceEventsQueryKey(params);
 
 
-
     const queryFn: QueryFunction<Awaited<ReturnType<typeof getEvidenceEvents>>> = ({ signal }) => getEvidenceEvents(params, { signal, ...requestOptions });
-
-
-
 
 
    return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getEvidenceEvents>>, TError, TData> & { queryKey: QueryKey }
@@ -1074,14 +926,7 @@ export function useGetEvidenceEvents<TData = Awaited<ReturnType<typeof getEviden
 }
 
 
-
-
-
-
-
 export const getGetEvidenceEventUrl = (eventId: number,) => {
-
-
 
 
   return `/api/events/${eventId}`
@@ -1103,9 +948,6 @@ export const getEvidenceEvent = async (eventId: number, options?: Parameters<typ
 );}
 
 
-
-
-
 export const getGetEvidenceEventQueryKey = (eventId: number,) => {
     return [
     `/api/events/${eventId}`
@@ -1121,11 +963,7 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
   const queryKey =  queryOptions?.queryKey ?? getGetEvidenceEventQueryKey(eventId);
 
 
-
     const queryFn: QueryFunction<Awaited<ReturnType<typeof getEvidenceEvent>>> = ({ signal }) => getEvidenceEvent(eventId, { signal, ...requestOptions });
-
-
-
 
 
    return  { queryKey, queryFn, enabled: eventId !== null && eventId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getEvidenceEvent>>, TError, TData> & { queryKey: QueryKey }
@@ -1152,14 +990,7 @@ export function useGetEvidenceEvent<TData = Awaited<ReturnType<typeof getEvidenc
 }
 
 
-
-
-
-
-
 export const getGetStoryEvidenceUrl = (storyId: number,) => {
-
-
 
 
   return `/api/stories/${storyId}/evidence`
@@ -1181,9 +1012,6 @@ export const getStoryEvidence = async (storyId: number, options?: Parameters<typ
 );}
 
 
-
-
-
 export const getGetStoryEvidenceQueryKey = (storyId: number,) => {
     return [
     `/api/stories/${storyId}/evidence`
@@ -1199,11 +1027,7 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
   const queryKey =  queryOptions?.queryKey ?? getGetStoryEvidenceQueryKey(storyId);
 
 
-
     const queryFn: QueryFunction<Awaited<ReturnType<typeof getStoryEvidence>>> = ({ signal }) => getStoryEvidence(storyId, { signal, ...requestOptions });
-
-
-
 
 
    return  { queryKey, queryFn, enabled: storyId !== null && storyId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getStoryEvidence>>, TError, TData> & { queryKey: QueryKey }
@@ -1230,14 +1054,7 @@ export function useGetStoryEvidence<TData = Awaited<ReturnType<typeof getStoryEv
 }
 
 
-
-
-
-
-
 export const getGetSourceDocumentUrl = (sourceId: number,) => {
-
-
 
 
   return `/api/sources/${sourceId}`
@@ -1259,9 +1076,6 @@ export const getSourceDocument = async (sourceId: number, options?: Parameters<t
 );}
 
 
-
-
-
 export const getGetSourceDocumentQueryKey = (sourceId: number,) => {
     return [
     `/api/sources/${sourceId}`
@@ -1277,11 +1091,7 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
   const queryKey =  queryOptions?.queryKey ?? getGetSourceDocumentQueryKey(sourceId);
 
 
-
     const queryFn: QueryFunction<Awaited<ReturnType<typeof getSourceDocument>>> = ({ signal }) => getSourceDocument(sourceId, { signal, ...requestOptions });
-
-
-
 
 
    return  { queryKey, queryFn, enabled: sourceId !== null && sourceId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSourceDocument>>, TError, TData> & { queryKey: QueryKey }
@@ -1306,11 +1116,6 @@ export function useGetSourceDocument<TData = Awaited<ReturnType<typeof getSource
 
   return withQueryKey(query, queryOptions.queryKey);
 }
-
-
-
-
-
 
 
 export const getSearchEvidenceRecordsUrl = (params: SearchEvidenceRecordsParams,) => {
@@ -1344,9 +1149,6 @@ export const searchEvidenceRecords = async (params: SearchEvidenceRecordsParams,
 );}
 
 
-
-
-
 export const getSearchEvidenceRecordsQueryKey = (params?: SearchEvidenceRecordsParams,) => {
     return [
     `/api/evidence-search`, ...(params ? [params] : [])
@@ -1362,11 +1164,7 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
   const queryKey =  queryOptions?.queryKey ?? getSearchEvidenceRecordsQueryKey(params);
 
 
-
     const queryFn: QueryFunction<Awaited<ReturnType<typeof searchEvidenceRecords>>> = ({ signal }) => searchEvidenceRecords(params, { signal, ...requestOptions });
-
-
-
 
 
    return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof searchEvidenceRecords>>, TError, TData> & { queryKey: QueryKey }
@@ -1393,14 +1191,7 @@ export function useSearchEvidenceRecords<TData = Awaited<ReturnType<typeof searc
 }
 
 
-
-
-
-
-
 export const getGetEditorEvidenceUrl = () => {
-
-
 
 
   return `/api/editor/evidence`
@@ -1422,9 +1213,6 @@ export const getEditorEvidence = async ( options?: Parameters<typeof customFetch
 );}
 
 
-
-
-
 export const getGetEditorEvidenceQueryKey = () => {
     return [
     `/api/editor/evidence`
@@ -1440,11 +1228,7 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
   const queryKey =  queryOptions?.queryKey ?? getGetEditorEvidenceQueryKey();
 
 
-
     const queryFn: QueryFunction<Awaited<ReturnType<typeof getEditorEvidence>>> = ({ signal }) => getEditorEvidence({ signal, ...requestOptions });
-
-
-
 
 
    return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getEditorEvidence>>, TError, TData> & { queryKey: QueryKey }
@@ -1471,14 +1255,7 @@ export function useGetEditorEvidence<TData = Awaited<ReturnType<typeof getEditor
 }
 
 
-
-
-
-
-
 export const getCreateEvidenceEventUrl = () => {
-
-
 
 
   return `/api/editor/events`
@@ -1513,9 +1290,6 @@ return customFetch<EvidenceEventRecord>(getCreateEvidenceEventUrl(),
 );}
 
 
-
-
-
 export const getCreateEvidenceEventMutationKey = () => ['createEvidenceEvent'] as const;
 
 export const getCreateEvidenceEventMutationOptions = <TError = ErrorType<void>,
@@ -1530,17 +1304,11 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       : {mutation: { mutationKey, }, request: undefined};
 
 
-
-
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof createEvidenceEvent>>, CreateEvidenceEventMutationVariables> = (props) => {
           const {data} = props ?? {};
 
           return  createEvidenceEvent(data,requestOptions)
         }
-
-
-
-
 
 
   return  { mutationFn, ...mutationOptions }}
@@ -1565,8 +1333,6 @@ export const useCreateEvidenceEvent = <TError = ErrorType<void>,
     }
 
 export const getUpdateEvidenceEventUrl = (eventId: number,) => {
-
-
 
 
   return `/api/editor/events/${eventId}`
@@ -1602,9 +1368,6 @@ return customFetch<EvidenceEventRecord>(getUpdateEvidenceEventUrl(eventId),
 );}
 
 
-
-
-
 export const getUpdateEvidenceEventMutationKey = () => ['updateEvidenceEvent'] as const;
 
 export const getUpdateEvidenceEventMutationOptions = <TError = ErrorType<void>,
@@ -1619,17 +1382,11 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       : {mutation: { mutationKey, }, request: undefined};
 
 
-
-
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateEvidenceEvent>>, UpdateEvidenceEventMutationVariables> = (props) => {
           const {eventId,data} = props ?? {};
 
           return  updateEvidenceEvent(eventId,data,requestOptions)
         }
-
-
-
-
 
 
   return  { mutationFn, ...mutationOptions }}
@@ -1656,8 +1413,6 @@ export const useUpdateEvidenceEvent = <TError = ErrorType<void>,
 export const getDeleteEvidenceEventUrl = (eventId: number,) => {
 
 
-
-
   return `/api/editor/events/${eventId}`
 }
 
@@ -1676,9 +1431,6 @@ export const deleteEvidenceEvent = async (eventId: number, options?: Parameters<
 );}
 
 
-
-
-
 export const getDeleteEvidenceEventMutationKey = () => ['deleteEvidenceEvent'] as const;
 
 export const getDeleteEvidenceEventMutationOptions = <TError = ErrorType<void>,
@@ -1693,17 +1445,11 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       : {mutation: { mutationKey, }, request: undefined};
 
 
-
-
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteEvidenceEvent>>, DeleteEvidenceEventMutationVariables> = (props) => {
           const {eventId} = props ?? {};
 
           return  deleteEvidenceEvent(eventId,requestOptions)
         }
-
-
-
-
 
 
   return  { mutationFn, ...mutationOptions }}
@@ -1728,8 +1474,6 @@ export const useDeleteEvidenceEvent = <TError = ErrorType<void>,
     }
 
 export const getCreateSourceDocumentUrl = () => {
-
-
 
 
   return `/api/editor/sources`
@@ -1764,9 +1508,6 @@ return customFetch<SourceDocument>(getCreateSourceDocumentUrl(),
 );}
 
 
-
-
-
 export const getCreateSourceDocumentMutationKey = () => ['createSourceDocument'] as const;
 
 export const getCreateSourceDocumentMutationOptions = <TError = ErrorType<void>,
@@ -1781,17 +1522,11 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       : {mutation: { mutationKey, }, request: undefined};
 
 
-
-
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof createSourceDocument>>, CreateSourceDocumentMutationVariables> = (props) => {
           const {data} = props ?? {};
 
           return  createSourceDocument(data,requestOptions)
         }
-
-
-
-
 
 
   return  { mutationFn, ...mutationOptions }}
@@ -1816,8 +1551,6 @@ export const useCreateSourceDocument = <TError = ErrorType<void>,
     }
 
 export const getUpdateSourceDocumentUrl = (sourceId: number,) => {
-
-
 
 
   return `/api/editor/sources/${sourceId}`
@@ -1853,9 +1586,6 @@ return customFetch<SourceDocument>(getUpdateSourceDocumentUrl(sourceId),
 );}
 
 
-
-
-
 export const getUpdateSourceDocumentMutationKey = () => ['updateSourceDocument'] as const;
 
 export const getUpdateSourceDocumentMutationOptions = <TError = ErrorType<void>,
@@ -1870,17 +1600,11 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       : {mutation: { mutationKey, }, request: undefined};
 
 
-
-
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateSourceDocument>>, UpdateSourceDocumentMutationVariables> = (props) => {
           const {sourceId,data} = props ?? {};
 
           return  updateSourceDocument(sourceId,data,requestOptions)
         }
-
-
-
-
 
 
   return  { mutationFn, ...mutationOptions }}
@@ -1907,8 +1631,6 @@ export const useUpdateSourceDocument = <TError = ErrorType<void>,
 export const getDeleteSourceDocumentUrl = (sourceId: number,) => {
 
 
-
-
   return `/api/editor/sources/${sourceId}`
 }
 
@@ -1927,9 +1649,6 @@ export const deleteSourceDocument = async (sourceId: number, options?: Parameter
 );}
 
 
-
-
-
 export const getDeleteSourceDocumentMutationKey = () => ['deleteSourceDocument'] as const;
 
 export const getDeleteSourceDocumentMutationOptions = <TError = ErrorType<void>,
@@ -1944,17 +1663,11 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       : {mutation: { mutationKey, }, request: undefined};
 
 
-
-
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteSourceDocument>>, DeleteSourceDocumentMutationVariables> = (props) => {
           const {sourceId} = props ?? {};
 
           return  deleteSourceDocument(sourceId,requestOptions)
         }
-
-
-
-
 
 
   return  { mutationFn, ...mutationOptions }}
@@ -1979,8 +1692,6 @@ export const useDeleteSourceDocument = <TError = ErrorType<void>,
     }
 
 export const getLinkArticleToEventUrl = () => {
-
-
 
 
   return `/api/editor/article-events`
@@ -2015,9 +1726,6 @@ return customFetch<EvidenceRelationshipResult>(getLinkArticleToEventUrl(),
 );}
 
 
-
-
-
 export const getLinkArticleToEventMutationKey = () => ['linkArticleToEvent'] as const;
 
 export const getLinkArticleToEventMutationOptions = <TError = ErrorType<void>,
@@ -2032,17 +1740,11 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       : {mutation: { mutationKey, }, request: undefined};
 
 
-
-
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof linkArticleToEvent>>, LinkArticleToEventMutationVariables> = (props) => {
           const {data} = props ?? {};
 
           return  linkArticleToEvent(data,requestOptions)
         }
-
-
-
-
 
 
   return  { mutationFn, ...mutationOptions }}
@@ -2070,8 +1772,6 @@ export const getUnlinkArticleFromEventUrl = (eventId: number,
     storyId: number,) => {
 
 
-
-
   return `/api/editor/article-events/${eventId}/${storyId}`
 }
 
@@ -2091,9 +1791,6 @@ export const unlinkArticleFromEvent = async (eventId: number,
 );}
 
 
-
-
-
 export const getUnlinkArticleFromEventMutationKey = () => ['unlinkArticleFromEvent'] as const;
 
 export const getUnlinkArticleFromEventMutationOptions = <TError = ErrorType<void>,
@@ -2108,17 +1805,11 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       : {mutation: { mutationKey, }, request: undefined};
 
 
-
-
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof unlinkArticleFromEvent>>, UnlinkArticleFromEventMutationVariables> = (props) => {
           const {eventId,storyId} = props ?? {};
 
           return  unlinkArticleFromEvent(eventId,storyId,requestOptions)
         }
-
-
-
-
 
 
   return  { mutationFn, ...mutationOptions }}
@@ -2143,8 +1834,6 @@ export const useUnlinkArticleFromEvent = <TError = ErrorType<void>,
     }
 
 export const getLinkArticleToSourceUrl = () => {
-
-
 
 
   return `/api/editor/article-sources`
@@ -2179,9 +1868,6 @@ return customFetch<EvidenceRelationshipResult>(getLinkArticleToSourceUrl(),
 );}
 
 
-
-
-
 export const getLinkArticleToSourceMutationKey = () => ['linkArticleToSource'] as const;
 
 export const getLinkArticleToSourceMutationOptions = <TError = ErrorType<void>,
@@ -2196,17 +1882,11 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       : {mutation: { mutationKey, }, request: undefined};
 
 
-
-
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof linkArticleToSource>>, LinkArticleToSourceMutationVariables> = (props) => {
           const {data} = props ?? {};
 
           return  linkArticleToSource(data,requestOptions)
         }
-
-
-
-
 
 
   return  { mutationFn, ...mutationOptions }}
@@ -2234,8 +1914,6 @@ export const getUnlinkArticleFromSourceUrl = (storyId: number,
     sourceId: number,) => {
 
 
-
-
   return `/api/editor/article-sources/${storyId}/${sourceId}`
 }
 
@@ -2255,9 +1933,6 @@ export const unlinkArticleFromSource = async (storyId: number,
 );}
 
 
-
-
-
 export const getUnlinkArticleFromSourceMutationKey = () => ['unlinkArticleFromSource'] as const;
 
 export const getUnlinkArticleFromSourceMutationOptions = <TError = ErrorType<void>,
@@ -2272,17 +1947,11 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       : {mutation: { mutationKey, }, request: undefined};
 
 
-
-
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof unlinkArticleFromSource>>, UnlinkArticleFromSourceMutationVariables> = (props) => {
           const {storyId,sourceId} = props ?? {};
 
           return  unlinkArticleFromSource(storyId,sourceId,requestOptions)
         }
-
-
-
-
 
 
   return  { mutationFn, ...mutationOptions }}
@@ -2307,8 +1976,6 @@ export const useUnlinkArticleFromSource = <TError = ErrorType<void>,
     }
 
 export const getLinkSourceToEventUrl = () => {
-
-
 
 
   return `/api/editor/event-sources`
@@ -2343,9 +2010,6 @@ return customFetch<EvidenceRelationshipResult>(getLinkSourceToEventUrl(),
 );}
 
 
-
-
-
 export const getLinkSourceToEventMutationKey = () => ['linkSourceToEvent'] as const;
 
 export const getLinkSourceToEventMutationOptions = <TError = ErrorType<void>,
@@ -2360,17 +2024,11 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       : {mutation: { mutationKey, }, request: undefined};
 
 
-
-
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof linkSourceToEvent>>, LinkSourceToEventMutationVariables> = (props) => {
           const {data} = props ?? {};
 
           return  linkSourceToEvent(data,requestOptions)
         }
-
-
-
-
 
 
   return  { mutationFn, ...mutationOptions }}
@@ -2398,8 +2056,6 @@ export const getUnlinkSourceFromEventUrl = (eventId: number,
     sourceId: number,) => {
 
 
-
-
   return `/api/editor/event-sources/${eventId}/${sourceId}`
 }
 
@@ -2419,9 +2075,6 @@ export const unlinkSourceFromEvent = async (eventId: number,
 );}
 
 
-
-
-
 export const getUnlinkSourceFromEventMutationKey = () => ['unlinkSourceFromEvent'] as const;
 
 export const getUnlinkSourceFromEventMutationOptions = <TError = ErrorType<void>,
@@ -2436,17 +2089,11 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       : {mutation: { mutationKey, }, request: undefined};
 
 
-
-
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof unlinkSourceFromEvent>>, UnlinkSourceFromEventMutationVariables> = (props) => {
           const {eventId,sourceId} = props ?? {};
 
           return  unlinkSourceFromEvent(eventId,sourceId,requestOptions)
         }
-
-
-
-
 
 
   return  { mutationFn, ...mutationOptions }}
@@ -2500,9 +2147,6 @@ export const getPolicies = async (params?: GetPoliciesParams, options?: Paramete
 );}
 
 
-
-
-
 export const getGetPoliciesQueryKey = (params?: GetPoliciesParams,) => {
     return [
     `/api/policies`, ...(params ? [params] : [])
@@ -2518,11 +2162,7 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
   const queryKey =  queryOptions?.queryKey ?? getGetPoliciesQueryKey(params);
 
 
-
     const queryFn: QueryFunction<Awaited<ReturnType<typeof getPolicies>>> = ({ signal }) => getPolicies(params, { signal, ...requestOptions });
-
-
-
 
 
    return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPolicies>>, TError, TData> & { queryKey: QueryKey }
@@ -2549,14 +2189,7 @@ export function useGetPolicies<TData = Awaited<ReturnType<typeof getPolicies>>, 
 }
 
 
-
-
-
-
-
 export const getGetPolicyUrl = (slug: string,) => {
-
-
 
 
   return `/api/policies/${slug}`
@@ -2577,9 +2210,6 @@ export const getPolicy = async (slug: string, options?: Parameters<typeof custom
 );}
 
 
-
-
-
 export const getGetPolicyQueryKey = (slug: string,) => {
     return [
     `/api/policies/${slug}`
@@ -2595,11 +2225,7 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
   const queryKey =  queryOptions?.queryKey ?? getGetPolicyQueryKey(slug);
 
 
-
     const queryFn: QueryFunction<Awaited<ReturnType<typeof getPolicy>>> = ({ signal }) => getPolicy(slug, { signal, ...requestOptions });
-
-
-
 
 
    return  { queryKey, queryFn, enabled: slug !== null && slug !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPolicy>>, TError, TData> & { queryKey: QueryKey }
@@ -2624,11 +2250,6 @@ export function useGetPolicy<TData = Awaited<ReturnType<typeof getPolicy>>, TErr
 
   return withQueryKey(query, queryOptions.queryKey);
 }
-
-
-
-
-
 
 
 export const getGetDecisionImpactsUrl = (params?: GetDecisionImpactsParams,) => {
@@ -2662,9 +2283,6 @@ export const getDecisionImpacts = async (params?: GetDecisionImpactsParams, opti
 );}
 
 
-
-
-
 export const getGetDecisionImpactsQueryKey = (params?: GetDecisionImpactsParams,) => {
     return [
     `/api/decision-impacts`, ...(params ? [params] : [])
@@ -2680,11 +2298,7 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
   const queryKey =  queryOptions?.queryKey ?? getGetDecisionImpactsQueryKey(params);
 
 
-
     const queryFn: QueryFunction<Awaited<ReturnType<typeof getDecisionImpacts>>> = ({ signal }) => getDecisionImpacts(params, { signal, ...requestOptions });
-
-
-
 
 
    return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getDecisionImpacts>>, TError, TData> & { queryKey: QueryKey }
@@ -2711,14 +2325,7 @@ export function useGetDecisionImpacts<TData = Awaited<ReturnType<typeof getDecis
 }
 
 
-
-
-
-
-
 export const getCreateDecisionImpactUrl = () => {
-
-
 
 
   return `/api/decision-impacts`
@@ -2753,9 +2360,6 @@ return customFetch<DecisionImpactRecord>(getCreateDecisionImpactUrl(),
 );}
 
 
-
-
-
 export const getCreateDecisionImpactMutationKey = () => ['createDecisionImpact'] as const;
 
 export const getCreateDecisionImpactMutationOptions = <TError = ErrorType<void>,
@@ -2770,17 +2374,11 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       : {mutation: { mutationKey, }, request: undefined};
 
 
-
-
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof createDecisionImpact>>, CreateDecisionImpactMutationVariables> = (props) => {
           const {data} = props ?? {};
 
           return  createDecisionImpact(data,requestOptions)
         }
-
-
-
-
 
 
   return  { mutationFn, ...mutationOptions }}
@@ -2807,8 +2405,6 @@ export const useCreateDecisionImpact = <TError = ErrorType<void>,
 export const getGetDecisionImpactRevisionsUrl = (recordId: number,) => {
 
 
-
-
   return `/api/decision-impacts/${recordId}/revisions`
 }
 
@@ -2827,9 +2423,6 @@ export const getDecisionImpactRevisions = async (recordId: number, options?: Par
 );}
 
 
-
-
-
 export const getGetDecisionImpactRevisionsQueryKey = (recordId: number,) => {
     return [
     `/api/decision-impacts/${recordId}/revisions`
@@ -2845,11 +2438,7 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
   const queryKey =  queryOptions?.queryKey ?? getGetDecisionImpactRevisionsQueryKey(recordId);
 
 
-
     const queryFn: QueryFunction<Awaited<ReturnType<typeof getDecisionImpactRevisions>>> = ({ signal }) => getDecisionImpactRevisions(recordId, { signal, ...requestOptions });
-
-
-
 
 
    return  { queryKey, queryFn, enabled: recordId !== null && recordId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getDecisionImpactRevisions>>, TError, TData> & { queryKey: QueryKey }
@@ -2876,14 +2465,7 @@ export function useGetDecisionImpactRevisions<TData = Awaited<ReturnType<typeof 
 }
 
 
-
-
-
-
-
 export const getUpdateDecisionImpactUrl = (recordId: number,) => {
-
-
 
 
   return `/api/decision-impacts/${recordId}`
@@ -2919,9 +2501,6 @@ return customFetch<DecisionImpactRecord>(getUpdateDecisionImpactUrl(recordId),
 );}
 
 
-
-
-
 export const getUpdateDecisionImpactMutationKey = () => ['updateDecisionImpact'] as const;
 
 export const getUpdateDecisionImpactMutationOptions = <TError = ErrorType<void>,
@@ -2936,17 +2515,11 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       : {mutation: { mutationKey, }, request: undefined};
 
 
-
-
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateDecisionImpact>>, UpdateDecisionImpactMutationVariables> = (props) => {
           const {recordId,data} = props ?? {};
 
           return  updateDecisionImpact(recordId,data,requestOptions)
         }
-
-
-
-
 
 
   return  { mutationFn, ...mutationOptions }}
@@ -2973,8 +2546,6 @@ export const useUpdateDecisionImpact = <TError = ErrorType<void>,
 export const getGetPublicationSitemapUrl = () => {
 
 
-
-
   return `/api/sitemap.xml`
 }
 
@@ -2993,9 +2564,6 @@ export const getPublicationSitemap = async ( options?: Parameters<typeof customF
 );}
 
 
-
-
-
 export const getGetPublicationSitemapQueryKey = () => {
     return [
     `/api/sitemap.xml`
@@ -3011,11 +2579,7 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
   const queryKey =  queryOptions?.queryKey ?? getGetPublicationSitemapQueryKey();
 
 
-
     const queryFn: QueryFunction<Awaited<ReturnType<typeof getPublicationSitemap>>> = ({ signal }) => getPublicationSitemap({ signal, ...requestOptions });
-
-
-
 
 
    return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPublicationSitemap>>, TError, TData> & { queryKey: QueryKey }
@@ -3042,14 +2606,7 @@ export function useGetPublicationSitemap<TData = Awaited<ReturnType<typeof getPu
 }
 
 
-
-
-
-
-
 export const getCreateIssueUrl = () => {
-
-
 
 
   return `/api/issues`
@@ -3084,9 +2641,6 @@ return customFetch<Issue>(getCreateIssueUrl(),
 );}
 
 
-
-
-
 export const getCreateIssueMutationKey = () => ['createIssue'] as const;
 
 export const getCreateIssueMutationOptions = <TError = ErrorType<void>,
@@ -3101,17 +2655,11 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       : {mutation: { mutationKey, }, request: undefined};
 
 
-
-
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof createIssue>>, CreateIssueMutationVariables> = (props) => {
           const {data} = props ?? {};
 
           return  createIssue(data,requestOptions)
         }
-
-
-
-
 
 
   return  { mutationFn, ...mutationOptions }}
@@ -3138,8 +2686,6 @@ export const useCreateIssue = <TError = ErrorType<void>,
 export const getPublishIssueUrl = (issueId: number,) => {
 
 
-
-
   return `/api/issues/${issueId}/publish`
 }
 
@@ -3158,9 +2704,6 @@ export const publishIssue = async (issueId: number, options?: Parameters<typeof 
 );}
 
 
-
-
-
 export const getPublishIssueMutationKey = () => ['publishIssue'] as const;
 
 export const getPublishIssueMutationOptions = <TError = ErrorType<void>,
@@ -3175,17 +2718,11 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       : {mutation: { mutationKey, }, request: undefined};
 
 
-
-
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof publishIssue>>, PublishIssueMutationVariables> = (props) => {
           const {issueId} = props ?? {};
 
           return  publishIssue(issueId,requestOptions)
         }
-
-
-
-
 
 
   return  { mutationFn, ...mutationOptions }}
@@ -3212,8 +2749,6 @@ export const usePublishIssue = <TError = ErrorType<void>,
 export const getGetStoryUrl = (storyId: number,) => {
 
 
-
-
   return `/api/stories/${storyId}`
 }
 
@@ -3232,9 +2767,6 @@ export const getStory = async (storyId: number, options?: Parameters<typeof cust
 );}
 
 
-
-
-
 export const getGetStoryQueryKey = (storyId: number,) => {
     return [
     `/api/stories/${storyId}`
@@ -3250,11 +2782,7 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
   const queryKey =  queryOptions?.queryKey ?? getGetStoryQueryKey(storyId);
 
 
-
     const queryFn: QueryFunction<Awaited<ReturnType<typeof getStory>>> = ({ signal }) => getStory(storyId, { signal, ...requestOptions });
-
-
-
 
 
    return  { queryKey, queryFn, enabled: storyId !== null && storyId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getStory>>, TError, TData> & { queryKey: QueryKey }
@@ -3281,14 +2809,7 @@ export function useGetStory<TData = Awaited<ReturnType<typeof getStory>>, TError
 }
 
 
-
-
-
-
-
 export const getUpdateStoryUrl = (storyId: number,) => {
-
-
 
 
   return `/api/stories/${storyId}`
@@ -3324,9 +2845,6 @@ return customFetch<Story>(getUpdateStoryUrl(storyId),
 );}
 
 
-
-
-
 export const getUpdateStoryMutationKey = () => ['updateStory'] as const;
 
 export const getUpdateStoryMutationOptions = <TError = ErrorType<void>,
@@ -3341,17 +2859,11 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       : {mutation: { mutationKey, }, request: undefined};
 
 
-
-
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateStory>>, UpdateStoryMutationVariables> = (props) => {
           const {storyId,data} = props ?? {};
 
           return  updateStory(storyId,data,requestOptions)
         }
-
-
-
-
 
 
   return  { mutationFn, ...mutationOptions }}
@@ -3378,8 +2890,6 @@ export const useUpdateStory = <TError = ErrorType<void>,
 export const getGetStoryRevisionsUrl = (storyId: number,) => {
 
 
-
-
   return `/api/stories/${storyId}/revisions`
 }
 
@@ -3398,9 +2908,6 @@ export const getStoryRevisions = async (storyId: number, options?: Parameters<ty
 );}
 
 
-
-
-
 export const getGetStoryRevisionsQueryKey = (storyId: number,) => {
     return [
     `/api/stories/${storyId}/revisions`
@@ -3416,11 +2923,7 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
   const queryKey =  queryOptions?.queryKey ?? getGetStoryRevisionsQueryKey(storyId);
 
 
-
     const queryFn: QueryFunction<Awaited<ReturnType<typeof getStoryRevisions>>> = ({ signal }) => getStoryRevisions(storyId, { signal, ...requestOptions });
-
-
-
 
 
    return  { queryKey, queryFn, enabled: storyId !== null && storyId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getStoryRevisions>>, TError, TData> & { queryKey: QueryKey }
@@ -3447,14 +2950,7 @@ export function useGetStoryRevisions<TData = Awaited<ReturnType<typeof getStoryR
 }
 
 
-
-
-
-
-
 export const getCreateStoryUrl = () => {
-
-
 
 
   return `/api/stories`
@@ -3489,9 +2985,6 @@ return customFetch<Story>(getCreateStoryUrl(),
 );}
 
 
-
-
-
 export const getCreateStoryMutationKey = () => ['createStory'] as const;
 
 export const getCreateStoryMutationOptions = <TError = ErrorType<void>,
@@ -3506,17 +2999,11 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       : {mutation: { mutationKey, }, request: undefined};
 
 
-
-
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof createStory>>, CreateStoryMutationVariables> = (props) => {
           const {data} = props ?? {};
 
           return  createStory(data,requestOptions)
         }
-
-
-
-
 
 
   return  { mutationFn, ...mutationOptions }}
@@ -3541,8 +3028,6 @@ export const useCreateStory = <TError = ErrorType<void>,
     }
 
 export const getSubscribeToNewsletterUrl = () => {
-
-
 
 
   return `/api/newsletter`
@@ -3577,9 +3062,6 @@ return customFetch<NewsletterStatus>(getSubscribeToNewsletterUrl(),
 );}
 
 
-
-
-
 export const getSubscribeToNewsletterMutationKey = () => ['subscribeToNewsletter'] as const;
 
 export const getSubscribeToNewsletterMutationOptions = <TError = ErrorType<unknown>,
@@ -3594,17 +3076,11 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       : {mutation: { mutationKey, }, request: undefined};
 
 
-
-
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof subscribeToNewsletter>>, SubscribeToNewsletterMutationVariables> = (props) => {
           const {data} = props ?? {};
 
           return  subscribeToNewsletter(data,requestOptions)
         }
-
-
-
-
 
 
   return  { mutationFn, ...mutationOptions }}
@@ -3631,8 +3107,6 @@ export const useSubscribeToNewsletter = <TError = ErrorType<unknown>,
 export const getGetEditorContentSourcesUrl = () => {
 
 
-
-
   return `/api/editor/content-sources`
 }
 
@@ -3652,9 +3126,6 @@ export const getEditorContentSources = async ( options?: Parameters<typeof custo
 );}
 
 
-
-
-
 export const getGetEditorContentSourcesQueryKey = () => {
     return [
     `/api/editor/content-sources`
@@ -3670,11 +3141,7 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
   const queryKey =  queryOptions?.queryKey ?? getGetEditorContentSourcesQueryKey();
 
 
-
     const queryFn: QueryFunction<Awaited<ReturnType<typeof getEditorContentSources>>> = ({ signal }) => getEditorContentSources({ signal, ...requestOptions });
-
-
-
 
 
    return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getEditorContentSources>>, TError, TData> & { queryKey: QueryKey }
@@ -3701,14 +3168,7 @@ export function useGetEditorContentSources<TData = Awaited<ReturnType<typeof get
 }
 
 
-
-
-
-
-
 export const getCreateEditorContentSourceUrl = () => {
-
-
 
 
   return `/api/editor/content-sources`
@@ -3743,9 +3203,6 @@ return customFetch<ContentSourceRecord>(getCreateEditorContentSourceUrl(),
 );}
 
 
-
-
-
 export const getCreateEditorContentSourceMutationKey = () => ['createEditorContentSource'] as const;
 
 export const getCreateEditorContentSourceMutationOptions = <TError = ErrorType<void>,
@@ -3760,17 +3217,11 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       : {mutation: { mutationKey, }, request: undefined};
 
 
-
-
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof createEditorContentSource>>, CreateEditorContentSourceMutationVariables> = (props) => {
           const {data} = props ?? {};
 
           return  createEditorContentSource(data,requestOptions)
         }
-
-
-
-
 
 
   return  { mutationFn, ...mutationOptions }}
@@ -3795,8 +3246,6 @@ export const useCreateEditorContentSource = <TError = ErrorType<void>,
     }
 
 export const getUpdateEditorContentSourceUrl = (sourceId: number,) => {
-
-
 
 
   return `/api/editor/content-sources/${sourceId}`
@@ -3832,9 +3281,6 @@ return customFetch<ContentSourceRecord>(getUpdateEditorContentSourceUrl(sourceId
 );}
 
 
-
-
-
 export const getUpdateEditorContentSourceMutationKey = () => ['updateEditorContentSource'] as const;
 
 export const getUpdateEditorContentSourceMutationOptions = <TError = ErrorType<void>,
@@ -3849,17 +3295,11 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       : {mutation: { mutationKey, }, request: undefined};
 
 
-
-
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateEditorContentSource>>, UpdateEditorContentSourceMutationVariables> = (props) => {
           const {sourceId,data} = props ?? {};
 
           return  updateEditorContentSource(sourceId,data,requestOptions)
         }
-
-
-
-
 
 
   return  { mutationFn, ...mutationOptions }}
@@ -3886,8 +3326,6 @@ export const useUpdateEditorContentSource = <TError = ErrorType<void>,
 export const getGetEditorDiscoveryItemsUrl = () => {
 
 
-
-
   return `/api/editor/discovery-items`
 }
 
@@ -3907,9 +3345,6 @@ export const getEditorDiscoveryItems = async ( options?: Parameters<typeof custo
 );}
 
 
-
-
-
 export const getGetEditorDiscoveryItemsQueryKey = () => {
     return [
     `/api/editor/discovery-items`
@@ -3925,11 +3360,7 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
   const queryKey =  queryOptions?.queryKey ?? getGetEditorDiscoveryItemsQueryKey();
 
 
-
     const queryFn: QueryFunction<Awaited<ReturnType<typeof getEditorDiscoveryItems>>> = ({ signal }) => getEditorDiscoveryItems({ signal, ...requestOptions });
-
-
-
 
 
    return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getEditorDiscoveryItems>>, TError, TData> & { queryKey: QueryKey }
@@ -3956,14 +3387,7 @@ export function useGetEditorDiscoveryItems<TData = Awaited<ReturnType<typeof get
 }
 
 
-
-
-
-
-
 export const getCreateEditorDiscoveryItemUrl = () => {
-
-
 
 
   return `/api/editor/discovery-items`
@@ -3998,9 +3422,6 @@ return customFetch<ContentDiscoveryItem>(getCreateEditorDiscoveryItemUrl(),
 );}
 
 
-
-
-
 export const getCreateEditorDiscoveryItemMutationKey = () => ['createEditorDiscoveryItem'] as const;
 
 export const getCreateEditorDiscoveryItemMutationOptions = <TError = ErrorType<void>,
@@ -4015,17 +3436,11 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       : {mutation: { mutationKey, }, request: undefined};
 
 
-
-
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof createEditorDiscoveryItem>>, CreateEditorDiscoveryItemMutationVariables> = (props) => {
           const {data} = props ?? {};
 
           return  createEditorDiscoveryItem(data,requestOptions)
         }
-
-
-
-
 
 
   return  { mutationFn, ...mutationOptions }}
@@ -4050,8 +3465,6 @@ export const useCreateEditorDiscoveryItem = <TError = ErrorType<void>,
     }
 
 export const getUpdateEditorDiscoveryItemUrl = (itemId: number,) => {
-
-
 
 
   return `/api/editor/discovery-items/${itemId}`
@@ -4087,9 +3500,6 @@ return customFetch<ContentDiscoveryItem>(getUpdateEditorDiscoveryItemUrl(itemId)
 );}
 
 
-
-
-
 export const getUpdateEditorDiscoveryItemMutationKey = () => ['updateEditorDiscoveryItem'] as const;
 
 export const getUpdateEditorDiscoveryItemMutationOptions = <TError = ErrorType<void>,
@@ -4104,17 +3514,11 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       : {mutation: { mutationKey, }, request: undefined};
 
 
-
-
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateEditorDiscoveryItem>>, UpdateEditorDiscoveryItemMutationVariables> = (props) => {
           const {itemId,data} = props ?? {};
 
           return  updateEditorDiscoveryItem(itemId,data,requestOptions)
         }
-
-
-
-
 
 
   return  { mutationFn, ...mutationOptions }}
@@ -4138,9 +3542,12 @@ export const useUpdateEditorDiscoveryItem = <TError = ErrorType<void>,
       return useMutation(getUpdateEditorDiscoveryItemMutationOptions(options));
     }
 
+export const getPromoteEditorDiscoveryItemUrl = (itemId: number,) => {
+
+
+  return `/api/editor/discovery-items/${itemId}/promote`
+}
 export const getSearchEditorCommonsImagesUrl = () => {
-
-
 
 
   return `/api/editor/image-search`
@@ -4176,9 +3583,6 @@ return customFetch<EditorImageCandidateSearchResponse>(getSearchEditorCommonsIma
 );}
 
 
-
-
-
 export const getSearchEditorCommonsImagesMutationKey = () => ['searchEditorCommonsImages'] as const;
 
 export const getSearchEditorCommonsImagesMutationOptions = <TError = ErrorType<void>,
@@ -4193,17 +3597,11 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       : {mutation: { mutationKey, }, request: undefined};
 
 
-
-
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof searchEditorCommonsImages>>, SearchEditorCommonsImagesMutationVariables> = (props) => {
           const {data} = props ?? {};
 
           return  searchEditorCommonsImages(data,requestOptions)
         }
-
-
-
-
 
 
   return  { mutationFn, ...mutationOptions }}
@@ -4230,8 +3628,6 @@ export const useSearchEditorCommonsImages = <TError = ErrorType<void>,
 export const getGetEditorDiscoveryItemImageCandidatesUrl = (itemId: number,) => {
 
 
-
-
   return `/api/editor/discovery-items/${itemId}/image-candidates`
 }
 
@@ -4251,9 +3647,6 @@ export const getEditorDiscoveryItemImageCandidates = async (itemId: number, opti
 );}
 
 
-
-
-
 export const getGetEditorDiscoveryItemImageCandidatesQueryKey = (itemId: number,) => {
     return [
     `/api/editor/discovery-items/${itemId}/image-candidates`
@@ -4269,11 +3662,7 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
   const queryKey =  queryOptions?.queryKey ?? getGetEditorDiscoveryItemImageCandidatesQueryKey(itemId);
 
 
-
     const queryFn: QueryFunction<Awaited<ReturnType<typeof getEditorDiscoveryItemImageCandidates>>> = ({ signal }) => getEditorDiscoveryItemImageCandidates(itemId, { signal, ...requestOptions });
-
-
-
 
 
    return  { queryKey, queryFn, enabled: itemId !== null && itemId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getEditorDiscoveryItemImageCandidates>>, TError, TData> & { queryKey: QueryKey }
@@ -4300,14 +3689,7 @@ export function useGetEditorDiscoveryItemImageCandidates<TData = Awaited<ReturnT
 }
 
 
-
-
-
-
-
 export const getCreateEditorDiscoveryItemImageCandidateUrl = (itemId: number,) => {
-
-
 
 
   return `/api/editor/discovery-items/${itemId}/image-candidates`
@@ -4344,9 +3726,6 @@ return customFetch<EditorImageCandidate>(getCreateEditorDiscoveryItemImageCandid
 );}
 
 
-
-
-
 export const getCreateEditorDiscoveryItemImageCandidateMutationKey = () => ['createEditorDiscoveryItemImageCandidate'] as const;
 
 export const getCreateEditorDiscoveryItemImageCandidateMutationOptions = <TError = ErrorType<void>,
@@ -4361,17 +3740,11 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       : {mutation: { mutationKey, }, request: undefined};
 
 
-
-
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof createEditorDiscoveryItemImageCandidate>>, CreateEditorDiscoveryItemImageCandidateMutationVariables> = (props) => {
           const {itemId,data} = props ?? {};
 
           return  createEditorDiscoveryItemImageCandidate(itemId,data,requestOptions)
         }
-
-
-
-
 
 
   return  { mutationFn, ...mutationOptions }}
@@ -4396,8 +3769,6 @@ export const useCreateEditorDiscoveryItemImageCandidate = <TError = ErrorType<vo
     }
 
 export const getUpdateEditorImageCandidateUrl = (candidateId: number,) => {
-
-
 
 
   return `/api/editor/image-candidates/${candidateId}`
@@ -4434,9 +3805,6 @@ return customFetch<EditorImageCandidate>(getUpdateEditorImageCandidateUrl(candid
 );}
 
 
-
-
-
 export const getUpdateEditorImageCandidateMutationKey = () => ['updateEditorImageCandidate'] as const;
 
 export const getUpdateEditorImageCandidateMutationOptions = <TError = ErrorType<void>,
@@ -4451,17 +3819,11 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       : {mutation: { mutationKey, }, request: undefined};
 
 
-
-
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateEditorImageCandidate>>, UpdateEditorImageCandidateMutationVariables> = (props) => {
           const {candidateId,data} = props ?? {};
 
           return  updateEditorImageCandidate(candidateId,data,requestOptions)
         }
-
-
-
-
 
 
   return  { mutationFn, ...mutationOptions }}
@@ -4488,8 +3850,6 @@ export const useUpdateEditorImageCandidate = <TError = ErrorType<void>,
 export const getRecheckEditorImageCandidateSourceUrl = (candidateId: number,) => {
 
 
-
-
   return `/api/editor/image-candidates/${candidateId}/recheck`
 }
 
@@ -4509,9 +3869,6 @@ export const recheckEditorImageCandidateSource = async (candidateId: number, opt
 );}
 
 
-
-
-
 export const getRecheckEditorImageCandidateSourceMutationKey = () => ['recheckEditorImageCandidateSource'] as const;
 
 export const getRecheckEditorImageCandidateSourceMutationOptions = <TError = ErrorType<void>,
@@ -4526,17 +3883,11 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       : {mutation: { mutationKey, }, request: undefined};
 
 
-
-
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof recheckEditorImageCandidateSource>>, RecheckEditorImageCandidateSourceMutationVariables> = (props) => {
           const {candidateId} = props ?? {};
 
           return  recheckEditorImageCandidateSource(candidateId,requestOptions)
         }
-
-
-
-
 
 
   return  { mutationFn, ...mutationOptions }}
@@ -4561,8 +3912,6 @@ export const useRecheckEditorImageCandidateSource = <TError = ErrorType<void>,
     }
 
 export const getApplyEditorImageCandidateSourceRecheckUrl = (candidateId: number,) => {
-
-
 
 
   return `/api/editor/image-candidates/${candidateId}/recheck/apply`
@@ -4599,9 +3948,6 @@ return customFetch<EditorImageCandidateSourceRecheckApplyResponse>(getApplyEdito
 );}
 
 
-
-
-
 export const getApplyEditorImageCandidateSourceRecheckMutationKey = () => ['applyEditorImageCandidateSourceRecheck'] as const;
 
 export const getApplyEditorImageCandidateSourceRecheckMutationOptions = <TError = ErrorType<void>,
@@ -4616,17 +3962,11 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       : {mutation: { mutationKey, }, request: undefined};
 
 
-
-
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof applyEditorImageCandidateSourceRecheck>>, ApplyEditorImageCandidateSourceRecheckMutationVariables> = (props) => {
           const {candidateId,data} = props ?? {};
 
           return  applyEditorImageCandidateSourceRecheck(candidateId,data,requestOptions)
         }
-
-
-
-
 
 
   return  { mutationFn, ...mutationOptions }}
@@ -4651,8 +3991,6 @@ export const useApplyEditorImageCandidateSourceRecheck = <TError = ErrorType<voi
     }
 
 export const getReviewEditorImageCandidateRightsUrl = (candidateId: number,) => {
-
-
 
 
   return `/api/editor/image-candidates/${candidateId}/rights`
@@ -4689,9 +4027,6 @@ return customFetch<EditorImageCandidate>(getReviewEditorImageCandidateRightsUrl(
 );}
 
 
-
-
-
 export const getReviewEditorImageCandidateRightsMutationKey = () => ['reviewEditorImageCandidateRights'] as const;
 
 export const getReviewEditorImageCandidateRightsMutationOptions = <TError = ErrorType<void>,
@@ -4706,17 +4041,11 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       : {mutation: { mutationKey, }, request: undefined};
 
 
-
-
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof reviewEditorImageCandidateRights>>, ReviewEditorImageCandidateRightsMutationVariables> = (props) => {
           const {candidateId,data} = props ?? {};
 
           return  reviewEditorImageCandidateRights(candidateId,data,requestOptions)
         }
-
-
-
-
 
 
   return  { mutationFn, ...mutationOptions }}
@@ -4740,3 +4069,78 @@ export const useReviewEditorImageCandidateRights = <TError = ErrorType<void>,
       return useMutation(getReviewEditorImageCandidateRightsMutationOptions(options));
     }
 
+
+    export type PromoteEditorDiscoveryItemMutationError = ErrorType<void>
+
+    export type PromoteEditorDiscoveryItemMutationResult = NonNullable<Awaited<ReturnType<typeof promoteEditorDiscoveryItem>>>
+
+export const getPromoteEditorDiscoveryItemMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof promoteEditorDiscoveryItem>>, TError,PromoteEditorDiscoveryItemMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof promoteEditorDiscoveryItem>>, TError,PromoteEditorDiscoveryItemMutationVariables, TContext> => {
+
+const mutationKey = getPromoteEditorDiscoveryItemMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof promoteEditorDiscoveryItem>>, PromoteEditorDiscoveryItemMutationVariables> = (props) => {
+          const {itemId,data} = props ?? {};
+
+          return  promoteEditorDiscoveryItem(itemId,data,requestOptions)
+        }
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+export const getPromoteEditorDiscoveryItemMutationKey = () => ['promoteEditorDiscoveryItem'] as const;
+
+    /**
+ * @summary Promote a reviewed lead into an article draft
+ */
+export const usePromoteEditorDiscoveryItem = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof promoteEditorDiscoveryItem>>, TError,PromoteEditorDiscoveryItemMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof promoteEditorDiscoveryItem>>,
+        TError,
+        PromoteEditorDiscoveryItemMutationVariables,
+        TContext
+      > => {
+      return useMutation(getPromoteEditorDiscoveryItemMutationOptions(options));
+    }
+
+    export type PromoteEditorDiscoveryItemMutationVariables = {itemId: number;data: BodyType<DiscoveryItemPromotionInput>}
+
+    export type PromoteEditorDiscoveryItemMutationBody = BodyType<DiscoveryItemPromotionInput>
+
+/**
+ * Requires verified editor access. Creates an unpublished draft with source/date provenance; it does not link evidence or publish the article.
+ * @summary Promote a reviewed lead into an article draft
+ */
+export const promoteEditorDiscoveryItem = async (itemId: number,
+    discoveryItemPromotionInput: DiscoveryItemPromotionInput, options?: Parameters<typeof customFetch>[1]): Promise<ContentDiscoveryItem> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ContentDiscoveryItem>(getPromoteEditorDiscoveryItemUrl(itemId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(discoveryItemPromotionInput)
+  }
+);}

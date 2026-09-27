@@ -12,6 +12,9 @@ import {
   GetEditorDiscoveryItemImageCandidatesResponse,
   GetEditorContentSourcesResponse,
   GetEditorDiscoveryItemsResponse,
+  PromoteEditorDiscoveryItemBody,
+  PromoteEditorDiscoveryItemParams,
+  PromoteEditorDiscoveryItemResponse,
   ReviewEditorImageCandidateRightsBody,
   ReviewEditorImageCandidateRightsParams,
   ReviewEditorImageCandidateRightsResponse,
@@ -41,7 +44,10 @@ import {
   contentImageCandidatesTable,
   db,
   discoveryItemsTable,
+  issuesTable,
   sourceRegistryTable,
+  storiesTable,
+  storyRevisionsTable,
 } from "@workspace/db";
 import type { ContentImageCandidate } from "@workspace/db";
 import { requireEditor } from "../middlewares/editorAuth";
@@ -239,6 +245,9 @@ function serializeDiscoveryItem(
     reviewNotes: item.reviewNotes,
     reviewedBy: item.reviewedBy,
     reviewedAt: asIso(item.reviewedAt),
+    promotedStoryId: item.promotedStoryId,
+    promotedBy: item.promotedBy,
+    promotedAt: asIso(item.promotedAt),
     createdBy: item.createdBy,
     createdAt: item.createdAt.toISOString(),
     updatedBy: item.updatedBy,
@@ -1070,6 +1079,12 @@ export function createContentDeskRouter(
         res.status(403).json({ message: "Verified editor identity is required." });
         return;
       }
+      const updateConditions = [
+        eq(discoveryItemsTable.id, params.data.itemId),
+      ];
+      if (parsed.data.status !== "review") {
+        updateConditions.push(isNull(discoveryItemsTable.promotedStoryId));
+      }
       const [item] = await database
         .update(discoveryItemsTable)
         .set({
@@ -1079,9 +1094,23 @@ export function createContentDeskRouter(
           reviewedAt: parsed.data.status === "new" ? null : new Date(),
           updatedBy: editorId,
         })
-        .where(eq(discoveryItemsTable.id, params.data.itemId))
+        .where(and(...updateConditions))
         .returning();
       if (!item) {
+        const [existing] = await database
+          .select({
+            id: discoveryItemsTable.id,
+            promotedStoryId: discoveryItemsTable.promotedStoryId,
+          })
+          .from(discoveryItemsTable)
+          .where(eq(discoveryItemsTable.id, params.data.itemId))
+          .limit(1);
+        if (existing?.promotedStoryId) {
+          res.status(409).json({
+            message: "A promoted lead must remain in the reviewed state.",
+          });
+          return;
+        }
         res.status(404).json({ message: "Discovery item not found." });
         return;
       }
@@ -1097,6 +1126,148 @@ export function createContentDeskRouter(
       res.json(
         UpdateEditorDiscoveryItemResponse.parse(
           serializeDiscoveryItem(item, source),
+        ),
+      );
+    },
+  );
+
+  router.post(
+    "/editor/discovery-items/:itemId/promote",
+    async (req, res): Promise<void> => {
+      const params = PromoteEditorDiscoveryItemParams.safeParse(req.params);
+      const parsed = PromoteEditorDiscoveryItemBody.safeParse(req.body);
+      if (!params.success) {
+        res.status(400).json({ message: params.error.message });
+        return;
+      }
+      if (!parsed.success) {
+        res.status(400).json({ message: parsed.error.message });
+        return;
+      }
+      if (
+        !parsed.data.title.trim() ||
+        !parsed.data.dek.trim() ||
+        !parsed.data.body.trim()
+      ) {
+        res.status(400).json({
+          message: "Write an original title, standfirst, and article body.",
+        });
+        return;
+      }
+      const editorId = req.editorIdentity?.id;
+      if (!editorId) {
+        res.status(403).json({ message: "Verified editor identity is required." });
+        return;
+      }
+
+      const result = await database.transaction(async (tx) => {
+        const [record] = await tx
+          .select({ item: discoveryItemsTable, source: sourceRegistryTable })
+          .from(discoveryItemsTable)
+          .innerJoin(
+            sourceRegistryTable,
+            eq(discoveryItemsTable.sourceId, sourceRegistryTable.id),
+          )
+          .where(eq(discoveryItemsTable.id, params.data.itemId))
+          .for("update")
+          .limit(1);
+        if (!record) {
+          return {
+            ok: false as const,
+            status: 404,
+            message: "Discovery item not found.",
+          };
+        }
+        if (record.item.promotedStoryId) {
+          return {
+            ok: false as const,
+            status: 409,
+            message: "This lead has already been promoted.",
+          };
+        }
+        if (record.item.status !== "review") {
+          return {
+            ok: false as const,
+            status: 409,
+            message: "Review this lead before promoting it.",
+          };
+        }
+
+        const [issue] = await tx
+          .select({ id: issuesTable.id })
+          .from(issuesTable)
+          .where(eq(issuesTable.id, parsed.data.issueId))
+          .limit(1);
+        if (!issue) {
+          return {
+            ok: false as const,
+            status: 404,
+            message: "Editorial issue not found.",
+          };
+        }
+
+        const now = new Date();
+        const [story] = await tx
+          .insert(storiesTable)
+          .values({
+            issueId: issue.id,
+            topic: parsed.data.topic,
+            kind: "Article",
+            state: record.item.state,
+            source: record.item.publisher?.trim() || record.source.sourceName,
+            sourceUrl: record.item.originalUrl,
+            publishedOn: null,
+            eyebrow: "Editorial draft",
+            title: parsed.data.title.trim(),
+            dek: parsed.data.dek.trim(),
+            body: parsed.data.body.trim(),
+            time: "6 min",
+            read: 6,
+            tone: "Latest",
+            number: null,
+            sortOrder: 0,
+            workflowStatus: "draft",
+            verificationStatus: "unverified",
+            verificationNotes:
+              "Created from a reviewed external lead; verify all reporting and source details before publication.",
+            sourcePublishedOn: record.item.sourcePublishedOn,
+            sourceRetrievedOn: now.toISOString().slice(0, 10),
+            lastVerifiedAt: null,
+            reviewedAt: null,
+            scheduledFor: null,
+            aiDisclosure: null,
+            correctionNote: null,
+          })
+          .returning();
+
+        await tx.insert(storyRevisionsTable).values({
+          storyId: story.id,
+          revisionNumber: 1,
+          changeNote: "Created from a reviewed external lead",
+          snapshot: story,
+        });
+
+        const [item] = await tx
+          .update(discoveryItemsTable)
+          .set({
+            promotedStoryId: story.id,
+            promotedBy: editorId,
+            promotedAt: now,
+            updatedBy: editorId,
+          })
+          .where(eq(discoveryItemsTable.id, record.item.id))
+          .returning();
+
+        return { ok: true as const, item, source: record.source };
+      });
+
+      if (!result.ok) {
+        res.status(result.status).json({ message: result.message });
+        return;
+      }
+      res.json(
+        PromoteEditorDiscoveryItemResponse.parse(
+          serializeDiscoveryItem(result.item, result.source),
         ),
       );
     },

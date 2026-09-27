@@ -42,6 +42,12 @@ export interface ContentDiscoveryItem {
   reviewedBy: string | null;
   /** @nullable */
   reviewedAt: Date | null;
+  /** @nullable */
+  promotedStoryId: number | null;
+  /** @nullable */
+  promotedBy: string | null;
+  /** @nullable */
+  promotedAt: Date | null;
   createdBy: string;
   createdAt: Date;
   updatedBy: string;

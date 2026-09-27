@@ -940,6 +940,12 @@ export interface ContentDiscoveryItem {
   reviewedBy: string | null;
   /** @nullable */
   reviewedAt: string | null;
+  /** @nullable */
+  promotedStoryId: number | null;
+  /** @nullable */
+  promotedBy: string | null;
+  /** @nullable */
+  promotedAt: string | null;
   createdBy: string;
   createdAt: string;
   updatedBy: string;
@@ -1003,6 +1009,26 @@ export interface DiscoveryItemReviewInput {
   reviewNotes: string;
 }
 
+export interface DiscoveryItemPromotionInput {
+  /** @minimum 1 */
+  issueId: number;
+  topic: Topic;
+  /**
+     * @minLength 1
+     * @maxLength 300
+     */
+  title: string;
+  /**
+     * @minLength 1
+     * @maxLength 500
+     */
+  dek: string;
+  /**
+     * @minLength 1
+     * @maxLength 50000
+     */
+  body: string;
+}
 export type ImageCandidateRightsStatus = typeof ImageCandidateRightsStatus[keyof typeof ImageCandidateRightsStatus];
 
 
@@ -1254,4 +1280,3 @@ includeUnpublished?: boolean;
  */
 limit?: number;
 };
-

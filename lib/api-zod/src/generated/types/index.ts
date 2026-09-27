@@ -36,6 +36,7 @@ export * from './decisionImpactRevisions';
 export * from './decisionImpactRevisionSnapshot';
 export * from './decisionImpactWorkflowStatus';
 export * from './discoveryItemInput';
+export * from './discoveryItemPromotionInput';
 export * from './discoveryItemReviewInput';
 export * from './discoveryItemStatus';
 export * from './editorArticleEventLink';

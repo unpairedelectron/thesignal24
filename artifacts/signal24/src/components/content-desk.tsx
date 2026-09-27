@@ -1,12 +1,15 @@
 import { useState, type FormEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
+  getGetEditorialIssueQueryKey,
   getGetEditorContentSourcesQueryKey,
   getGetEditorDiscoveryItemsQueryKey,
+  useGetEditorialIssue,
   useCreateEditorContentSource,
   useCreateEditorDiscoveryItem,
   useGetEditorContentSources,
   useGetEditorDiscoveryItems,
+  usePromoteEditorDiscoveryItem,
   useUpdateEditorContentSource,
   useUpdateEditorDiscoveryItem,
 } from "@workspace/api-client-react";
@@ -15,6 +18,7 @@ import type {
   ContentSourceType,
   ContentTopic,
   DiscoveryItemStatus,
+  Topic,
 } from "@workspace/api-client-react";
 import { ImageCandidateManager } from "./image-candidate-manager";
 
@@ -104,6 +108,14 @@ const GEOGRAPHIES = [
 ];
 const DISCOVERY_STATUSES: DiscoveryItemStatus[] = ["new", "review", "rejected"];
 
+const ARTICLE_TOPICS: Topic[] = [
+  "Latest",
+  "Courts & Policy",
+  "States",
+  "History",
+  "Ground Reports",
+  "Data & Notes",
+];
 type SourceForm = {
   id?: number;
   sourceName: string;
@@ -134,6 +146,7 @@ type LeadForm = {
 };
 type ReviewDraft = { status: DiscoveryItemStatus; notes: string };
 
+type PromotionDraft = { topic: Topic; title: string; dek: string; body: string };
 const emptySource: SourceForm = {
   sourceName: "",
   sourceType: "government",
@@ -239,15 +252,20 @@ export function SourceDiscoveryDesk() {
   const queryClient = useQueryClient();
   const sourceQuery = useGetEditorContentSources();
   const discoveryQuery = useGetEditorDiscoveryItems();
+  const editorialIssueQuery = useGetEditorialIssue();
   const createSource = useCreateEditorContentSource();
   const updateSource = useUpdateEditorContentSource();
   const createLead = useCreateEditorDiscoveryItem();
   const updateLead = useUpdateEditorDiscoveryItem();
+  const promoteLead = usePromoteEditorDiscoveryItem();
   const [sourceForm, setSourceForm] = useState<SourceForm>(emptySource);
   const [leadForm, setLeadForm] = useState<LeadForm>(emptyLead);
   const [reviewDrafts, setReviewDrafts] = useState<Record<number, ReviewDraft>>(
     {},
   );
+  const [promotionDrafts, setPromotionDrafts] = useState<
+    Record<number, PromotionDraft | undefined>
+  >({});
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
@@ -262,6 +280,9 @@ export function SourceDiscoveryDesk() {
       }),
       queryClient.invalidateQueries({
         queryKey: getGetEditorDiscoveryItemsQueryKey(),
+      }),
+      queryClient.invalidateQueries({
+        queryKey: getGetEditorialIssueQueryKey(),
       }),
     ]);
     setNotice(message);
@@ -351,6 +372,45 @@ export function SourceDiscoveryDesk() {
         onSuccess: () => void refresh("Lead review saved."),
         onError: (reason: unknown) =>
           fail("Lead review could not be saved.", reason),
+      },
+    );
+  }
+
+  function submitPromotion(
+    event: FormEvent<HTMLFormElement>,
+    itemId: number,
+  ) {
+    event.preventDefault();
+    const draft = promotionDrafts[itemId];
+    const issueId = editorialIssueQuery.data?.issue.id;
+    if (!draft || !issueId) {
+      fail("Open an editorial issue before promoting a lead.");
+      return;
+    }
+    promoteLead.mutate(
+      {
+        itemId,
+        data: {
+          issueId,
+          topic: draft.topic,
+          title: draft.title.trim(),
+          dek: draft.dek.trim(),
+          body: draft.body.trim(),
+        },
+      },
+      {
+        onSuccess: (item) => {
+          setPromotionDrafts((current) => {
+            const next = { ...current };
+            delete next[itemId];
+            return next;
+          });
+          void refresh(
+            `Lead promoted to unpublished draft article #${item.promotedStoryId}.`,
+          );
+        },
+        onError: (reason: unknown) =>
+          fail("The lead could not be promoted.", reason),
       },
     );
   }
@@ -682,6 +742,8 @@ export function SourceDiscoveryDesk() {
                 status: item.status,
                 notes: item.reviewNotes,
               };
+              const promotionDraft = promotionDrafts[item.id];
+              const editorialIssue = editorialIssueQuery.data?.issue;
               return (
                 <article key={item.id} className="border-b border-foreground/15 py-5">
                   <div className="flex flex-wrap items-start justify-between gap-3">
@@ -748,6 +810,154 @@ export function SourceDiscoveryDesk() {
                       Save review
                     </button>
                   </div>
+                  {item.promotedStoryId ? (
+                    <div className="mt-4 border-l-2 border-accent pl-3">
+                      <p className="signal-kicker text-accent">
+                        Draft article #{item.promotedStoryId} · unpublished
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Promoted by {item.promotedBy ?? "editor"}
+                        {item.promotedAt
+                          ? ` · ${new Date(item.promotedAt).toLocaleString()}`
+                          : ""}
+                      </p>
+                    </div>
+                  ) : item.status === "review" ? (
+                    <div className="mt-4 border-t border-foreground/10 pt-4">
+                      {promotionDraft ? (
+                        <form
+                          className="grid gap-3"
+                          onSubmit={(event) => submitPromotion(event, item.id)}
+                        >
+                          <p className="signal-kicker text-accent">
+                            Create an original article draft
+                          </p>
+                          <p className="text-xs leading-relaxed text-muted-foreground">
+                            Source, publisher, and source date will be carried over.
+                            Write new editorial copy below; this will not publish the
+                            article or link it to an event or evidence source.
+                          </p>
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            <SourceSelect
+                              label="Editorial topic"
+                              value={promotionDraft.topic}
+                              onChange={(topic) =>
+                                setPromotionDrafts({
+                                  ...promotionDrafts,
+                                  [item.id]: {
+                                    ...promotionDraft,
+                                    topic: topic as Topic,
+                                  },
+                                })
+                              }
+                              options={ARTICLE_TOPICS}
+                            />
+                            <SourceTextField
+                              label="Original article title"
+                              value={promotionDraft.title}
+                              onChange={(title) =>
+                                setPromotionDrafts({
+                                  ...promotionDrafts,
+                                  [item.id]: { ...promotionDraft, title },
+                                })
+                              }
+                              required
+                              maxLength={300}
+                            />
+                          </div>
+                          <label className="grid gap-1 signal-kicker text-muted-foreground">
+                            Original standfirst / dek
+                            <textarea
+                              className="signal-input min-h-20 normal-case tracking-normal text-foreground"
+                              value={promotionDraft.dek}
+                              onChange={(event) =>
+                                setPromotionDrafts({
+                                  ...promotionDrafts,
+                                  [item.id]: {
+                                    ...promotionDraft,
+                                    dek: event.target.value,
+                                  },
+                                })
+                              }
+                              required
+                              maxLength={500}
+                            />
+                          </label>
+                          <label className="grid gap-1 signal-kicker text-muted-foreground">
+                            Original article body
+                            <textarea
+                              className="signal-input min-h-48 normal-case tracking-normal text-foreground"
+                              value={promotionDraft.body}
+                              onChange={(event) =>
+                                setPromotionDrafts({
+                                  ...promotionDrafts,
+                                  [item.id]: {
+                                    ...promotionDraft,
+                                    body: event.target.value,
+                                  },
+                                })
+                              }
+                              required
+                              maxLength={50000}
+                              placeholder="Write original reporting or analysis. Separate paragraphs with a blank line."
+                            />
+                          </label>
+                          {!editorialIssueQuery.isLoading && !editorialIssue && (
+                            <p className="text-xs text-accent" role="status">
+                              No current issue is available. Create or open an issue
+                              in the <a className="underline" href="/editor">editorial desk</a>{" "}
+                              before promoting a lead.
+                            </p>
+                          )}
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              type="submit"
+                              className="signal-button"
+                              disabled={
+                                promoteLead.isPending ||
+                                editorialIssueQuery.isLoading ||
+                                !editorialIssue
+                              }
+                            >
+                              {promoteLead.isPending
+                                ? "Creating draft…"
+                                : "Create unpublished draft"}
+                            </button>
+                            <button
+                              type="button"
+                              className="signal-button border border-foreground/20 bg-transparent text-foreground"
+                              onClick={() =>
+                                setPromotionDrafts({
+                                  ...promotionDrafts,
+                                  [item.id]: undefined,
+                                })
+                              }
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </form>
+                      ) : (
+                        <button
+                          type="button"
+                          className="signal-button"
+                          onClick={() =>
+                            setPromotionDrafts({
+                              ...promotionDrafts,
+                              [item.id]: {
+                                topic: "Latest",
+                                title: "",
+                                dek: "",
+                                body: "",
+                              },
+                            })
+                          }
+                        >
+                          Write article draft
+                        </button>
+                      )}
+                    </div>
+                  ) : null}
                 </article>
               );
             }) : (

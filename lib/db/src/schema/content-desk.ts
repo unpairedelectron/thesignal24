@@ -11,6 +11,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { z } from "zod/v4";
+import { storiesTable } from "./publication";
 
 export const sourceRegistryTable = pgTable(
   "publication_content_sources",
@@ -69,6 +70,12 @@ export const discoveryItemsTable = pgTable(
     reviewNotes: text("review_notes").notNull().default(""),
     reviewedBy: text("reviewed_by"),
     reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+    promotedStoryId: integer("promoted_story_id").references(
+      () => storiesTable.id,
+      { onDelete: "restrict" },
+    ),
+    promotedBy: text("promoted_by"),
+    promotedAt: timestamp("promoted_at", { withTimezone: true }),
     createdBy: text("created_by").notNull(),
     updatedBy: text("updated_by").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -103,6 +110,9 @@ export const insertDiscoveryItemSchema = createInsertSchema(
   id: true,
   reviewedBy: true,
   reviewedAt: true,
+  promotedStoryId: true,
+  promotedBy: true,
+  promotedAt: true,
   createdAt: true,
   updatedAt: true,
 });

@@ -1161,6 +1161,42 @@ paths:
           description: Verified editor access required
         "404":
           description: Lead not found
+  /editor/discovery-items/{itemId}/promote:
+    post:
+      operationId: promoteEditorDiscoveryItem
+      tags: [editor, evidence]
+      summary: Promote a reviewed lead into an article draft
+      description: Requires verified editor access. Creates an unpublished draft with source/date provenance; it does not link evidence or publish the article.
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DiscoveryItemPromotionInput"
+      responses:
+        "200":
+          description: Reviewed lead linked to its new draft
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentDiscoveryItem"
+        "400":
+          description: Invalid article draft
+        "401":
+          description: Sign-in required
+        "403":
+          description: Verified editor access required
+        "404":
+          description: Lead or issue not found
+        "409":
+          description: Lead must be reviewed and not already promoted
   /editor/image-search:
     post:
       operationId: searchEditorCommonsImages
@@ -2648,6 +2684,13 @@ components:
         reviewedAt:
           type: ["string", "null"]
           format: date-time
+        promotedStoryId:
+          type: ["integer", "null"]
+        promotedBy:
+          type: ["string", "null"]
+        promotedAt:
+          type: ["string", "null"]
+          format: date-time
         createdBy:
           type: string
         createdAt:
@@ -2658,7 +2701,7 @@ components:
         updatedAt:
           type: string
           format: date-time
-      required: [id, sourceId, sourceName, sourceDomain, originalUrl, canonicalUrl, title, publisher, sourcePublishedOn, author, summary, language, state, topic, candidateEventTitle, candidateSourceUrl, candidateImageUrl, status, reviewNotes, reviewedBy, reviewedAt, createdBy, createdAt, updatedBy, updatedAt]
+      required: [id, sourceId, sourceName, sourceDomain, originalUrl, canonicalUrl, title, publisher, sourcePublishedOn, author, summary, language, state, topic, candidateEventTitle, candidateSourceUrl, candidateImageUrl, status, reviewNotes, reviewedBy, reviewedAt, promotedStoryId, promotedBy, promotedAt, createdBy, createdAt, updatedBy, updatedAt]
     DiscoveryItemInput:
       type: object
       properties:
@@ -2715,6 +2758,27 @@ components:
           type: string
           maxLength: 2000
       required: [status, reviewNotes]
+    DiscoveryItemPromotionInput:
+      type: object
+      properties:
+        issueId:
+          type: integer
+          minimum: 1
+        topic:
+          $ref: "#/components/schemas/Topic"
+        title:
+          type: string
+          minLength: 1
+          maxLength: 300
+        dek:
+          type: string
+          minLength: 1
+          maxLength: 500
+        body:
+          type: string
+          minLength: 1
+          maxLength: 50000
+      required: [issueId, topic, title, dek, body]
     ImageCandidateRightsStatus:
       type: string
       enum: [pending, approved, rejected]
@@ -2953,4 +3017,3 @@ components:
           items:
             $ref: "#/components/schemas/ContentDiscoveryItem"
       required: [items]
-
