@@ -34,6 +34,7 @@ import {
   useUpdateEvidenceEvent,
   useUpdateSourceDocument,
 } from "@workspace/api-client-react";
+import { SourceDiscoveryDesk } from "./content-desk";
 import type {
   EvidenceDocumentType,
   EvidenceEventWorkflowStatus,
@@ -1085,6 +1086,7 @@ export function EditorEvidenceDesk() {
       <p className="mt-10 border-t border-foreground/15 pt-5 signal-kicker text-muted-foreground">
         Removing a record cascades its active relationships. Relationship rows retain the editor identity and time at which they were created while they exist.
       </p>
+      <SourceDiscoveryDesk />
     </section>
   );
 }

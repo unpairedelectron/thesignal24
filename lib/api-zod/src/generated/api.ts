@@ -455,6 +455,7 @@ export const GetArchiveResponse = zod.object({
 
 
 /**
+ * Returns published events only, with explicitly linked published articles and their stored source links. Draft event links and editor audit metadata are not included.
  * @summary List published events and their explicit evidence relationships
  */
 export const getEvidenceEventsQueryLimitDefault = 100;
@@ -523,6 +524,7 @@ export const GetEvidenceEventsResponse = zod.object({
 
 
 /**
+ * Returns a published event only, with explicitly linked published articles and stored source links. Draft event links and editor audit metadata are not included.
  * @summary Get a published event and its explicit relationships
  */
 
@@ -588,6 +590,7 @@ export const GetEvidenceEventResponse = zod.object({
 
 
 /**
+ * Returns only explicitly linked published events and their public evidence relationships.
  * @summary Get events and sources explicitly linked to a published article
  */
 export const GetStoryEvidenceParams = zod.object({
@@ -650,6 +653,7 @@ export const GetStoryEvidenceResponse = zod.object({
 
 
 /**
+ * A source is public only when explicitly linked to a published event; returned events and cited articles include published records only.
  * @summary Get a source document and its explicit event and article links
  */
 
@@ -700,6 +704,7 @@ export const GetSourceDocumentResponse = zod.object({
 
 
 /**
+ * Searches published articles and events, plus sources explicitly linked to published events. Draft records and editor audit metadata are excluded.
  * @summary Search published articles, events, and source documents separately
  */
 
@@ -738,6 +743,7 @@ export const SearchEvidenceRecordsResponse = zod.object({
 
 
 /**
+ * Requires verified editor access. Includes draft records, all stored relationships, and editor-only audit metadata.
  * @summary List evidence records and all stored relationships for editors
  */
 export const getEditorEvidenceResponseEventsItemEventRecordDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
@@ -1615,6 +1621,294 @@ export const SubscribeToNewsletterBody = zod.object({
 export const SubscribeToNewsletterResponse = zod.object({
   "subscribed": zod.boolean(),
   "email": zod.string().email()
+})
+
+
+/**
+ * Requires verified editor access. This registry does not imply that automated crawling is active.
+ * @summary List configured editorial source entries
+ */
+export const GetEditorContentSourcesResponse = zod.object({
+  "sources": zod.array(zod.object({
+  "id": zod.number().int(),
+  "sourceName": zod.string(),
+  "sourceType": zod.enum(['government', 'court', 'regulator', 'reporting', 'academic', 'community', 'image', 'other']),
+  "authorityLevel": zod.enum(['primary', 'secondary', 'academic', 'community', 'unconfirmed']),
+  "domain": zod.string(),
+  "rssUrl": zod.string().url().nullable(),
+  "sitemapUrl": zod.string().url().nullable(),
+  "searchUrl": zod.string().url().nullable(),
+  "language": zod.string(),
+  "state": zod.string().nullable(),
+  "enabled": zod.boolean(),
+  "crawlFrequency": zod.enum(['manual']),
+  "lastCheckedAt": zod.coerce.date().nullable(),
+  "createdBy": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedBy": zod.string(),
+  "updatedAt": zod.coerce.date()
+}))
+})
+
+
+/**
+ * @summary Add a source to the editorial registry
+ */
+export const createEditorContentSourceBodySourceNameMax = 160;
+
+export const createEditorContentSourceBodyDomainMin = 3;
+export const createEditorContentSourceBodyDomainMax = 253;
+
+export const createEditorContentSourceBodyLanguageMax = 80;
+
+export const createEditorContentSourceBodyStateMax = 120;
+
+
+
+export const CreateEditorContentSourceBody = zod.object({
+  "sourceName": zod.string().min(1).max(createEditorContentSourceBodySourceNameMax),
+  "sourceType": zod.enum(['government', 'court', 'regulator', 'reporting', 'academic', 'community', 'image', 'other']),
+  "authorityLevel": zod.enum(['primary', 'secondary', 'academic', 'community', 'unconfirmed']),
+  "domain": zod.string().min(createEditorContentSourceBodyDomainMin).max(createEditorContentSourceBodyDomainMax),
+  "rssUrl": zod.string().url().nullish(),
+  "sitemapUrl": zod.string().url().nullish(),
+  "searchUrl": zod.string().url().nullish(),
+  "language": zod.string().min(1).max(createEditorContentSourceBodyLanguageMax),
+  "state": zod.string().max(createEditorContentSourceBodyStateMax).nullish(),
+  "enabled": zod.boolean()
+})
+
+export const CreateEditorContentSourceResponse = zod.object({
+  "id": zod.number().int(),
+  "sourceName": zod.string(),
+  "sourceType": zod.enum(['government', 'court', 'regulator', 'reporting', 'academic', 'community', 'image', 'other']),
+  "authorityLevel": zod.enum(['primary', 'secondary', 'academic', 'community', 'unconfirmed']),
+  "domain": zod.string(),
+  "rssUrl": zod.string().url().nullable(),
+  "sitemapUrl": zod.string().url().nullable(),
+  "searchUrl": zod.string().url().nullable(),
+  "language": zod.string(),
+  "state": zod.string().nullable(),
+  "enabled": zod.boolean(),
+  "crawlFrequency": zod.enum(['manual']),
+  "lastCheckedAt": zod.coerce.date().nullable(),
+  "createdBy": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedBy": zod.string(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Update a source registry entry
+ */
+
+
+
+export const UpdateEditorContentSourceParams = zod.object({
+  "sourceId": zod.coerce.number().int().min(1)
+})
+
+export const updateEditorContentSourceBodySourceNameMax = 160;
+
+export const updateEditorContentSourceBodyDomainMin = 3;
+export const updateEditorContentSourceBodyDomainMax = 253;
+
+export const updateEditorContentSourceBodyLanguageMax = 80;
+
+export const updateEditorContentSourceBodyStateMax = 120;
+
+
+
+export const UpdateEditorContentSourceBody = zod.object({
+  "sourceName": zod.string().min(1).max(updateEditorContentSourceBodySourceNameMax),
+  "sourceType": zod.enum(['government', 'court', 'regulator', 'reporting', 'academic', 'community', 'image', 'other']),
+  "authorityLevel": zod.enum(['primary', 'secondary', 'academic', 'community', 'unconfirmed']),
+  "domain": zod.string().min(updateEditorContentSourceBodyDomainMin).max(updateEditorContentSourceBodyDomainMax),
+  "rssUrl": zod.string().url().nullish(),
+  "sitemapUrl": zod.string().url().nullish(),
+  "searchUrl": zod.string().url().nullish(),
+  "language": zod.string().min(1).max(updateEditorContentSourceBodyLanguageMax),
+  "state": zod.string().max(updateEditorContentSourceBodyStateMax).nullish(),
+  "enabled": zod.boolean()
+})
+
+export const UpdateEditorContentSourceResponse = zod.object({
+  "id": zod.number().int(),
+  "sourceName": zod.string(),
+  "sourceType": zod.enum(['government', 'court', 'regulator', 'reporting', 'academic', 'community', 'image', 'other']),
+  "authorityLevel": zod.enum(['primary', 'secondary', 'academic', 'community', 'unconfirmed']),
+  "domain": zod.string(),
+  "rssUrl": zod.string().url().nullable(),
+  "sitemapUrl": zod.string().url().nullable(),
+  "searchUrl": zod.string().url().nullable(),
+  "language": zod.string(),
+  "state": zod.string().nullable(),
+  "enabled": zod.boolean(),
+  "crawlFrequency": zod.enum(['manual']),
+  "lastCheckedAt": zod.coerce.date().nullable(),
+  "createdBy": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedBy": zod.string(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * Requires verified editor access. Items are unpublished leads, not Signal Hub reporting or evidence.
+ * @summary List external leads for editorial review
+ */
+export const getEditorDiscoveryItemsResponseItemsItemSourcePublishedOnRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+
+
+export const GetEditorDiscoveryItemsResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.number().int(),
+  "sourceId": zod.number().int(),
+  "sourceName": zod.string(),
+  "sourceDomain": zod.string(),
+  "originalUrl": zod.string().url(),
+  "canonicalUrl": zod.string().url(),
+  "title": zod.string(),
+  "publisher": zod.string().nullable(),
+  "sourcePublishedOn": zod.string().regex(getEditorDiscoveryItemsResponseItemsItemSourcePublishedOnRegExp).nullable(),
+  "author": zod.string().nullable(),
+  "summary": zod.string(),
+  "language": zod.string(),
+  "state": zod.string().nullable(),
+  "topic": zod.union([zod.enum(['Reservation', 'Higher Education', 'Employment', 'Government Recruitment', 'UGC', 'Universities', 'Supreme Court', 'High Courts', 'Constitution', 'Social Justice', 'EWS', 'SC', 'ST', 'OBC', 'PwD', 'Women', 'Minorities', 'Admissions', 'Examinations', 'Public Policy', 'State Policy', 'Court Judgments', 'Government Orders', 'Data', 'Historical Records']),zod.null()]),
+  "candidateEventTitle": zod.string().nullable(),
+  "candidateSourceUrl": zod.string().url().nullable(),
+  "candidateImageUrl": zod.string().url().nullable(),
+  "status": zod.enum(['new', 'review', 'rejected']),
+  "reviewNotes": zod.string(),
+  "reviewedBy": zod.string().nullable(),
+  "reviewedAt": zod.coerce.date().nullable(),
+  "createdBy": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedBy": zod.string(),
+  "updatedAt": zod.coerce.date()
+}))
+})
+
+
+/**
+ * @summary Add an external lead to the discovery queue
+ */
+
+export const createEditorDiscoveryItemBodyTitleMax = 300;
+
+export const createEditorDiscoveryItemBodyPublisherMax = 160;
+
+export const createEditorDiscoveryItemBodySourcePublishedOnRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const createEditorDiscoveryItemBodyAuthorMax = 160;
+
+export const createEditorDiscoveryItemBodySummaryMax = 500;
+
+export const createEditorDiscoveryItemBodyLanguageMax = 80;
+
+export const createEditorDiscoveryItemBodyStateMax = 120;
+
+export const createEditorDiscoveryItemBodyCandidateEventTitleMax = 300;
+
+
+
+export const CreateEditorDiscoveryItemBody = zod.object({
+  "sourceId": zod.number().int().min(1),
+  "originalUrl": zod.string().url(),
+  "title": zod.string().min(1).max(createEditorDiscoveryItemBodyTitleMax),
+  "publisher": zod.string().max(createEditorDiscoveryItemBodyPublisherMax).nullish(),
+  "sourcePublishedOn": zod.string().regex(createEditorDiscoveryItemBodySourcePublishedOnRegExp).nullish(),
+  "author": zod.string().max(createEditorDiscoveryItemBodyAuthorMax).nullish(),
+  "summary": zod.string().min(1).max(createEditorDiscoveryItemBodySummaryMax),
+  "language": zod.string().min(1).max(createEditorDiscoveryItemBodyLanguageMax),
+  "state": zod.string().max(createEditorDiscoveryItemBodyStateMax).nullish(),
+  "topic": zod.union([zod.enum(['Reservation', 'Higher Education', 'Employment', 'Government Recruitment', 'UGC', 'Universities', 'Supreme Court', 'High Courts', 'Constitution', 'Social Justice', 'EWS', 'SC', 'ST', 'OBC', 'PwD', 'Women', 'Minorities', 'Admissions', 'Examinations', 'Public Policy', 'State Policy', 'Court Judgments', 'Government Orders', 'Data', 'Historical Records']),zod.null()]).optional(),
+  "candidateEventTitle": zod.string().max(createEditorDiscoveryItemBodyCandidateEventTitleMax).nullish(),
+  "candidateSourceUrl": zod.string().url().nullish(),
+  "candidateImageUrl": zod.string().url().nullish()
+})
+
+export const createEditorDiscoveryItemResponseSourcePublishedOnRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+
+
+export const CreateEditorDiscoveryItemResponse = zod.object({
+  "id": zod.number().int(),
+  "sourceId": zod.number().int(),
+  "sourceName": zod.string(),
+  "sourceDomain": zod.string(),
+  "originalUrl": zod.string().url(),
+  "canonicalUrl": zod.string().url(),
+  "title": zod.string(),
+  "publisher": zod.string().nullable(),
+  "sourcePublishedOn": zod.string().regex(createEditorDiscoveryItemResponseSourcePublishedOnRegExp).nullable(),
+  "author": zod.string().nullable(),
+  "summary": zod.string(),
+  "language": zod.string(),
+  "state": zod.string().nullable(),
+  "topic": zod.union([zod.enum(['Reservation', 'Higher Education', 'Employment', 'Government Recruitment', 'UGC', 'Universities', 'Supreme Court', 'High Courts', 'Constitution', 'Social Justice', 'EWS', 'SC', 'ST', 'OBC', 'PwD', 'Women', 'Minorities', 'Admissions', 'Examinations', 'Public Policy', 'State Policy', 'Court Judgments', 'Government Orders', 'Data', 'Historical Records']),zod.null()]),
+  "candidateEventTitle": zod.string().nullable(),
+  "candidateSourceUrl": zod.string().url().nullable(),
+  "candidateImageUrl": zod.string().url().nullable(),
+  "status": zod.enum(['new', 'review', 'rejected']),
+  "reviewNotes": zod.string(),
+  "reviewedBy": zod.string().nullable(),
+  "reviewedAt": zod.coerce.date().nullable(),
+  "createdBy": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedBy": zod.string(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Update a lead's review status and notes
+ */
+
+
+
+export const UpdateEditorDiscoveryItemParams = zod.object({
+  "itemId": zod.coerce.number().int().min(1)
+})
+
+export const updateEditorDiscoveryItemBodyReviewNotesMax = 2000;
+
+
+
+export const UpdateEditorDiscoveryItemBody = zod.object({
+  "status": zod.enum(['new', 'review', 'rejected']),
+  "reviewNotes": zod.string().max(updateEditorDiscoveryItemBodyReviewNotesMax)
+})
+
+export const updateEditorDiscoveryItemResponseSourcePublishedOnRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+
+
+export const UpdateEditorDiscoveryItemResponse = zod.object({
+  "id": zod.number().int(),
+  "sourceId": zod.number().int(),
+  "sourceName": zod.string(),
+  "sourceDomain": zod.string(),
+  "originalUrl": zod.string().url(),
+  "canonicalUrl": zod.string().url(),
+  "title": zod.string(),
+  "publisher": zod.string().nullable(),
+  "sourcePublishedOn": zod.string().regex(updateEditorDiscoveryItemResponseSourcePublishedOnRegExp).nullable(),
+  "author": zod.string().nullable(),
+  "summary": zod.string(),
+  "language": zod.string(),
+  "state": zod.string().nullable(),
+  "topic": zod.union([zod.enum(['Reservation', 'Higher Education', 'Employment', 'Government Recruitment', 'UGC', 'Universities', 'Supreme Court', 'High Courts', 'Constitution', 'Social Justice', 'EWS', 'SC', 'ST', 'OBC', 'PwD', 'Women', 'Minorities', 'Admissions', 'Examinations', 'Public Policy', 'State Policy', 'Court Judgments', 'Government Orders', 'Data', 'Historical Records']),zod.null()]),
+  "candidateEventTitle": zod.string().nullable(),
+  "candidateSourceUrl": zod.string().url().nullable(),
+  "candidateImageUrl": zod.string().url().nullable(),
+  "status": zod.enum(['new', 'review', 'rejected']),
+  "reviewNotes": zod.string(),
+  "reviewedBy": zod.string().nullable(),
+  "reviewedAt": zod.coerce.date().nullable(),
+  "createdBy": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedBy": zod.string(),
+  "updatedAt": zod.coerce.date()
 })
 
 

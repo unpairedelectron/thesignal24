@@ -761,6 +761,240 @@ export interface NewsletterStatus {
   email: string;
 }
 
+export type ContentSourceType = typeof ContentSourceType[keyof typeof ContentSourceType];
+
+
+export const ContentSourceType = {
+  government: 'government',
+  court: 'court',
+  regulator: 'regulator',
+  reporting: 'reporting',
+  academic: 'academic',
+  community: 'community',
+  image: 'image',
+  other: 'other',
+} as const;
+
+export type ContentAuthorityLevel = typeof ContentAuthorityLevel[keyof typeof ContentAuthorityLevel];
+
+
+export const ContentAuthorityLevel = {
+  primary: 'primary',
+  secondary: 'secondary',
+  academic: 'academic',
+  community: 'community',
+  unconfirmed: 'unconfirmed',
+} as const;
+
+export type ContentSourceRecordCrawlFrequency = typeof ContentSourceRecordCrawlFrequency[keyof typeof ContentSourceRecordCrawlFrequency];
+
+
+export const ContentSourceRecordCrawlFrequency = {
+  manual: 'manual',
+} as const;
+
+export interface ContentSourceRecord {
+  id: number;
+  sourceName: string;
+  sourceType: ContentSourceType;
+  authorityLevel: ContentAuthorityLevel;
+  domain: string;
+  /** @nullable */
+  rssUrl: string | null;
+  /** @nullable */
+  sitemapUrl: string | null;
+  /** @nullable */
+  searchUrl: string | null;
+  language: string;
+  /** @nullable */
+  state: string | null;
+  enabled: boolean;
+  crawlFrequency: ContentSourceRecordCrawlFrequency;
+  /** @nullable */
+  lastCheckedAt: string | null;
+  createdBy: string;
+  createdAt: string;
+  updatedBy: string;
+  updatedAt: string;
+}
+
+export interface ContentSourceInput {
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  sourceName: string;
+  sourceType: ContentSourceType;
+  authorityLevel: ContentAuthorityLevel;
+  /**
+     * @minLength 3
+     * @maxLength 253
+     */
+  domain: string;
+  /** @nullable */
+  rssUrl?: string | null;
+  /** @nullable */
+  sitemapUrl?: string | null;
+  /** @nullable */
+  searchUrl?: string | null;
+  /**
+     * @minLength 1
+     * @maxLength 80
+     */
+  language: string;
+  /**
+     * @maxLength 120
+     * @nullable
+     */
+  state?: string | null;
+  enabled: boolean;
+}
+
+export type ContentTopic = typeof ContentTopic[keyof typeof ContentTopic];
+
+
+export const ContentTopic = {
+  Reservation: 'Reservation',
+  Higher_Education: 'Higher Education',
+  Employment: 'Employment',
+  Government_Recruitment: 'Government Recruitment',
+  UGC: 'UGC',
+  Universities: 'Universities',
+  Supreme_Court: 'Supreme Court',
+  High_Courts: 'High Courts',
+  Constitution: 'Constitution',
+  Social_Justice: 'Social Justice',
+  EWS: 'EWS',
+  SC: 'SC',
+  ST: 'ST',
+  OBC: 'OBC',
+  PwD: 'PwD',
+  Women: 'Women',
+  Minorities: 'Minorities',
+  Admissions: 'Admissions',
+  Examinations: 'Examinations',
+  Public_Policy: 'Public Policy',
+  State_Policy: 'State Policy',
+  Court_Judgments: 'Court Judgments',
+  Government_Orders: 'Government Orders',
+  Data: 'Data',
+  Historical_Records: 'Historical Records',
+} as const;
+
+export type DiscoveryItemStatus = typeof DiscoveryItemStatus[keyof typeof DiscoveryItemStatus];
+
+
+export const DiscoveryItemStatus = {
+  new: 'new',
+  review: 'review',
+  rejected: 'rejected',
+} as const;
+
+export interface ContentDiscoveryItem {
+  id: number;
+  sourceId: number;
+  sourceName: string;
+  sourceDomain: string;
+  originalUrl: string;
+  canonicalUrl: string;
+  title: string;
+  /** @nullable */
+  publisher: string | null;
+  /**
+     * @nullable
+     * @pattern ^\d{4}-\d{2}-\d{2}$
+     */
+  sourcePublishedOn: string | null;
+  /** @nullable */
+  author: string | null;
+  summary: string;
+  language: string;
+  /** @nullable */
+  state: string | null;
+  topic: ContentTopic | null;
+  /** @nullable */
+  candidateEventTitle: string | null;
+  /** @nullable */
+  candidateSourceUrl: string | null;
+  /** @nullable */
+  candidateImageUrl: string | null;
+  status: DiscoveryItemStatus;
+  reviewNotes: string;
+  /** @nullable */
+  reviewedBy: string | null;
+  /** @nullable */
+  reviewedAt: string | null;
+  createdBy: string;
+  createdAt: string;
+  updatedBy: string;
+  updatedAt: string;
+}
+
+export interface DiscoveryItemInput {
+  /** @minimum 1 */
+  sourceId: number;
+  originalUrl: string;
+  /**
+     * @minLength 1
+     * @maxLength 300
+     */
+  title: string;
+  /**
+     * @maxLength 160
+     * @nullable
+     */
+  publisher?: string | null;
+  /**
+     * @nullable
+     * @pattern ^\d{4}-\d{2}-\d{2}$
+     */
+  sourcePublishedOn?: string | null;
+  /**
+     * @maxLength 160
+     * @nullable
+     */
+  author?: string | null;
+  /**
+     * @minLength 1
+     * @maxLength 500
+     */
+  summary: string;
+  /**
+     * @minLength 1
+     * @maxLength 80
+     */
+  language: string;
+  /**
+     * @maxLength 120
+     * @nullable
+     */
+  state?: string | null;
+  topic?: ContentTopic | null;
+  /**
+     * @maxLength 300
+     * @nullable
+     */
+  candidateEventTitle?: string | null;
+  /** @nullable */
+  candidateSourceUrl?: string | null;
+  /** @nullable */
+  candidateImageUrl?: string | null;
+}
+
+export interface DiscoveryItemReviewInput {
+  status: DiscoveryItemStatus;
+  /** @maxLength 2000 */
+  reviewNotes: string;
+}
+
+export interface EditorContentSourcesResponse {
+  sources: ContentSourceRecord[];
+}
+
+export interface EditorDiscoveryItemsResponse {
+  items: ContentDiscoveryItem[];
+}
+
 export type GetCommunityPostsParams = {
 topic?: CommunityTopic;
 state?: string;

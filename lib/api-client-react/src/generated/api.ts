@@ -29,11 +29,18 @@ import type {
   CommunityPostList,
   CommunityReply,
   CommunityReplyInput,
+  ContentDiscoveryItem,
+  ContentSourceInput,
+  ContentSourceRecord,
   CurrentIssue,
   DecisionImpactInput,
   DecisionImpactListResult,
   DecisionImpactRecord,
   DecisionImpactRevisions,
+  DiscoveryItemInput,
+  DiscoveryItemReviewInput,
+  EditorContentSourcesResponse,
+  EditorDiscoveryItemsResponse,
   EditorEvidenceResponse,
   EditorSession,
   EventSourceLinkInput,
@@ -992,6 +999,7 @@ export const getGetEvidenceEventsUrl = (params?: GetEvidenceEventsParams,) => {
 }
 
 /**
+ * Returns published events only, with explicitly linked published articles and their stored source links. Draft event links and editor audit metadata are not included.
  * @summary List published events and their explicit evidence relationships
  */
 export const getEvidenceEvents = async (params?: GetEvidenceEventsParams, options?: Parameters<typeof customFetch>[1]): Promise<EvidenceEventsResponse> => {
@@ -1069,6 +1077,7 @@ export const getGetEvidenceEventUrl = (eventId: number,) => {
 }
 
 /**
+ * Returns a published event only, with explicitly linked published articles and stored source links. Draft event links and editor audit metadata are not included.
  * @summary Get a published event and its explicit relationships
  */
 export const getEvidenceEvent = async (eventId: number, options?: Parameters<typeof customFetch>[1]): Promise<EvidenceEventResponse> => {
@@ -1146,6 +1155,7 @@ export const getGetStoryEvidenceUrl = (storyId: number,) => {
 }
 
 /**
+ * Returns only explicitly linked published events and their public evidence relationships.
  * @summary Get events and sources explicitly linked to a published article
  */
 export const getStoryEvidence = async (storyId: number, options?: Parameters<typeof customFetch>[1]): Promise<StoryEvidenceResponse> => {
@@ -1223,6 +1233,7 @@ export const getGetSourceDocumentUrl = (sourceId: number,) => {
 }
 
 /**
+ * A source is public only when explicitly linked to a published event; returned events and cited articles include published records only.
  * @summary Get a source document and its explicit event and article links
  */
 export const getSourceDocument = async (sourceId: number, options?: Parameters<typeof customFetch>[1]): Promise<SourceDocumentResponse> => {
@@ -1307,6 +1318,7 @@ export const getSearchEvidenceRecordsUrl = (params: SearchEvidenceRecordsParams,
 }
 
 /**
+ * Searches published articles and events, plus sources explicitly linked to published events. Draft records and editor audit metadata are excluded.
  * @summary Search published articles, events, and source documents separately
  */
 export const searchEvidenceRecords = async (params: SearchEvidenceRecordsParams, options?: Parameters<typeof customFetch>[1]): Promise<EvidenceSearchResponse> => {
@@ -1384,6 +1396,7 @@ export const getGetEditorEvidenceUrl = () => {
 }
 
 /**
+ * Requires verified editor access. Includes draft records, all stored relationships, and editor-only audit metadata.
  * @summary List evidence records and all stored relationships for editors
  */
 export const getEditorEvidence = async ( options?: Parameters<typeof customFetch>[1]): Promise<EditorEvidenceResponse> => {
@@ -3438,5 +3451,515 @@ export const useSubscribeToNewsletter = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getSubscribeToNewsletterMutationOptions(options));
+    }
+
+export const getGetEditorContentSourcesUrl = () => {
+
+
+
+
+  return `/api/editor/content-sources`
+}
+
+/**
+ * Requires verified editor access. This registry does not imply that automated crawling is active.
+ * @summary List configured editorial source entries
+ */
+export const getEditorContentSources = async ( options?: Parameters<typeof customFetch>[1]): Promise<EditorContentSourcesResponse> => {
+
+  return customFetch<EditorContentSourcesResponse>(getGetEditorContentSourcesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetEditorContentSourcesQueryKey = () => {
+    return [
+    `/api/editor/content-sources`
+    ] as const;
+    }
+
+
+export const getGetEditorContentSourcesQueryOptions = <TData = Awaited<ReturnType<typeof getEditorContentSources>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getEditorContentSources>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetEditorContentSourcesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getEditorContentSources>>> = ({ signal }) => getEditorContentSources({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getEditorContentSources>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetEditorContentSourcesQueryResult = NonNullable<Awaited<ReturnType<typeof getEditorContentSources>>>
+export type GetEditorContentSourcesQueryError = ErrorType<void>
+
+
+/**
+ * @summary List configured editorial source entries
+ */
+
+export function useGetEditorContentSources<TData = Awaited<ReturnType<typeof getEditorContentSources>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getEditorContentSources>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetEditorContentSourcesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateEditorContentSourceUrl = () => {
+
+
+
+
+  return `/api/editor/content-sources`
+}
+
+/**
+ * @summary Add a source to the editorial registry
+ */
+export const createEditorContentSource = async (contentSourceInput: ContentSourceInput, options?: Parameters<typeof customFetch>[1]): Promise<ContentSourceRecord> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ContentSourceRecord>(getCreateEditorContentSourceUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(contentSourceInput)
+  }
+);}
+
+
+
+
+
+export const getCreateEditorContentSourceMutationKey = () => ['createEditorContentSource'] as const;
+
+export const getCreateEditorContentSourceMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createEditorContentSource>>, TError,CreateEditorContentSourceMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createEditorContentSource>>, TError,CreateEditorContentSourceMutationVariables, TContext> => {
+
+const mutationKey = getCreateEditorContentSourceMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createEditorContentSource>>, CreateEditorContentSourceMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createEditorContentSource(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateEditorContentSourceMutationResult = NonNullable<Awaited<ReturnType<typeof createEditorContentSource>>>
+    export type CreateEditorContentSourceMutationBody = BodyType<ContentSourceInput>
+    export type CreateEditorContentSourceMutationError = ErrorType<void>
+    export type CreateEditorContentSourceMutationVariables = {data: BodyType<ContentSourceInput>}
+
+    /**
+ * @summary Add a source to the editorial registry
+ */
+export const useCreateEditorContentSource = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createEditorContentSource>>, TError,CreateEditorContentSourceMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createEditorContentSource>>,
+        TError,
+        CreateEditorContentSourceMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateEditorContentSourceMutationOptions(options));
+    }
+
+export const getUpdateEditorContentSourceUrl = (sourceId: number,) => {
+
+
+
+
+  return `/api/editor/content-sources/${sourceId}`
+}
+
+/**
+ * @summary Update a source registry entry
+ */
+export const updateEditorContentSource = async (sourceId: number,
+    contentSourceInput: ContentSourceInput, options?: Parameters<typeof customFetch>[1]): Promise<ContentSourceRecord> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ContentSourceRecord>(getUpdateEditorContentSourceUrl(sourceId),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(contentSourceInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateEditorContentSourceMutationKey = () => ['updateEditorContentSource'] as const;
+
+export const getUpdateEditorContentSourceMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateEditorContentSource>>, TError,UpdateEditorContentSourceMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateEditorContentSource>>, TError,UpdateEditorContentSourceMutationVariables, TContext> => {
+
+const mutationKey = getUpdateEditorContentSourceMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateEditorContentSource>>, UpdateEditorContentSourceMutationVariables> = (props) => {
+          const {sourceId,data} = props ?? {};
+
+          return  updateEditorContentSource(sourceId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateEditorContentSourceMutationResult = NonNullable<Awaited<ReturnType<typeof updateEditorContentSource>>>
+    export type UpdateEditorContentSourceMutationBody = BodyType<ContentSourceInput>
+    export type UpdateEditorContentSourceMutationError = ErrorType<void>
+    export type UpdateEditorContentSourceMutationVariables = {sourceId: number;data: BodyType<ContentSourceInput>}
+
+    /**
+ * @summary Update a source registry entry
+ */
+export const useUpdateEditorContentSource = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateEditorContentSource>>, TError,UpdateEditorContentSourceMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateEditorContentSource>>,
+        TError,
+        UpdateEditorContentSourceMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateEditorContentSourceMutationOptions(options));
+    }
+
+export const getGetEditorDiscoveryItemsUrl = () => {
+
+
+
+
+  return `/api/editor/discovery-items`
+}
+
+/**
+ * Requires verified editor access. Items are unpublished leads, not Signal Hub reporting or evidence.
+ * @summary List external leads for editorial review
+ */
+export const getEditorDiscoveryItems = async ( options?: Parameters<typeof customFetch>[1]): Promise<EditorDiscoveryItemsResponse> => {
+
+  return customFetch<EditorDiscoveryItemsResponse>(getGetEditorDiscoveryItemsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetEditorDiscoveryItemsQueryKey = () => {
+    return [
+    `/api/editor/discovery-items`
+    ] as const;
+    }
+
+
+export const getGetEditorDiscoveryItemsQueryOptions = <TData = Awaited<ReturnType<typeof getEditorDiscoveryItems>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getEditorDiscoveryItems>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetEditorDiscoveryItemsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getEditorDiscoveryItems>>> = ({ signal }) => getEditorDiscoveryItems({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getEditorDiscoveryItems>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetEditorDiscoveryItemsQueryResult = NonNullable<Awaited<ReturnType<typeof getEditorDiscoveryItems>>>
+export type GetEditorDiscoveryItemsQueryError = ErrorType<void>
+
+
+/**
+ * @summary List external leads for editorial review
+ */
+
+export function useGetEditorDiscoveryItems<TData = Awaited<ReturnType<typeof getEditorDiscoveryItems>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getEditorDiscoveryItems>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetEditorDiscoveryItemsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateEditorDiscoveryItemUrl = () => {
+
+
+
+
+  return `/api/editor/discovery-items`
+}
+
+/**
+ * @summary Add an external lead to the discovery queue
+ */
+export const createEditorDiscoveryItem = async (discoveryItemInput: DiscoveryItemInput, options?: Parameters<typeof customFetch>[1]): Promise<ContentDiscoveryItem> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ContentDiscoveryItem>(getCreateEditorDiscoveryItemUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(discoveryItemInput)
+  }
+);}
+
+
+
+
+
+export const getCreateEditorDiscoveryItemMutationKey = () => ['createEditorDiscoveryItem'] as const;
+
+export const getCreateEditorDiscoveryItemMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createEditorDiscoveryItem>>, TError,CreateEditorDiscoveryItemMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createEditorDiscoveryItem>>, TError,CreateEditorDiscoveryItemMutationVariables, TContext> => {
+
+const mutationKey = getCreateEditorDiscoveryItemMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createEditorDiscoveryItem>>, CreateEditorDiscoveryItemMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createEditorDiscoveryItem(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateEditorDiscoveryItemMutationResult = NonNullable<Awaited<ReturnType<typeof createEditorDiscoveryItem>>>
+    export type CreateEditorDiscoveryItemMutationBody = BodyType<DiscoveryItemInput>
+    export type CreateEditorDiscoveryItemMutationError = ErrorType<void>
+    export type CreateEditorDiscoveryItemMutationVariables = {data: BodyType<DiscoveryItemInput>}
+
+    /**
+ * @summary Add an external lead to the discovery queue
+ */
+export const useCreateEditorDiscoveryItem = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createEditorDiscoveryItem>>, TError,CreateEditorDiscoveryItemMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createEditorDiscoveryItem>>,
+        TError,
+        CreateEditorDiscoveryItemMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateEditorDiscoveryItemMutationOptions(options));
+    }
+
+export const getUpdateEditorDiscoveryItemUrl = (itemId: number,) => {
+
+
+
+
+  return `/api/editor/discovery-items/${itemId}`
+}
+
+/**
+ * @summary Update a lead's review status and notes
+ */
+export const updateEditorDiscoveryItem = async (itemId: number,
+    discoveryItemReviewInput: DiscoveryItemReviewInput, options?: Parameters<typeof customFetch>[1]): Promise<ContentDiscoveryItem> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ContentDiscoveryItem>(getUpdateEditorDiscoveryItemUrl(itemId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(discoveryItemReviewInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateEditorDiscoveryItemMutationKey = () => ['updateEditorDiscoveryItem'] as const;
+
+export const getUpdateEditorDiscoveryItemMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateEditorDiscoveryItem>>, TError,UpdateEditorDiscoveryItemMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateEditorDiscoveryItem>>, TError,UpdateEditorDiscoveryItemMutationVariables, TContext> => {
+
+const mutationKey = getUpdateEditorDiscoveryItemMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateEditorDiscoveryItem>>, UpdateEditorDiscoveryItemMutationVariables> = (props) => {
+          const {itemId,data} = props ?? {};
+
+          return  updateEditorDiscoveryItem(itemId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateEditorDiscoveryItemMutationResult = NonNullable<Awaited<ReturnType<typeof updateEditorDiscoveryItem>>>
+    export type UpdateEditorDiscoveryItemMutationBody = BodyType<DiscoveryItemReviewInput>
+    export type UpdateEditorDiscoveryItemMutationError = ErrorType<void>
+    export type UpdateEditorDiscoveryItemMutationVariables = {itemId: number;data: BodyType<DiscoveryItemReviewInput>}
+
+    /**
+ * @summary Update a lead's review status and notes
+ */
+export const useUpdateEditorDiscoveryItem = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateEditorDiscoveryItem>>, TError,UpdateEditorDiscoveryItemMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateEditorDiscoveryItem>>,
+        TError,
+        UpdateEditorDiscoveryItemMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateEditorDiscoveryItemMutationOptions(options));
     }
 

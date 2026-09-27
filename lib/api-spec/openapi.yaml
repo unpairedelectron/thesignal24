@@ -959,6 +959,160 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/NewsletterStatus"
+  /editor/content-sources:
+    get:
+      operationId: getEditorContentSources
+      tags: [editor, evidence]
+      summary: List configured editorial source entries
+      description: Requires verified editor access. This registry does not imply that automated crawling is active.
+      responses:
+        "200":
+          description: Source registry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EditorContentSourcesResponse"
+        "401":
+          description: Sign-in required
+        "403":
+          description: Verified editor access required
+    post:
+      operationId: createEditorContentSource
+      tags: [editor, evidence]
+      summary: Add a source to the editorial registry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContentSourceInput"
+      responses:
+        "201":
+          description: Source added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentSourceRecord"
+        "400":
+          description: Invalid source entry
+        "401":
+          description: Sign-in required
+        "403":
+          description: Verified editor access required
+        "409":
+          description: Domain is already registered
+  /editor/content-sources/{sourceId}:
+    put:
+      operationId: updateEditorContentSource
+      tags: [editor, evidence]
+      summary: Update a source registry entry
+      parameters:
+        - name: sourceId
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContentSourceInput"
+      responses:
+        "200":
+          description: Source updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentSourceRecord"
+        "400":
+          description: Invalid source entry
+        "401":
+          description: Sign-in required
+        "403":
+          description: Verified editor access required
+        "404":
+          description: Source not found
+        "409":
+          description: Domain is already registered
+  /editor/discovery-items:
+    get:
+      operationId: getEditorDiscoveryItems
+      tags: [editor, evidence]
+      summary: List external leads for editorial review
+      description: Requires verified editor access. Items are unpublished leads, not Signal Hub reporting or evidence.
+      responses:
+        "200":
+          description: Discovery queue
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EditorDiscoveryItemsResponse"
+        "401":
+          description: Sign-in required
+        "403":
+          description: Verified editor access required
+    post:
+      operationId: createEditorDiscoveryItem
+      tags: [editor, evidence]
+      summary: Add an external lead to the discovery queue
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DiscoveryItemInput"
+      responses:
+        "201":
+          description: Lead added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentDiscoveryItem"
+        "400":
+          description: Invalid lead or source
+        "401":
+          description: Sign-in required
+        "403":
+          description: Verified editor access required
+        "404":
+          description: Source not found or disabled
+        "409":
+          description: URL is already in the discovery queue
+  /editor/discovery-items/{itemId}:
+    patch:
+      operationId: updateEditorDiscoveryItem
+      tags: [editor, evidence]
+      summary: Update a lead's review status and notes
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DiscoveryItemReviewInput"
+      responses:
+        "200":
+          description: Lead review updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentDiscoveryItem"
+        "400":
+          description: Invalid review update
+        "401":
+          description: Sign-in required
+        "403":
+          description: Verified editor access required
+        "404":
+          description: Lead not found
 components:
   parameters:
     IssueId:
@@ -2043,4 +2197,231 @@ components:
           type: string
           format: email
       required: [subscribed, email]
+    ContentSourceType:
+      type: string
+      enum: [government, court, regulator, reporting, academic, community, image, other]
+    ContentAuthorityLevel:
+      type: string
+      enum: [primary, secondary, academic, community, unconfirmed]
+    ContentSourceRecord:
+      type: object
+      properties:
+        id:
+          type: integer
+        sourceName:
+          type: string
+        sourceType:
+          $ref: "#/components/schemas/ContentSourceType"
+        authorityLevel:
+          $ref: "#/components/schemas/ContentAuthorityLevel"
+        domain:
+          type: string
+        rssUrl:
+          type: ["string", "null"]
+          format: uri
+        sitemapUrl:
+          type: ["string", "null"]
+          format: uri
+        searchUrl:
+          type: ["string", "null"]
+          format: uri
+        language:
+          type: string
+        state:
+          type: ["string", "null"]
+        enabled:
+          type: boolean
+        crawlFrequency:
+          type: string
+          enum: [manual]
+        lastCheckedAt:
+          type: ["string", "null"]
+          format: date-time
+        createdBy:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedBy:
+          type: string
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, sourceName, sourceType, authorityLevel, domain, rssUrl, sitemapUrl, searchUrl, language, state, enabled, crawlFrequency, lastCheckedAt, createdBy, createdAt, updatedBy, updatedAt]
+    ContentSourceInput:
+      type: object
+      properties:
+        sourceName:
+          type: string
+          minLength: 1
+          maxLength: 160
+        sourceType:
+          $ref: "#/components/schemas/ContentSourceType"
+        authorityLevel:
+          $ref: "#/components/schemas/ContentAuthorityLevel"
+        domain:
+          type: string
+          minLength: 3
+          maxLength: 253
+        rssUrl:
+          type: ["string", "null"]
+          format: uri
+        sitemapUrl:
+          type: ["string", "null"]
+          format: uri
+        searchUrl:
+          type: ["string", "null"]
+          format: uri
+        language:
+          type: string
+          minLength: 1
+          maxLength: 80
+        state:
+          type: ["string", "null"]
+          maxLength: 120
+        enabled:
+          type: boolean
+      required: [sourceName, sourceType, authorityLevel, domain, language, enabled]
+    ContentTopic:
+      type: string
+      enum: [Reservation, Higher Education, Employment, Government Recruitment, UGC, Universities, Supreme Court, High Courts, Constitution, Social Justice, EWS, SC, ST, OBC, PwD, Women, Minorities, Admissions, Examinations, Public Policy, State Policy, Court Judgments, Government Orders, Data, Historical Records]
+    DiscoveryItemStatus:
+      type: string
+      enum: [new, review, rejected]
+    ContentDiscoveryItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        sourceId:
+          type: integer
+        sourceName:
+          type: string
+        sourceDomain:
+          type: string
+        originalUrl:
+          type: string
+          format: uri
+        canonicalUrl:
+          type: string
+          format: uri
+        title:
+          type: string
+        publisher:
+          type: ["string", "null"]
+        sourcePublishedOn:
+          type: ["string", "null"]
+          pattern: '^\d{4}-\d{2}-\d{2}$'
+        author:
+          type: ["string", "null"]
+        summary:
+          type: string
+        language:
+          type: string
+        state:
+          type: ["string", "null"]
+        topic:
+          oneOf:
+            - $ref: "#/components/schemas/ContentTopic"
+            - type: "null"
+        candidateEventTitle:
+          type: ["string", "null"]
+        candidateSourceUrl:
+          type: ["string", "null"]
+          format: uri
+        candidateImageUrl:
+          type: ["string", "null"]
+          format: uri
+        status:
+          $ref: "#/components/schemas/DiscoveryItemStatus"
+        reviewNotes:
+          type: string
+        reviewedBy:
+          type: ["string", "null"]
+        reviewedAt:
+          type: ["string", "null"]
+          format: date-time
+        createdBy:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedBy:
+          type: string
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, sourceId, sourceName, sourceDomain, originalUrl, canonicalUrl, title, publisher, sourcePublishedOn, author, summary, language, state, topic, candidateEventTitle, candidateSourceUrl, candidateImageUrl, status, reviewNotes, reviewedBy, reviewedAt, createdBy, createdAt, updatedBy, updatedAt]
+    DiscoveryItemInput:
+      type: object
+      properties:
+        sourceId:
+          type: integer
+          minimum: 1
+        originalUrl:
+          type: string
+          format: uri
+        title:
+          type: string
+          minLength: 1
+          maxLength: 300
+        publisher:
+          type: ["string", "null"]
+          maxLength: 160
+        sourcePublishedOn:
+          type: ["string", "null"]
+          pattern: '^\d{4}-\d{2}-\d{2}$'
+        author:
+          type: ["string", "null"]
+          maxLength: 160
+        summary:
+          type: string
+          minLength: 1
+          maxLength: 500
+        language:
+          type: string
+          minLength: 1
+          maxLength: 80
+        state:
+          type: ["string", "null"]
+          maxLength: 120
+        topic:
+          oneOf:
+            - $ref: "#/components/schemas/ContentTopic"
+            - type: "null"
+        candidateEventTitle:
+          type: ["string", "null"]
+          maxLength: 300
+        candidateSourceUrl:
+          type: ["string", "null"]
+          format: uri
+        candidateImageUrl:
+          type: ["string", "null"]
+          format: uri
+      required: [sourceId, originalUrl, title, summary, language]
+    DiscoveryItemReviewInput:
+      type: object
+      properties:
+        status:
+          $ref: "#/components/schemas/DiscoveryItemStatus"
+        reviewNotes:
+          type: string
+          maxLength: 2000
+      required: [status, reviewNotes]
+    EditorContentSourcesResponse:
+      type: object
+      properties:
+        sources:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContentSourceRecord"
+      required: [sources]
+    EditorDiscoveryItemsResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContentDiscoveryItem"
+      required: [items]
 
