@@ -43,6 +43,13 @@ import type {
   EditorContentSourcesResponse,
   EditorDiscoveryItemsResponse,
   EditorEvidenceResponse,
+  EditorImageCandidate,
+  EditorImageCandidateCreateInput,
+  EditorImageCandidateMetadataInput,
+  EditorImageCandidateRightsReviewInput,
+  EditorImageCandidateSearchInput,
+  EditorImageCandidateSearchResponse,
+  EditorImageCandidatesResponse,
   EditorSession,
   EventSourceLinkInput,
   EvidenceEventInput,
@@ -4126,5 +4133,442 @@ export const useUpdateEditorDiscoveryItem = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getUpdateEditorDiscoveryItemMutationOptions(options));
+    }
+
+export const getSearchEditorCommonsImagesUrl = () => {
+
+
+
+
+  return `/api/editor/image-search`
+}
+
+/**
+ * Requires verified editor access. Results are suggestions only and are not saved, rights-approved, or published.
+ * @summary Search Wikimedia Commons image candidates
+ */
+export const searchEditorCommonsImages = async (editorImageCandidateSearchInput: EditorImageCandidateSearchInput, options?: Parameters<typeof customFetch>[1]): Promise<EditorImageCandidateSearchResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<EditorImageCandidateSearchResponse>(getSearchEditorCommonsImagesUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(editorImageCandidateSearchInput)
+  }
+);}
+
+
+
+
+
+export const getSearchEditorCommonsImagesMutationKey = () => ['searchEditorCommonsImages'] as const;
+
+export const getSearchEditorCommonsImagesMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof searchEditorCommonsImages>>, TError,SearchEditorCommonsImagesMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof searchEditorCommonsImages>>, TError,SearchEditorCommonsImagesMutationVariables, TContext> => {
+
+const mutationKey = getSearchEditorCommonsImagesMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof searchEditorCommonsImages>>, SearchEditorCommonsImagesMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  searchEditorCommonsImages(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SearchEditorCommonsImagesMutationResult = NonNullable<Awaited<ReturnType<typeof searchEditorCommonsImages>>>
+    export type SearchEditorCommonsImagesMutationBody = BodyType<EditorImageCandidateSearchInput>
+    export type SearchEditorCommonsImagesMutationError = ErrorType<void>
+    export type SearchEditorCommonsImagesMutationVariables = {data: BodyType<EditorImageCandidateSearchInput>}
+
+    /**
+ * @summary Search Wikimedia Commons image candidates
+ */
+export const useSearchEditorCommonsImages = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof searchEditorCommonsImages>>, TError,SearchEditorCommonsImagesMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof searchEditorCommonsImages>>,
+        TError,
+        SearchEditorCommonsImagesMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSearchEditorCommonsImagesMutationOptions(options));
+    }
+
+export const getGetEditorDiscoveryItemImageCandidatesUrl = (itemId: number,) => {
+
+
+
+
+  return `/api/editor/discovery-items/${itemId}/image-candidates`
+}
+
+/**
+ * Requires verified editor access. Candidate records are not public and are not publication approvals.
+ * @summary List image candidates for an external lead
+ */
+export const getEditorDiscoveryItemImageCandidates = async (itemId: number, options?: Parameters<typeof customFetch>[1]): Promise<EditorImageCandidatesResponse> => {
+
+  return customFetch<EditorImageCandidatesResponse>(getGetEditorDiscoveryItemImageCandidatesUrl(itemId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetEditorDiscoveryItemImageCandidatesQueryKey = (itemId: number,) => {
+    return [
+    `/api/editor/discovery-items/${itemId}/image-candidates`
+    ] as const;
+    }
+
+
+export const getGetEditorDiscoveryItemImageCandidatesQueryOptions = <TData = Awaited<ReturnType<typeof getEditorDiscoveryItemImageCandidates>>, TError = ErrorType<void>>(itemId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getEditorDiscoveryItemImageCandidates>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetEditorDiscoveryItemImageCandidatesQueryKey(itemId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getEditorDiscoveryItemImageCandidates>>> = ({ signal }) => getEditorDiscoveryItemImageCandidates(itemId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: itemId !== null && itemId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getEditorDiscoveryItemImageCandidates>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetEditorDiscoveryItemImageCandidatesQueryResult = NonNullable<Awaited<ReturnType<typeof getEditorDiscoveryItemImageCandidates>>>
+export type GetEditorDiscoveryItemImageCandidatesQueryError = ErrorType<void>
+
+
+/**
+ * @summary List image candidates for an external lead
+ */
+
+export function useGetEditorDiscoveryItemImageCandidates<TData = Awaited<ReturnType<typeof getEditorDiscoveryItemImageCandidates>>, TError = ErrorType<void>>(
+ itemId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getEditorDiscoveryItemImageCandidates>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetEditorDiscoveryItemImageCandidatesQueryOptions(itemId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateEditorDiscoveryItemImageCandidateUrl = (itemId: number,) => {
+
+
+
+
+  return `/api/editor/discovery-items/${itemId}/image-candidates`
+}
+
+/**
+ * Requires verified editor access. The server re-fetches Commons metadata; saved candidates start with rights review pending.
+ * @summary Save a Commons result as an image candidate
+ */
+export const createEditorDiscoveryItemImageCandidate = async (itemId: number,
+    editorImageCandidateCreateInput: EditorImageCandidateCreateInput, options?: Parameters<typeof customFetch>[1]): Promise<EditorImageCandidate> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<EditorImageCandidate>(getCreateEditorDiscoveryItemImageCandidateUrl(itemId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(editorImageCandidateCreateInput)
+  }
+);}
+
+
+
+
+
+export const getCreateEditorDiscoveryItemImageCandidateMutationKey = () => ['createEditorDiscoveryItemImageCandidate'] as const;
+
+export const getCreateEditorDiscoveryItemImageCandidateMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createEditorDiscoveryItemImageCandidate>>, TError,CreateEditorDiscoveryItemImageCandidateMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createEditorDiscoveryItemImageCandidate>>, TError,CreateEditorDiscoveryItemImageCandidateMutationVariables, TContext> => {
+
+const mutationKey = getCreateEditorDiscoveryItemImageCandidateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createEditorDiscoveryItemImageCandidate>>, CreateEditorDiscoveryItemImageCandidateMutationVariables> = (props) => {
+          const {itemId,data} = props ?? {};
+
+          return  createEditorDiscoveryItemImageCandidate(itemId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateEditorDiscoveryItemImageCandidateMutationResult = NonNullable<Awaited<ReturnType<typeof createEditorDiscoveryItemImageCandidate>>>
+    export type CreateEditorDiscoveryItemImageCandidateMutationBody = BodyType<EditorImageCandidateCreateInput>
+    export type CreateEditorDiscoveryItemImageCandidateMutationError = ErrorType<void>
+    export type CreateEditorDiscoveryItemImageCandidateMutationVariables = {itemId: number;data: BodyType<EditorImageCandidateCreateInput>}
+
+    /**
+ * @summary Save a Commons result as an image candidate
+ */
+export const useCreateEditorDiscoveryItemImageCandidate = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createEditorDiscoveryItemImageCandidate>>, TError,CreateEditorDiscoveryItemImageCandidateMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createEditorDiscoveryItemImageCandidate>>,
+        TError,
+        CreateEditorDiscoveryItemImageCandidateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateEditorDiscoveryItemImageCandidateMutationOptions(options));
+    }
+
+export const getUpdateEditorImageCandidateUrl = (candidateId: number,) => {
+
+
+
+
+  return `/api/editor/image-candidates/${candidateId}`
+}
+
+/**
+ * Requires verified editor access. Changes to rights terms reset the rights review to pending.
+ * @summary Edit image credit and accessibility metadata
+ */
+export const updateEditorImageCandidate = async (candidateId: number,
+    editorImageCandidateMetadataInput: EditorImageCandidateMetadataInput, options?: Parameters<typeof customFetch>[1]): Promise<EditorImageCandidate> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<EditorImageCandidate>(getUpdateEditorImageCandidateUrl(candidateId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(editorImageCandidateMetadataInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateEditorImageCandidateMutationKey = () => ['updateEditorImageCandidate'] as const;
+
+export const getUpdateEditorImageCandidateMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateEditorImageCandidate>>, TError,UpdateEditorImageCandidateMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateEditorImageCandidate>>, TError,UpdateEditorImageCandidateMutationVariables, TContext> => {
+
+const mutationKey = getUpdateEditorImageCandidateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateEditorImageCandidate>>, UpdateEditorImageCandidateMutationVariables> = (props) => {
+          const {candidateId,data} = props ?? {};
+
+          return  updateEditorImageCandidate(candidateId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateEditorImageCandidateMutationResult = NonNullable<Awaited<ReturnType<typeof updateEditorImageCandidate>>>
+    export type UpdateEditorImageCandidateMutationBody = BodyType<EditorImageCandidateMetadataInput>
+    export type UpdateEditorImageCandidateMutationError = ErrorType<void>
+    export type UpdateEditorImageCandidateMutationVariables = {candidateId: number;data: BodyType<EditorImageCandidateMetadataInput>}
+
+    /**
+ * @summary Edit image credit and accessibility metadata
+ */
+export const useUpdateEditorImageCandidate = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateEditorImageCandidate>>, TError,UpdateEditorImageCandidateMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateEditorImageCandidate>>,
+        TError,
+        UpdateEditorImageCandidateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateEditorImageCandidateMutationOptions(options));
+    }
+
+export const getReviewEditorImageCandidateRightsUrl = (candidateId: number,) => {
+
+
+
+
+  return `/api/editor/image-candidates/${candidateId}/rights`
+}
+
+/**
+ * Requires verified editor access. Approval is an editor decision only; it does not publish or attach the image to an article.
+ * @summary Record an editor's image rights decision
+ */
+export const reviewEditorImageCandidateRights = async (candidateId: number,
+    editorImageCandidateRightsReviewInput: EditorImageCandidateRightsReviewInput, options?: Parameters<typeof customFetch>[1]): Promise<EditorImageCandidate> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<EditorImageCandidate>(getReviewEditorImageCandidateRightsUrl(candidateId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(editorImageCandidateRightsReviewInput)
+  }
+);}
+
+
+
+
+
+export const getReviewEditorImageCandidateRightsMutationKey = () => ['reviewEditorImageCandidateRights'] as const;
+
+export const getReviewEditorImageCandidateRightsMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewEditorImageCandidateRights>>, TError,ReviewEditorImageCandidateRightsMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reviewEditorImageCandidateRights>>, TError,ReviewEditorImageCandidateRightsMutationVariables, TContext> => {
+
+const mutationKey = getReviewEditorImageCandidateRightsMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reviewEditorImageCandidateRights>>, ReviewEditorImageCandidateRightsMutationVariables> = (props) => {
+          const {candidateId,data} = props ?? {};
+
+          return  reviewEditorImageCandidateRights(candidateId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReviewEditorImageCandidateRightsMutationResult = NonNullable<Awaited<ReturnType<typeof reviewEditorImageCandidateRights>>>
+    export type ReviewEditorImageCandidateRightsMutationBody = BodyType<EditorImageCandidateRightsReviewInput>
+    export type ReviewEditorImageCandidateRightsMutationError = ErrorType<void>
+    export type ReviewEditorImageCandidateRightsMutationVariables = {candidateId: number;data: BodyType<EditorImageCandidateRightsReviewInput>}
+
+    /**
+ * @summary Record an editor's image rights decision
+ */
+export const useReviewEditorImageCandidateRights = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewEditorImageCandidateRights>>, TError,ReviewEditorImageCandidateRightsMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof reviewEditorImageCandidateRights>>,
+        TError,
+        ReviewEditorImageCandidateRightsMutationVariables,
+        TContext
+      > => {
+      return useMutation(getReviewEditorImageCandidateRightsMutationOptions(options));
     }
 

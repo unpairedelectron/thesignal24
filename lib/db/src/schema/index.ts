@@ -4,3 +4,4 @@ export * from "./decision-impacts";
 export * from "./publication";
 export * from "./evidence";
 export * from "./content-desk";
+export * from "./content-image-candidates";

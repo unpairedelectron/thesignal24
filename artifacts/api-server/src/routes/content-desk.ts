@@ -1,12 +1,25 @@
 import { asc, desc, eq } from "drizzle-orm";
 import { Router, type IRouter, type RequestHandler } from "express";
 import {
+  CreateEditorDiscoveryItemImageCandidateBody,
+  CreateEditorDiscoveryItemImageCandidateParams,
+  CreateEditorDiscoveryItemImageCandidateResponse,
   CreateEditorContentSourceBody,
   CreateEditorContentSourceResponse,
   CreateEditorDiscoveryItemBody,
   CreateEditorDiscoveryItemResponse,
+  GetEditorDiscoveryItemImageCandidatesParams,
+  GetEditorDiscoveryItemImageCandidatesResponse,
   GetEditorContentSourcesResponse,
   GetEditorDiscoveryItemsResponse,
+  ReviewEditorImageCandidateRightsBody,
+  ReviewEditorImageCandidateRightsParams,
+  ReviewEditorImageCandidateRightsResponse,
+  SearchEditorCommonsImagesBody,
+  SearchEditorCommonsImagesResponse,
+  UpdateEditorImageCandidateBody,
+  UpdateEditorImageCandidateParams,
+  UpdateEditorImageCandidateResponse,
   UpdateEditorContentSourceBody,
   UpdateEditorContentSourceParams,
   UpdateEditorContentSourceResponse,
@@ -14,13 +27,22 @@ import {
   UpdateEditorDiscoveryItemParams,
   UpdateEditorDiscoveryItemResponse,
 } from "@workspace/api-zod";
-import type { ContentSourceInput } from "@workspace/api-zod";
+import type {
+  ContentSourceInput,
+  EditorImageCandidateSearchResult,
+} from "@workspace/api-zod";
 import {
+  contentImageCandidatesTable,
   db,
   discoveryItemsTable,
   sourceRegistryTable,
 } from "@workspace/db";
+import type { ContentImageCandidate } from "@workspace/db";
 import { requireEditor } from "../middlewares/editorAuth";
+import {
+  type WikimediaCommonsClient,
+  wikimediaCommonsClient,
+} from "../lib/wikimedia-commons";
 
 const sourceTypes = new Set([
   "government",
@@ -218,6 +240,16 @@ function serializeDiscoveryItem(
   };
 }
 
+function serializeImageCandidate(candidate: ContentImageCandidate) {
+  return {
+    ...candidate,
+    reviewedAt: asIso(candidate.reviewedAt),
+    discoveredAt: candidate.discoveredAt.toISOString(),
+    createdAt: candidate.createdAt.toISOString(),
+    updatedAt: candidate.updatedAt.toISOString(),
+  };
+}
+
 function validateSourceInput(
   input: ContentSourceInput,
 ): { domain: string; urls: Record<string, string | null> } | null {
@@ -247,9 +279,31 @@ function validateSourceInput(
 export function createContentDeskRouter(
   database: typeof db = db,
   editorGuard: RequestHandler = requireEditor,
+  commonsClient: WikimediaCommonsClient = wikimediaCommonsClient,
 ): IRouter {
   const router: IRouter = Router();
   router.use(editorGuard);
+
+  router.post("/editor/image-search", async (req, res): Promise<void> => {
+    const parsed = SearchEditorCommonsImagesBody.safeParse(req.body);
+    if (!parsed.success || parsed.data.query.trim().length < 2) {
+      res.status(400).json({
+        message: parsed.success
+          ? "Enter at least two non-space characters to search."
+          : parsed.error.message,
+      });
+      return;
+    }
+    try {
+      const results = await commonsClient.searchImages(parsed.data.query.trim());
+      res.json(SearchEditorCommonsImagesResponse.parse({ results }));
+    } catch {
+      req.log?.warn("Wikimedia Commons image search failed");
+      res.status(502).json({
+        message: "Wikimedia Commons could not be reached. Try again later.",
+      });
+    }
+  });
 
   router.get("/editor/content-sources", async (_req, res): Promise<void> => {
     const rows = await database
@@ -487,6 +541,290 @@ export function createContentDeskRouter(
       ),
     );
   });
+
+  router.get(
+    "/editor/discovery-items/:itemId/image-candidates",
+    async (req, res): Promise<void> => {
+      const params = GetEditorDiscoveryItemImageCandidatesParams.safeParse(
+        req.params,
+      );
+      if (!params.success) {
+        res.status(400).json({ message: params.error.message });
+        return;
+      }
+      const [item] = await database
+        .select({ id: discoveryItemsTable.id })
+        .from(discoveryItemsTable)
+        .where(eq(discoveryItemsTable.id, params.data.itemId))
+        .limit(1);
+      if (!item) {
+        res.status(404).json({ message: "Discovery item not found." });
+        return;
+      }
+      const candidates = await database
+        .select()
+        .from(contentImageCandidatesTable)
+        .where(
+          eq(contentImageCandidatesTable.discoveryItemId, params.data.itemId),
+        )
+        .orderBy(desc(contentImageCandidatesTable.discoveredAt));
+      res.json(
+        GetEditorDiscoveryItemImageCandidatesResponse.parse({
+          candidates: candidates.map(serializeImageCandidate),
+        }),
+      );
+    },
+  );
+
+  router.post(
+    "/editor/discovery-items/:itemId/image-candidates",
+    async (req, res): Promise<void> => {
+      const params = CreateEditorDiscoveryItemImageCandidateParams.safeParse(
+        req.params,
+      );
+      const parsed = CreateEditorDiscoveryItemImageCandidateBody.safeParse(
+        req.body,
+      );
+      if (!params.success) {
+        res.status(400).json({ message: params.error.message });
+        return;
+      }
+      if (!parsed.success) {
+        res.status(400).json({ message: parsed.error.message });
+        return;
+      }
+      const [item] = await database
+        .select({ id: discoveryItemsTable.id })
+        .from(discoveryItemsTable)
+        .where(eq(discoveryItemsTable.id, params.data.itemId))
+        .limit(1);
+      if (!item) {
+        res.status(404).json({ message: "Discovery item not found." });
+        return;
+      }
+      if (!parsed.data.fileTitle.trim().startsWith("File:")) {
+        res.status(400).json({ message: "Choose a Wikimedia Commons file." });
+        return;
+      }
+      const editorId = req.editorIdentity?.id;
+      if (!editorId) {
+        res.status(403).json({ message: "Verified editor identity is required." });
+        return;
+      }
+
+      let file: EditorImageCandidateSearchResult | null;
+      try {
+        file = await commonsClient.getFileByTitle(parsed.data.fileTitle.trim());
+      } catch {
+        req.log?.warn("Wikimedia Commons file metadata request failed");
+        res.status(502).json({
+          message: "Wikimedia Commons could not be reached. Try again later.",
+        });
+        return;
+      }
+      if (!file) {
+        res.status(404).json({
+          message: "That file is no longer available on Wikimedia Commons.",
+        });
+        return;
+      }
+
+      const [candidate] = await database
+        .insert(contentImageCandidatesTable)
+        .values({
+          discoveryItemId: params.data.itemId,
+          source: file.source,
+          fileTitle: file.fileTitle,
+          imageUrl: file.imageUrl,
+          thumbnailUrl: file.thumbnailUrl,
+          filePageUrl: file.filePageUrl,
+          license: file.license,
+          licenseUrl: file.licenseUrl,
+          creator: file.creator,
+          credit: file.credit,
+          copyright: file.copyright,
+          usageRights: file.usageRights,
+          altText: parsed.data.altText?.trim() ?? "",
+          caption: parsed.data.caption?.trim() ?? "",
+          rightsStatus: "pending",
+          reviewNotes: "",
+          createdBy: editorId,
+          updatedBy: editorId,
+        })
+        .onConflictDoNothing({
+          target: [
+            contentImageCandidatesTable.discoveryItemId,
+            contentImageCandidatesTable.fileTitle,
+          ],
+        })
+        .returning();
+      if (!candidate) {
+        res.status(409).json({
+          message: "This Commons file is already saved for the lead.",
+        });
+        return;
+      }
+      res.status(201).json(
+        CreateEditorDiscoveryItemImageCandidateResponse.parse(
+          serializeImageCandidate(candidate),
+        ),
+      );
+    },
+  );
+
+  router.patch(
+    "/editor/image-candidates/:candidateId",
+    async (req, res): Promise<void> => {
+      const params = UpdateEditorImageCandidateParams.safeParse(req.params);
+      const parsed = UpdateEditorImageCandidateBody.safeParse(req.body);
+      if (!params.success) {
+        res.status(400).json({ message: params.error.message });
+        return;
+      }
+      if (!parsed.success) {
+        res.status(400).json({ message: parsed.error.message });
+        return;
+      }
+      const editorId = req.editorIdentity?.id;
+      if (!editorId) {
+        res.status(403).json({ message: "Verified editor identity is required." });
+        return;
+      }
+      const license = parsed.data.license.trim();
+      const licenseUrlInput = parsed.data.licenseUrl?.trim() || null;
+      const licenseUrl = licenseUrlInput
+        ? parseHttpsUrl(licenseUrlInput)
+        : null;
+      if (licenseUrlInput && !licenseUrl) {
+        res.status(400).json({
+          message: "The license URL must use HTTPS and contain no credentials.",
+        });
+        return;
+      }
+      const [existing] = await database
+        .select()
+        .from(contentImageCandidatesTable)
+        .where(eq(contentImageCandidatesTable.id, params.data.candidateId))
+        .limit(1);
+      if (!existing) {
+        res.status(404).json({ message: "Image candidate not found." });
+        return;
+      }
+      const creator = parsed.data.creator.trim();
+      const credit = parsed.data.credit.trim();
+      const copyright = parsed.data.copyright.trim();
+      const usageRights = parsed.data.usageRights.trim();
+      const rightsTermsChanged =
+        license !== existing.license ||
+        (licenseUrl?.toString() ?? null) !== existing.licenseUrl ||
+        creator !== existing.creator ||
+        credit !== existing.credit ||
+        copyright !== existing.copyright ||
+        usageRights !== existing.usageRights;
+      const [candidate] = await database
+        .update(contentImageCandidatesTable)
+        .set({
+          license,
+          licenseUrl: licenseUrl?.toString() ?? null,
+          creator,
+          credit,
+          copyright,
+          usageRights,
+          altText: parsed.data.altText.trim(),
+          caption: parsed.data.caption.trim(),
+          rightsStatus: rightsTermsChanged ? "pending" : existing.rightsStatus,
+          reviewNotes: rightsTermsChanged ? "" : existing.reviewNotes,
+          reviewedBy: rightsTermsChanged ? null : existing.reviewedBy,
+          reviewedAt: rightsTermsChanged ? null : existing.reviewedAt,
+          updatedBy: editorId,
+        })
+        .where(eq(contentImageCandidatesTable.id, params.data.candidateId))
+        .returning();
+      if (!candidate) {
+        res.status(404).json({ message: "Image candidate not found." });
+        return;
+      }
+      res.json(
+        UpdateEditorImageCandidateResponse.parse(
+          serializeImageCandidate(candidate),
+        ),
+      );
+    },
+  );
+
+  router.patch(
+    "/editor/image-candidates/:candidateId/rights",
+    async (req, res): Promise<void> => {
+      const params = ReviewEditorImageCandidateRightsParams.safeParse(
+        req.params,
+      );
+      const parsed = ReviewEditorImageCandidateRightsBody.safeParse(req.body);
+      if (!params.success) {
+        res.status(400).json({ message: params.error.message });
+        return;
+      }
+      if (!parsed.success || !parsed.data.reviewNotes.trim()) {
+        res.status(400).json({
+          message: parsed.success
+            ? "Add a review note explaining the rights decision."
+            : parsed.error.message,
+        });
+        return;
+      }
+      const editorId = req.editorIdentity?.id;
+      if (!editorId) {
+        res.status(403).json({ message: "Verified editor identity is required." });
+        return;
+      }
+      const [existing] = await database
+        .select()
+        .from(contentImageCandidatesTable)
+        .where(eq(contentImageCandidatesTable.id, params.data.candidateId))
+        .limit(1);
+      if (!existing) {
+        res.status(404).json({ message: "Image candidate not found." });
+        return;
+      }
+      if (
+        parsed.data.rightsStatus === "approved" &&
+        [
+          existing.license,
+          existing.creator,
+          existing.credit,
+          existing.copyright,
+          existing.usageRights,
+          existing.altText,
+          existing.caption,
+        ].some((value) => !value.trim())
+      ) {
+        res.status(400).json({
+          message:
+            "Complete the license, creator, credit, copyright, usage terms, alt text, and caption before confirming rights.",
+        });
+        return;
+      }
+      const [candidate] = await database
+        .update(contentImageCandidatesTable)
+        .set({
+          rightsStatus: parsed.data.rightsStatus,
+          reviewNotes: parsed.data.reviewNotes.trim(),
+          reviewedBy: editorId,
+          reviewedAt: new Date(),
+          updatedBy: editorId,
+        })
+        .where(eq(contentImageCandidatesTable.id, params.data.candidateId))
+        .returning();
+      if (!candidate) {
+        res.status(404).json({ message: "Image candidate not found." });
+        return;
+      }
+      res.json(
+        ReviewEditorImageCandidateRightsResponse.parse(
+          serializeImageCandidate(candidate),
+        ),
+      );
+    },
+  );
 
   router.patch(
     "/editor/discovery-items/:itemId",

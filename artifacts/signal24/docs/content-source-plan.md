@@ -51,7 +51,7 @@ Authority is a source classification, not a political credibility score. Store t
 | Editorial charts/maps | Visualize verified data with units, period, geography and source. | Build only from verified structured data; keep the source and method visible. |
 | Document preview | A small, legally appropriate preview linked to the official document. | Preserve the original source URL; do not imply that a preview is the complete or authoritative document. |
 
-An image record must retain `image_url`, `source`, `license`, `creator`, `credit`, `copyright`, `usage_rights`, `alt_text`, `caption` and `discovered_at`. If rights or relevance are unresolved, keep it in editor review as **IMAGE RIGHTS UNCONFIRMED** and do not publish it. Image fallback order: relevant licensed image → relevant official image → document preview → original infographic/chart/map/timeline → honest typographic treatment → no image. Never fill an image slot with an unrelated attractive photo.
+An image record must retain `image_url`, `source`, `license`, `creator`, `credit`, `copyright`, `usage_rights`, `alt_text`, `caption` and `discovered_at`. The editor-only Wikimedia Commons search stores selected results per lead with rights review set to **PENDING**. Editors must inspect the original file page and confirm the specific file's license, attribution and permitted use; Commons availability or API metadata alone is not clearance. Any change to creator, credit or usage terms resets the rights review to pending. A recorded rights check does not publish the image or attach it to a story. If rights or relevance are unresolved, keep it in editor review as **IMAGE RIGHTS UNCONFIRMED** and do not publish it. Image fallback order: relevant licensed image → relevant official image → document preview → original infographic/chart/map/timeline → honest typographic treatment → no image. Never fill an image slot with an unrelated attractive photo.
 
 ## 4. Controlled taxonomies
 
@@ -102,7 +102,7 @@ The first implementation slice supports discovery items in `NEW`, `REVIEW` and `
 9. **Publish:** publication requires the existing editor/review safeguards plus a source/date/body quality check. Public pages only expose published records and relationships to published records.
 10. **Audit:** retain who created/reviewed/promoted records and when; preserve revisions and corrections.
 
-The current first slice is editor-only and manual: it stores source registry entries, accepts editor-entered leads from enabled source domains, canonicalizes URLs for deduplication, and records review/rejection notes. It does not fetch feeds or page content, search for images, create articles/events/source documents, create evidence relationships, or publish.
+The current first slice is editor-only and manual: it stores source registry entries, accepts editor-entered leads from enabled source domains, canonicalizes URLs for deduplication, and records review/rejection notes. It does not fetch feeds or external article page content. Editors can search Wikimedia Commons and save file metadata as per-lead image candidates for explicit rights review. It does not create articles/events/source documents, create evidence relationships, or publish or attach images.
 
 ## 6. Initial 100-record research backlog
 

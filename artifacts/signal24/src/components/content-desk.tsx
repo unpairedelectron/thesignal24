@@ -16,6 +16,7 @@ import type {
   ContentTopic,
   DiscoveryItemStatus,
 } from "@workspace/api-client-react";
+import { ImageCandidateManager } from "./image-candidate-manager";
 
 const SOURCE_TYPES: ContentSourceType[] = [
   "government",
@@ -708,9 +709,10 @@ export function SourceDiscoveryDesk() {
                     <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 signal-kicker text-muted-foreground">
                       {item.candidateEventTitle && <span>Possible event: {item.candidateEventTitle}</span>}
                       {item.candidateSourceUrl && <a href={item.candidateSourceUrl} target="_blank" rel="noopener noreferrer" className="hover:text-accent">Candidate document</a>}
-                      {item.candidateImageUrl && <a href={item.candidateImageUrl} target="_blank" rel="noopener noreferrer" className="hover:text-accent">Candidate image · rights unconfirmed</a>}
+                      {item.candidateImageUrl && <a href={item.candidateImageUrl} target="_blank" rel="noopener noreferrer" className="hover:text-accent">Existing image link · not rights reviewed</a>}
                     </div>
                   )}
+                  <ImageCandidateManager itemId={item.id} />
                   <div className="mt-4 grid gap-3 sm:grid-cols-[180px_1fr_auto] sm:items-end">
                     <SourceSelect
                       label="Review status"

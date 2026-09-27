@@ -1979,3 +1979,246 @@ export const UpdateEditorDiscoveryItemResponse = zod.object({
 })
 
 
+/**
+ * Requires verified editor access. Results are suggestions only and are not saved, rights-approved, or published.
+ * @summary Search Wikimedia Commons image candidates
+ */
+export const searchEditorCommonsImagesBodyQueryMin = 2;
+export const searchEditorCommonsImagesBodyQueryMax = 160;
+
+
+
+export const SearchEditorCommonsImagesBody = zod.object({
+  "query": zod.string().min(searchEditorCommonsImagesBodyQueryMin).max(searchEditorCommonsImagesBodyQueryMax)
+})
+
+export const searchEditorCommonsImagesResponseResultsItemFileTitleMax = 500;
+
+
+
+export const SearchEditorCommonsImagesResponse = zod.object({
+  "results": zod.array(zod.object({
+  "source": zod.enum(['Wikimedia Commons']),
+  "fileTitle": zod.string().max(searchEditorCommonsImagesResponseResultsItemFileTitleMax),
+  "imageUrl": zod.string().url(),
+  "thumbnailUrl": zod.string().url(),
+  "filePageUrl": zod.string().url(),
+  "license": zod.string(),
+  "licenseUrl": zod.string().url().nullable(),
+  "creator": zod.string(),
+  "credit": zod.string(),
+  "copyright": zod.string(),
+  "usageRights": zod.string()
+}))
+})
+
+
+/**
+ * Requires verified editor access. Candidate records are not public and are not publication approvals.
+ * @summary List image candidates for an external lead
+ */
+
+
+
+export const GetEditorDiscoveryItemImageCandidatesParams = zod.object({
+  "itemId": zod.coerce.number().int().min(1)
+})
+
+export const GetEditorDiscoveryItemImageCandidatesResponse = zod.object({
+  "candidates": zod.array(zod.object({
+  "id": zod.number().int(),
+  "discoveryItemId": zod.number().int(),
+  "source": zod.enum(['Wikimedia Commons']),
+  "fileTitle": zod.string(),
+  "imageUrl": zod.string().url(),
+  "thumbnailUrl": zod.string().url(),
+  "filePageUrl": zod.string().url(),
+  "license": zod.string(),
+  "licenseUrl": zod.string().url().nullable(),
+  "creator": zod.string(),
+  "credit": zod.string(),
+  "copyright": zod.string(),
+  "usageRights": zod.string(),
+  "altText": zod.string(),
+  "caption": zod.string(),
+  "rightsStatus": zod.enum(['pending', 'approved', 'rejected']),
+  "reviewNotes": zod.string(),
+  "reviewedBy": zod.string().nullable(),
+  "reviewedAt": zod.coerce.date().nullable(),
+  "discoveredAt": zod.coerce.date(),
+  "createdBy": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedBy": zod.string(),
+  "updatedAt": zod.coerce.date()
+}))
+})
+
+
+/**
+ * Requires verified editor access. The server re-fetches Commons metadata; saved candidates start with rights review pending.
+ * @summary Save a Commons result as an image candidate
+ */
+
+
+
+export const CreateEditorDiscoveryItemImageCandidateParams = zod.object({
+  "itemId": zod.coerce.number().int().min(1)
+})
+
+export const createEditorDiscoveryItemImageCandidateBodyFileTitleMin = 6;
+export const createEditorDiscoveryItemImageCandidateBodyFileTitleMax = 500;
+
+export const createEditorDiscoveryItemImageCandidateBodyAltTextMax = 500;
+
+export const createEditorDiscoveryItemImageCandidateBodyCaptionMax = 1000;
+
+
+
+export const CreateEditorDiscoveryItemImageCandidateBody = zod.object({
+  "fileTitle": zod.string().min(createEditorDiscoveryItemImageCandidateBodyFileTitleMin).max(createEditorDiscoveryItemImageCandidateBodyFileTitleMax),
+  "altText": zod.string().max(createEditorDiscoveryItemImageCandidateBodyAltTextMax).optional(),
+  "caption": zod.string().max(createEditorDiscoveryItemImageCandidateBodyCaptionMax).optional()
+})
+
+export const CreateEditorDiscoveryItemImageCandidateResponse = zod.object({
+  "id": zod.number().int(),
+  "discoveryItemId": zod.number().int(),
+  "source": zod.enum(['Wikimedia Commons']),
+  "fileTitle": zod.string(),
+  "imageUrl": zod.string().url(),
+  "thumbnailUrl": zod.string().url(),
+  "filePageUrl": zod.string().url(),
+  "license": zod.string(),
+  "licenseUrl": zod.string().url().nullable(),
+  "creator": zod.string(),
+  "credit": zod.string(),
+  "copyright": zod.string(),
+  "usageRights": zod.string(),
+  "altText": zod.string(),
+  "caption": zod.string(),
+  "rightsStatus": zod.enum(['pending', 'approved', 'rejected']),
+  "reviewNotes": zod.string(),
+  "reviewedBy": zod.string().nullable(),
+  "reviewedAt": zod.coerce.date().nullable(),
+  "discoveredAt": zod.coerce.date(),
+  "createdBy": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedBy": zod.string(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * Requires verified editor access. Changes to rights terms reset the rights review to pending.
+ * @summary Edit image credit and accessibility metadata
+ */
+
+
+
+export const UpdateEditorImageCandidateParams = zod.object({
+  "candidateId": zod.coerce.number().int().min(1)
+})
+
+export const updateEditorImageCandidateBodyLicenseMax = 500;
+
+export const updateEditorImageCandidateBodyCreatorMax = 1000;
+
+export const updateEditorImageCandidateBodyCreditMax = 2000;
+
+export const updateEditorImageCandidateBodyCopyrightMax = 2000;
+
+export const updateEditorImageCandidateBodyUsageRightsMax = 3000;
+
+export const updateEditorImageCandidateBodyAltTextMax = 500;
+
+export const updateEditorImageCandidateBodyCaptionMax = 1000;
+
+
+
+export const UpdateEditorImageCandidateBody = zod.object({
+  "license": zod.string().max(updateEditorImageCandidateBodyLicenseMax),
+  "licenseUrl": zod.string().url().nullable(),
+  "creator": zod.string().max(updateEditorImageCandidateBodyCreatorMax),
+  "credit": zod.string().max(updateEditorImageCandidateBodyCreditMax),
+  "copyright": zod.string().max(updateEditorImageCandidateBodyCopyrightMax),
+  "usageRights": zod.string().max(updateEditorImageCandidateBodyUsageRightsMax),
+  "altText": zod.string().max(updateEditorImageCandidateBodyAltTextMax),
+  "caption": zod.string().max(updateEditorImageCandidateBodyCaptionMax)
+})
+
+export const UpdateEditorImageCandidateResponse = zod.object({
+  "id": zod.number().int(),
+  "discoveryItemId": zod.number().int(),
+  "source": zod.enum(['Wikimedia Commons']),
+  "fileTitle": zod.string(),
+  "imageUrl": zod.string().url(),
+  "thumbnailUrl": zod.string().url(),
+  "filePageUrl": zod.string().url(),
+  "license": zod.string(),
+  "licenseUrl": zod.string().url().nullable(),
+  "creator": zod.string(),
+  "credit": zod.string(),
+  "copyright": zod.string(),
+  "usageRights": zod.string(),
+  "altText": zod.string(),
+  "caption": zod.string(),
+  "rightsStatus": zod.enum(['pending', 'approved', 'rejected']),
+  "reviewNotes": zod.string(),
+  "reviewedBy": zod.string().nullable(),
+  "reviewedAt": zod.coerce.date().nullable(),
+  "discoveredAt": zod.coerce.date(),
+  "createdBy": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedBy": zod.string(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * Requires verified editor access. Approval is an editor decision only; it does not publish or attach the image to an article.
+ * @summary Record an editor's image rights decision
+ */
+
+
+
+export const ReviewEditorImageCandidateRightsParams = zod.object({
+  "candidateId": zod.coerce.number().int().min(1)
+})
+
+export const reviewEditorImageCandidateRightsBodyReviewNotesMax = 2000;
+
+
+
+export const ReviewEditorImageCandidateRightsBody = zod.object({
+  "rightsStatus": zod.enum(['approved', 'rejected']),
+  "reviewNotes": zod.string().min(1).max(reviewEditorImageCandidateRightsBodyReviewNotesMax)
+})
+
+export const ReviewEditorImageCandidateRightsResponse = zod.object({
+  "id": zod.number().int(),
+  "discoveryItemId": zod.number().int(),
+  "source": zod.enum(['Wikimedia Commons']),
+  "fileTitle": zod.string(),
+  "imageUrl": zod.string().url(),
+  "thumbnailUrl": zod.string().url(),
+  "filePageUrl": zod.string().url(),
+  "license": zod.string(),
+  "licenseUrl": zod.string().url().nullable(),
+  "creator": zod.string(),
+  "credit": zod.string(),
+  "copyright": zod.string(),
+  "usageRights": zod.string(),
+  "altText": zod.string(),
+  "caption": zod.string(),
+  "rightsStatus": zod.enum(['pending', 'approved', 'rejected']),
+  "reviewNotes": zod.string(),
+  "reviewedBy": zod.string().nullable(),
+  "reviewedAt": zod.coerce.date().nullable(),
+  "discoveredAt": zod.coerce.date(),
+  "createdBy": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedBy": zod.string(),
+  "updatedAt": zod.coerce.date()
+})
+
+

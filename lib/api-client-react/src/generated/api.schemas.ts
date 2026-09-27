@@ -1003,6 +1003,139 @@ export interface DiscoveryItemReviewInput {
   reviewNotes: string;
 }
 
+export type ImageCandidateRightsStatus = typeof ImageCandidateRightsStatus[keyof typeof ImageCandidateRightsStatus];
+
+
+export const ImageCandidateRightsStatus = {
+  pending: 'pending',
+  approved: 'approved',
+  rejected: 'rejected',
+} as const;
+
+export type ImageCandidateRightsDecision = typeof ImageCandidateRightsDecision[keyof typeof ImageCandidateRightsDecision];
+
+
+export const ImageCandidateRightsDecision = {
+  approved: 'approved',
+  rejected: 'rejected',
+} as const;
+
+export interface EditorImageCandidateSearchInput {
+  /**
+     * @minLength 2
+     * @maxLength 160
+     */
+  query: string;
+}
+
+export type EditorImageCandidateSearchResultSource = typeof EditorImageCandidateSearchResultSource[keyof typeof EditorImageCandidateSearchResultSource];
+
+
+export const EditorImageCandidateSearchResultSource = {
+  Wikimedia_Commons: 'Wikimedia Commons',
+} as const;
+
+export interface EditorImageCandidateSearchResult {
+  source: EditorImageCandidateSearchResultSource;
+  /** @maxLength 500 */
+  fileTitle: string;
+  imageUrl: string;
+  thumbnailUrl: string;
+  filePageUrl: string;
+  license: string;
+  /** @nullable */
+  licenseUrl: string | null;
+  creator: string;
+  credit: string;
+  copyright: string;
+  usageRights: string;
+}
+
+export interface EditorImageCandidateSearchResponse {
+  results: EditorImageCandidateSearchResult[];
+}
+
+export interface EditorImageCandidateCreateInput {
+  /**
+     * @minLength 6
+     * @maxLength 500
+     */
+  fileTitle: string;
+  /** @maxLength 500 */
+  altText?: string;
+  /** @maxLength 1000 */
+  caption?: string;
+}
+
+export interface EditorImageCandidateMetadataInput {
+  /** @maxLength 500 */
+  license: string;
+  /** @nullable */
+  licenseUrl: string | null;
+  /** @maxLength 1000 */
+  creator: string;
+  /** @maxLength 2000 */
+  credit: string;
+  /** @maxLength 2000 */
+  copyright: string;
+  /** @maxLength 3000 */
+  usageRights: string;
+  /** @maxLength 500 */
+  altText: string;
+  /** @maxLength 1000 */
+  caption: string;
+}
+
+export interface EditorImageCandidateRightsReviewInput {
+  rightsStatus: ImageCandidateRightsDecision;
+  /**
+     * @minLength 1
+     * @maxLength 2000
+     */
+  reviewNotes: string;
+}
+
+export type EditorImageCandidateSource = typeof EditorImageCandidateSource[keyof typeof EditorImageCandidateSource];
+
+
+export const EditorImageCandidateSource = {
+  Wikimedia_Commons: 'Wikimedia Commons',
+} as const;
+
+export interface EditorImageCandidate {
+  id: number;
+  discoveryItemId: number;
+  source: EditorImageCandidateSource;
+  fileTitle: string;
+  imageUrl: string;
+  thumbnailUrl: string;
+  filePageUrl: string;
+  license: string;
+  /** @nullable */
+  licenseUrl: string | null;
+  creator: string;
+  credit: string;
+  copyright: string;
+  usageRights: string;
+  altText: string;
+  caption: string;
+  rightsStatus: ImageCandidateRightsStatus;
+  reviewNotes: string;
+  /** @nullable */
+  reviewedBy: string | null;
+  /** @nullable */
+  reviewedAt: string | null;
+  discoveredAt: string;
+  createdBy: string;
+  createdAt: string;
+  updatedBy: string;
+  updatedAt: string;
+}
+
+export interface EditorImageCandidatesResponse {
+  candidates: EditorImageCandidate[];
+}
+
 export interface EditorContentSourcesResponse {
   sources: ContentSourceRecord[];
 }

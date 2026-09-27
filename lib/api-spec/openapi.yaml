@@ -1161,6 +1161,166 @@ paths:
           description: Verified editor access required
         "404":
           description: Lead not found
+  /editor/image-search:
+    post:
+      operationId: searchEditorCommonsImages
+      tags: [editor, evidence]
+      summary: Search Wikimedia Commons image candidates
+      description: Requires verified editor access. Results are suggestions only and are not saved, rights-approved, or published.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EditorImageCandidateSearchInput"
+      responses:
+        "200":
+          description: Commons image search results with source metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EditorImageCandidateSearchResponse"
+        "400":
+          description: Invalid search request
+        "401":
+          description: Sign-in required
+        "403":
+          description: Verified editor access required
+        "502":
+          description: Wikimedia Commons is unavailable
+  /editor/discovery-items/{itemId}/image-candidates:
+    get:
+      operationId: getEditorDiscoveryItemImageCandidates
+      tags: [editor, evidence]
+      summary: List image candidates for an external lead
+      description: Requires verified editor access. Candidate records are not public and are not publication approvals.
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        "200":
+          description: Stored image candidates
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EditorImageCandidatesResponse"
+        "400":
+          description: Invalid lead ID
+        "401":
+          description: Sign-in required
+        "403":
+          description: Verified editor access required
+        "404":
+          description: Lead not found
+    post:
+      operationId: createEditorDiscoveryItemImageCandidate
+      tags: [editor, evidence]
+      summary: Save a Commons result as an image candidate
+      description: Requires verified editor access. The server re-fetches Commons metadata; saved candidates start with rights review pending.
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EditorImageCandidateCreateInput"
+      responses:
+        "201":
+          description: Candidate saved for editor review
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EditorImageCandidate"
+        "400":
+          description: Invalid candidate request
+        "401":
+          description: Sign-in required
+        "403":
+          description: Verified editor access required
+        "404":
+          description: Lead or Commons file not found
+        "409":
+          description: This Commons file is already saved for the lead
+        "502":
+          description: Wikimedia Commons is unavailable
+  /editor/image-candidates/{candidateId}:
+    patch:
+      operationId: updateEditorImageCandidate
+      tags: [editor, evidence]
+      summary: Edit image credit and accessibility metadata
+      description: Requires verified editor access. Changes to rights terms reset the rights review to pending.
+      parameters:
+        - name: candidateId
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EditorImageCandidateMetadataInput"
+      responses:
+        "200":
+          description: Candidate metadata updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EditorImageCandidate"
+        "400":
+          description: Invalid candidate metadata
+        "401":
+          description: Sign-in required
+        "403":
+          description: Verified editor access required
+        "404":
+          description: Candidate not found
+  /editor/image-candidates/{candidateId}/rights:
+    patch:
+      operationId: reviewEditorImageCandidateRights
+      tags: [editor, evidence]
+      summary: Record an editor's image rights decision
+      description: Requires verified editor access. Approval is an editor decision only; it does not publish or attach the image to an article.
+      parameters:
+        - name: candidateId
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EditorImageCandidateRightsReviewInput"
+      responses:
+        "200":
+          description: Rights review recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EditorImageCandidate"
+        "400":
+          description: Required metadata or review note is missing
+        "401":
+          description: Sign-in required
+        "403":
+          description: Verified editor access required
+        "404":
+          description: Candidate not found
 components:
   parameters:
     IssueId:
@@ -2487,6 +2647,181 @@ components:
           type: string
           maxLength: 2000
       required: [status, reviewNotes]
+    ImageCandidateRightsStatus:
+      type: string
+      enum: [pending, approved, rejected]
+    ImageCandidateRightsDecision:
+      type: string
+      enum: [approved, rejected]
+    EditorImageCandidateSearchInput:
+      type: object
+      properties:
+        query:
+          type: string
+          minLength: 2
+          maxLength: 160
+      required: [query]
+    EditorImageCandidateSearchResult:
+      type: object
+      properties:
+        source:
+          type: string
+          enum: [Wikimedia Commons]
+        fileTitle:
+          type: string
+          maxLength: 500
+        imageUrl:
+          type: string
+          format: uri
+        thumbnailUrl:
+          type: string
+          format: uri
+        filePageUrl:
+          type: string
+          format: uri
+        license:
+          type: string
+        licenseUrl:
+          type: ["string", "null"]
+          format: uri
+        creator:
+          type: string
+        credit:
+          type: string
+        copyright:
+          type: string
+        usageRights:
+          type: string
+      required: [source, fileTitle, imageUrl, thumbnailUrl, filePageUrl, license, licenseUrl, creator, credit, copyright, usageRights]
+    EditorImageCandidateSearchResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/EditorImageCandidateSearchResult"
+      required: [results]
+    EditorImageCandidateCreateInput:
+      type: object
+      properties:
+        fileTitle:
+          type: string
+          minLength: 6
+          maxLength: 500
+        altText:
+          type: string
+          maxLength: 500
+        caption:
+          type: string
+          maxLength: 1000
+      required: [fileTitle]
+    EditorImageCandidateMetadataInput:
+      type: object
+      properties:
+        license:
+          type: string
+          maxLength: 500
+        licenseUrl:
+          type: ["string", "null"]
+          format: uri
+        creator:
+          type: string
+          maxLength: 1000
+        credit:
+          type: string
+          maxLength: 2000
+        copyright:
+          type: string
+          maxLength: 2000
+        usageRights:
+          type: string
+          maxLength: 3000
+        altText:
+          type: string
+          maxLength: 500
+        caption:
+          type: string
+          maxLength: 1000
+      required: [license, licenseUrl, creator, credit, copyright, usageRights, altText, caption]
+    EditorImageCandidateRightsReviewInput:
+      type: object
+      properties:
+        rightsStatus:
+          $ref: "#/components/schemas/ImageCandidateRightsDecision"
+        reviewNotes:
+          type: string
+          minLength: 1
+          maxLength: 2000
+      required: [rightsStatus, reviewNotes]
+    EditorImageCandidate:
+      type: object
+      properties:
+        id:
+          type: integer
+        discoveryItemId:
+          type: integer
+        source:
+          type: string
+          enum: [Wikimedia Commons]
+        fileTitle:
+          type: string
+        imageUrl:
+          type: string
+          format: uri
+        thumbnailUrl:
+          type: string
+          format: uri
+        filePageUrl:
+          type: string
+          format: uri
+        license:
+          type: string
+        licenseUrl:
+          type: ["string", "null"]
+          format: uri
+        creator:
+          type: string
+        credit:
+          type: string
+        copyright:
+          type: string
+        usageRights:
+          type: string
+        altText:
+          type: string
+        caption:
+          type: string
+        rightsStatus:
+          $ref: "#/components/schemas/ImageCandidateRightsStatus"
+        reviewNotes:
+          type: string
+        reviewedBy:
+          type: ["string", "null"]
+        reviewedAt:
+          type: ["string", "null"]
+          format: date-time
+        discoveredAt:
+          type: string
+          format: date-time
+        createdBy:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedBy:
+          type: string
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, discoveryItemId, source, fileTitle, imageUrl, thumbnailUrl, filePageUrl, license, licenseUrl, creator, credit, copyright, usageRights, altText, caption, rightsStatus, reviewNotes, reviewedBy, reviewedAt, discoveredAt, createdBy, createdAt, updatedBy, updatedAt]
+    EditorImageCandidatesResponse:
+      type: object
+      properties:
+        candidates:
+          type: array
+          items:
+            $ref: "#/components/schemas/EditorImageCandidate"
+      required: [candidates]
     EditorContentSourcesResponse:
       type: object
       properties:
