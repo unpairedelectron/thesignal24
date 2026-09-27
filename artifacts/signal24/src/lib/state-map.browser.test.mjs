@@ -1,0 +1,289 @@
+import assert from 'node:assert/strict';
+import { spawn } from 'node:child_process';
+import { existsSync } from 'node:fs';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { EventEmitter, once } from 'node:events';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { setTimeout as delay } from 'node:timers/promises';
+import { test } from 'node:test';
+import {
+  getMapFeatureName,
+  getStateLinkedStories,
+  getStateNames,
+  getStoriesForState,
+  stateNameKey,
+} from './state-map.ts';
+
+const baseUrl = new URL(
+  process.env.SIGNAL24_BROWSER_TEST_URL
+    ?? (process.env.REPLIT_DEV_DOMAIN
+      ? `https://${process.env.REPLIT_DEV_DOMAIN}/`
+      : 'http://localhost:80/'),
+);
+const snapshotExpression = (missingStateSlug) => `(() => {
+  const buttons = [...document.querySelectorAll('button[data-testid^="button-map-state-"]')];
+  const selectedButton = buttons.find((button) => button.getAttribute('aria-pressed') === 'true');
+  return {
+    selectedState: selectedButton?.querySelector('span')?.textContent?.trim() ?? null,
+    stateParam: new URLSearchParams(location.search).get('state'),
+    recordTitles: [...document.querySelectorAll('#india-in-focus h3')].map((heading) => heading.textContent?.trim()),
+    unmappedNote: document.querySelector('[data-testid="note-unmapped-map-states"]')?.textContent ?? '',
+    missingStateHasMapShape: Boolean(document.querySelector('[data-testid="map-state-shape-${missingStateSlug}"]')),
+  };
+})()`;
+
+class DevToolsConnection {
+  constructor(socket) {
+    this.socket = socket;
+    this.events = new EventEmitter();
+    this.nextId = 0;
+    this.pending = new Map();
+    socket.addEventListener('message', ({ data }) => {
+      const message = JSON.parse(String(data));
+      if (message.id) {
+        const pending = this.pending.get(message.id);
+        if (!pending) return;
+        this.pending.delete(message.id);
+        clearTimeout(pending.timeout);
+        if (message.error) pending.reject(new Error(message.error.message));
+        else pending.resolve(message.result);
+      } else {
+        this.events.emit('event', message);
+      }
+    });
+    socket.addEventListener('close', () => {
+      for (const pending of this.pending.values()) {
+        clearTimeout(pending.timeout);
+        pending.reject(new Error('Chromium closed the DevTools connection.'));
+      }
+      this.pending.clear();
+    });
+  }
+
+  send(method, params = {}, sessionId) {
+    const id = ++this.nextId;
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        this.pending.delete(id);
+        reject(new Error(`Chromium DevTools command timed out: ${method}`));
+      }, 15_000);
+      this.pending.set(id, { resolve, reject, timeout });
+      this.socket.send(JSON.stringify({ id, method, params, ...(sessionId ? { sessionId } : {}) }));
+    });
+  }
+
+  waitForEvent(method, sessionId, timeoutMs = 15_000) {
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        this.events.off('event', handler);
+        reject(new Error(`Timed out waiting for Chromium event: ${method}`));
+      }, timeoutMs);
+      const handler = (message) => {
+        if (message.method !== method || (sessionId && message.sessionId !== sessionId)) return;
+        clearTimeout(timeout);
+        this.events.off('event', handler);
+        resolve(message.params);
+      };
+      this.events.on('event', handler);
+    });
+  }
+}
+
+async function launchBrowser() {
+  const executable = process.env.CHROMIUM_PATH ?? '/repl/tools/bin/chromium';
+  assert.ok(existsSync(executable), `Chromium was not found at ${executable}; set CHROMIUM_PATH to its executable.`);
+  const profileDir = await mkdtemp(join(tmpdir(), 'signal24-chromium-'));
+  const processHandle = spawn(executable, [
+    '--headless=new',
+    '--no-sandbox',
+    '--disable-gpu',
+    '--disable-dev-shm-usage',
+    '--disable-background-networking',
+    '--no-first-run',
+    '--no-default-browser-check',
+    '--remote-allow-origins=*',
+    '--remote-debugging-port=0',
+    `--user-data-dir=${profileDir}`,
+    'about:blank',
+  ], { stdio: ['ignore', 'ignore', 'pipe'] });
+  let stderr = '';
+  processHandle.stderr.setEncoding('utf8');
+
+  const endpoint = await new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => reject(new Error(`Chromium did not start DevTools. ${stderr}`)), 15_000);
+    processHandle.stderr.on('data', (chunk) => {
+      stderr += chunk;
+      const match = stderr.match(/DevTools listening on (ws:\/\/\S+)/);
+      if (match) {
+        clearTimeout(timeout);
+        resolve(match[1]);
+      }
+    });
+    processHandle.once('error', (error) => {
+      clearTimeout(timeout);
+      reject(error);
+    });
+    processHandle.once('exit', (code) => {
+      clearTimeout(timeout);
+      reject(new Error(`Chromium exited before DevTools started (code ${code}). ${stderr}`));
+    });
+  });
+  const socket = new WebSocket(endpoint);
+  await new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => reject(new Error('Timed out connecting to Chromium DevTools.')), 10_000);
+    socket.addEventListener('open', () => {
+      clearTimeout(timeout);
+      resolve();
+    }, { once: true });
+    socket.addEventListener('error', () => {
+      clearTimeout(timeout);
+      reject(new Error('Could not connect to Chromium DevTools.'));
+    }, { once: true });
+  });
+  const connection = new DevToolsConnection(socket);
+  const { targetId } = await connection.send('Target.createTarget', { url: 'about:blank' });
+  const { sessionId } = await connection.send('Target.attachToTarget', { targetId, flatten: true });
+  await connection.send('Page.enable', {}, sessionId);
+  await connection.send('Runtime.enable', {}, sessionId);
+
+  return {
+    async evaluate(expression) {
+      const response = await connection.send('Runtime.evaluate', {
+        expression,
+        awaitPromise: true,
+        returnByValue: true,
+      }, sessionId);
+      if (response.exceptionDetails) {
+        throw new Error(response.exceptionDetails.text ?? 'Browser expression failed.');
+      }
+      return response.result?.value ?? null;
+    },
+    async addScriptOnNewDocument(source) {
+      await connection.send('Page.addScriptToEvaluateOnNewDocument', { source }, sessionId);
+    },
+    async navigate(url) {
+      const loaded = connection.waitForEvent('Page.loadEventFired', sessionId);
+      await connection.send('Page.navigate', { url }, sessionId);
+      await loaded;
+    },
+    async reload() {
+      const loaded = connection.waitForEvent('Page.loadEventFired', sessionId);
+      await connection.send('Page.reload', {}, sessionId);
+      await loaded;
+    },
+    async waitFor(expression, predicate, description) {
+      const deadline = Date.now() + 30_000;
+      let lastValue = null;
+      while (Date.now() < deadline) {
+        lastValue = await this.evaluate(expression);
+        if (predicate(lastValue)) return lastValue;
+        await delay(150);
+      }
+      throw new Error(`Timed out waiting for ${description}. Last browser state: ${JSON.stringify(lastValue)}`);
+    },
+    async close() {
+      socket.close();
+      if (processHandle.exitCode === null) {
+        const exited = once(processHandle, 'exit').catch(() => {});
+        processHandle.kill('SIGTERM');
+        await Promise.race([exited, delay(2_000)]);
+        if (processHandle.exitCode === null) processHandle.kill('SIGKILL');
+      }
+      await rm(profileDir, { recursive: true, force: true });
+    },
+  };
+}
+
+function slugify(value) {
+  return value.toLocaleLowerCase('en-IN').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+function expectedTitles(stories, stateName) {
+  return getStoriesForState(
+    stories.filter((story) => story.workflowStatus === 'published')
+      .sort((a, b) => (b.publishedOn ?? b.recordDate ?? '').localeCompare(a.publishedOn ?? a.recordDate ?? '')),
+    stateName,
+  ).map((story) => story.title);
+}
+
+test('state links restore records across reload and browser history, including a list-only state', async (t) => {
+  const archiveResponse = await fetch(new URL('/api/archive?limit=100', baseUrl));
+  assert.equal(archiveResponse.ok, true, `Could not load the archive from ${new URL('/api/archive', baseUrl)}`);
+  const archive = await archiveResponse.json();
+  const mapResponse = await fetch(new URL('/data/india-states-simplified.geojson', baseUrl));
+  assert.equal(mapResponse.ok, true, 'Could not load the local India map data.');
+  assert.match(mapResponse.headers.get('content-type') ?? '', /json/i, 'The map URL must return GeoJSON, not the app shell.');
+  const mapData = await mapResponse.json();
+  const stateNames = getStateNames(getStateLinkedStories(archive.stories));
+  const mapFeaturesByName = new Map(
+    mapData.features.map((feature) => [stateNameKey(getMapFeatureName(feature) ?? ''), getMapFeatureName(feature)]),
+  );
+  const candidates = stateNames.filter((name) => mapFeaturesByName.has(stateNameKey(name)) && expectedTitles(archive.stories, name).length > 0);
+  assert.ok(candidates.length >= 2, 'The published archive needs at least two map-linked states for this browser test.');
+  const [listOnlyState, secondState] = candidates;
+  const expectedListOnlyTitles = expectedTitles(archive.stories, listOnlyState);
+  const expectedSecondTitles = expectedTitles(archive.stories, secondState);
+  const missingFeatureName = mapFeaturesByName.get(stateNameKey(listOnlyState));
+  const missingStateSlug = slugify(listOnlyState);
+  const browser = await launchBrowser();
+  t.after(() => browser.close());
+
+  const interceptMapScript = `(() => {
+    const originalFetch = window.fetch.bind(window);
+    window.fetch = async (...args) => {
+      const response = await originalFetch(...args);
+      const requestUrl = typeof args[0] === 'string' ? args[0] : args[0]?.url;
+      if (!response.ok || !requestUrl?.includes('india-states-simplified.geojson')) return response;
+      const data = await response.json();
+      const omittedName = ${JSON.stringify(missingFeatureName)};
+      data.features = data.features.filter((feature) => (feature.properties?.NAME_1 ?? feature.properties?.name) !== omittedName);
+      return new Response(JSON.stringify(data), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    };
+  })();`;
+  await browser.addScriptOnNewDocument(interceptMapScript);
+  const initialUrl = new URL(baseUrl);
+  initialUrl.searchParams.set('state', listOnlyState);
+  await browser.navigate(initialUrl.toString());
+
+  const snapshotExpressionText = snapshotExpression(missingStateSlug);
+  const waitForState = (stateName, expectedRecordTitles) => browser.waitFor(
+    snapshotExpressionText,
+    (snapshot) => snapshot?.selectedState === stateName
+      && snapshot.stateParam === stateName
+      && JSON.stringify(snapshot.recordTitles) === JSON.stringify(expectedRecordTitles),
+    `state ${stateName} and its matching records`,
+  );
+
+  let snapshot = await waitForState(listOnlyState, expectedListOnlyTitles);
+  assert.equal(snapshot.missingStateHasMapShape, false, `${listOnlyState} should not have a rendered map shape in this test.`);
+  assert.ok(snapshot.unmappedNote.includes(listOnlyState), 'The page should explain why this selected state has no matching map boundary.');
+
+  await browser.reload();
+  snapshot = await waitForState(listOnlyState, expectedListOnlyTitles);
+  assert.equal(snapshot.missingStateHasMapShape, false, 'Reload should not make the list-only state depend on a map outline.');
+
+  const clickState = async (stateName) => {
+    const clicked = await browser.evaluate(`(() => {
+      const button = [...document.querySelectorAll('button[data-testid^="button-map-state-"]')]
+        .find((candidate) => candidate.querySelector('span')?.textContent?.trim() === ${JSON.stringify(stateName)});
+      if (!button) return false;
+      button.click();
+      return true;
+    })()`);
+    assert.equal(clicked, true, `Could not select ${stateName} from the text state list.`);
+  };
+
+  await clickState(secondState);
+  await waitForState(secondState, expectedSecondTitles);
+  await browser.evaluate('history.back()');
+  snapshot = await waitForState(listOnlyState, expectedListOnlyTitles);
+  assert.equal(snapshot.missingStateHasMapShape, false);
+  await browser.evaluate('history.forward()');
+  await waitForState(secondState, expectedSecondTitles);
+
+  // Selecting the boundary-free state from its text-list entry must still work.
+  await clickState(listOnlyState);
+  snapshot = await waitForState(listOnlyState, expectedListOnlyTitles);
+  assert.equal(snapshot.missingStateHasMapShape, false);
+});
