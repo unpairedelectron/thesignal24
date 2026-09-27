@@ -7,7 +7,7 @@ import {
   useGetEditorDiscoveryItemImageCandidates,
   useRecheckEditorImageCandidateSource,
   useReviewEditorImageCandidateRights,
-  useSearchEditorCommonsImages,
+  useSearchEditorImageCandidates,
   useUpdateEditorImageCandidate,
 } from "@workspace/api-client-react";
 import type {
@@ -108,7 +108,7 @@ function SearchResult({
         href={result.filePageUrl}
         target="_blank"
         rel="noopener noreferrer"
-        aria-label={`Open Wikimedia Commons file page for ${result.fileTitle}`}
+        aria-label={`Open ${result.source} item page for ${result.fileTitle}`}
       >
         <img
           src={result.thumbnailUrl}
@@ -127,12 +127,14 @@ function SearchResult({
           {result.fileTitle}
         </a>
         <p className="mt-1 signal-kicker text-muted-foreground">
-          Wikimedia Commons search result · not rights-cleared
+          {result.source} search result · not rights-cleared
         </p>
         <dl className="mt-3 grid gap-2 text-xs leading-relaxed text-muted-foreground">
           <div>
             <dt className="inline font-semibold text-foreground">License: </dt>
-            <dd className="inline">{result.license || "Not supplied by Commons"}</dd>
+            <dd className="inline">
+              {result.license || `Not supplied by ${result.source}`}
+            </dd>
             {result.licenseUrl && (
               <>
                 {" · "}
@@ -149,19 +151,27 @@ function SearchResult({
           </div>
           <div>
             <dt className="inline font-semibold text-foreground">Creator: </dt>
-            <dd className="inline">{result.creator || "Not supplied by Commons"}</dd>
+            <dd className="inline">
+              {result.creator || `Not supplied by ${result.source}`}
+            </dd>
           </div>
           <div>
             <dt className="inline font-semibold text-foreground">Credit: </dt>
-            <dd className="inline">{result.credit || "Not supplied by Commons"}</dd>
+            <dd className="inline">
+              {result.credit || `Not supplied by ${result.source}`}
+            </dd>
           </div>
           <div>
             <dt className="inline font-semibold text-foreground">Copyright: </dt>
-            <dd className="inline">{result.copyright || "Not supplied by Commons"}</dd>
+            <dd className="inline">
+              {result.copyright || `Not supplied by ${result.source}`}
+            </dd>
           </div>
           <div>
             <dt className="inline font-semibold text-foreground">Usage terms: </dt>
-            <dd className="inline">{result.usageRights || "Not supplied by Commons"}</dd>
+            <dd className="inline">
+              {result.usageRights || `Not supplied by ${result.source}`}
+            </dd>
           </div>
         </dl>
         <button
@@ -173,7 +183,10 @@ function SearchResult({
               {
                 itemId,
                 data: {
+                  source: result.source,
                   fileTitle: result.fileTitle,
+                  filePageUrl: result.filePageUrl,
+                  imageUrl: result.imageUrl,
                   altText: "",
                   caption: "",
                 },
@@ -199,6 +212,8 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const [searchText, setSearchText] = useState("");
+  const [archiveSource, setArchiveSource] =
+    useState<EditorImageCandidateSearchResult["source"]>("Wikimedia Commons");
   const [drafts, setDrafts] = useState<Record<number, CandidateDraft>>({});
   const [sourcePreviews, setSourcePreviews] = useState<
     Record<number, EditorImageCandidateSourceRecheckPreview>
@@ -214,7 +229,7 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
       enabled: isOpen,
     },
   });
-  const search = useSearchEditorCommonsImages();
+  const search = useSearchEditorImageCandidates();
   const updateCandidate = useUpdateEditorImageCandidate();
   const recheckSource = useRecheckEditorImageCandidateSource();
   const applySourceRecheck = useApplyEditorImageCandidateSourceRecheck();
@@ -263,7 +278,7 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
     });
   }
 
-  function recheckCommonsTerms(candidate: EditorImageCandidate) {
+  function recheckSourceTerms(candidate: EditorImageCandidate) {
     setError("");
     setNotice("");
     setSourcePreviewsNeedRefresh((current) =>
@@ -285,8 +300,8 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
           }));
           setNotice(
             preview.changedFields.length === 0
-              ? "Commons rights terms match the saved snapshot. No metadata was changed."
-              : "Commons terms differ from the saved snapshot. Compare them below before applying.",
+              ? `${candidate.source} rights terms match the saved snapshot. No metadata was changed.`
+              : `${candidate.source} terms differ from the saved snapshot. Compare them below before applying.`,
           );
         },
         onError: (reason) =>
@@ -298,7 +313,7 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
             setError(
               errorMessage(
                 reason,
-                "Commons could not be checked. Saved image terms were not changed.",
+                `${candidate.source} could not be checked. Saved image terms were not changed.`,
               ),
             );
           },
@@ -306,13 +321,13 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
     );
   }
 
-  function applyCommonsTerms(
+  function applySourceTerms(
     candidate: EditorImageCandidate,
     preview: EditorImageCandidateSourceRecheckPreview,
     hasUnsavedMetadata: boolean,
   ) {
     if (hasUnsavedMetadata) {
-      setError("Save the image metadata before applying Commons terms.");
+      setError(`Save the image metadata before applying ${candidate.source} terms.`);
       return;
     }
     setError("");
@@ -328,7 +343,7 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
           void invalidateCandidates();
           setNotice(
             result.rightsTermsChanged
-              ? "Current Commons terms saved. The previous rights decision was cleared and review is pending."
+              ? `Current ${candidate.source} terms saved. The previous rights decision was cleared and review is pending.`
               : "No rights terms changed. The saved snapshot and review decision remain unchanged.",
           );
         },
@@ -340,7 +355,7 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
           setError(
             errorMessage(
               reason,
-              "Commons terms could not be applied. Saved image terms were not changed; recheck before trying again.",
+              `${candidate.source} terms could not be applied. Saved image terms were not changed; recheck before trying again.`,
             ),
           );
         },
@@ -404,7 +419,7 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
         (sourcePreviews[candidate.id]?.changedFields.length ?? 0) > 0)
     ) {
       setError(
-        "Recheck Commons and resolve or refresh the comparison before approving rights.",
+        `Recheck ${candidate.source} and resolve or refresh the comparison before approving rights.`,
       );
       return;
     }
@@ -438,10 +453,10 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
     setError("");
     setNotice("");
     search.mutate(
-      { data: { query: searchText.trim() } },
+      { data: { query: searchText.trim(), source: archiveSource } },
       {
         onError: (reason) =>
-          setError(errorMessage(reason, "Wikimedia Commons search failed.")),
+          setError(errorMessage(reason, `${archiveSource} search failed.`)),
       },
     );
   }
@@ -460,10 +475,9 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
       {isOpen && (
         <div className="mt-4">
           <p className="max-w-3xl text-xs leading-relaxed text-muted-foreground">
-            Search Wikimedia Commons and inspect each original file page. Commons
-            availability is not reuse clearance. Every saved candidate stays
-            pending until an editor records a rights decision; no candidate is
-            shown on public stories or published automatically.
+            {archiveSource === "Internet Archive"
+              ? "Internet Archive item metadata may be incomplete or supplied by uploaders, and the archive does not guarantee an item’s copyright status. Inspect the original record and rights terms. Every saved candidate stays pending until an editor records a rights decision; candidates are not attached to stories or published automatically."
+              : "Search Wikimedia Commons and inspect each original file page. Commons availability is not reuse clearance. Every saved candidate stays pending until an editor records a rights decision; candidates are not attached to stories or published automatically."}
           </p>
 
           {(error || notice) && (
@@ -476,6 +490,24 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
           )}
 
           <form className="mt-4 flex flex-col gap-2 sm:flex-row" onSubmit={submitSearch}>
+            <label className="grid gap-1 signal-kicker text-muted-foreground">
+              Image archive
+              <select
+                className="signal-input min-h-10 normal-case tracking-normal text-foreground"
+                value={archiveSource}
+                onChange={(event) => {
+                  setArchiveSource(
+                    event.target.value as EditorImageCandidateSearchResult["source"],
+                  );
+                  search.reset();
+                  setError("");
+                  setNotice("");
+                }}
+              >
+                <option value="Wikimedia Commons">Wikimedia Commons</option>
+                <option value="Internet Archive">Internet Archive</option>
+              </select>
+            </label>
             <label className="grid flex-1 gap-1 signal-kicker text-muted-foreground">
               Search terms
               <input
@@ -492,7 +524,7 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
               className="signal-button self-end"
               disabled={search.isPending || searchText.trim().length < 2}
             >
-              {search.isPending ? "Searching…" : "Search Commons"}
+              {search.isPending ? "Searching…" : `Search ${archiveSource}`}
             </button>
           </form>
 
@@ -619,7 +651,8 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
                           <div>
                             <dt className="inline font-semibold text-foreground">License: </dt>
                             <dd className="inline">
-                              {candidate.license || "Not supplied by Commons"}
+                              {candidate.license ||
+                                `Not supplied by ${candidate.source}`}
                             </dd>
                             {candidate.licenseUrl && (
                               <>
@@ -638,7 +671,8 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
                           <div>
                             <dt className="inline font-semibold text-foreground">Copyright: </dt>
                             <dd className="inline">
-                              {candidate.copyright || "Not supplied by Commons"}
+                              {candidate.copyright ||
+                                `Not supplied by ${candidate.source}`}
                             </dd>
                           </div>
                         </dl>
@@ -654,11 +688,11 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
                                 recheckingThisCandidate ||
                                 applyingThisCandidate
                               }
-                              onClick={() => recheckCommonsTerms(candidate)}
+                              onClick={() => recheckSourceTerms(candidate)}
                             >
                               {recheckingThisCandidate
-                                ? "Checking Commons…"
-                                : "Recheck current Commons terms"}
+                                ? `Checking ${candidate.source}…`
+                                : `Recheck current ${candidate.source} terms`}
                             </button>
                             <p className="max-w-2xl text-xs leading-relaxed text-muted-foreground">
                               This read-only check compares the original file page
@@ -673,7 +707,7 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
                           )}
                           {sourcePreviewNeedsRefresh && !sourcePreview && (
                             <p className="mt-2 text-xs text-destructive" role="status">
-                              Current Commons terms could not be confirmed. Retry the
+                               Current {candidate.source} terms could not be confirmed. Retry the
                               recheck before approving rights.
                             </p>
                           )}
@@ -681,10 +715,10 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
                           {sourcePreview && (
                             <section
                               className="mt-3 border-t border-foreground/15 pt-3"
-                              aria-label={`Commons rights comparison for ${candidate.fileTitle}`}
+                              aria-label={`${candidate.source} rights comparison for ${candidate.fileTitle}`}
                             >
                               <p className="signal-kicker text-muted-foreground">
-                                Commons checked{" "}
+                                {candidate.source} checked{" "}
                                 {new Date(sourcePreview.checkedAt).toLocaleString()}
                               </p>
                               {sourcePreviewNeedsRefresh && (
@@ -725,7 +759,7 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
                                           </div>
                                           <div className="min-w-0">
                                             <p className="font-semibold text-muted-foreground">
-                                              Current Commons
+                                              Current {candidate.source}
                                             </p>
                                             <p className="mt-1 break-words text-foreground">
                                               {rightsMetadataValue(
@@ -749,7 +783,7 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
                                       applyingThisCandidate
                                     }
                                     onClick={() =>
-                                      applyCommonsTerms(
+                                      applySourceTerms(
                                         candidate,
                                         sourcePreview,
                                         metadataDirty,
@@ -947,7 +981,7 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
                         </div>
                         {rightsApprovalBlocked && (
                           <p className="mt-3 text-xs leading-relaxed text-muted-foreground" role="status">
-                            Rights approval is paused until the Commons comparison
+                            Rights approval is paused until the {candidate.source} comparison
                             is rechecked and any changed terms are resolved.
                           </p>
                         )}

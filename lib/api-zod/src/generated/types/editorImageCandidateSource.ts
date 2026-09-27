@@ -11,4 +11,5 @@ export type EditorImageCandidateSource = typeof EditorImageCandidateSource[keyof
 
 export const EditorImageCandidateSource = {
   Wikimedia_Commons: 'Wikimedia Commons',
+  Internet_Archive: 'Internet Archive',
 } as const;

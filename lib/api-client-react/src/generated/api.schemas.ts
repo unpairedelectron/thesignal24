@@ -1029,6 +1029,7 @@ export interface DiscoveryItemPromotionInput {
      */
   body: string;
 }
+
 export type ImageCandidateRightsStatus = typeof ImageCandidateRightsStatus[keyof typeof ImageCandidateRightsStatus];
 
 
@@ -1046,12 +1047,21 @@ export const ImageCandidateRightsDecision = {
   rejected: 'rejected',
 } as const;
 
+export type EditorImageCandidateSearchInputSource = typeof EditorImageCandidateSearchInputSource[keyof typeof EditorImageCandidateSearchInputSource];
+
+
+export const EditorImageCandidateSearchInputSource = {
+  Wikimedia_Commons: 'Wikimedia Commons',
+  Internet_Archive: 'Internet Archive',
+} as const;
+
 export interface EditorImageCandidateSearchInput {
   /**
      * @minLength 2
      * @maxLength 160
      */
   query: string;
+  source?: EditorImageCandidateSearchInputSource;
 }
 
 export type EditorImageCandidateSearchResultSource = typeof EditorImageCandidateSearchResultSource[keyof typeof EditorImageCandidateSearchResultSource];
@@ -1059,6 +1069,7 @@ export type EditorImageCandidateSearchResultSource = typeof EditorImageCandidate
 
 export const EditorImageCandidateSearchResultSource = {
   Wikimedia_Commons: 'Wikimedia Commons',
+  Internet_Archive: 'Internet Archive',
 } as const;
 
 export interface EditorImageCandidateSearchResult {
@@ -1081,12 +1092,23 @@ export interface EditorImageCandidateSearchResponse {
   results: EditorImageCandidateSearchResult[];
 }
 
+export type EditorImageCandidateCreateInputSource = typeof EditorImageCandidateCreateInputSource[keyof typeof EditorImageCandidateCreateInputSource];
+
+
+export const EditorImageCandidateCreateInputSource = {
+  Wikimedia_Commons: 'Wikimedia Commons',
+  Internet_Archive: 'Internet Archive',
+} as const;
+
 export interface EditorImageCandidateCreateInput {
+  source?: EditorImageCandidateCreateInputSource;
   /**
      * @minLength 6
      * @maxLength 500
      */
   fileTitle: string;
+  filePageUrl?: string;
+  imageUrl?: string;
   /** @maxLength 500 */
   altText?: string;
   /** @maxLength 1000 */
@@ -1159,6 +1181,7 @@ export type EditorImageCandidateSource = typeof EditorImageCandidateSource[keyof
 
 export const EditorImageCandidateSource = {
   Wikimedia_Commons: 'Wikimedia Commons',
+  Internet_Archive: 'Internet Archive',
 } as const;
 
 export interface EditorImageCandidate {
@@ -1218,7 +1241,6 @@ sort?: GetCommunityPostsSort;
  */
 limit?: number;
 };
-
 export type GetCommunityPostsSort = typeof GetCommunityPostsSort[keyof typeof GetCommunityPostsSort];
 
 
@@ -1238,7 +1260,6 @@ state?: string;
  */
 limit?: number;
 };
-
 export type GetEvidenceEventsParams = {
 topic?: Topic;
 /**
@@ -1247,7 +1268,6 @@ topic?: Topic;
  */
 limit?: number;
 };
-
 export type SearchEvidenceRecordsParams = {
 /**
  * @minLength 1

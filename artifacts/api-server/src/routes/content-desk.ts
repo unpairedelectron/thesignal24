@@ -18,8 +18,8 @@ import {
   ReviewEditorImageCandidateRightsBody,
   ReviewEditorImageCandidateRightsParams,
   ReviewEditorImageCandidateRightsResponse,
-  SearchEditorCommonsImagesBody,
-  SearchEditorCommonsImagesResponse,
+  SearchEditorImageCandidatesBody,
+  SearchEditorImageCandidatesResponse,
   UpdateEditorImageCandidateBody,
   UpdateEditorImageCandidateParams,
   UpdateEditorImageCandidateResponse,
@@ -55,6 +55,11 @@ import {
   type WikimediaCommonsClient,
   wikimediaCommonsClient,
 } from "../lib/wikimedia-commons";
+import {
+  internetArchiveClient,
+  isInternetArchiveImageUrlForItem,
+  type InternetArchiveClient,
+} from "../lib/internet-archive";
 
 const sourceTypes = new Set([
   "government",
@@ -339,12 +344,28 @@ export function createContentDeskRouter(
   database: typeof db = db,
   editorGuard: RequestHandler = requireEditor,
   commonsClient: WikimediaCommonsClient = wikimediaCommonsClient,
+  archiveClient: InternetArchiveClient = internetArchiveClient,
 ): IRouter {
   const router: IRouter = Router();
   router.use(editorGuard);
 
+  async function currentSourceImage(
+    candidate: ContentImageCandidate,
+  ): Promise<EditorImageCandidateSearchResult | null> {
+    if (candidate.source === "Wikimedia Commons") {
+      return commonsClient.getFileByTitle(candidate.fileTitle);
+    }
+    if (candidate.source === "Internet Archive") {
+      return archiveClient.getImageByItemUrl(
+        candidate.filePageUrl,
+        candidate.imageUrl,
+      );
+    }
+    throw new Error("Unsupported image archive provider.");
+  }
+
   router.post("/editor/image-search", async (req, res): Promise<void> => {
-    const parsed = SearchEditorCommonsImagesBody.safeParse(req.body);
+    const parsed = SearchEditorImageCandidatesBody.safeParse(req.body);
     if (!parsed.success || parsed.data.query.trim().length < 2) {
       res.status(400).json({
         message: parsed.success
@@ -353,13 +374,16 @@ export function createContentDeskRouter(
       });
       return;
     }
+    const source = parsed.data.source ?? "Wikimedia Commons";
+    const provider =
+      source === "Internet Archive" ? archiveClient : commonsClient;
     try {
-      const results = await commonsClient.searchImages(parsed.data.query.trim());
-      res.json(SearchEditorCommonsImagesResponse.parse({ results }));
+      const results = await provider.searchImages(parsed.data.query.trim());
+      res.json(SearchEditorImageCandidatesResponse.parse({ results }));
     } catch {
-      req.log?.warn("Wikimedia Commons image search failed");
+      req.log?.warn({ source }, "Image archive search failed");
       res.status(502).json({
-        message: "Wikimedia Commons could not be reached. Try again later.",
+        message: `${source} could not be reached. Try again later.`,
       });
     }
   });
@@ -661,8 +685,27 @@ export function createContentDeskRouter(
         res.status(404).json({ message: "Discovery item not found." });
         return;
       }
-      if (!parsed.data.fileTitle.trim().startsWith("File:")) {
+      const source = parsed.data.source ?? "Wikimedia Commons";
+      if (
+        source === "Wikimedia Commons" &&
+        !parsed.data.fileTitle.trim().startsWith("File:")
+      ) {
         res.status(400).json({ message: "Choose a Wikimedia Commons file." });
+        return;
+      }
+      if (
+        source === "Internet Archive" &&
+        (!parsed.data.filePageUrl ||
+          !parsed.data.imageUrl ||
+          !isInternetArchiveImageUrlForItem(
+            parsed.data.filePageUrl,
+            parsed.data.imageUrl,
+          ))
+      ) {
+        res.status(400).json({
+          message:
+            "Choose an image file and item page from the Internet Archive.",
+        });
         return;
       }
       const editorId = req.editorIdentity?.id;
@@ -673,17 +716,25 @@ export function createContentDeskRouter(
 
       let file: EditorImageCandidateSearchResult | null;
       try {
-        file = await commonsClient.getFileByTitle(parsed.data.fileTitle.trim());
+        file =
+          source === "Internet Archive"
+            ? await archiveClient.getImageByItemUrl(
+                parsed.data.filePageUrl!,
+                parsed.data.imageUrl!,
+              )
+            : await commonsClient.getFileByTitle(
+                parsed.data.fileTitle.trim(),
+              );
       } catch {
-        req.log?.warn("Wikimedia Commons file metadata request failed");
+        req.log?.warn({ source }, "Image archive file metadata request failed");
         res.status(502).json({
-          message: "Wikimedia Commons could not be reached. Try again later.",
+          message: `${source} could not be reached. Try again later.`,
         });
         return;
       }
       if (!file) {
         res.status(404).json({
-          message: "That file is no longer available on Wikimedia Commons.",
+          message: `That image is no longer available from ${source}.`,
         });
         return;
       }
@@ -719,7 +770,7 @@ export function createContentDeskRouter(
         .returning();
       if (!candidate) {
         res.status(409).json({
-          message: "This Commons file is already saved for the lead.",
+          message: `This ${source} image is already saved for the lead.`,
         });
         return;
       }
@@ -833,19 +884,22 @@ export function createContentDeskRouter(
 
       let sourceFile: EditorImageCandidateSearchResult | null;
       try {
-        sourceFile = await commonsClient.getFileByTitle(candidate.fileTitle);
+        sourceFile = await currentSourceImage(candidate);
       } catch {
-        req.log?.warn("Wikimedia Commons candidate recheck failed");
+        req.log?.warn(
+          { source: candidate.source },
+          "Image candidate source recheck failed",
+        );
         res.status(502).json({
           message:
-            "Wikimedia Commons could not be reached. Saved image terms were not changed.",
+            `${candidate.source} could not be reached. Saved image terms were not changed.`,
         });
         return;
       }
       if (!sourceFile) {
         res.status(404).json({
           message:
-            "The Commons file is no longer available. Saved image terms were not changed.",
+            `The ${candidate.source} image is no longer available. Saved image terms were not changed.`,
         });
         return;
       }
@@ -898,19 +952,22 @@ export function createContentDeskRouter(
       }
       let sourceFile: EditorImageCandidateSearchResult | null;
       try {
-        sourceFile = await commonsClient.getFileByTitle(candidate.fileTitle);
+        sourceFile = await currentSourceImage(candidate);
       } catch {
-        req.log?.warn("Wikimedia Commons candidate apply check failed");
+        req.log?.warn(
+          { source: candidate.source },
+          "Image candidate source apply check failed",
+        );
         res.status(502).json({
           message:
-            "Wikimedia Commons could not be reached. Saved image terms were not changed.",
+            `${candidate.source} could not be reached. Saved image terms were not changed.`,
         });
         return;
       }
       if (!sourceFile) {
         res.status(404).json({
           message:
-            "The Commons file is no longer available. Saved image terms were not changed.",
+            `The ${candidate.source} image is no longer available. Saved image terms were not changed.`,
         });
         return;
       }
@@ -924,7 +981,7 @@ export function createContentDeskRouter(
       ) {
         res.status(409).json({
           message:
-            "Commons terms changed since the comparison. Recheck the file before applying.",
+            `${candidate.source} terms changed since the comparison. Recheck the image before applying.`,
         });
         return;
       }

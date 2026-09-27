@@ -7,8 +7,14 @@ import {
   createWikimediaCommonsClient,
   type WikimediaCommonsClient,
 } from "../lib/wikimedia-commons";
+import {
+  createInternetArchiveClient,
+  isInternetArchiveImageUrlForItem,
+  parseInternetArchiveItemPageUrl,
+} from "../lib/internet-archive";
 import { createContentDeskRouter } from "./content-desk";
 import { eq } from "drizzle-orm";
+import { db, issuesTable } from "@workspace/db";
 
 const rollbackMarker = new Error("Rollback content desk test fixtures");
 
@@ -113,51 +119,162 @@ test("Wikimedia Commons adapter normalizes source metadata and rejects external 
   assert.match(requests[0], /gsrlimit=8/);
 });
 
+test("Internet Archive adapter validates provider URLs and preserves item rights metadata", async () => {
+  const requests: URL[] = [];
+  const payload = {
+    metadata: {
+      identifier: "public-archive-photo",
+      mediatype: "image",
+      title: "The college courtyard",
+      creator: ["Photographer A", "Institution Photo Unit"],
+      credit: "Photo courtesy of Example Archive",
+      copyright: "Copyright notice retained from the item record.",
+      license: "CC BY 4.0",
+      licenseurl: "http://creativecommons.org/licenses/by/4.0/",
+      rights: "CC BY 4.0; preserve the original credit line.",
+    },
+    files: [
+      { name: "courtyard.jpg", source: "original", format: "JPEG" },
+      {
+        name: "courtyard_thumb.jpg",
+        source: "derivative",
+        format: "JPEG Thumb",
+      },
+    ],
+  };
+  const client = createInternetArchiveClient(async (input) => {
+    const url = new URL(String(input));
+    requests.push(url);
+    if (url.pathname === "/advancedsearch.php") {
+      return new Response(
+        JSON.stringify({
+          response: {
+            docs: [{ identifier: "public-archive-photo", title: "The college courtyard" }],
+          },
+        }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      );
+    }
+    return new Response(JSON.stringify(payload), {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    });
+  });
+
+  const [result] = await client.searchImages("campus records");
+  assert.equal(result.source, "Internet Archive");
+  assert.equal(result.fileTitle, "The college courtyard [public-archive-photo]");
+  assert.equal(result.filePageUrl, "https://archive.org/details/public-archive-photo");
+  assert.equal(
+    result.imageUrl,
+    "https://archive.org/download/public-archive-photo/courtyard.jpg",
+  );
+  assert.equal(
+    result.thumbnailUrl,
+    "https://archive.org/services/img/public-archive-photo",
+  );
+  assert.equal(result.license, "CC BY 4.0");
+  assert.equal(
+    result.licenseUrl,
+    "https://creativecommons.org/licenses/by/4.0/",
+  );
+  assert.equal(
+    result.creator,
+    "Photographer A; Institution Photo Unit",
+  );
+  assert.equal(result.credit, "Photo courtesy of Example Archive");
+  assert.equal(
+    result.copyright,
+    "Copyright notice retained from the item record.",
+  );
+  assert.equal(
+    result.usageRights,
+    "CC BY 4.0; preserve the original credit line.",
+  );
+  assert.match(requests[0].searchParams.get("q") ?? "", /mediatype:image/);
+  assert.equal(requests[0].searchParams.get("output"), "json");
+
+  assert.equal(
+    parseInternetArchiveItemPageUrl(
+      "https://archive.org/details/public-archive-photo",
+    ),
+    "public-archive-photo",
+  );
+  assert.equal(
+    parseInternetArchiveItemPageUrl(
+      "http://archive.org/details/public-archive-photo",
+    ),
+    null,
+  );
+  assert.equal(
+    parseInternetArchiveItemPageUrl(
+      "https://archive.org.attacker.test/details/public-archive-photo",
+    ),
+    null,
+  );
+  assert.equal(
+    parseInternetArchiveItemPageUrl(
+      "https://editor@archive.org/details/public-archive-photo",
+    ),
+    null,
+  );
+  assert.equal(
+    isInternetArchiveImageUrlForItem(
+      result.filePageUrl,
+      "https://archive.org/download/another-item/courtyard.jpg",
+    ),
+    false,
+  );
+  assert.equal(
+    isInternetArchiveImageUrlForItem(
+      result.filePageUrl,
+      "https://images.example.test/courtyard.jpg",
+    ),
+    false,
+  );
+  assert.equal(
+    isInternetArchiveImageUrlForItem(
+      result.filePageUrl,
+      "https://archive.org:8443/download/public-archive-photo/courtyard.jpg",
+    ),
+    false,
+  );
+  assert.equal(
+    isInternetArchiveImageUrlForItem(
+      result.filePageUrl,
+      "https://archive.org/download/public-archive-photo/courtyard%2Fimage.jpg",
+    ),
+    false,
+  );
+  assert.equal(
+    isInternetArchiveImageUrlForItem(
+      result.filePageUrl,
+      "https://archive.org/download/public-archive-photo/%2e%2e",
+    ),
+    false,
+  );
+});
+
 test("image search is rejected by the editor guard before calling Commons", async () => {
   let searchCalled = false;
   let fileLookupCalled = false;
-      const editorGuard: RequestHandler = (req, _res, next) => {
-        req.editorIdentity = {
-          id: "content-desk-test-editor",
-          displayName: "Content Desk Test Editor",
-        };
-        next();
-      };
-      const commonsClient: WikimediaCommonsClient = {
-        searchImages: async () =>
-          currentCommonsResult ? [currentCommonsResult] : [],
-        getFileByTitle: async (title) => {
-          if (commonsLookupError) {
-            throw new Error("Simulated Wikimedia Commons outage");
-          }
-          return title === commonsResult.fileTitle
-            ? currentCommonsResult
-            : null;
-        },
-      };
-      const app = express();
-      app.use(express.json());
-      app.use(
-        createContentDeskRouter(
-          tx as unknown as typeof db,
-          editorGuard,
-          commonsClient,
-        ),
-      );
-      app.use(
-        (
-          error: Error & { cause?: unknown },
-          _req: express.Request,
-          res: express.Response,
-          _next: express.NextFunction,
-        ) => {
-          res.status(500).json({
-            message: error.message,
-            cause: error.cause instanceof Error ? error.cause.message : undefined,
-          });
-        },
-      );
-      const { server, baseUrl } = await listen(app);
+  const editorGuard: RequestHandler = (_req, res) => {
+    res.status(403).json({ message: "Verified editor access required." });
+  };
+  const commonsClient: WikimediaCommonsClient = {
+    searchImages: async () => {
+      searchCalled = true;
+      return [];
+    },
+    getFileByTitle: async () => {
+      fileLookupCalled = true;
+      return null;
+    },
+  };
+  const app = express();
+  app.use(express.json());
+  app.use(createContentDeskRouter(undefined, editorGuard, commonsClient));
+  const { server, baseUrl } = await listen(app);
 
   try {
     const response = await requestJson(
@@ -205,9 +322,28 @@ test("editor source registry and manual discovery queue validate and retain revi
         copyright: "Source copyright statement",
         usageRights: "CC BY-SA 4.0; attribution required.",
       };
+      const archiveResult: EditorImageCandidateSearchResult = {
+        source: "Internet Archive" as const,
+        fileTitle: "The college courtyard [signalhub-archive-test]",
+        imageUrl:
+          "https://archive.org/download/signalhub-archive-test/courtyard.jpg",
+        thumbnailUrl:
+          "https://archive.org/services/img/signalhub-archive-test",
+        filePageUrl: "https://archive.org/details/signalhub-archive-test",
+        license: "CC BY 4.0",
+        licenseUrl: "https://creativecommons.org/licenses/by/4.0/",
+        creator: "Archive photographer",
+        credit: "Photo courtesy of the contributor",
+        copyright: "Contributor copyright statement",
+        usageRights: "Use under CC BY 4.0 with attribution.",
+      };
       let currentCommonsResult: EditorImageCandidateSearchResult | null =
         commonsResult;
       let commonsLookupError = false;
+      let currentArchiveResult: EditorImageCandidateSearchResult | null =
+        archiveResult;
+      let archiveLookupError = false;
+      let archiveLookupCalled = false;
       const commonsClient: WikimediaCommonsClient = {
         searchImages: async () =>
           currentCommonsResult ? [currentCommonsResult] : [],
@@ -220,6 +356,20 @@ test("editor source registry and manual discovery queue validate and retain revi
             : null;
         },
       };
+      const archiveClient = {
+        searchImages: async () =>
+          currentArchiveResult ? [currentArchiveResult] : [],
+        getImageByItemUrl: async (filePageUrl: string, imageUrl: string) => {
+          archiveLookupCalled = true;
+          if (archiveLookupError) {
+            throw new Error("Simulated Internet Archive outage");
+          }
+          return currentArchiveResult?.filePageUrl === filePageUrl &&
+            currentArchiveResult.imageUrl === imageUrl
+            ? currentArchiveResult
+            : null;
+        },
+      };
       const app = express();
       app.use(express.json());
       app.use(
@@ -227,6 +377,7 @@ test("editor source registry and manual discovery queue validate and retain revi
           tx as unknown as typeof db,
           editorGuard,
           commonsClient,
+          archiveClient,
         ),
       );
       app.use(
@@ -390,6 +541,110 @@ test("editor source registry and manual discovery queue validate and retain revi
           { fileTitle: commonsResult.fileTitle },
         );
         assert.equal(duplicateImageCandidate.response.status, 409);
+
+        archiveLookupCalled = false;
+        const invalidArchiveCandidate = await requestJson(
+          baseUrl,
+          `/editor/discovery-items/${createdLead.body.id}/image-candidates`,
+          "POST",
+          {
+            source: "Internet Archive",
+            fileTitle: archiveResult.fileTitle,
+            filePageUrl: "https://archive.org.attacker.test/details/forged",
+            imageUrl: "https://archive.org/download/forged/image.jpg",
+          },
+        );
+        assert.equal(invalidArchiveCandidate.response.status, 400);
+        assert.equal(archiveLookupCalled, false);
+
+        const archiveSearch = await requestJson(
+          baseUrl,
+          "/editor/image-search",
+          "POST",
+          { query: "college courtyard", source: "Internet Archive" },
+        );
+        assert.equal(archiveSearch.response.status, 200);
+        assert.equal(archiveSearch.body.results[0].source, "Internet Archive");
+        assert.equal(
+          archiveSearch.body.results[0].creator,
+          archiveResult.creator,
+        );
+
+        const createdArchiveCandidate = await requestJson(
+          baseUrl,
+          `/editor/discovery-items/${createdLead.body.id}/image-candidates`,
+          "POST",
+          {
+            source: "Internet Archive",
+            fileTitle: archiveResult.fileTitle,
+            filePageUrl: archiveResult.filePageUrl,
+            imageUrl: archiveResult.imageUrl,
+          },
+        );
+        assert.equal(createdArchiveCandidate.response.status, 201);
+        assert.equal(createdArchiveCandidate.body.source, "Internet Archive");
+        assert.equal(createdArchiveCandidate.body.rightsStatus, "pending");
+        assert.equal(
+          createdArchiveCandidate.body.filePageUrl,
+          archiveResult.filePageUrl,
+        );
+        assert.equal(
+          createdArchiveCandidate.body.imageUrl,
+          archiveResult.imageUrl,
+        );
+        assert.equal(createdArchiveCandidate.body.license, archiveResult.license);
+        assert.equal(
+          createdArchiveCandidate.body.licenseUrl,
+          archiveResult.licenseUrl,
+        );
+        assert.equal(createdArchiveCandidate.body.creator, archiveResult.creator);
+        assert.equal(createdArchiveCandidate.body.credit, archiveResult.credit);
+        assert.equal(
+          createdArchiveCandidate.body.copyright,
+          archiveResult.copyright,
+        );
+        assert.equal(
+          createdArchiveCandidate.body.usageRights,
+          archiveResult.usageRights,
+        );
+
+        const duplicateArchiveCandidate = await requestJson(
+          baseUrl,
+          `/editor/discovery-items/${createdLead.body.id}/image-candidates`,
+          "POST",
+          {
+            source: "Internet Archive",
+            fileTitle: archiveResult.fileTitle,
+            filePageUrl: archiveResult.filePageUrl,
+            imageUrl: archiveResult.imageUrl,
+          },
+        );
+        assert.equal(duplicateArchiveCandidate.response.status, 409);
+
+        currentArchiveResult = {
+          ...archiveResult,
+          credit: "Updated archive credit line",
+        };
+        const archiveRightsPreview = await requestJson(
+          baseUrl,
+          `/editor/image-candidates/${createdArchiveCandidate.body.id}/recheck`,
+          "POST",
+        );
+        assert.equal(archiveRightsPreview.response.status, 200);
+        assert.deepEqual(archiveRightsPreview.body.changedFields, ["credit"]);
+        const archiveRightsApplied = await requestJson(
+          baseUrl,
+          `/editor/image-candidates/${createdArchiveCandidate.body.id}/recheck/apply`,
+          "POST",
+          { expectedMetadata: archiveRightsPreview.body.currentMetadata },
+        );
+        assert.equal(archiveRightsApplied.response.status, 200);
+        assert.equal(archiveRightsApplied.body.rightsTermsChanged, true);
+        assert.equal(archiveRightsApplied.body.candidate.rightsStatus, "pending");
+        assert.equal(
+          archiveRightsApplied.body.candidate.credit,
+          "Updated archive credit line",
+        );
 
         const prematureRightsReview = await requestJson(
           baseUrl,
@@ -674,6 +929,7 @@ test("editor source registry and manual discovery queue validate and retain revi
           `/editor/discovery-items/${createdLead.body.id}/image-candidates`,
           "GET",
         );
+        assert.equal(imageCandidates.response.status, 200);
 
         const unreviewedPromotion = await requestJson(
           baseUrl,
@@ -687,6 +943,8 @@ test("editor source registry and manual discovery queue validate and retain revi
           "PATCH",
           { status: "review", reviewNotes: "Check the issuing department." },
         );
+        assert.equal(unreviewedPromotion.response.status, 409);
+        assert.equal(reviewed.response.status, 200);
 
         const blankPromotion = await requestJson(
           baseUrl,
@@ -699,6 +957,25 @@ test("editor source registry and manual discovery queue validate and retain revi
           "/editor/discovery-items",
           "GET",
         );
+        assert.equal(blankPromotion.response.status, 400);
+        assert.equal(queue.response.status, 200);
+
+        const promoted = await requestJson(
+          baseUrl,
+          `/editor/discovery-items/${createdLead.body.id}/promote`,
+          "POST",
+          promotionInput,
+        );
+        assert.equal(promoted.response.status, 200);
+        assert.ok(promoted.body.promotedStoryId);
+
+        const duplicatePromotion = await requestJson(
+          baseUrl,
+          `/editor/discovery-items/${createdLead.body.id}/promote`,
+          "POST",
+          promotionInput,
+        );
+        assert.equal(duplicatePromotion.response.status, 409);
 
         const unreviewPromotedLead = await requestJson(
           baseUrl,
@@ -716,32 +993,3 @@ test("editor source registry and manual discovery queue validate and retain revi
     (error) => error === rollbackMarker,
   );
 });
-
-        const duplicatePromotion = await requestJson(
-          baseUrl,
-          `/editor/discovery-items/${createdLead.body.id}/promote`,
-          "POST",
-          promotionInput,
-        );
-
-        const articleEventLinks = await tx
-          .select()
-          .from(articleEventsTable)
-          .where(eq(articleEventsTable.articleId, story.id));
-
-        const [story] = await tx
-          .select()
-          .from(storiesTable)
-          .where(eq(storiesTable.id, promoted.body.promotedStoryId));
-
-        const articleSourceLinks = await tx
-          .select()
-          .from(articleSourcesTable)
-          .where(eq(articleSourcesTable.articleId, story.id));
-
-        const promoted = await requestJson(
-          baseUrl,
-          `/editor/discovery-items/${createdLead.body.id}/promote`,
-          "POST",
-          promotionInput,
-        );

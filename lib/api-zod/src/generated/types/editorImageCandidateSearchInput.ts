@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { EditorImageCandidateSearchInputSource } from './editorImageCandidateSearchInputSource';
 
 export interface EditorImageCandidateSearchInput {
   /**
@@ -12,4 +13,5 @@ export interface EditorImageCandidateSearchInput {
      * @maxLength 160
      */
   query: string;
+  source?: EditorImageCandidateSearchInputSource;
 }

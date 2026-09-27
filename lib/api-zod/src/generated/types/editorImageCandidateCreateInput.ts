@@ -5,13 +5,17 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { EditorImageCandidateCreateInputSource } from './editorImageCandidateCreateInputSource';
 
 export interface EditorImageCandidateCreateInput {
+  source?: EditorImageCandidateCreateInputSource;
   /**
      * @minLength 6
      * @maxLength 500
      */
   fileTitle: string;
+  filePageUrl?: string;
+  imageUrl?: string;
   /** @maxLength 500 */
   altText?: string;
   /** @maxLength 1000 */

@@ -1199,10 +1199,10 @@ paths:
           description: Lead must be reviewed and not already promoted
   /editor/image-search:
     post:
-      operationId: searchEditorCommonsImages
+      operationId: searchEditorImageCandidates
       tags: [editor, evidence]
-      summary: Search Wikimedia Commons image candidates
-      description: Requires verified editor access. Results are suggestions only and are not saved, rights-approved, or published.
+      summary: Search public image archive candidates
+      description: Requires verified editor access. Search Wikimedia Commons or Internet Archive. Results are suggestions only and are not saved, rights-approved, or published.
       requestBody:
         required: true
         content:
@@ -1211,7 +1211,7 @@ paths:
               $ref: "#/components/schemas/EditorImageCandidateSearchInput"
       responses:
         "200":
-          description: Commons image search results with source metadata
+          description: Image search results with provider source and rights metadata
           content:
             application/json:
               schema:
@@ -1223,7 +1223,7 @@ paths:
         "403":
           description: Verified editor access required
         "502":
-          description: Wikimedia Commons is unavailable
+          description: The selected image archive is unavailable
   /editor/discovery-items/{itemId}/image-candidates:
     get:
       operationId: getEditorDiscoveryItemImageCandidates
@@ -1255,8 +1255,8 @@ paths:
     post:
       operationId: createEditorDiscoveryItemImageCandidate
       tags: [editor, evidence]
-      summary: Save a Commons result as an image candidate
-      description: Requires verified editor access. The server re-fetches Commons metadata; saved candidates start with rights review pending.
+      summary: Save an archive result as an image candidate
+      description: Requires verified editor access. The server re-fetches metadata from the selected archive; saved candidates start with rights review pending.
       parameters:
         - name: itemId
           in: path
@@ -1284,11 +1284,11 @@ paths:
         "403":
           description: Verified editor access required
         "404":
-          description: Lead or Commons file not found
+          description: Lead or selected archive item not found
         "409":
-          description: This Commons file is already saved for the lead
+          description: This archive image is already saved for the lead
         "502":
-          description: Wikimedia Commons is unavailable
+          description: The selected image archive is unavailable
   /editor/image-candidates/{candidateId}:
     patch:
       operationId: updateEditorImageCandidate
@@ -1327,8 +1327,8 @@ paths:
     post:
       operationId: recheckEditorImageCandidateSource
       tags: [editor, evidence]
-      summary: Compare a saved candidate with current Commons terms
-      description: Requires verified editor access. This preview does not modify the saved candidate.
+      summary: Compare a saved candidate with current archive terms
+      description: Requires verified editor access. The provider-specific preview does not modify the saved candidate.
       parameters:
         - name: candidateId
           in: path
@@ -1350,15 +1350,15 @@ paths:
         "403":
           description: Verified editor access required
         "404":
-          description: Candidate or original Commons file not found
+          description: Candidate or original archive image not found
         "502":
-          description: Wikimedia Commons is unavailable
+          description: The selected image archive is unavailable
   /editor/image-candidates/{candidateId}/recheck/apply:
     post:
       operationId: applyEditorImageCandidateSourceRecheck
       tags: [editor, evidence]
-      summary: Apply a confirmed Commons rights-metadata change
-      description: Requires verified editor access. The server rechecks the source against the preview; changed rights terms reset review to pending.
+      summary: Apply a confirmed image-archive rights-metadata change
+      description: Requires verified editor access. The server rechecks the selected provider against the preview; changed rights terms reset review to pending.
       parameters:
         - name: candidateId
           in: path
@@ -1386,11 +1386,11 @@ paths:
         "403":
           description: Verified editor access required
         "404":
-          description: Candidate or original Commons file not found
+          description: Candidate or original archive image not found
         "409":
           description: Candidate or source metadata changed since the preview
         "502":
-          description: Wikimedia Commons is unavailable
+          description: The selected image archive is unavailable
   /editor/image-candidates/{candidateId}/rights:
     patch:
       operationId: reviewEditorImageCandidateRights
@@ -2792,13 +2792,16 @@ components:
           type: string
           minLength: 2
           maxLength: 160
+        source:
+          type: string
+          enum: [Wikimedia Commons, Internet Archive]
       required: [query]
     EditorImageCandidateSearchResult:
       type: object
       properties:
         source:
           type: string
-          enum: [Wikimedia Commons]
+          enum: [Wikimedia Commons, Internet Archive]
         fileTitle:
           type: string
           maxLength: 500
@@ -2836,10 +2839,19 @@ components:
     EditorImageCandidateCreateInput:
       type: object
       properties:
+        source:
+          type: string
+          enum: [Wikimedia Commons, Internet Archive]
         fileTitle:
           type: string
           minLength: 6
           maxLength: 500
+        filePageUrl:
+          type: string
+          format: uri
+        imageUrl:
+          type: string
+          format: uri
         altText:
           type: string
           maxLength: 500
@@ -2933,7 +2945,7 @@ components:
           type: integer
         source:
           type: string
-          enum: [Wikimedia Commons]
+          enum: [Wikimedia Commons, Internet Archive]
         fileTitle:
           type: string
         imageUrl:
