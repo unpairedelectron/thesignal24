@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { once } from "node:events";
 import express, { type Express } from "express";
 import { test } from "node:test";
+import { eq } from "drizzle-orm";
 import {
   articleEventsTable,
   articleSourcesTable,
@@ -464,14 +465,14 @@ test("public evidence routes exclude draft-only records, links, and audit data",
           ) => {
             res.status(500).json({
               message:
-                error instanceof Error ? error.message : "Unexpected test error",
+                error instanceof Error
+                  ? error.message
+                  : "Unexpected test error",
             });
           },
         );
-        const {
-          server: editorServer,
-          baseUrl: editorBaseUrl,
-        } = await listen(editorApp);
+        const { server: editorServer, baseUrl: editorBaseUrl } =
+          await listen(editorApp);
         try {
           const directLinkInput = {
             articleId: publishedArticle.id,
@@ -516,6 +517,92 @@ test("public evidence routes exclude draft-only records, links, and audit data",
                 link.sourceDocument.id === sharedSource.id,
             ),
           );
+
+          const restoreDirectLink = await postJson(
+            editorBaseUrl,
+            "/editor/article-sources",
+            directLinkInput,
+          );
+          assert.equal(restoreDirectLink.status, 201);
+
+          for (const status of ["draft", "archived"] as const) {
+            await tx
+              .update(storiesTable)
+              .set({ workflowStatus: "published" })
+              .where(eq(storiesTable.id, publishedArticle.id));
+            await tx
+              .update(storiesTable)
+              .set({ workflowStatus: status })
+              .where(eq(storiesTable.id, publishedArticle.id));
+
+            const hiddenArticleEvidence = await getJson(
+              baseUrl,
+              `/stories/${publishedArticle.id}/evidence`,
+            );
+            assert.equal(hiddenArticleEvidence.response.status, 404);
+
+            const hiddenDirectSource = await getJson(
+              baseUrl,
+              `/sources/${publishedDirectOnlySource.id}`,
+            );
+            assert.equal(hiddenDirectSource.response.status, 404);
+
+            const remainingSharedSource = await getJson(
+              baseUrl,
+              `/sources/${sharedSource.id}`,
+            );
+            assert.equal(remainingSharedSource.response.status, 200);
+            assert.deepEqual(
+              remainingSharedSource.body.citedByArticles.map(
+                (article: any) => article.id,
+              ),
+              [],
+            );
+
+            const statusSearch = await getJson(
+              baseUrl,
+              `/evidence-search?q=${encodeURIComponent(token)}`,
+            );
+            assert(
+              !statusSearch.body.results.some(
+                (record: any) =>
+                  record.resultType === "article" &&
+                  record.id === publishedArticle.id,
+              ),
+            );
+            assert(
+              !statusSearch.body.results.some(
+                (record: any) =>
+                  record.resultType === "source" &&
+                  record.id === publishedDirectOnlySource.id,
+              ),
+            );
+
+            const changedStatusEditorGraph = await getJson(
+              editorBaseUrl,
+              "/editor/evidence",
+            );
+            const retainedDirectLinks =
+              changedStatusEditorGraph.body.articleSourceLinks.filter(
+                (link: any) => link.article.id === publishedArticle.id,
+              );
+            assert(
+              retainedDirectLinks.some(
+                (link: any) =>
+                  link.sourceDocument.id === publishedDirectOnlySource.id,
+              ),
+            );
+            assert(
+              retainedDirectLinks.some(
+                (link: any) => link.sourceDocument.id === sharedSource.id,
+              ),
+            );
+            assert(
+              retainedDirectLinks.every(
+                (link: any) => link.article.workflowStatus === status,
+              ),
+            );
+          }
         } finally {
           await close(editorServer);
         }
