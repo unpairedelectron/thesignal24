@@ -427,11 +427,11 @@ function StoryCard({ story, compact = false }: { story: Story; compact?: boolean
       <div>
         <div className="flex flex-wrap items-center justify-between gap-3"><p className="signal-kicker text-accent">{story.topic} / {story.kind}</p><time className="signal-kicker text-muted-foreground" dateTime={story.publishedOn ?? story.recordDate ?? undefined}>{story.publishedOn ? 'Published' : 'Record date'} / {formatDate(story.publishedOn ?? story.recordDate)}</time></div>
         <Link href={storyPath(story)} className="mt-3 block" data-testid={`link-story-${story.id}`}><h3 className={`${compact ? 'text-2xl sm:text-3xl' : 'text-3xl sm:text-4xl'} max-w-3xl font-display leading-[1.02] tracking-[-.025em] transition-colors group-hover:text-accent`}>{story.title}</h3></Link>
+        <div className="mt-2"><span className={`signal-status-badge ${story.verificationStatus === 'verified' ? 'is-verified' : story.verificationStatus === 'source-linked' ? 'is-source-linked' : 'is-unverified'}`}>{verificationLabel(story.verificationStatus)}</span></div>
         <p className={`${compact ? 'line-clamp-2' : 'max-w-2xl'} mt-3 text-sm leading-relaxed text-muted-foreground`}>{story.dek}</p>
       </div>
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-foreground/15 pt-3">
         <span className="signal-kicker text-muted-foreground">{story.state ?? 'India'} · {story.read} min read</span>
-        <span className={`signal-status-badge ${story.verificationStatus === 'verified' ? 'is-verified' : story.verificationStatus === 'source-linked' ? 'is-source-linked' : 'is-unverified'}`}>{verificationLabel(story.verificationStatus)}</span>
       </div>
       <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 signal-kicker text-muted-foreground"><span>{story.sourceCount ?? 0} sources · {story.eventCount ?? 0} events</span><span>{story.sourceUrl ? 'Direct source available' : 'Direct source unavailable'}</span></div>
     </div>
@@ -608,6 +608,16 @@ function evidenceTypeLabel(value: DecisionImpactEvidenceType) {
 
 function verificationLabel(value: VerificationStatus) {
   return value === 'verified' ? 'Verified' : value === 'source-linked' ? 'Source linked' : 'Unverified';
+}
+
+function verificationSummary(stories: Story[]) {
+  const counts = new Map<VerificationStatus, number>();
+  for (const story of stories) {
+    counts.set(story.verificationStatus, (counts.get(story.verificationStatus) ?? 0) + 1);
+  }
+  return Array.from(counts.entries())
+    .map(([status, count]) => `${count} ${verificationLabel(status)}`)
+    .join(' · ');
 }
 
 function isMeasuredDecisionImpact(record?: DecisionImpactRecord) {
