@@ -648,7 +648,7 @@
 .india-map path.is-active { fill: hsl(var(--accent) / .78); }
 .india-map path.is-selected { fill: hsl(var(--secondary) / .9); }
 .india-map path[role="button"] { cursor: pointer; }
-.india-map path[role="button"]:focus-visible { stroke: hsl(var(--accent)); stroke-width: 2; outline: none; }
+.india-map path[role="button"]:focus-visible { stroke: hsl(var(--accent)); stroke-width: 3; filter: drop-shadow(0 0 1px hsl(var(--foreground))); outline: none; }
 .map-state-button { border-bottom: 1px solid hsl(var(--border)); padding: 10px 0; text-align: left; transition: color .2s ease, padding-left .2s ease; }
 .map-state-button:hover, .map-state-button[aria-pressed="true"] { padding-left: 6px; color: hsl(var(--accent)); }
 .timeline-visual-entry { display: grid; gap: 18px; border-bottom: 1px solid hsl(var(--border)); padding: 24px 0; }

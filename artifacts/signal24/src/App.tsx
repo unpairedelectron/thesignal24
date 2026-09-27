@@ -46,6 +46,20 @@ import {
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import {
+  canonicalStateName,
+  getMapFeatureName,
+  getStateLinkedStories,
+  getStateNames,
+  getStoriesForState,
+  getUnmappedStateNames,
+  isMapSelectionKey,
+  mapPath,
+  parseStateMap,
+  stateNameKey,
+  toggleStateSelection,
+  type MapFeature,
+} from '@/lib/state-map';
+import {
   getGetArchiveQueryKey,
   getGetDecisionImpactRevisionsQueryKey,
   getGetDecisionImpactRevisionsQueryOptions,
@@ -670,22 +684,6 @@ function HomeDecisionGrid({ stories }: { stories: Story[] }) {
   </section>;
 }
 
-type MapFeature = { properties?: { NAME_1?: string }; geometry?: { type?: string; coordinates?: unknown } };
-function projectMapPoint(point: number[]) {
-  const x = ((point[0] - 68) / 30) * 1000;
-  const y = 950 - ((point[1] - 6) / 31) * 950;
-  return `${x.toFixed(1)},${y.toFixed(1)}`;
-}
-function mapPath(coords: unknown): string {
-  if (!Array.isArray(coords) || !coords.length) return '';
-  if (typeof coords[0] === 'number') return `M${projectMapPoint(coords as number[])} `;
-  if (Array.isArray(coords[0]) && typeof coords[0][0] === 'number') {
-    const points = (coords as number[][]).map(projectMapPoint);
-    return `M${points.join(' L')} Z`;
-  }
-  return (coords as unknown[]).map(mapPath).join(' ');
-}
-
 function IndiaFocus({ stories }: { stories: Story[] }) {
   const [features, setFeatures] = useState<MapFeature[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
@@ -697,10 +695,10 @@ function IndiaFocus({ stories }: { stories: Story[] }) {
     fetch(`${basePath}/data/india-states-simplified.geojson`).then((response) => {
       if (!response.ok) throw new Error(`GeoJSON request failed: ${response.status}`);
       return response.json();
-    }).then((value: { features?: MapFeature[] }) => {
-      if (!Array.isArray(value.features) || value.features.length === 0) throw new Error('India map has no state features.');
+    }).then((value: unknown) => {
+      const parsedFeatures = parseStateMap(value);
       if (!cancelled) {
-        setFeatures(value.features);
+        setFeatures(parsedFeatures);
         setGeoStatus('ready');
       }
     }).catch(() => {
@@ -711,9 +709,13 @@ function IndiaFocus({ stories }: { stories: Story[] }) {
     });
     return () => { cancelled = true; };
   }, [geoRetry]);
-  const stateStories = useMemo(() => stories.filter((story) => story.state && story.state.toLowerCase() !== 'national'), [stories]);
-  const states = useMemo(() => Array.from(new Set(stateStories.map((story) => story.state as string))).sort(), [stateStories]);
-  const selectedStories = selected ? stateStories.filter((story) => story.state === selected) : stateStories.slice(0, 3);
+  const stateStories = useMemo(() => getStateLinkedStories(stories), [stories]);
+  const states = useMemo(() => getStateNames(stateStories), [stateStories]);
+  const unmappedStates = useMemo(
+    () => geoStatus === 'ready' ? getUnmappedStateNames(states, features) : [],
+    [features, geoStatus, states],
+  );
+  const selectedStories = selected ? getStoriesForState(stateStories, selected) : stateStories.slice(0, 3);
   const selectedLatest = selectedStories[0];
   return <section className="map-shell mt-20 py-8 sm:mt-28 sm:py-12" id="india-in-focus" aria-labelledby="india-focus-title">
     <div className="signal-container">
@@ -721,11 +723,13 @@ function IndiaFocus({ stories }: { stories: Story[] }) {
       {states.length === 0 ? <div className="py-12"><EmptyState title="No state-linked records yet." text="The map will show markers only when published archive records carry a state." /></div> : <div className="grid gap-8 py-8 lg:grid-cols-[1.15fr_.85fr] lg:items-center">
         <div className="overflow-hidden" data-testid="india-editorial-map">
           {geoStatus === 'loading' && <div className="border border-dashed border-foreground/25 py-16 text-center" role="status" data-testid="status-india-map-loading"><div className="mx-auto h-8 w-40 animate-pulse bg-muted" /><p className="mt-4 signal-kicker text-muted-foreground">Loading the local India map…</p></div>}
-          {geoStatus === 'error' && <div className="border border-accent/50 bg-card px-6 py-10 text-center" role="alert" data-testid="status-india-map-error"><p className="signal-kicker text-accent">Map asset / unavailable</p><p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">The local state-boundary file could not be opened. Published state records remain available in the list.</p><button type="button" className="signal-button mt-5" onClick={() => setGeoRetry((value) => value + 1)} data-testid="button-retry-india-map">Try map again</button></div>}
-          {geoStatus === 'ready' && <><svg viewBox="0 0 1000 950" role="img" aria-label="Editorial map of India showing states with published archive records" className="india-map">{features.map((feature, index) => { const name = feature.properties?.NAME_1 ?? `state-${index}`; const active = states.includes(name); return <path key={`${name}-${index}`} d={mapPath(feature.geometry?.coordinates)} className={`${active ? 'is-active' : ''} ${selected === name ? 'is-selected' : ''}`} aria-label={name} role={active ? 'button' : undefined} tabIndex={active ? 0 : -1} aria-pressed={active ? selected === name : undefined} onClick={() => active && setSelected(selected === name ? null : name)} onKeyDown={(event) => { if (active && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); setSelected(selected === name ? null : name); } }} />; })}</svg><p className="mt-3 max-w-xl text-[10px] leading-relaxed text-muted-foreground">Map for editorial navigation only, not a legal boundary reference. <a href={`${basePath}/data/india-map-attribution.md`} className="signal-rule-link" target="_blank" rel="noopener noreferrer">Map attribution and boundary notice</a>.</p></>}
+          {geoStatus === 'error' && <div className="border border-accent/50 bg-card px-6 py-10 text-center" role="alert" data-testid="status-india-map-error"><p className="signal-kicker text-accent">Map asset / unavailable</p><p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">The local state-boundary file is missing or malformed. Published state records remain available in the list.</p><button type="button" className="signal-button mt-5" onClick={() => setGeoRetry((value) => value + 1)} data-testid="button-retry-india-map">Try map again</button></div>}
+          {geoStatus === 'ready' && <svg viewBox="0 0 1000 950" role="group" aria-label="Map shapes for states with published archive records" className="india-map">{features.map((feature, index) => { const featureName = getMapFeatureName(feature); const stateName = featureName ? canonicalStateName(featureName) : null; const active = Boolean(stateName && states.some((name) => stateNameKey(name) === stateNameKey(stateName))); const isSelected = Boolean(stateName && selected && stateNameKey(selected) === stateNameKey(stateName)); return <path key={`${featureName ?? 'state'}-${index}`} data-testid={active && stateName ? `map-state-shape-${slugify(stateName)}` : undefined} d={mapPath(feature.geometry?.coordinates)} className={`${active ? 'is-active' : ''} ${isSelected ? 'is-selected' : ''}`} aria-label={active && stateName ? `Select ${stateName}` : undefined} role={active ? 'button' : undefined} tabIndex={active ? 0 : undefined} aria-pressed={active ? isSelected : undefined} onClick={() => active && stateName && setSelected((current) => toggleStateSelection(current, stateName))} onKeyDown={(event) => { if (active && stateName && isMapSelectionKey(event.key)) { event.preventDefault(); setSelected((current) => toggleStateSelection(current, stateName)); } }} />; })}</svg>}
         </div>
-        <div><p className="signal-kicker text-accent">States with published records / {states.length}</p><div className="mt-3 grid gap-0">{states.map((state) => <button key={state} type="button" className="map-state-button flex items-center justify-between gap-4 signal-kicker" aria-pressed={selected === state} onClick={() => setSelected(selected === state ? null : state)} data-testid={`button-map-state-${slugify(state)}`}><span>{state}</span><span className="text-muted-foreground">{stateStories.filter((story) => story.state === state).length}</span></button>)}</div></div>
+        <div><p className="signal-kicker text-accent">States with published records / {states.length}</p><div className="mt-3 grid gap-0">{states.map((state) => <button key={state} type="button" className="map-state-button flex items-center justify-between gap-4 signal-kicker" aria-pressed={Boolean(selected && stateNameKey(selected) === stateNameKey(state))} onClick={() => setSelected((current) => toggleStateSelection(current, state))} data-testid={`button-map-state-${slugify(state)}`}><span>{state}</span><span className="text-muted-foreground">{getStoriesForState(stateStories, state).length}</span></button>)}</div></div>
       </div>}
+      {unmappedStates.length > 0 && <p className="mt-3 border-l-2 border-accent px-3 py-2 text-xs leading-relaxed text-muted-foreground" role="note" data-testid="note-unmapped-map-states">No matching boundary is available for {unmappedStates.join(', ')}. These records can still be selected from the state list.</p>}
+      <p className="mt-3 max-w-xl text-[10px] leading-relaxed text-muted-foreground">Map for editorial navigation only, not a legal boundary reference. <a href={`${basePath}/data/india-map-attribution.md`} className="signal-rule-link" target="_blank" rel="noopener noreferrer">Map attribution and boundary notice</a>.</p>
       {selectedStories.length > 0 && <div className="border-t border-foreground/20 pt-6"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="signal-kicker text-accent">{selected ?? 'Recent state-linked records'}</p>{selectedLatest && <p className="mt-2 text-sm text-muted-foreground">Latest story context: {selectedLatest.title}</p>}</div>{selected && <button type="button" className="signal-kicker text-muted-foreground hover:text-accent" onClick={() => setSelected(null)} data-testid="button-clear-map-state">Show all states</button>}</div><div className="mt-4 grid gap-5 sm:grid-cols-3">{selectedStories.map((story) => <Link href={storyPath(story)} key={story.id} className="group"><p className="signal-kicker text-muted-foreground">{story.publishedOn ? 'Published' : 'Record date'} / {formatDate(story.recordDate ?? story.publishedOn)}</p><div className="mt-2 flex flex-wrap items-center gap-2"><span className={`signal-status-badge ${story.verificationStatus === 'verified' ? 'is-verified' : story.verificationStatus === 'source-linked' ? 'is-source-linked' : 'is-unverified'}`}>{verificationLabel(story.verificationStatus)}</span><span className="signal-kicker text-muted-foreground">{story.sourceUrl ? 'Direct source available' : 'Direct source unavailable'}</span></div><h3 className="mt-2 font-display text-2xl leading-tight group-hover:text-accent">{story.title}</h3><p className="mt-2 text-xs leading-relaxed text-muted-foreground">{story.dek}</p></Link>)}</div></div>}
     </div>
   </section>;
