@@ -632,6 +632,18 @@ test("editor source registry and manual discovery queue validate and retain revi
         );
         assert.equal(archiveRightsPreview.response.status, 200);
         assert.deepEqual(archiveRightsPreview.body.changedFields, ["credit"]);
+        const archiveHistoryBeforeApply = await requestJson(
+          baseUrl,
+          `/editor/discovery-items/${createdLead.body.id}/image-candidates`,
+          "GET",
+        );
+        assert.deepEqual(
+          archiveHistoryBeforeApply.body.candidates.find(
+            (candidate: Record<string, any>) =>
+              candidate.id === createdArchiveCandidate.body.id,
+          ).rightsHistory,
+          [],
+        );
         const archiveRightsApplied = await requestJson(
           baseUrl,
           `/editor/image-candidates/${createdArchiveCandidate.body.id}/recheck/apply`,
@@ -644,6 +656,33 @@ test("editor source registry and manual discovery queue validate and retain revi
         assert.equal(
           archiveRightsApplied.body.candidate.credit,
           "Updated archive credit line",
+        );
+        assert.equal(
+          archiveRightsApplied.body.candidate.rightsHistory.length,
+          1,
+        );
+        assert.equal(
+          archiveRightsApplied.body.candidate.rightsHistory[0].previousRightsStatus,
+          "pending",
+        );
+        assert.equal(
+          archiveRightsApplied.body.candidate.rightsHistory[0].previousMetadata.credit,
+          archiveResult.credit,
+        );
+        assert.equal(
+          archiveRightsApplied.body.candidate.rightsHistory[0].newMetadata.credit,
+          "Updated archive credit line",
+        );
+        assert.equal(
+          archiveRightsApplied.body.candidate.rightsHistory[0].changedBy,
+          "content-desk-test-editor",
+        );
+        assert.equal(
+          archiveRightsApplied.body.candidate.rightsHistory[0].changeSource,
+          "source_recheck",
+        );
+        assert.ok(
+          archiveRightsApplied.body.candidate.rightsHistory[0].changedAt,
         );
 
         const prematureRightsReview = await requestJson(
@@ -721,6 +760,34 @@ test("editor source registry and manual discovery queue validate and retain revi
         assert.equal(changedRightsTerms.body.rightsStatus, "pending");
         assert.equal(changedRightsTerms.body.reviewedBy, null);
         assert.equal(changedRightsTerms.body.reviewedAt, null);
+        assert.equal(changedRightsTerms.body.rightsHistory.length, 2);
+        assert.equal(
+          changedRightsTerms.body.rightsHistory[0].previousRightsStatus,
+          "approved",
+        );
+        assert.equal(
+          changedRightsTerms.body.rightsHistory[0].previousReviewNotes,
+          "Confirmed the license and required attribution on Commons.",
+        );
+        assert.equal(
+          changedRightsTerms.body.rightsHistory[0].previousReviewedBy,
+          "content-desk-test-editor",
+        );
+        assert.ok(
+          changedRightsTerms.body.rightsHistory[0].previousReviewedAt,
+        );
+        assert.equal(
+          changedRightsTerms.body.rightsHistory[0].previousMetadata.license,
+          commonsResult.license,
+        );
+        assert.equal(
+          changedRightsTerms.body.rightsHistory[0].newMetadata.license,
+          "CC BY 4.0",
+        );
+        assert.equal(
+          changedRightsTerms.body.rightsHistory[0].changeSource,
+          "editor_edit",
+        );
 
         const savedRightsMetadata = {
           license: changedRightsTerms.body.license,
@@ -796,6 +863,15 @@ test("editor source registry and manual discovery queue validate and retain revi
           "copyright",
           "usageRights",
         ]);
+        const historyAfterPreview = await requestJson(
+          baseUrl,
+          `/editor/discovery-items/${createdLead.body.id}/image-candidates`,
+          "GET",
+        );
+        assert.equal(
+          historyAfterPreview.body.candidates[0].rightsHistory.length,
+          2,
+        );
         const beforeApplyingSourceChanges = await requestJson(
           baseUrl,
           `/editor/discovery-items/${createdLead.body.id}/image-candidates`,
@@ -836,6 +912,10 @@ test("editor source registry and manual discovery queue validate and retain revi
           afterStaleSourceApply.body.candidates[0].credit,
           savedRightsMetadata.credit,
         );
+        assert.equal(
+          afterStaleSourceApply.body.candidates[0].rightsHistory.length,
+          2,
+        );
 
         const latestSourcePreview = await requestJson(
           baseUrl,
@@ -862,6 +942,37 @@ test("editor source registry and manual discovery queue validate and retain revi
         assert.equal(
           appliedSourceChanges.body.candidate.credit,
           "A newer credit statement on Commons.",
+        );
+        assert.equal(
+          appliedSourceChanges.body.candidate.rightsHistory.length,
+          3,
+        );
+        assert.equal(
+          appliedSourceChanges.body.candidate.rightsHistory[0].previousRightsStatus,
+          "approved",
+        );
+        assert.equal(
+          appliedSourceChanges.body.candidate.rightsHistory[0].previousReviewNotes,
+          "Rechecked the current Commons file page.",
+        );
+        assert.equal(
+          appliedSourceChanges.body.candidate.rightsHistory[0].previousReviewedBy,
+          "content-desk-test-editor",
+        );
+        assert.ok(
+          appliedSourceChanges.body.candidate.rightsHistory[0].previousReviewedAt,
+        );
+        assert.equal(
+          appliedSourceChanges.body.candidate.rightsHistory[0].previousMetadata.license,
+          savedRightsMetadata.license,
+        );
+        assert.equal(
+          appliedSourceChanges.body.candidate.rightsHistory[0].newMetadata.license,
+          "CC BY 3.0",
+        );
+        assert.equal(
+          appliedSourceChanges.body.candidate.rightsHistory[0].changeSource,
+          "source_recheck",
         );
 
         const stablePreviewBeforeOutage = await requestJson(
@@ -892,6 +1003,10 @@ test("editor source registry and manual discovery queue validate and retain revi
         assert.equal(
           afterFailedSourceApply.body.candidates[0].rightsStatus,
           "pending",
+        );
+        assert.equal(
+          afterFailedSourceApply.body.candidates[0].rightsHistory.length,
+          3,
         );
 
         currentCommonsResult = null;

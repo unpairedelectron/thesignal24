@@ -3063,7 +3063,38 @@ components:
         updatedAt:
           type: string
           format: date-time
-      required: [id, discoveryItemId, source, fileTitle, imageUrl, thumbnailUrl, filePageUrl, license, licenseUrl, creator, credit, copyright, usageRights, altText, caption, rightsStatus, reviewNotes, reviewedBy, reviewedAt, discoveredAt, createdBy, createdAt, updatedBy, updatedAt]
+        rightsHistory:
+          type: array
+          items:
+            $ref: "#/components/schemas/EditorImageCandidateRightsHistoryEntry"
+      required: [id, discoveryItemId, source, fileTitle, imageUrl, thumbnailUrl, filePageUrl, license, licenseUrl, creator, credit, copyright, usageRights, altText, caption, rightsStatus, reviewNotes, reviewedBy, reviewedAt, discoveredAt, createdBy, createdAt, updatedBy, updatedAt, rightsHistory]
+    EditorImageCandidateRightsHistoryEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        previousMetadata:
+          $ref: "#/components/schemas/EditorImageCandidateRightsMetadata"
+        newMetadata:
+          $ref: "#/components/schemas/EditorImageCandidateRightsMetadata"
+        previousRightsStatus:
+          $ref: "#/components/schemas/ImageCandidateRightsStatus"
+        previousReviewNotes:
+          type: string
+        previousReviewedBy:
+          type: ["string", "null"]
+        previousReviewedAt:
+          type: ["string", "null"]
+          format: date-time
+        changedBy:
+          type: string
+        changeSource:
+          type: string
+          enum: [editor_edit, source_recheck]
+        changedAt:
+          type: string
+          format: date-time
+      required: [id, previousMetadata, newMetadata, previousRightsStatus, previousReviewNotes, previousReviewedBy, previousReviewedAt, changedBy, changeSource, changedAt]
     EditorImageCandidateSourceRecheckApplyResponse:
       type: object
       properties:

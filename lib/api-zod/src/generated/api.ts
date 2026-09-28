@@ -2150,7 +2150,33 @@ export const GetEditorDiscoveryItemImageCandidatesResponse = zod.object({
   "createdBy": zod.string(),
   "createdAt": zod.coerce.date(),
   "updatedBy": zod.string(),
-  "updatedAt": zod.coerce.date()
+  "updatedAt": zod.coerce.date(),
+  "rightsHistory": zod.array(zod.object({
+  "id": zod.number().int(),
+  "previousMetadata": zod.object({
+  "license": zod.string(),
+  "licenseUrl": zod.string().url().nullable(),
+  "creator": zod.string(),
+  "credit": zod.string(),
+  "copyright": zod.string(),
+  "usageRights": zod.string()
+}),
+  "newMetadata": zod.object({
+  "license": zod.string(),
+  "licenseUrl": zod.string().url().nullable(),
+  "creator": zod.string(),
+  "credit": zod.string(),
+  "copyright": zod.string(),
+  "usageRights": zod.string()
+}),
+  "previousRightsStatus": zod.enum(['pending', 'approved', 'rejected']),
+  "previousReviewNotes": zod.string(),
+  "previousReviewedBy": zod.string().nullable(),
+  "previousReviewedAt": zod.coerce.date().nullable(),
+  "changedBy": zod.string(),
+  "changeSource": zod.enum(['editor_edit', 'source_recheck']),
+  "changedAt": zod.coerce.date()
+}))
 }))
 })
 
@@ -2208,7 +2234,33 @@ export const CreateEditorDiscoveryItemImageCandidateResponse = zod.object({
   "createdBy": zod.string(),
   "createdAt": zod.coerce.date(),
   "updatedBy": zod.string(),
-  "updatedAt": zod.coerce.date()
+  "updatedAt": zod.coerce.date(),
+  "rightsHistory": zod.array(zod.object({
+  "id": zod.number().int(),
+  "previousMetadata": zod.object({
+  "license": zod.string(),
+  "licenseUrl": zod.string().url().nullable(),
+  "creator": zod.string(),
+  "credit": zod.string(),
+  "copyright": zod.string(),
+  "usageRights": zod.string()
+}),
+  "newMetadata": zod.object({
+  "license": zod.string(),
+  "licenseUrl": zod.string().url().nullable(),
+  "creator": zod.string(),
+  "credit": zod.string(),
+  "copyright": zod.string(),
+  "usageRights": zod.string()
+}),
+  "previousRightsStatus": zod.enum(['pending', 'approved', 'rejected']),
+  "previousReviewNotes": zod.string(),
+  "previousReviewedBy": zod.string().nullable(),
+  "previousReviewedAt": zod.coerce.date().nullable(),
+  "changedBy": zod.string(),
+  "changeSource": zod.enum(['editor_edit', 'source_recheck']),
+  "changedAt": zod.coerce.date()
+}))
 })
 
 
@@ -2274,7 +2326,33 @@ export const UpdateEditorImageCandidateResponse = zod.object({
   "createdBy": zod.string(),
   "createdAt": zod.coerce.date(),
   "updatedBy": zod.string(),
-  "updatedAt": zod.coerce.date()
+  "updatedAt": zod.coerce.date(),
+  "rightsHistory": zod.array(zod.object({
+  "id": zod.number().int(),
+  "previousMetadata": zod.object({
+  "license": zod.string(),
+  "licenseUrl": zod.string().url().nullable(),
+  "creator": zod.string(),
+  "credit": zod.string(),
+  "copyright": zod.string(),
+  "usageRights": zod.string()
+}),
+  "newMetadata": zod.object({
+  "license": zod.string(),
+  "licenseUrl": zod.string().url().nullable(),
+  "creator": zod.string(),
+  "credit": zod.string(),
+  "copyright": zod.string(),
+  "usageRights": zod.string()
+}),
+  "previousRightsStatus": zod.enum(['pending', 'approved', 'rejected']),
+  "previousReviewNotes": zod.string(),
+  "previousReviewedBy": zod.string().nullable(),
+  "previousReviewedAt": zod.coerce.date().nullable(),
+  "changedBy": zod.string(),
+  "changeSource": zod.enum(['editor_edit', 'source_recheck']),
+  "changedAt": zod.coerce.date()
+}))
 })
 
 
@@ -2351,7 +2429,33 @@ export const ApplyEditorImageCandidateSourceRecheckResponse = zod.object({
   "createdBy": zod.string(),
   "createdAt": zod.coerce.date(),
   "updatedBy": zod.string(),
-  "updatedAt": zod.coerce.date()
+  "updatedAt": zod.coerce.date(),
+  "rightsHistory": zod.array(zod.object({
+  "id": zod.number().int(),
+  "previousMetadata": zod.object({
+  "license": zod.string(),
+  "licenseUrl": zod.string().url().nullable(),
+  "creator": zod.string(),
+  "credit": zod.string(),
+  "copyright": zod.string(),
+  "usageRights": zod.string()
+}),
+  "newMetadata": zod.object({
+  "license": zod.string(),
+  "licenseUrl": zod.string().url().nullable(),
+  "creator": zod.string(),
+  "credit": zod.string(),
+  "copyright": zod.string(),
+  "usageRights": zod.string()
+}),
+  "previousRightsStatus": zod.enum(['pending', 'approved', 'rejected']),
+  "previousReviewNotes": zod.string(),
+  "previousReviewedBy": zod.string().nullable(),
+  "previousReviewedAt": zod.coerce.date().nullable(),
+  "changedBy": zod.string(),
+  "changeSource": zod.enum(['editor_edit', 'source_recheck']),
+  "changedAt": zod.coerce.date()
+}))
 }),
   "rightsTermsChanged": zod.boolean()
 })
@@ -2401,7 +2505,33 @@ export const ReviewEditorImageCandidateRightsResponse = zod.object({
   "createdBy": zod.string(),
   "createdAt": zod.coerce.date(),
   "updatedBy": zod.string(),
-  "updatedAt": zod.coerce.date()
+  "updatedAt": zod.coerce.date(),
+  "rightsHistory": zod.array(zod.object({
+  "id": zod.number().int(),
+  "previousMetadata": zod.object({
+  "license": zod.string(),
+  "licenseUrl": zod.string().url().nullable(),
+  "creator": zod.string(),
+  "credit": zod.string(),
+  "copyright": zod.string(),
+  "usageRights": zod.string()
+}),
+  "newMetadata": zod.object({
+  "license": zod.string(),
+  "licenseUrl": zod.string().url().nullable(),
+  "creator": zod.string(),
+  "credit": zod.string(),
+  "copyright": zod.string(),
+  "usageRights": zod.string()
+}),
+  "previousRightsStatus": zod.enum(['pending', 'approved', 'rejected']),
+  "previousReviewNotes": zod.string(),
+  "previousReviewedBy": zod.string().nullable(),
+  "previousReviewedAt": zod.coerce.date().nullable(),
+  "changedBy": zod.string(),
+  "changeSource": zod.enum(['editor_edit', 'source_recheck']),
+  "changedAt": zod.coerce.date()
+}))
 })
 
 

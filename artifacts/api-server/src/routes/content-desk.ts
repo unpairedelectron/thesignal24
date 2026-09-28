@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
 import { Router, type IRouter, type RequestHandler } from "express";
 import {
   CreateEditorDiscoveryItemImageCandidateBody,
@@ -41,6 +41,7 @@ import type {
   EditorImageCandidateSearchResult,
 } from "@workspace/api-zod";
 import {
+  contentImageCandidateRightsHistoryTable,
   contentImageCandidatesTable,
   db,
   discoveryItemsTable,
@@ -49,7 +50,10 @@ import {
   storiesTable,
   storyRevisionsTable,
 } from "@workspace/db";
-import type { ContentImageCandidate } from "@workspace/db";
+import type {
+  ContentImageCandidate,
+  ContentImageCandidateRightsHistory,
+} from "@workspace/db";
 import { requireEditor } from "../middlewares/editorAuth";
 import {
   type WikimediaCommonsClient,
@@ -260,14 +264,42 @@ function serializeDiscoveryItem(
   };
 }
 
-function serializeImageCandidate(candidate: ContentImageCandidate) {
+function serializeImageCandidateRightsHistory(
+  entry: ContentImageCandidateRightsHistory,
+) {
+  return {
+    ...entry,
+    previousReviewedAt: asIso(entry.previousReviewedAt),
+    changedAt: entry.changedAt.toISOString(),
+  };
+}
+
+function serializeImageCandidate(
+  candidate: ContentImageCandidate,
+  rightsHistory: ContentImageCandidateRightsHistory[] = [],
+) {
   return {
     ...candidate,
     reviewedAt: asIso(candidate.reviewedAt),
     discoveredAt: candidate.discoveredAt.toISOString(),
     createdAt: candidate.createdAt.toISOString(),
     updatedAt: candidate.updatedAt.toISOString(),
+    rightsHistory: rightsHistory.map(serializeImageCandidateRightsHistory),
   };
+}
+
+async function getImageCandidateRightsHistory(
+  database: typeof db,
+  candidateId: number,
+) {
+  return database
+    .select()
+    .from(contentImageCandidateRightsHistoryTable)
+    .where(eq(contentImageCandidateRightsHistoryTable.candidateId, candidateId))
+    .orderBy(
+      desc(contentImageCandidateRightsHistoryTable.changedAt),
+      desc(contentImageCandidateRightsHistoryTable.id),
+    );
 }
 
 const imageRightsMetadataFields = [
@@ -651,9 +683,39 @@ export function createContentDeskRouter(
           eq(contentImageCandidatesTable.discoveryItemId, params.data.itemId),
         )
         .orderBy(desc(contentImageCandidatesTable.discoveredAt));
+      const historyRows =
+        candidates.length === 0
+          ? []
+          : await database
+              .select()
+              .from(contentImageCandidateRightsHistoryTable)
+              .where(
+                inArray(
+                  contentImageCandidateRightsHistoryTable.candidateId,
+                  candidates.map((candidate) => candidate.id),
+                ),
+              )
+              .orderBy(
+                desc(contentImageCandidateRightsHistoryTable.changedAt),
+                desc(contentImageCandidateRightsHistoryTable.id),
+              );
+      const historyByCandidate = new Map<
+        number,
+        ContentImageCandidateRightsHistory[]
+      >();
+      for (const historyRow of historyRows) {
+        const current = historyByCandidate.get(historyRow.candidateId) ?? [];
+        current.push(historyRow);
+        historyByCandidate.set(historyRow.candidateId, current);
+      }
       res.json(
         GetEditorDiscoveryItemImageCandidatesResponse.parse({
-          candidates: candidates.map(serializeImageCandidate),
+          candidates: candidates.map((candidate) =>
+            serializeImageCandidate(
+              candidate,
+              historyByCandidate.get(candidate.id),
+            ),
+          ),
         }),
       );
     },
@@ -811,52 +873,73 @@ export function createContentDeskRouter(
         });
         return;
       }
-      const [existing] = await database
-        .select()
-        .from(contentImageCandidatesTable)
-        .where(eq(contentImageCandidatesTable.id, params.data.candidateId))
-        .limit(1);
-      if (!existing) {
-        res.status(404).json({ message: "Image candidate not found." });
-        return;
-      }
       const creator = parsed.data.creator.trim();
       const credit = parsed.data.credit.trim();
       const copyright = parsed.data.copyright.trim();
       const usageRights = parsed.data.usageRights.trim();
-      const rightsTermsChanged =
-        license !== existing.license ||
-        (licenseUrl?.toString() ?? null) !== existing.licenseUrl ||
-        creator !== existing.creator ||
-        credit !== existing.credit ||
-        copyright !== existing.copyright ||
-        usageRights !== existing.usageRights;
-      const [candidate] = await database
-        .update(contentImageCandidatesTable)
-        .set({
-          license,
-          licenseUrl: licenseUrl?.toString() ?? null,
-          creator,
-          credit,
-          copyright,
-          usageRights,
-          altText: parsed.data.altText.trim(),
-          caption: parsed.data.caption.trim(),
-          rightsStatus: rightsTermsChanged ? "pending" : existing.rightsStatus,
-          reviewNotes: rightsTermsChanged ? "" : existing.reviewNotes,
-          reviewedBy: rightsTermsChanged ? null : existing.reviewedBy,
-          reviewedAt: rightsTermsChanged ? null : existing.reviewedAt,
-          updatedBy: editorId,
-        })
-        .where(eq(contentImageCandidatesTable.id, params.data.candidateId))
-        .returning();
+      const nextMetadata = {
+        license,
+        licenseUrl: licenseUrl?.toString() ?? null,
+        creator,
+        credit,
+        copyright,
+        usageRights,
+      };
+      const updateResult = await database.transaction(async (tx) => {
+        const [existing] = await tx
+          .select()
+          .from(contentImageCandidatesTable)
+          .where(eq(contentImageCandidatesTable.id, params.data.candidateId))
+          .for("update")
+          .limit(1);
+        if (!existing) return { candidate: undefined };
+        const rightsTermsChanged =
+          changedImageRightsMetadataFields(
+            candidateRightsMetadata(existing),
+            nextMetadata,
+          ).length > 0;
+        const [candidate] = await tx
+          .update(contentImageCandidatesTable)
+          .set({
+            ...nextMetadata,
+            altText: parsed.data.altText.trim(),
+            caption: parsed.data.caption.trim(),
+            rightsStatus: rightsTermsChanged ? "pending" : existing.rightsStatus,
+            reviewNotes: rightsTermsChanged ? "" : existing.reviewNotes,
+            reviewedBy: rightsTermsChanged ? null : existing.reviewedBy,
+            reviewedAt: rightsTermsChanged ? null : existing.reviewedAt,
+            updatedBy: editorId,
+          })
+          .where(eq(contentImageCandidatesTable.id, params.data.candidateId))
+          .returning();
+        if (!candidate) return { candidate: undefined };
+        if (rightsTermsChanged) {
+          await tx.insert(contentImageCandidateRightsHistoryTable).values({
+            candidateId: existing.id,
+            previousMetadata: candidateRightsMetadata(existing),
+            newMetadata: nextMetadata,
+            previousRightsStatus: existing.rightsStatus,
+            previousReviewNotes: existing.reviewNotes,
+            previousReviewedBy: existing.reviewedBy,
+            previousReviewedAt: existing.reviewedAt,
+            changedBy: editorId,
+            changeSource: "editor_edit",
+          });
+        }
+        return { candidate };
+      });
+      const candidate = updateResult.candidate;
       if (!candidate) {
         res.status(404).json({ message: "Image candidate not found." });
         return;
       }
+      const rightsHistory = await getImageCandidateRightsHistory(
+        database,
+        candidate.id,
+      );
       res.json(
         UpdateEditorImageCandidateResponse.parse(
-          serializeImageCandidate(candidate),
+          serializeImageCandidate(candidate, rightsHistory),
         ),
       );
     },
@@ -1001,39 +1084,68 @@ export function createContentDeskRouter(
         return;
       }
 
-      const [updatedCandidate] = await database
-        .update(contentImageCandidatesTable)
-        .set({
-          ...currentMetadata,
-          rightsStatus: "pending",
-          reviewNotes: "",
-          reviewedBy: null,
-          reviewedAt: null,
-          updatedBy: editorId,
-        })
-        .where(
-          and(
-            eq(contentImageCandidatesTable.id, candidate.id),
-            eq(contentImageCandidatesTable.license, candidate.license),
-            candidate.licenseUrl === null
-              ? isNull(contentImageCandidatesTable.licenseUrl)
-              : eq(contentImageCandidatesTable.licenseUrl, candidate.licenseUrl),
-            eq(contentImageCandidatesTable.creator, candidate.creator),
-            eq(contentImageCandidatesTable.credit, candidate.credit),
-            eq(contentImageCandidatesTable.copyright, candidate.copyright),
-            eq(contentImageCandidatesTable.usageRights, candidate.usageRights),
-          ),
-        )
-        .returning();
-      if (!updatedCandidate) {
+      const applyResult = await database.transaction(async (tx) => {
+        const [lockedCandidate] = await tx
+          .select()
+          .from(contentImageCandidatesTable)
+          .where(eq(contentImageCandidatesTable.id, candidate.id))
+          .for("update")
+          .limit(1);
+        if (!lockedCandidate) return { kind: "missing" as const };
+        if (
+          changedImageRightsMetadataFields(
+            candidateRightsMetadata(candidate),
+            candidateRightsMetadata(lockedCandidate),
+          ).length > 0
+        ) {
+          return { kind: "changed" as const };
+        }
+        const [updatedCandidate] = await tx
+          .update(contentImageCandidatesTable)
+          .set({
+            ...currentMetadata,
+            rightsStatus: "pending",
+            reviewNotes: "",
+            reviewedBy: null,
+            reviewedAt: null,
+            updatedBy: editorId,
+          })
+          .where(eq(contentImageCandidatesTable.id, lockedCandidate.id))
+          .returning();
+        if (!updatedCandidate) return { kind: "changed" as const };
+        await tx.insert(contentImageCandidateRightsHistoryTable).values({
+          candidateId: lockedCandidate.id,
+          previousMetadata: candidateRightsMetadata(lockedCandidate),
+          newMetadata: currentMetadata,
+          previousRightsStatus: lockedCandidate.rightsStatus,
+          previousReviewNotes: lockedCandidate.reviewNotes,
+          previousReviewedBy: lockedCandidate.reviewedBy,
+          previousReviewedAt: lockedCandidate.reviewedAt,
+          changedBy: editorId,
+          changeSource: "source_recheck",
+        });
+        return { kind: "updated" as const, candidate: updatedCandidate };
+      });
+      if (applyResult.kind === "missing") {
+        res.status(404).json({ message: "Image candidate not found." });
+        return;
+      }
+      if (applyResult.kind !== "updated") {
         res.status(409).json({
           message: "The candidate changed while applying. Recheck it before applying.",
         });
         return;
       }
+      const rightsHistory = await getImageCandidateRightsHistory(
+        database,
+        applyResult.candidate.id,
+      );
       res.json(
         ApplyEditorImageCandidateSourceRecheckResponse.parse({
-          candidate: serializeImageCandidate(updatedCandidate),
+          candidate: serializeImageCandidate(
+            applyResult.candidate,
+            rightsHistory,
+          ),
           rightsTermsChanged: true,
         }),
       );
@@ -1106,9 +1218,13 @@ export function createContentDeskRouter(
         res.status(404).json({ message: "Image candidate not found." });
         return;
       }
+      const rightsHistory = await getImageCandidateRightsHistory(
+        database,
+        candidate.id,
+      );
       res.json(
         ReviewEditorImageCandidateRightsResponse.parse(
-          serializeImageCandidate(candidate),
+          serializeImageCandidate(candidate, rightsHistory),
         ),
       );
     },

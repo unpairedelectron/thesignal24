@@ -925,6 +925,71 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
                             Previous rights-review note: {candidate.reviewNotes}
                           </p>
                         )}
+                        {candidate.rightsHistory.length > 0 && (
+                          <details className="mt-4 border border-foreground/15 p-3">
+                            <summary className="cursor-pointer signal-kicker text-accent">
+                              Rights history ({candidate.rightsHistory.length})
+                            </summary>
+                            <ol className="mt-3 divide-y divide-foreground/15 border-t border-foreground/15">
+                              {candidate.rightsHistory.map((entry) => (
+                                <li key={entry.id} className="py-4">
+                                  <p className="signal-kicker text-foreground">
+                                    Terms changed by {entry.changedBy} ·{" "}
+                                    {new Date(entry.changedAt).toLocaleString()} ·{" "}
+                                    {entry.changeSource === "source_recheck"
+                                      ? "source recheck"
+                                      : "editor edit"}
+                                  </p>
+                                  <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                                    Previous decision:{" "}
+                                    {rightsStatusLabel(entry.previousRightsStatus)}
+                                    {entry.previousReviewedBy
+                                      ? ` · reviewed by ${entry.previousReviewedBy}`
+                                      : ""}
+                                    {entry.previousReviewedAt
+                                      ? ` · ${new Date(
+                                          entry.previousReviewedAt,
+                                        ).toLocaleString()}`
+                                      : ""}
+                                  </p>
+                                  {entry.previousReviewNotes && (
+                                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                                      Previous review note: {entry.previousReviewNotes}
+                                    </p>
+                                  )}
+                                  <dl className="mt-3 grid gap-3 text-xs leading-relaxed sm:grid-cols-2">
+                                    {(Object.keys(rightsFieldLabels) as Array<
+                                      keyof EditorImageCandidateRightsMetadata
+                                    >).map((field) => (
+                                      <div
+                                        key={field}
+                                        className="border-t border-foreground/10 pt-2"
+                                      >
+                                        <dt className="signal-kicker text-foreground">
+                                          {rightsFieldLabels[field]}
+                                        </dt>
+                                        <dd className="mt-1 break-words text-muted-foreground">
+                                          Previous:{" "}
+                                          {rightsMetadataValue(
+                                            field,
+                                            entry.previousMetadata[field],
+                                          )}
+                                        </dd>
+                                        <dd className="mt-1 break-words text-muted-foreground">
+                                          New:{" "}
+                                          {rightsMetadataValue(
+                                            field,
+                                            entry.newMetadata[field],
+                                          )}
+                                        </dd>
+                                      </div>
+                                    ))}
+                                  </dl>
+                                </li>
+                              ))}
+                            </ol>
+                          </details>
+                        )}
                         <label className="mt-4 grid gap-1 signal-kicker text-muted-foreground">
                           Rights-review note
                           <textarea

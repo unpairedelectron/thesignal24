@@ -1204,6 +1204,29 @@ export const EditorImageCandidateSource = {
   Internet_Archive: 'Internet Archive',
 } as const;
 
+export type EditorImageCandidateRightsHistoryEntryChangeSource = typeof EditorImageCandidateRightsHistoryEntryChangeSource[keyof typeof EditorImageCandidateRightsHistoryEntryChangeSource];
+
+
+export const EditorImageCandidateRightsHistoryEntryChangeSource = {
+  editor_edit: 'editor_edit',
+  source_recheck: 'source_recheck',
+} as const;
+
+export interface EditorImageCandidateRightsHistoryEntry {
+  id: number;
+  previousMetadata: EditorImageCandidateRightsMetadata;
+  newMetadata: EditorImageCandidateRightsMetadata;
+  previousRightsStatus: ImageCandidateRightsStatus;
+  previousReviewNotes: string;
+  /** @nullable */
+  previousReviewedBy: string | null;
+  /** @nullable */
+  previousReviewedAt: string | null;
+  changedBy: string;
+  changeSource: EditorImageCandidateRightsHistoryEntryChangeSource;
+  changedAt: string;
+}
+
 export interface EditorImageCandidate {
   id: number;
   discoveryItemId: number;
@@ -1232,6 +1255,7 @@ export interface EditorImageCandidate {
   createdAt: string;
   updatedBy: string;
   updatedAt: string;
+  rightsHistory: EditorImageCandidateRightsHistoryEntry[];
 }
 
 export interface EditorImageCandidateSourceRecheckApplyResponse {

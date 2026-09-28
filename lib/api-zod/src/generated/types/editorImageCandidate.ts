@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { EditorImageCandidateRightsHistoryEntry } from './editorImageCandidateRightsHistoryEntry';
 import type { EditorImageCandidateSource } from './editorImageCandidateSource';
 import type { ImageCandidateRightsStatus } from './imageCandidateRightsStatus';
 
@@ -36,4 +37,5 @@ export interface EditorImageCandidate {
   createdAt: Date;
   updatedBy: string;
   updatedAt: Date;
+  rightsHistory: EditorImageCandidateRightsHistoryEntry[];
 }

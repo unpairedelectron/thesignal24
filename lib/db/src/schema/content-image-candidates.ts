@@ -2,6 +2,7 @@ import { createInsertSchema } from "drizzle-zod";
 import {
   index,
   integer,
+  jsonb,
   pgTable,
   serial,
   text,
@@ -58,6 +59,47 @@ export const contentImageCandidatesTable = pgTable(
   }),
 );
 
+export type ContentImageCandidateRightsMetadataSnapshot = {
+  license: string;
+  licenseUrl: string | null;
+  creator: string;
+  credit: string;
+  copyright: string;
+  usageRights: string;
+};
+
+export const contentImageCandidateRightsHistoryTable = pgTable(
+  "publication_content_image_candidate_rights_history",
+  {
+    id: serial("id").primaryKey(),
+    candidateId: integer("candidate_id")
+      .notNull()
+      .references(() => contentImageCandidatesTable.id, { onDelete: "cascade" }),
+    previousMetadata: jsonb("previous_metadata")
+      .$type<ContentImageCandidateRightsMetadataSnapshot>()
+      .notNull(),
+    newMetadata: jsonb("new_metadata")
+      .$type<ContentImageCandidateRightsMetadataSnapshot>()
+      .notNull(),
+    previousRightsStatus: text("previous_rights_status").notNull(),
+    previousReviewNotes: text("previous_review_notes").notNull(),
+    previousReviewedBy: text("previous_reviewed_by"),
+    previousReviewedAt: timestamp("previous_reviewed_at", {
+      withTimezone: true,
+    }),
+    changedBy: text("changed_by").notNull(),
+    changeSource: text("change_source").notNull(),
+    changedAt: timestamp("changed_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => ({
+    candidateChangedAtIndex: index(
+      "publication_content_image_candidate_rights_history_candidate_changed_at_idx",
+    ).on(table.candidateId, table.changedAt),
+  }),
+);
+
 export const insertContentImageCandidateSchema = createInsertSchema(
   contentImageCandidatesTable,
 ).omit({
@@ -73,6 +115,8 @@ export const insertContentImageCandidateSchema = createInsertSchema(
 
 export type ContentImageCandidate =
   typeof contentImageCandidatesTable.$inferSelect;
+export type ContentImageCandidateRightsHistory =
+  typeof contentImageCandidateRightsHistoryTable.$inferSelect;
 export type InsertContentImageCandidate = z.infer<
   typeof insertContentImageCandidateSchema
 >;
