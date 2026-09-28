@@ -7,6 +7,7 @@
  */
 import type { EditorImageCandidateRightsHistoryEntry } from './editorImageCandidateRightsHistoryEntry';
 import type { EditorImageCandidateSource } from './editorImageCandidateSource';
+import type { EditorImageCandidateSourceAvailabilityStatus } from './editorImageCandidateSourceAvailabilityStatus';
 import type { ImageCandidateRightsStatus } from './imageCandidateRightsStatus';
 
 export interface EditorImageCandidate {
@@ -26,6 +27,7 @@ export interface EditorImageCandidate {
   usageRights: string;
   altText: string;
   caption: string;
+  sourceAvailabilityStatus: EditorImageCandidateSourceAvailabilityStatus;
   rightsStatus: ImageCandidateRightsStatus;
   reviewNotes: string;
   /** @nullable */

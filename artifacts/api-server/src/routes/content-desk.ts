@@ -396,6 +396,23 @@ export function createContentDeskRouter(
     throw new Error("Unsupported image archive provider.");
   }
 
+  async function updateSourceAvailability(
+    candidate: ContentImageCandidate,
+    status: "available" | "missing",
+    editorId: string | undefined,
+  ): Promise<ContentImageCandidate | null> {
+    if (candidate.sourceAvailabilityStatus === status) return candidate;
+    const [updatedCandidate] = await database
+      .update(contentImageCandidatesTable)
+      .set({
+        sourceAvailabilityStatus: status,
+        updatedBy: editorId ?? candidate.updatedBy,
+      })
+      .where(eq(contentImageCandidatesTable.id, candidate.id))
+      .returning();
+    return updatedCandidate ?? null;
+  }
+
   router.post("/editor/image-search", async (req, res): Promise<void> => {
     const parsed = SearchEditorImageCandidatesBody.safeParse(req.body);
     if (!parsed.success || parsed.data.query.trim().length < 2) {
@@ -955,7 +972,7 @@ export function createContentDeskRouter(
         res.status(400).json({ message: params.error.message });
         return;
       }
-      const [candidate] = await database
+      let [candidate] = await database
         .select()
         .from(contentImageCandidatesTable)
         .where(eq(contentImageCandidatesTable.id, params.data.candidateId))
@@ -980,12 +997,23 @@ export function createContentDeskRouter(
         return;
       }
       if (!sourceFile) {
+        await updateSourceAvailability(
+          candidate,
+          "missing",
+          req.editorIdentity?.id,
+        );
         res.status(404).json({
           message:
             `The ${candidate.source} image is no longer available. Saved image terms were not changed.`,
         });
         return;
       }
+      candidate =
+        (await updateSourceAvailability(
+          candidate,
+          "available",
+          req.editorIdentity?.id,
+        )) ?? candidate;
 
       const currentMetadata = sourceRightsMetadata(sourceFile);
       res.json(
@@ -1024,7 +1052,7 @@ export function createContentDeskRouter(
         res.status(403).json({ message: "Verified editor identity is required." });
         return;
       }
-      const [candidate] = await database
+      let [candidate] = await database
         .select()
         .from(contentImageCandidatesTable)
         .where(eq(contentImageCandidatesTable.id, params.data.candidateId))
@@ -1048,12 +1076,23 @@ export function createContentDeskRouter(
         return;
       }
       if (!sourceFile) {
+        await updateSourceAvailability(
+          candidate,
+          "missing",
+          req.editorIdentity?.id,
+        );
         res.status(404).json({
           message:
             `The ${candidate.source} image is no longer available. Saved image terms were not changed.`,
         });
         return;
       }
+      candidate =
+        (await updateSourceAvailability(
+          candidate,
+          "available",
+          req.editorIdentity?.id,
+        )) ?? candidate;
 
       const currentMetadata = sourceRightsMetadata(sourceFile);
       if (
@@ -1104,6 +1143,7 @@ export function createContentDeskRouter(
           .update(contentImageCandidatesTable)
           .set({
             ...currentMetadata,
+            sourceAvailabilityStatus: "available",
             rightsStatus: "pending",
             reviewNotes: "",
             reviewedBy: null,

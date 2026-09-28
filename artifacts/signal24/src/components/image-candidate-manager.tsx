@@ -290,6 +290,7 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
       { candidateId: candidate.id },
       {
         onSuccess: (preview) => {
+          void invalidateCandidates();
           setSourcePreviews((current) => ({
             ...current,
             [candidate.id]: preview,
@@ -306,6 +307,7 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
         },
         onError: (reason) =>
           {
+            void invalidateCandidates();
             setSourcePreviewsNeedRefresh((current) => ({
               ...current,
               [candidate.id]: true,
@@ -348,6 +350,7 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
           );
         },
         onError: (reason) => {
+          void invalidateCandidates();
           setSourcePreviewsNeedRefresh((current) => ({
             ...current,
             [candidate.id]: true,
@@ -646,6 +649,17 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
                             </p>
                           )}
                         </div>
+
+                        {candidate.sourceAvailabilityStatus === "missing" && (
+                          <p
+                            className="mt-3 border-l-2 border-destructive px-3 py-2 text-sm text-destructive"
+                            role="status"
+                          >
+                            Source file confirmed missing from {candidate.source}.
+                            The saved attribution and rights snapshot are still
+                            available below.
+                          </p>
+                        )}
 
                         <dl className="mt-3 grid gap-2 text-xs leading-relaxed text-muted-foreground">
                           <div>

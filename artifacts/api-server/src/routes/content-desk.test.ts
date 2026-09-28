@@ -529,6 +529,10 @@ test("editor source registry and manual discovery queue validate and retain revi
         assert.equal(createdImageCandidate.body.rightsStatus, "pending");
         assert.equal(createdImageCandidate.body.source, "Wikimedia Commons");
         assert.equal(
+          createdImageCandidate.body.sourceAvailabilityStatus,
+          "available",
+        );
+        assert.equal(
           createdImageCandidate.body.imageUrl,
           commonsResult.imageUrl,
         );
@@ -1005,6 +1009,10 @@ test("editor source registry and manual discovery queue validate and retain revi
           "pending",
         );
         assert.equal(
+          afterFailedSourceApply.body.candidates[0].sourceAvailabilityStatus,
+          "available",
+        );
+        assert.equal(
           afterFailedSourceApply.body.candidates[0].rightsHistory.length,
           3,
         );
@@ -1037,6 +1045,44 @@ test("editor source registry and manual discovery queue validate and retain revi
         assert.equal(
           afterRemovedSourceRecheck.body.candidates[0].rightsStatus,
           "pending",
+        );
+        assert.equal(
+          afterRemovedSourceRecheck.body.candidates[0].sourceAvailabilityStatus,
+          "missing",
+        );
+        assert.equal(
+          afterRemovedSourceRecheck.body.candidates[0].license,
+          appliedSourceChanges.body.candidate.license,
+        );
+        assert.equal(
+          afterRemovedSourceRecheck.body.candidates[0].credit,
+          appliedSourceChanges.body.candidate.credit,
+        );
+        assert.equal(
+          afterRemovedSourceRecheck.body.candidates[0].rightsHistory.length,
+          3,
+        );
+
+        currentCommonsResult = changedCommonsTerms;
+        const recoveredSourceRecheck = await requestJson(
+          baseUrl,
+          `/editor/image-candidates/${createdImageCandidate.body.id}/recheck`,
+          "POST",
+        );
+        assert.equal(recoveredSourceRecheck.response.status, 200);
+        const afterRecoveredSourceRecheck = await requestJson(
+          baseUrl,
+          `/editor/discovery-items/${createdLead.body.id}/image-candidates`,
+          "GET",
+        );
+        assert.equal(
+          afterRecoveredSourceRecheck.body.candidates[0]
+            .sourceAvailabilityStatus,
+          "available",
+        );
+        assert.equal(
+          afterRecoveredSourceRecheck.body.candidates[0].license,
+          appliedSourceChanges.body.candidate.license,
         );
 
         const imageCandidates = await requestJson(

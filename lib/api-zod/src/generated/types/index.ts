@@ -64,6 +64,7 @@ export * from './editorImageCandidateSearchResponse';
 export * from './editorImageCandidateSearchResult';
 export * from './editorImageCandidateSearchResultSource';
 export * from './editorImageCandidateSource';
+export * from './editorImageCandidateSourceAvailabilityStatus';
 export * from './editorImageCandidateSourceRecheckApplyResponse';
 export * from './editorImageCandidateSourceRecheckInput';
 export * from './editorImageCandidateSourceRecheckPreview';

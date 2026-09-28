@@ -33,6 +33,9 @@ export const contentImageCandidatesTable = pgTable(
     altText: text("alt_text").notNull().default(""),
     caption: text("caption").notNull().default(""),
     rightsStatus: text("rights_status").notNull().default("pending"),
+    sourceAvailabilityStatus: text("source_availability_status")
+      .notNull()
+      .default("available"),
     reviewNotes: text("review_notes").notNull().default(""),
     reviewedBy: text("reviewed_by"),
     reviewedAt: timestamp("reviewed_at", { withTimezone: true }),

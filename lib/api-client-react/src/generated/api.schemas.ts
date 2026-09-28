@@ -1204,6 +1204,14 @@ export const EditorImageCandidateSource = {
   Internet_Archive: 'Internet Archive',
 } as const;
 
+export type EditorImageCandidateSourceAvailabilityStatus = typeof EditorImageCandidateSourceAvailabilityStatus[keyof typeof EditorImageCandidateSourceAvailabilityStatus];
+
+
+export const EditorImageCandidateSourceAvailabilityStatus = {
+  available: 'available',
+  missing: 'missing',
+} as const;
+
 export type EditorImageCandidateRightsHistoryEntryChangeSource = typeof EditorImageCandidateRightsHistoryEntryChangeSource[keyof typeof EditorImageCandidateRightsHistoryEntryChangeSource];
 
 
@@ -1244,6 +1252,7 @@ export interface EditorImageCandidate {
   usageRights: string;
   altText: string;
   caption: string;
+  sourceAvailabilityStatus: EditorImageCandidateSourceAvailabilityStatus;
   rightsStatus: ImageCandidateRightsStatus;
   reviewNotes: string;
   /** @nullable */

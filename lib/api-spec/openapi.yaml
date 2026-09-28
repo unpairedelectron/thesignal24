@@ -3041,6 +3041,9 @@ components:
           type: string
         caption:
           type: string
+        sourceAvailabilityStatus:
+          type: string
+          enum: [available, missing]
         rightsStatus:
           $ref: "#/components/schemas/ImageCandidateRightsStatus"
         reviewNotes:
@@ -3067,7 +3070,7 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/EditorImageCandidateRightsHistoryEntry"
-      required: [id, discoveryItemId, source, fileTitle, imageUrl, thumbnailUrl, filePageUrl, license, licenseUrl, creator, credit, copyright, usageRights, altText, caption, rightsStatus, reviewNotes, reviewedBy, reviewedAt, discoveredAt, createdBy, createdAt, updatedBy, updatedAt, rightsHistory]
+      required: [id, discoveryItemId, source, fileTitle, imageUrl, thumbnailUrl, filePageUrl, license, licenseUrl, creator, credit, copyright, usageRights, altText, caption, sourceAvailabilityStatus, rightsStatus, reviewNotes, reviewedBy, reviewedAt, discoveredAt, createdBy, createdAt, updatedBy, updatedAt, rightsHistory]
     EditorImageCandidateRightsHistoryEntry:
       type: object
       properties:
