@@ -5,12 +5,12 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { EvidenceArticle } from './evidenceArticle';
+import type { CitedByArticleRelationship } from './citedByArticleRelationship';
 import type { SourceDocument } from './sourceDocument';
 import type { SourceEventRelationship } from './sourceEventRelationship';
 
 export interface SourceDocumentResponse {
   sourceDocument: SourceDocument;
   supportingEvents: SourceEventRelationship[];
-  citedByArticles: EvidenceArticle[];
+  citedByArticles: CitedByArticleRelationship[];
 }

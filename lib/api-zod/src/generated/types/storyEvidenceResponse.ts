@@ -5,10 +5,10 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { ArticleSourceRelationship } from './articleSourceRelationship';
 import type { EvidenceEventDetail } from './evidenceEventDetail';
-import type { SourceDocument } from './sourceDocument';
 
 export interface StoryEvidenceResponse {
   events: EvidenceEventDetail[];
-  directSources: SourceDocument[];
+  directSources: ArticleSourceRelationship[];
 }

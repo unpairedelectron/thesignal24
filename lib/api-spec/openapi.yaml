@@ -589,6 +589,39 @@ paths:
         "403":
           description: Verified editor access required
   /editor/article-sources/{storyId}/{sourceId}:
+    patch:
+      operationId: updateArticleSourceRole
+      tags: [evidence, editor]
+      summary: Change the evidentiary role of a direct article source
+      parameters:
+        - $ref: "#/components/parameters/StoryId"
+        - name: sourceId
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ArticleSourceRoleUpdate"
+      responses:
+        "200":
+          description: Direct article-source role updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArticleSourceRoleResult"
+        "400":
+          description: Invalid article or source id, or role
+        "404":
+          description: Relationship not found
+        "401":
+          description: Sign-in required
+        "403":
+          description: Verified editor access required
     delete:
       operationId: unlinkArticleFromSource
       tags: [evidence, editor]
@@ -1899,8 +1932,26 @@ components:
         directSources:
           type: array
           items:
-            $ref: "#/components/schemas/SourceDocument"
+            $ref: "#/components/schemas/ArticleSourceRelationship"
       required: [events, directSources]
+    ArticleSourceRelationship:
+      type: object
+      properties:
+        sourceDocument:
+          $ref: "#/components/schemas/SourceDocument"
+        sourceRole:
+          $ref: "#/components/schemas/EvidenceSourceRole"
+      required: [sourceDocument, sourceRole]
+    CitedByArticleRelationship:
+      type: object
+      properties:
+        article:
+          $ref: "#/components/schemas/EvidenceArticle"
+        sourceRole:
+          oneOf:
+            - $ref: "#/components/schemas/EvidenceSourceRole"
+            - type: "null"
+      required: [article, sourceRole]
     SourceEventRelationship:
       type: object
       properties:
@@ -1921,7 +1972,7 @@ components:
         citedByArticles:
           type: array
           items:
-            $ref: "#/components/schemas/EvidenceArticle"
+            $ref: "#/components/schemas/CitedByArticleRelationship"
       required: [sourceDocument, supportingEvents, citedByArticles]
     EvidenceAuditMetadata:
       type: object
@@ -1968,12 +2019,14 @@ components:
           $ref: "#/components/schemas/EvidenceArticle"
         sourceDocument:
           $ref: "#/components/schemas/SourceDocument"
+        sourceRole:
+          $ref: "#/components/schemas/EvidenceSourceRole"
         linkedBy:
           type: string
         linkedAt:
           type: string
           format: date-time
-      required: [article, sourceDocument, linkedBy, linkedAt]
+      required: [article, sourceDocument, sourceRole, linkedBy, linkedAt]
     EditorEvidenceEvent:
       type: object
       properties:
@@ -2087,7 +2140,21 @@ components:
         sourceDocumentId:
           type: integer
           minimum: 1
+        sourceRole:
+          $ref: "#/components/schemas/EvidenceSourceRole"
       required: [articleId, sourceDocumentId]
+    ArticleSourceRoleUpdate:
+      type: object
+      properties:
+        sourceRole:
+          $ref: "#/components/schemas/EvidenceSourceRole"
+      required: [sourceRole]
+    ArticleSourceRoleResult:
+      type: object
+      properties:
+        sourceRole:
+          $ref: "#/components/schemas/EvidenceSourceRole"
+      required: [sourceRole]
     EventSourceLinkInput:
       type: object
       properties:

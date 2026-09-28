@@ -380,9 +380,19 @@ export interface EvidenceEventResponse {
   event: EvidenceEventDetail;
 }
 
+export interface ArticleSourceRelationship {
+  sourceDocument: SourceDocument;
+  sourceRole: EvidenceSourceRole;
+}
+
 export interface StoryEvidenceResponse {
   events: EvidenceEventDetail[];
-  directSources: SourceDocument[];
+  directSources: ArticleSourceRelationship[];
+}
+
+export interface CitedByArticleRelationship {
+  article: EvidenceArticle;
+  sourceRole: EvidenceSourceRole | null;
 }
 
 export interface SourceEventRelationship {
@@ -393,7 +403,7 @@ export interface SourceEventRelationship {
 export interface SourceDocumentResponse {
   sourceDocument: SourceDocument;
   supportingEvents: SourceEventRelationship[];
-  citedByArticles: EvidenceArticle[];
+  citedByArticles: CitedByArticleRelationship[];
 }
 
 export interface EvidenceAuditMetadata {
@@ -419,6 +429,7 @@ export interface EditorEventSourceLink {
 export interface EditorArticleSourceLink {
   article: EvidenceArticle;
   sourceDocument: SourceDocument;
+  sourceRole: EvidenceSourceRole;
   linkedBy: string;
   linkedAt: string;
 }
@@ -488,6 +499,15 @@ export interface ArticleSourceLinkInput {
   articleId: number;
   /** @minimum 1 */
   sourceDocumentId: number;
+  sourceRole?: EvidenceSourceRole;
+}
+
+export interface ArticleSourceRoleUpdate {
+  sourceRole: EvidenceSourceRole;
+}
+
+export interface ArticleSourceRoleResult {
+  sourceRole: EvidenceSourceRole;
 }
 
 export interface EventSourceLinkInput {
@@ -1241,6 +1261,7 @@ sort?: GetCommunityPostsSort;
  */
 limit?: number;
 };
+
 export type GetCommunityPostsSort = typeof GetCommunityPostsSort[keyof typeof GetCommunityPostsSort];
 
 
@@ -1260,6 +1281,7 @@ state?: string;
  */
 limit?: number;
 };
+
 export type GetEvidenceEventsParams = {
 topic?: Topic;
 /**
@@ -1268,6 +1290,7 @@ topic?: Topic;
  */
 limit?: number;
 };
+
 export type SearchEvidenceRecordsParams = {
 /**
  * @minLength 1
@@ -1300,3 +1323,4 @@ includeUnpublished?: boolean;
  */
 limit?: number;
 };
+

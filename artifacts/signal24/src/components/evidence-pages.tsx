@@ -33,6 +33,7 @@ import {
   useUnlinkArticleFromEvent,
   useUnlinkArticleFromSource,
   useUnlinkSourceFromEvent,
+  useUpdateArticleSourceRole,
   useUpdateEvidenceEvent,
   useUpdateSourceDocument,
 } from "@workspace/api-client-react";
@@ -114,6 +115,10 @@ function humanize(value: string) {
   return value.replaceAll("-", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
+function sourceRoleLabel(role: string) {
+  return role === "primary" ? "Primary" : "Supporting";
+}
+
 function ErrorNote({ text }: { text: string }) {
   return <p className="text-sm text-destructive" role="alert">{text}</p>;
 }
@@ -147,7 +152,7 @@ function SourceLinkCard({
         </div>
         {role && (
           <span className="signal-kicker text-accent">
-            {role} source
+            {sourceRoleLabel(role)} source
           </span>
         )}
       </div>
@@ -563,7 +568,7 @@ export function EvidenceSourceDetailPage() {
             {data.supportingEvents.length ? data.supportingEvents.map(({ event, sourceRole }) => (
               <article key={event.id} className="py-5">
                 <p className="signal-kicker text-muted-foreground">
-                  {sourceRole} source · Event date {displayDate(event.recordDate)}
+                  {sourceRoleLabel(sourceRole)} source · Event date {displayDate(event.recordDate)}
                 </p>
                 <Link href={`/events/${event.id}`} className="mt-2 block font-display text-2xl hover:text-accent">
                   {event.title}
@@ -578,12 +583,15 @@ export function EvidenceSourceDetailPage() {
         <section>
           <p className="signal-kicker text-accent">Cited by published articles · {data.citedByArticles.length}</p>
           <div className="mt-3 divide-y divide-foreground/15">
-            {data.citedByArticles.length ? data.citedByArticles.map((article) => (
+            {data.citedByArticles.length ? data.citedByArticles.map(({ article, sourceRole }) => (
               <article key={article.id} className="py-5">
                 <p className="signal-kicker text-muted-foreground">{article.topic} · {article.kind}</p>
                 <Link href={article.canonicalPath} className="mt-2 block font-display text-2xl hover:text-accent">
                   {article.title}
                 </Link>
+                <p className="mt-2 signal-kicker text-accent">
+                  {sourceRole ? `${sourceRoleLabel(sourceRole)} direct citation` : "Linked through a published event"}
+                </p>
                 <p className="mt-2 signal-kicker text-muted-foreground">
                   Record date {displayDate(article.recordDate)} · Article published {displayDate(article.articlePublishedAt)}
                 </p>
@@ -655,8 +663,8 @@ export function ArticleEvidenceSection({ storyId }: { storyId: number }) {
             Directly cited source documents · {directSources.length}
           </p>
           <div className="mt-4 grid gap-3 lg:grid-cols-2">
-            {directSources.map((source) => (
-              <SourceLinkCard key={source.id} source={source} />
+            {directSources.map(({ sourceDocument, sourceRole }) => (
+              <SourceLinkCard key={sourceDocument.id} source={sourceDocument} role={sourceRole} />
             ))}
           </div>
         </div>
@@ -726,6 +734,7 @@ export function EditorEvidenceDesk() {
   const [sourceDocumentId, setSourceDocumentId] = useState("");
   const [directArticleId, setDirectArticleId] = useState("");
   const [directSourceDocumentId, setDirectSourceDocumentId] = useState("");
+  const [directSourceRole, setDirectSourceRole] = useState<EvidenceSourceRole>("secondary");
   const [sourceRole, setSourceRole] = useState<EvidenceSourceRole>("primary");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -738,6 +747,7 @@ export function EditorEvidenceDesk() {
   const deleteSource = useDeleteSourceDocument();
   const linkArticle = useLinkArticleToEvent();
   const linkArticleSource = useLinkArticleToSource();
+  const updateArticleSourceRole = useUpdateArticleSourceRole();
   const unlinkArticle = useUnlinkArticleFromEvent();
   const unlinkArticleSource = useUnlinkArticleFromSource();
   const linkSource = useLinkSourceToEvent();
@@ -852,6 +862,7 @@ export function EditorEvidenceDesk() {
         data: {
           articleId: selectedArticleId,
           sourceDocumentId: selectedSourceId,
+          sourceRole: directSourceRole,
         },
       },
       {
@@ -1040,7 +1051,7 @@ export function EditorEvidenceDesk() {
               <div className="flex flex-wrap items-end gap-3">
                 <label className="grid gap-2 text-sm">Relationship role
                   <select value={sourceRole} onChange={(e) => setSourceRole(e.target.value as EvidenceSourceRole)} className="editor-input min-w-40">
-                    {SOURCE_ROLES.map((role) => <option key={role} value={role}>{humanize(role)}</option>)}
+                    {SOURCE_ROLES.map((role) => <option key={role} value={role}>{sourceRoleLabel(role)}</option>)}
                   </select>
                 </label>
                 <button type="submit" disabled={!eventId || !sourceDocumentId || linkSource.isPending} className="inline-flex items-center justify-center gap-2 rounded-full border border-foreground/25 px-4 py-3 signal-kicker disabled:opacity-40"><Link2 size={13} /> Link source</button>
@@ -1062,6 +1073,11 @@ export function EditorEvidenceDesk() {
                   <select value={directSourceDocumentId} onChange={(e) => setDirectSourceDocumentId(e.target.value)} className="editor-input" disabled={!directArticleId}>
                     <option value="">Choose a source document</option>
                     {sources.filter((item) => !alreadyLinkedDirectSources.has(item.sourceDocument.id)).map((item) => <option key={item.sourceDocument.id} value={item.sourceDocument.id}>{item.sourceDocument.title}</option>)}
+                  </select>
+                </label>
+                <label className="grid gap-2 text-sm">Citation role
+                  <select value={directSourceRole} onChange={(e) => setDirectSourceRole(e.target.value as EvidenceSourceRole)} className="editor-input">
+                    {SOURCE_ROLES.map((role) => <option key={role} value={role}>{sourceRoleLabel(role)}</option>)}
                   </select>
                 </label>
                 <button type="submit" disabled={!directArticleId || !directSourceDocumentId || linkArticleSource.isPending} className="inline-flex items-center justify-center gap-2 rounded-full border border-foreground/25 px-4 py-3 signal-kicker disabled:opacity-40"><Link2 size={13} /> Link source directly</button>
@@ -1110,7 +1126,7 @@ export function EditorEvidenceDesk() {
                           <Link href={`/sources/${link.sourceDocument.id}`} className="text-sm hover:text-accent">{link.sourceDocument.title}</Link>
                           <button type="button" onClick={() => unlinkSource.mutate({ eventId: event.id, sourceId: link.sourceDocument.id }, { onSuccess: () => void refresh("Source link removed."), onError: (reason) => failure("Source link could not be removed.", reason) })} className="text-destructive" aria-label={`Unlink ${link.sourceDocument.title}`}><Trash2 size={13} /></button>
                         </div>
-                        <p className="mt-2 signal-kicker text-muted-foreground">{humanize(link.sourceRole)} · Linked by {link.linkedBy} · {displayDate(link.linkedAt)}</p>
+                        <p className="mt-2 signal-kicker text-muted-foreground">{sourceRoleLabel(link.sourceRole)} · Linked by {link.linkedBy} · {displayDate(link.linkedAt)}</p>
                       </div>
                     ))}
                     {!linkedArticles.length && !linkedSources.length && (
@@ -1134,22 +1150,46 @@ export function EditorEvidenceDesk() {
                     <div>
                       <Link href={link.article.canonicalPath} className="font-display text-xl hover:text-accent">{link.article.title}</Link>
                       <p className="mt-1 text-sm text-muted-foreground">Direct source: {link.sourceDocument.title}</p>
-                      <p className="mt-2 signal-kicker text-muted-foreground">Linked by {link.linkedBy} · {displayDate(link.linkedAt)}</p>
+                      <p className="mt-2 signal-kicker text-muted-foreground">{sourceRoleLabel(link.sourceRole)} source · Linked by {link.linkedBy} · {displayDate(link.linkedAt)}</p>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => unlinkArticleSource.mutate(
-                        { storyId: link.article.id, sourceId: link.sourceDocument.id },
-                        {
-                          onSuccess: () => void refresh("Direct article/source link removed."),
-                          onError: (reason) => failure("Direct article/source link could not be removed.", reason),
-                        },
-                      )}
-                      className="text-destructive"
-                      aria-label={`Unlink ${link.sourceDocument.title} from ${link.article.title}`}
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <label className="grid gap-1 text-xs text-muted-foreground">
+                        Citation role
+                        <select
+                          value={link.sourceRole}
+                          onChange={(e) => updateArticleSourceRole.mutate(
+                            {
+                              storyId: link.article.id,
+                              sourceId: link.sourceDocument.id,
+                              data: { sourceRole: e.target.value as EvidenceSourceRole },
+                            },
+                            {
+                              onSuccess: () => void refresh("Direct citation role updated."),
+                              onError: (reason) => failure("Direct citation role could not be updated.", reason),
+                            },
+                          )}
+                          className="editor-input"
+                          aria-label={`Citation role for ${link.sourceDocument.title} in ${link.article.title}`}
+                          disabled={updateArticleSourceRole.isPending}
+                        >
+                          {SOURCE_ROLES.map((role) => <option key={role} value={role}>{sourceRoleLabel(role)}</option>)}
+                        </select>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => unlinkArticleSource.mutate(
+                          { storyId: link.article.id, sourceId: link.sourceDocument.id },
+                          {
+                            onSuccess: () => void refresh("Direct article/source link removed."),
+                            onError: (reason) => failure("Direct article/source link could not be removed.", reason),
+                          },
+                        )}
+                        className="text-destructive"
+                        aria-label={`Unlink ${link.sourceDocument.title} from ${link.article.title}`}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </article>
                 ))}
               </div>

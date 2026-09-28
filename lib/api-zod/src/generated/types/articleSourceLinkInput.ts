@@ -5,10 +5,12 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { EvidenceSourceRole } from './evidenceSourceRole';
 
 export interface ArticleSourceLinkInput {
   /** @minimum 1 */
   articleId: number;
   /** @minimum 1 */
   sourceDocumentId: number;
+  sourceRole?: EvidenceSourceRole;
 }

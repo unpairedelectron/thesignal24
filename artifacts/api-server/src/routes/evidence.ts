@@ -29,6 +29,8 @@ import {
   LinkSourceToEventResponse,
   SearchEvidenceRecordsQueryParams,
   SearchEvidenceRecordsResponse,
+  UpdateArticleSourceRoleBody,
+  UpdateArticleSourceRoleResponse,
   UpdateEvidenceEventBody,
   UpdateEvidenceEventResponse,
   UpdateSourceDocumentBody,
@@ -311,7 +313,7 @@ router.get("/stories/:storyId/evidence", async (req, res, next): Promise<void> =
       res.status(404).json({ message: "Article not found" });
       return;
     }
-    const links = await db
+    const links = await database
       .select({ event: evidenceEventsTable })
       .from(articleEventsTable)
       .innerJoin(
@@ -329,8 +331,11 @@ router.get("/stories/:storyId/evidence", async (req, res, next): Promise<void> =
       links.map((link) => link.event),
       database,
     );
-    const directSources = await db
-      .select({ sourceDocument: sourceDocumentsTable })
+    const directSources = await database
+      .select({
+        sourceDocument: sourceDocumentsTable,
+        sourceRole: articleSourcesTable.sourceRole,
+      })
       .from(articleSourcesTable)
       .innerJoin(
         sourceDocumentsTable,
@@ -341,9 +346,10 @@ router.get("/stories/:storyId/evidence", async (req, res, next): Promise<void> =
     res.json(
       GetStoryEvidenceResponse.parse({
         events,
-        directSources: directSources.map(({ sourceDocument }) =>
-          serializeSource(sourceDocument),
-        ),
+        directSources: directSources.map(({ sourceDocument, sourceRole }) => ({
+          sourceDocument: serializeSource(sourceDocument),
+          sourceRole: sourceRoles.has(sourceRole) ? sourceRole : "secondary",
+        })),
       }),
     );
   } catch (error) {
@@ -358,7 +364,7 @@ router.get("/sources/:sourceId", async (req, res, next): Promise<void> => {
       res.status(400).json({ message: "Invalid source id" });
       return;
     }
-    const [source] = await db
+    const [source] = await database
       .select()
       .from(sourceDocumentsTable)
       .where(eq(sourceDocumentsTable.id, sourceId))
@@ -368,7 +374,7 @@ router.get("/sources/:sourceId", async (req, res, next): Promise<void> => {
       return;
     }
     const [eventLinks, directArticleLinks] = await Promise.all([
-      db
+      database
         .select({
           event: evidenceEventsTable,
           sourceRole: eventSourcesTable.sourceRole,
@@ -385,10 +391,11 @@ router.get("/sources/:sourceId", async (req, res, next): Promise<void> => {
           ),
         )
         .orderBy(desc(evidenceEventsTable.recordDate), asc(evidenceEventsTable.id)),
-      db
+      database
         .select({
           story: storiesTable,
           articlePublishedAt: issuesTable.publishedAt,
+          sourceRole: articleSourcesTable.sourceRole,
         })
         .from(articleSourcesTable)
         .innerJoin(storiesTable, eq(articleSourcesTable.articleId, storiesTable.id))
@@ -410,14 +417,27 @@ router.get("/sources/:sourceId", async (req, res, next): Promise<void> => {
       eventLinks.map((link) => link.event),
       database,
     );
-    const citedArticles = new Map<number, ReturnType<typeof serializeArticle>>();
+    const citedArticles = new Map<
+      number,
+      {
+        article: ReturnType<typeof serializeArticle>;
+        sourceRole: "primary" | "secondary" | null;
+      }
+    >();
     for (const detail of details) {
-      for (const article of detail.articles) citedArticles.set(article.id, article);
+      for (const article of detail.articles) {
+        citedArticles.set(article.id, { article, sourceRole: null });
+      }
     }
     for (const link of directArticleLinks) {
       citedArticles.set(
         link.story.id,
-        serializeArticle(link.story, link.articlePublishedAt),
+        {
+          article: serializeArticle(link.story, link.articlePublishedAt),
+          sourceRole: sourceRoles.has(link.sourceRole)
+            ? link.sourceRole as "primary" | "secondary"
+            : "secondary",
+        },
       );
     }
     res.json(
@@ -449,7 +469,7 @@ router.get("/evidence-search", async (req, res, next): Promise<void> => {
     }
     const pattern = `%${query}%`;
     const [articleRows, events, eventSourceRows, directSourceRows] = await Promise.all([
-      db
+          database
         .select({
           story: storiesTable,
           articlePublishedAt: issuesTable.publishedAt,
@@ -699,12 +719,12 @@ router.get("/evidence-search", async (req, res, next): Promise<void> => {
 router.get("/editor/evidence", requireEditor, async (_req, res, next): Promise<void> => {
   try {
     const [events, sourceDocuments, articleRows, articleSourceRows] = await Promise.all([
-      db.select().from(evidenceEventsTable).orderBy(desc(evidenceEventsTable.updatedAt)),
-      db
+      database.select().from(evidenceEventsTable).orderBy(desc(evidenceEventsTable.updatedAt)),
+      database
         .select()
         .from(sourceDocumentsTable)
         .orderBy(desc(sourceDocumentsTable.updatedAt)),
-      db
+      database
         .select({
           story: storiesTable,
           articlePublishedAt: issuesTable.publishedAt,
@@ -713,12 +733,13 @@ router.get("/editor/evidence", requireEditor, async (_req, res, next): Promise<v
         .from(storiesTable)
         .innerJoin(issuesTable, eq(storiesTable.issueId, issuesTable.id))
         .orderBy(asc(storiesTable.title)),
-      db
+      database
         .select({
           story: storiesTable,
           articlePublishedAt: issuesTable.publishedAt,
           issueStatus: issuesTable.status,
           sourceDocument: sourceDocumentsTable,
+          sourceRole: articleSourcesTable.sourceRole,
           linkedBy: articleSourcesTable.createdBy,
           linkedAt: articleSourcesTable.createdAt,
         })
@@ -734,7 +755,7 @@ router.get("/editor/evidence", requireEditor, async (_req, res, next): Promise<v
     const eventIds = events.map((event) => event.id);
     const [articleLinks, sourceLinks] = eventIds.length
       ? await Promise.all([
-          db
+          database
             .select({
               eventId: articleEventsTable.eventId,
               linkedBy: articleEventsTable.createdBy,
@@ -748,7 +769,7 @@ router.get("/editor/evidence", requireEditor, async (_req, res, next): Promise<v
             .innerJoin(issuesTable, eq(storiesTable.issueId, issuesTable.id))
             .where(inArray(articleEventsTable.eventId, eventIds))
             .orderBy(asc(storiesTable.title)),
-          db
+          database
             .select({
               eventId: eventSourcesTable.eventId,
               sourceRole: eventSourcesTable.sourceRole,
@@ -833,6 +854,9 @@ router.get("/editor/evidence", requireEditor, async (_req, res, next): Promise<v
             true,
           ),
           sourceDocument: serializeSource(link.sourceDocument),
+          sourceRole: sourceRoles.has(link.sourceRole)
+            ? link.sourceRole
+            : "secondary",
           linkedBy: link.linkedBy,
           linkedAt: link.linkedAt.toISOString(),
         })),
@@ -1127,9 +1151,9 @@ router.post("/editor/article-sources", requireEditor, async (req, res, next): Pr
       return;
     }
     const [story, source] = await Promise.all([
-      db.select({ id: storiesTable.id }).from(storiesTable)
+      database.select({ id: storiesTable.id }).from(storiesTable)
         .where(eq(storiesTable.id, parsed.data.articleId)).limit(1),
-      db.select({ id: sourceDocumentsTable.id }).from(sourceDocumentsTable)
+      database.select({ id: sourceDocumentsTable.id }).from(sourceDocumentsTable)
         .where(eq(sourceDocumentsTable.id, parsed.data.sourceDocumentId)).limit(1),
     ]);
     if (!story[0] || !source[0]) {
@@ -1141,11 +1165,12 @@ router.post("/editor/article-sources", requireEditor, async (req, res, next): Pr
       res.status(403).json({ message: "Verified editor identity is missing." });
       return;
     }
-    const [created] = await db
+    const [created] = await database
       .insert(articleSourcesTable)
       .values({
         articleId: parsed.data.articleId,
         sourceDocumentId: parsed.data.sourceDocumentId,
+        sourceRole: parsed.data.sourceRole ?? "secondary",
         createdBy: editorId,
       })
       .onConflictDoNothing()
@@ -1160,6 +1185,47 @@ router.post("/editor/article-sources", requireEditor, async (req, res, next): Pr
   }
 });
 
+router.patch(
+  "/editor/article-sources/:storyId/:sourceId",
+  requireEditor,
+  async (req, res, next): Promise<void> => {
+    try {
+      const storyId = parseId(req.params.storyId);
+      const sourceId = parseId(req.params.sourceId);
+      if (!storyId || !sourceId) {
+        res.status(400).json({ message: "Invalid article or source id" });
+        return;
+      }
+      const parsed = UpdateArticleSourceRoleBody.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ message: parsed.error.message });
+        return;
+      }
+      const [updated] = await database
+        .update(articleSourcesTable)
+        .set({ sourceRole: parsed.data.sourceRole })
+        .where(and(
+          eq(articleSourcesTable.articleId, storyId),
+          eq(articleSourcesTable.sourceDocumentId, sourceId),
+        ))
+        .returning({ sourceRole: articleSourcesTable.sourceRole });
+      if (!updated) {
+        res.status(404).json({ message: "Article-source relationship not found" });
+        return;
+      }
+      res.json(
+        UpdateArticleSourceRoleResponse.parse({
+          sourceRole: sourceRoles.has(updated.sourceRole)
+            ? updated.sourceRole
+            : "secondary",
+        }),
+      );
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
 router.delete(
   "/editor/article-sources/:storyId/:sourceId",
   requireEditor,
@@ -1171,7 +1237,7 @@ router.delete(
         res.status(400).json({ message: "Invalid article or source id" });
         return;
       }
-      const [deleted] = await db
+      const [deleted] = await database
         .delete(articleSourcesTable)
         .where(and(
           eq(articleSourcesTable.articleId, storyId),

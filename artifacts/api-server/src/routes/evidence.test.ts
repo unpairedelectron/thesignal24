@@ -48,6 +48,14 @@ async function postJson(baseUrl: string, path: string, body: unknown) {
   });
 }
 
+async function patchJson(baseUrl: string, path: string, body: unknown) {
+  return fetch(`${baseUrl}${path}`, {
+    method: "PATCH",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
 function collectKeys(value: unknown): string[] {
   if (Array.isArray(value)) return value.flatMap(collectKeys);
   if (!value || typeof value !== "object") return [];
@@ -327,9 +335,9 @@ test("public evidence routes exclude draft-only records, links, and audit data",
         );
         assert.deepEqual(
           publishedArticleEvidence.body.directSources.map(
-            (source: any) => source.id,
+            (source: any) => [source.sourceDocument.id, source.sourceRole],
           ),
-          [publishedDirectOnlySource.id],
+          [[publishedDirectOnlySource.id, "secondary"]],
         );
         assert.equal(draftArticleEvidence.response.status, 404);
 
@@ -357,9 +365,9 @@ test("public evidence routes exclude draft-only records, links, and audit data",
         );
         assert.deepEqual(
           sharedSourceDetail.body.citedByArticles.map(
-            (article: any) => article.id,
+            (entry: any) => [entry.article.id, entry.sourceRole],
           ),
-          [publishedArticle.id],
+          [[publishedArticle.id, null]],
         );
         assert.equal(draftOnlySourceDetail.response.status, 404);
         assert.equal(publishedDirectOnlySourceDetail.response.status, 200);
@@ -369,9 +377,9 @@ test("public evidence routes exclude draft-only records, links, and audit data",
         );
         assert.deepEqual(
           publishedDirectOnlySourceDetail.body.citedByArticles.map(
-            (article: any) => article.id,
+            (entry: any) => [entry.article.id, entry.sourceRole],
           ),
-          [publishedArticle.id],
+          [[publishedArticle.id, "secondary"]],
         );
         assert.equal(draftDirectOnlySourceDetail.response.status, 404);
 
@@ -477,6 +485,7 @@ test("public evidence routes exclude draft-only records, links, and audit data",
           const directLinkInput = {
             articleId: publishedArticle.id,
             sourceDocumentId: sharedSource.id,
+            sourceRole: "primary",
           };
           const createDirectLink = await postJson(
             editorBaseUrl,
@@ -500,6 +509,54 @@ test("public evidence routes exclude draft-only records, links, and audit data",
               link.sourceDocument.id === sharedSource.id,
           );
           assert.equal(directEditorLink.linkedBy, "test-editor");
+          assert.equal(directEditorLink.sourceRole, "primary");
+
+          const changeDirectLinkRole = await patchJson(
+            editorBaseUrl,
+            `/editor/article-sources/${publishedArticle.id}/${sharedSource.id}`,
+            { sourceRole: "secondary" },
+          );
+          assert.equal(changeDirectLinkRole.status, 200);
+          assert.deepEqual(await changeDirectLinkRole.json(), {
+            sourceRole: "secondary",
+          });
+
+          const changedRoleArticleEvidence = await getJson(
+            editorBaseUrl,
+            `/stories/${publishedArticle.id}/evidence`,
+          );
+          assert(
+            changedRoleArticleEvidence.body.directSources.some(
+              (entry: any) =>
+                entry.sourceDocument.id === sharedSource.id &&
+                entry.sourceRole === "secondary",
+            ),
+          );
+
+          const changedRoleSourceDetail = await getJson(
+            editorBaseUrl,
+            `/sources/${sharedSource.id}`,
+          );
+          assert(
+            changedRoleSourceDetail.body.citedByArticles.some(
+              (entry: any) =>
+                entry.article.id === publishedArticle.id &&
+                entry.sourceRole === "secondary",
+            ),
+          );
+
+          const changedEditorGraph = await getJson(
+            editorBaseUrl,
+            "/editor/evidence",
+          );
+          assert.equal(
+            changedEditorGraph.body.articleSourceLinks.find(
+              (link: any) =>
+                link.article.id === publishedArticle.id &&
+                link.sourceDocument.id === sharedSource.id,
+            ).sourceRole,
+            "secondary",
+          );
 
           const removeDirectLink = await fetch(
             `${editorBaseUrl}/editor/article-sources/${publishedArticle.id}/${sharedSource.id}`,

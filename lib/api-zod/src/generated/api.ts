@@ -605,7 +605,7 @@ export const getStoryEvidenceResponseEventsItemArticleCountMin = 0;
 
 export const getStoryEvidenceResponseEventsItemSourceCountMin = 0;
 
-export const getStoryEvidenceResponseDirectSourcesItemPublicationDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const getStoryEvidenceResponseDirectSourcesItemSourceDocumentPublicationDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
 
 
 export const GetStoryEvidenceResponse = zod.object({
@@ -651,13 +651,16 @@ export const GetStoryEvidenceResponse = zod.object({
   "sourceCount": zod.number().int().min(getStoryEvidenceResponseEventsItemSourceCountMin)
 })),
   "directSources": zod.array(zod.object({
+  "sourceDocument": zod.object({
   "id": zod.number().int(),
   "title": zod.string(),
   "publisher": zod.string(),
-  "publicationDate": zod.string().regex(getStoryEvidenceResponseDirectSourcesItemPublicationDateRegExp).nullable(),
+  "publicationDate": zod.string().regex(getStoryEvidenceResponseDirectSourcesItemSourceDocumentPublicationDateRegExp).nullable(),
   "documentType": zod.enum(['official-document', 'court-record', 'government-data', 'report', 'news-report', 'other']),
   "sourceUrl": zod.string().url().nullable(),
   "status": zod.enum(['verified', 'unverified', 'archived', 'unavailable'])
+}),
+  "sourceRole": zod.enum(['primary', 'secondary'])
 }))
 })
 
@@ -675,7 +678,7 @@ export const GetSourceDocumentParams = zod.object({
 
 export const getSourceDocumentResponseSourceDocumentPublicationDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
 export const getSourceDocumentResponseSupportingEventsItemEventRecordDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
-export const getSourceDocumentResponseCitedByArticlesItemRecordDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const getSourceDocumentResponseCitedByArticlesItemArticleRecordDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
 
 
 export const GetSourceDocumentResponse = zod.object({
@@ -700,15 +703,18 @@ export const GetSourceDocumentResponse = zod.object({
   "sourceRole": zod.enum(['primary', 'secondary'])
 })),
   "citedByArticles": zod.array(zod.object({
+  "article": zod.object({
   "id": zod.number().int(),
   "title": zod.string(),
   "topic": zod.enum(['Latest', 'Courts & Policy', 'States', 'History', 'Ground Reports', 'Data & Notes']),
   "kind": zod.enum(['Article', 'Paper note', 'Archive', 'Explainer']),
-  "recordDate": zod.string().regex(getSourceDocumentResponseCitedByArticlesItemRecordDateRegExp).nullable(),
+  "recordDate": zod.string().regex(getSourceDocumentResponseCitedByArticlesItemArticleRecordDateRegExp).nullable(),
   "articlePublishedAt": zod.coerce.date().nullable(),
   "canonicalPath": zod.string(),
   "verificationStatus": zod.enum(['unverified', 'source-linked', 'verified']),
   "workflowStatus": zod.enum(['draft', 'review', 'scheduled', 'published', 'archived']).optional()
+}),
+  "sourceRole": zod.union([zod.enum(['primary', 'secondary']),zod.null()])
 }))
 })
 
@@ -860,6 +866,7 @@ export const GetEditorEvidenceResponse = zod.object({
   "sourceUrl": zod.string().url().nullable(),
   "status": zod.enum(['verified', 'unverified', 'archived', 'unavailable'])
 }),
+  "sourceRole": zod.enum(['primary', 'secondary']),
   "linkedBy": zod.string(),
   "linkedAt": zod.coerce.date()
 }))
@@ -1062,11 +1069,32 @@ export const UnlinkArticleFromEventResponse = zod.void()
 
 export const LinkArticleToSourceBody = zod.object({
   "articleId": zod.number().int().min(1),
-  "sourceDocumentId": zod.number().int().min(1)
+  "sourceDocumentId": zod.number().int().min(1),
+  "sourceRole": zod.enum(['primary', 'secondary']).optional()
 })
 
 export const LinkArticleToSourceResponse = zod.object({
   "linked": zod.boolean()
+})
+
+
+/**
+ * @summary Change the evidentiary role of a direct article source
+ */
+
+
+
+export const UpdateArticleSourceRoleParams = zod.object({
+  "storyId": zod.coerce.number().int(),
+  "sourceId": zod.coerce.number().int().min(1)
+})
+
+export const UpdateArticleSourceRoleBody = zod.object({
+  "sourceRole": zod.enum(['primary', 'secondary'])
+})
+
+export const UpdateArticleSourceRoleResponse = zod.object({
+  "sourceRole": zod.enum(['primary', 'secondary'])
 })
 
 
@@ -1764,6 +1792,8 @@ export const CreateEditorContentSourceResponse = zod.object({
   "updatedBy": zod.string(),
   "updatedAt": zod.coerce.date()
 })
+
+
 /**
  * @summary Update a source registry entry
  */
@@ -1817,6 +1847,8 @@ export const UpdateEditorContentSourceResponse = zod.object({
   "updatedBy": zod.string(),
   "updatedAt": zod.coerce.date()
 })
+
+
 /**
  * Requires verified editor access. Items are unpublished leads, not Signal Hub reporting or evidence.
  * @summary List external leads for editorial review
@@ -2178,6 +2210,8 @@ export const CreateEditorDiscoveryItemImageCandidateResponse = zod.object({
   "updatedBy": zod.string(),
   "updatedAt": zod.coerce.date()
 })
+
+
 /**
  * Requires verified editor access. Changes to rights terms reset the rights review to pending.
  * @summary Edit image credit and accessibility metadata
@@ -2242,6 +2276,8 @@ export const UpdateEditorImageCandidateResponse = zod.object({
   "updatedBy": zod.string(),
   "updatedAt": zod.coerce.date()
 })
+
+
 /**
  * Requires verified editor access. The provider-specific preview does not modify the saved candidate.
  * @summary Compare a saved candidate with current archive terms

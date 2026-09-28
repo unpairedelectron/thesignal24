@@ -23,6 +23,8 @@ import type {
   ArchiveResult,
   ArticleEventLinkInput,
   ArticleSourceLinkInput,
+  ArticleSourceRoleResult,
+  ArticleSourceRoleUpdate,
   CommunityLikeResponse,
   CommunityPost,
   CommunityPostDetail,
@@ -2229,6 +2231,97 @@ export const useLinkArticleToSource = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getLinkArticleToSourceMutationOptions(options));
+    }
+
+export const getUpdateArticleSourceRoleUrl = (storyId: number,
+    sourceId: number,) => {
+
+
+
+
+  return `/api/editor/article-sources/${storyId}/${sourceId}`
+}
+
+/**
+ * @summary Change the evidentiary role of a direct article source
+ */
+export const updateArticleSourceRole = async (storyId: number,
+    sourceId: number,
+    articleSourceRoleUpdate: ArticleSourceRoleUpdate, options?: Parameters<typeof customFetch>[1]): Promise<ArticleSourceRoleResult> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ArticleSourceRoleResult>(getUpdateArticleSourceRoleUrl(storyId,sourceId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(articleSourceRoleUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdateArticleSourceRoleMutationKey = () => ['updateArticleSourceRole'] as const;
+
+export const getUpdateArticleSourceRoleMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateArticleSourceRole>>, TError,UpdateArticleSourceRoleMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateArticleSourceRole>>, TError,UpdateArticleSourceRoleMutationVariables, TContext> => {
+
+const mutationKey = getUpdateArticleSourceRoleMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateArticleSourceRole>>, UpdateArticleSourceRoleMutationVariables> = (props) => {
+          const {storyId,sourceId,data} = props ?? {};
+
+          return  updateArticleSourceRole(storyId,sourceId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateArticleSourceRoleMutationResult = NonNullable<Awaited<ReturnType<typeof updateArticleSourceRole>>>
+    export type UpdateArticleSourceRoleMutationBody = BodyType<ArticleSourceRoleUpdate>
+    export type UpdateArticleSourceRoleMutationError = ErrorType<void>
+    export type UpdateArticleSourceRoleMutationVariables = {storyId: number;sourceId: number;data: BodyType<ArticleSourceRoleUpdate>}
+
+    /**
+ * @summary Change the evidentiary role of a direct article source
+ */
+export const useUpdateArticleSourceRole = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateArticleSourceRole>>, TError,UpdateArticleSourceRoleMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateArticleSourceRole>>,
+        TError,
+        UpdateArticleSourceRoleMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateArticleSourceRoleMutationOptions(options));
     }
 
 export const getUnlinkArticleFromSourceUrl = (storyId: number,
@@ -4830,3 +4923,4 @@ export const useReviewEditorImageCandidateRights = <TError = ErrorType<void>,
       > => {
       return useMutation(getReviewEditorImageCandidateRightsMutationOptions(options));
     }
+

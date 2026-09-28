@@ -106,6 +106,7 @@ export const articleSourcesTable = pgTable(
     sourceDocumentId: integer("source_document_id")
       .notNull()
       .references(() => sourceDocumentsTable.id, { onDelete: "cascade" }),
+    sourceRole: text("source_role").notNull().default("secondary"),
     createdBy: text("created_by").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()

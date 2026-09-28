@@ -6,11 +6,13 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { EvidenceArticle } from './evidenceArticle';
+import type { EvidenceSourceRole } from './evidenceSourceRole';
 import type { SourceDocument } from './sourceDocument';
 
 export interface EditorArticleSourceLink {
   article: EvidenceArticle;
   sourceDocument: SourceDocument;
+  sourceRole: EvidenceSourceRole;
   linkedBy: string;
   linkedAt: Date;
 }
