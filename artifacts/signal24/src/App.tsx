@@ -48,6 +48,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import {
   canonicalStateName,
+  getRequestedStateFromSearch,
   getSelectedStateFromSearch,
   getMapFeatureName,
   getStateLinkedStories,
@@ -708,6 +709,11 @@ function IndiaFocus({ stories }: { stories: Story[] }) {
   const stateStories = useMemo(() => getStateLinkedStories(stories), [stories]);
   const states = useMemo(() => getStateNames(stateStories), [stateStories]);
   const selected = getSelectedStateFromSearch(search, states);
+  const requestedState = getRequestedStateFromSearch(search);
+  const unavailableState = requestedState && !selected ? requestedState : null;
+  const clearStateSelection = () => {
+    setLocation(`${location}${searchWithSelectedState(search, null)}${window.location.hash}`);
+  };
   const toggleSelectedState = (stateName: string) => {
     const nextSelected = toggleStateSelection(selected, stateName);
     setLocation(`${location}${searchWithSelectedState(search, nextSelected)}${window.location.hash}`);
@@ -745,7 +751,11 @@ function IndiaFocus({ stories }: { stories: Story[] }) {
     () => geoStatus === 'ready' ? getUnmappedStateNames(states, features) : [],
     [features, geoStatus, states],
   );
-  const selectedStories = selected ? getStoriesForState(stateStories, selected) : stateStories.slice(0, 3);
+  const selectedStories = unavailableState
+    ? []
+    : selected
+      ? getStoriesForState(stateStories, selected)
+      : stateStories.slice(0, 3);
   const selectedLatest = selectedStories[0];
   return <section className="map-shell mt-20 py-8 sm:mt-28 sm:py-12" id="india-in-focus" aria-labelledby="india-focus-title">
     <div className="signal-container">
@@ -757,6 +767,12 @@ function IndiaFocus({ stories }: { stories: Story[] }) {
           {geoStatus === 'ready' && <svg viewBox="0 0 1000 950" role="group" aria-label="Map shapes for states with published archive records" className="india-map">{features.map((feature, index) => { const featureName = getMapFeatureName(feature); const stateName = featureName ? canonicalStateName(featureName) : null; const active = Boolean(stateName && states.some((name) => stateNameKey(name) === stateNameKey(stateName))); const isSelected = Boolean(stateName && selected && stateNameKey(selected) === stateNameKey(stateName)); return <path key={`${featureName ?? 'state'}-${index}`} data-testid={active && stateName ? `map-state-shape-${slugify(stateName)}` : undefined} d={mapPath(feature.geometry?.coordinates)} className={`${active ? 'is-active' : ''} ${isSelected ? 'is-selected' : ''}`} aria-label={active && stateName ? `Select ${stateName}` : undefined} role={active ? 'button' : undefined} tabIndex={active ? 0 : undefined} aria-pressed={active ? isSelected : undefined} onClick={() => active && stateName && toggleSelectedState(stateName)} onKeyDown={(event) => { if (active && stateName && isMapSelectionKey(event.key)) { event.preventDefault(); toggleSelectedState(stateName); } }} />; })}</svg>}
         </div>
         <div><p className="signal-kicker text-accent">States with published records / {states.length}</p><div className="mt-3 grid gap-0">{states.map((state) => <button key={state} type="button" className="map-state-button flex items-center justify-between gap-4 signal-kicker" aria-pressed={Boolean(selected && stateNameKey(selected) === stateNameKey(state))} onClick={() => toggleSelectedState(state)} data-testid={`button-map-state-${slugify(state)}`}><span>{state}</span><span className="text-muted-foreground">{getStoriesForState(stateStories, state).length}</span></button>)}</div></div>
+      </div>}
+      {unavailableState && <div className="mt-6 border-l-2 border-accent bg-card px-4 py-4" role="status" data-testid="note-unavailable-state">
+        <p className="signal-kicker text-accent">State archive / no current records</p>
+        <p className="mt-2 text-sm leading-relaxed">No published state-linked records are currently available for {unavailableState}. This shared link may be out of date.</p>
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{states.length > 0 ? 'Choose a state with published records from the list above, or return to all states.' : 'No state-linked records are currently available. You can return to the all-states view.'}</p>
+        <button type="button" className="mt-3 signal-kicker text-accent hover:underline" onClick={clearStateSelection} data-testid="button-show-all-states-from-unavailable">Show all states</button>
       </div>}
       {unmappedStates.length > 0 && <p className="mt-3 border-l-2 border-accent px-3 py-2 text-xs leading-relaxed text-muted-foreground" role="note" data-testid="note-unmapped-map-states">No matching boundary is available for {unmappedStates.join(', ')}. These records can still be selected from the state list.</p>}
       <p className="mt-3 max-w-xl text-[10px] leading-relaxed text-muted-foreground">Map for editorial navigation only, not a legal boundary reference. <a href={`${basePath}/data/india-map-attribution.md`} className="signal-rule-link" target="_blank" rel="noopener noreferrer">Map attribution and boundary notice</a>.</p>

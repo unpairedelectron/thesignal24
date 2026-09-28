@@ -83,10 +83,15 @@ export function getSelectedStateFromSearch(
   search: string,
   stateNames: string[],
 ): string | null {
-  const requestedState = new URLSearchParams(search).get('state')?.trim();
+  const requestedState = getRequestedStateFromSearch(search);
   if (!requestedState) return null;
   const requestedKey = stateNameKey(requestedState);
   return stateNames.find((stateName) => stateNameKey(stateName) === requestedKey) ?? null;
+}
+
+export function getRequestedStateFromSearch(search: string): string | null {
+  const requestedState = new URLSearchParams(search).get('state')?.trim();
+  return requestedState ? canonicalStateName(requestedState) : null;
 }
 
 export function searchWithSelectedState(search: string, selectedState: string | null): string {

@@ -29,6 +29,8 @@ const snapshotExpression = (missingStateSlug) => `(() => {
     stateParam: new URLSearchParams(location.search).get('state'),
     recordTitles: [...document.querySelectorAll('#india-in-focus h3')].map((heading) => heading.textContent?.trim()),
     unmappedNote: document.querySelector('[data-testid="note-unmapped-map-states"]')?.textContent ?? '',
+    unavailableNote: document.querySelector('[data-testid="note-unavailable-state"]')?.textContent ?? '',
+    showAllFromUnavailable: Boolean(document.querySelector('[data-testid="button-show-all-states-from-unavailable"]')),
     missingStateHasMapShape: Boolean(document.querySelector('[data-testid="map-state-shape-${missingStateSlug}"]')),
   };
 })()`;
@@ -190,7 +192,7 @@ async function launchBrowser() {
         await Promise.race([exited, delay(2_000)]);
         if (processHandle.exitCode === null) processHandle.kill('SIGKILL');
       }
-      await rm(profileDir, { recursive: true, force: true });
+      await rm(profileDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
     },
   };
 }
@@ -224,6 +226,12 @@ test('state links restore records across reload and browser history, including a
   const [listOnlyState, secondState] = candidates;
   const expectedListOnlyTitles = expectedTitles(archive.stories, listOnlyState);
   const expectedSecondTitles = expectedTitles(archive.stories, secondState);
+  const removedStoryIds = getStoriesForState(archive.stories, listOnlyState).map((story) => story.id);
+  const removedStoryIdSet = new Set(removedStoryIds);
+  const expectedRecentTitles = getStateLinkedStories(archive.stories.filter(
+    (story) => story.workflowStatus === 'published' && !removedStoryIdSet.has(story.id),
+  ).sort((a, b) => (b.publishedOn ?? b.recordDate ?? '').localeCompare(a.publishedOn ?? a.recordDate ?? '')))
+    .slice(0, 3).map((story) => story.title);
   const missingFeatureName = mapFeaturesByName.get(stateNameKey(listOnlyState));
   const missingStateSlug = slugify(listOnlyState);
   const browser = await launchBrowser();
@@ -234,7 +242,14 @@ test('state links restore records across reload and browser history, including a
     window.fetch = async (...args) => {
       const response = await originalFetch(...args);
       const requestUrl = typeof args[0] === 'string' ? args[0] : args[0]?.url;
-      if (!response.ok || !requestUrl?.includes('india-states-simplified.geojson')) return response;
+      if (!response.ok || !requestUrl) return response;
+      if (requestUrl.includes('/api/archive') && localStorage.getItem('signal24-hide-state-records') === 'true') {
+        const data = await response.json();
+        const removedStoryIds = ${JSON.stringify(removedStoryIds)};
+        data.stories = data.stories.filter((story) => !removedStoryIds.includes(story.id));
+        return new Response(JSON.stringify(data), { status: response.status, headers: { 'Content-Type': response.headers.get('content-type') ?? 'application/json' } });
+      }
+      if (!requestUrl.includes('india-states-simplified.geojson')) return response;
       const data = await response.json();
       const omittedName = ${JSON.stringify(missingFeatureName)};
       data.features = data.features.filter((feature) => (feature.properties?.NAME_1 ?? feature.properties?.name) !== omittedName);
@@ -286,4 +301,28 @@ test('state links restore records across reload and browser history, including a
   await clickState(listOnlyState);
   snapshot = await waitForState(listOnlyState, expectedListOnlyTitles);
   assert.equal(snapshot.missingStateHasMapShape, false);
+
+  // A previously valid shared URL must not fall back to recent records if its state is no longer published.
+  await browser.evaluate("localStorage.setItem('signal24-hide-state-records', 'true')");
+  await browser.reload();
+  snapshot = await browser.waitFor(
+    snapshotExpressionText,
+    (value) => value?.stateParam === listOnlyState && !value.selectedState
+      && value.unavailableNote.includes(listOnlyState) && value.showAllFromUnavailable,
+    `an unavailable-state explanation for ${listOnlyState}`,
+  );
+  assert.deepEqual(snapshot.recordTitles, [], 'An unavailable state link must not show recent records from other states.');
+  assert.equal(snapshot.missingStateHasMapShape, false, 'An unavailable state must not appear selected on the map.');
+
+  await browser.evaluate("document.querySelector('[data-testid=\"button-show-all-states-from-unavailable\"]')?.click()");
+  await browser.waitFor(
+    snapshotExpressionText,
+    (value) => value?.stateParam === null && !value.selectedState
+      && JSON.stringify(value.recordTitles) === JSON.stringify(expectedRecentTitles)
+      && !value.unavailableNote,
+    'the all-states view after clearing an unavailable state link',
+  );
+  await clickState(secondState);
+  snapshot = await waitForState(secondState, expectedSecondTitles);
+  assert.equal(snapshot.unavailableNote, '', 'Selecting a currently available state should clear the unavailable-link notice.');
 });

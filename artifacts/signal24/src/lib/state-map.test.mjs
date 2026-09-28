@@ -4,6 +4,7 @@ import { test } from 'node:test';
 import {
   canonicalStateName,
   getMapFeatureName,
+  getRequestedStateFromSearch,
   getSelectedStateFromSearch,
   getStateLinkedStories,
   getStateNames,
@@ -120,9 +121,12 @@ test('state selections round-trip through stable URL search values', () => {
   const states = ['Odisha', 'Uttarakhand', 'Atlantis'];
 
   assert.equal(getSelectedStateFromSearch('?topic=States&state=Orissa', states), 'Odisha');
-  assert.equal(getSelectedStateFromSearch('?state=Atlantis', states), 'Atlantis');
+  assert.equal(getRequestedStateFromSearch('?state=Atlantis'), 'Atlantis');
+  assert.equal(getSelectedStateFromSearch('?state=Atlantis', ['Odisha', 'Uttarakhand']), null);
   assert.equal(getSelectedStateFromSearch('?state=Kerala', states), null);
   assert.equal(getSelectedStateFromSearch('?topic=States', states), null);
+  assert.equal(getRequestedStateFromSearch('?state=Orissa'), 'Odisha');
+  assert.equal(getRequestedStateFromSearch('?state=%20%20'), null);
 
   assert.equal(
     searchWithSelectedState('?topic=States&state=Orissa', 'Odisha'),
