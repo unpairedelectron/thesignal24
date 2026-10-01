@@ -2086,14 +2086,19 @@ export const PromoteEditorDiscoveryItemResponse = zod.object({
 export const searchEditorImageCandidatesBodyQueryMin = 2;
 export const searchEditorImageCandidatesBodyQueryMax = 160;
 
+export const searchEditorImageCandidatesBodyPageMax = 1000;
+
 
 
 export const SearchEditorImageCandidatesBody = zod.object({
   "query": zod.string().min(searchEditorImageCandidatesBodyQueryMin).max(searchEditorImageCandidatesBodyQueryMax),
-  "source": zod.enum(['Wikimedia Commons', 'Internet Archive']).optional()
+  "source": zod.enum(['Wikimedia Commons', 'Internet Archive']).optional(),
+  "page": zod.number().int().min(1).max(searchEditorImageCandidatesBodyPageMax).optional()
 })
 
 export const searchEditorImageCandidatesResponseResultsItemFileTitleMax = 500;
+
+export const searchEditorImageCandidatesResponseNextPageMax = 1000;
 
 
 
@@ -2110,7 +2115,8 @@ export const SearchEditorImageCandidatesResponse = zod.object({
   "credit": zod.string(),
   "copyright": zod.string(),
   "usageRights": zod.string()
-}))
+})),
+  "nextPage": zod.number().int().min(1).max(searchEditorImageCandidatesResponseNextPageMax).nullable()
 })
 
 

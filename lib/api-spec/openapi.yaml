@@ -2862,6 +2862,10 @@ components:
         source:
           type: string
           enum: [Wikimedia Commons, Internet Archive]
+        page:
+          type: integer
+          minimum: 1
+          maximum: 1000
       required: [query]
     EditorImageCandidateSearchResult:
       type: object
@@ -2902,7 +2906,11 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/EditorImageCandidateSearchResult"
-      required: [results]
+        nextPage:
+          type: ["integer", "null"]
+          minimum: 1
+          maximum: 1000
+      required: [results, nextPage]
     EditorImageCandidateCreateInput:
       type: object
       properties:

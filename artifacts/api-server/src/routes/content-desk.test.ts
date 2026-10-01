@@ -150,6 +150,7 @@ test("Internet Archive adapter validates provider URLs and preserves item rights
         JSON.stringify({
           response: {
             docs: [{ identifier: "public-archive-photo", title: "The college courtyard" }],
+            numFound: 1,
           },
         }),
         { status: 200, headers: { "content-type": "application/json" } },
@@ -161,7 +162,9 @@ test("Internet Archive adapter validates provider URLs and preserves item rights
     });
   });
 
-  const [result] = await client.searchImages("campus records");
+  const { results, nextPage } = await client.searchImages("campus records");
+  const [result] = results;
+  assert.equal(nextPage, null);
   assert.equal(result.source, "Internet Archive");
   assert.equal(result.fileTitle, "The college courtyard [public-archive-photo]");
   assert.equal(result.filePageUrl, "https://archive.org/details/public-archive-photo");
@@ -253,6 +256,91 @@ test("Internet Archive adapter validates provider URLs and preserves item rights
     ),
     false,
   );
+});
+
+test("Internet Archive search paginates, preserves item validation, and signals exhaustion", async () => {
+  const searchRequests: URL[] = [];
+  const client = createInternetArchiveClient(async (input) => {
+    const url = new URL(String(input));
+    if (url.pathname === "/advancedsearch.php") {
+      searchRequests.push(url);
+      const start = Number(url.searchParams.get("start"));
+      const identifiers =
+        start === 0
+          ? Array.from({ length: 8 }, (_, index) => `archive-image-${index}`)
+          : ["archive-image-7", "archive-image-8"];
+      return new Response(
+        JSON.stringify({
+          response: {
+            docs: identifiers.map((identifier) => ({ identifier })),
+            numFound: 10,
+          },
+        }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      );
+    }
+
+    const identifier = decodeURIComponent(url.pathname.split("/").at(-1)!);
+    return new Response(
+      JSON.stringify({
+        metadata: {
+          identifier,
+          title: `Image ${identifier}`,
+          license: "Rights information retained from the item",
+          creator: "Archive contributor",
+          credit: "Archive credit line",
+          copyright: "Uploader-supplied copyright notice",
+          rights: "Review original item terms",
+        },
+        files: [
+          { name: `${identifier}.jpg`, source: "original", format: "JPEG" },
+        ],
+      }),
+      { status: 200, headers: { "content-type": "application/json" } },
+    );
+  });
+
+  const firstPage = await client.searchImages("campus records", 1);
+  const secondPage = await client.searchImages("campus records", 2);
+
+  assert.equal(firstPage.results.length, 8);
+  assert.equal(firstPage.nextPage, 2);
+  assert.equal(secondPage.results.length, 2);
+  assert.equal(secondPage.nextPage, null);
+  assert.equal(
+    firstPage.results.at(-1)?.filePageUrl,
+    secondPage.results[0].filePageUrl,
+    "a repeated item identifier across pages has the same canonical item URL",
+  );
+  assert.equal(searchRequests[0].searchParams.get("rows"), "8");
+  assert.equal(searchRequests[0].searchParams.get("start"), "0");
+  assert.equal(searchRequests[1].searchParams.get("start"), "8");
+  for (const result of [...firstPage.results, ...secondPage.results]) {
+    assert.equal(result.source, "Internet Archive");
+    assert.equal(
+      isInternetArchiveImageUrlForItem(result.filePageUrl, result.imageUrl),
+      true,
+    );
+    assert.equal(result.license, "Rights information retained from the item");
+    assert.equal(result.creator, "Archive contributor");
+    assert.equal(result.credit, "Archive credit line");
+    assert.equal(result.copyright, "Uploader-supplied copyright notice");
+    assert.equal(result.usageRights, "Review original item terms");
+  }
+});
+
+test("Internet Archive search reports exhausted results when there are no matches", async () => {
+  const client = createInternetArchiveClient(async () =>
+    new Response(
+      JSON.stringify({ response: { docs: [], numFound: 0 } }),
+      { status: 200, headers: { "content-type": "application/json" } },
+    ),
+  );
+
+  assert.deepEqual(await client.searchImages("no archive matches"), {
+    results: [],
+    nextPage: null,
+  });
 });
 
 test("image search is rejected by the editor guard before calling Commons", async () => {
@@ -357,8 +445,10 @@ test("editor source registry and manual discovery queue validate and retain revi
         },
       };
       const archiveClient = {
-        searchImages: async () =>
-          currentArchiveResult ? [currentArchiveResult] : [],
+        searchImages: async (_query: string, page = 1) => ({
+          results: currentArchiveResult ? [currentArchiveResult] : [],
+          nextPage: page === 1 ? 2 : null,
+        }),
         getImageByItemUrl: async (filePageUrl: string, imageUrl: string) => {
           archiveLookupCalled = true;
           if (archiveLookupError) {
@@ -569,10 +659,19 @@ test("editor source registry and manual discovery queue validate and retain revi
         );
         assert.equal(archiveSearch.response.status, 200);
         assert.equal(archiveSearch.body.results[0].source, "Internet Archive");
+        assert.equal(archiveSearch.body.nextPage, 2);
         assert.equal(
           archiveSearch.body.results[0].creator,
           archiveResult.creator,
         );
+        const archiveSearchPageTwo = await requestJson(
+          baseUrl,
+          "/editor/image-search",
+          "POST",
+          { query: "college courtyard", source: "Internet Archive", page: 2 },
+        );
+        assert.equal(archiveSearchPageTwo.response.status, 200);
+        assert.equal(archiveSearchPageTwo.body.nextPage, null);
 
         const createdArchiveCandidate = await requestJson(
           baseUrl,

@@ -9,4 +9,10 @@ import type { EditorImageCandidateSearchResult } from './editorImageCandidateSea
 
 export interface EditorImageCandidateSearchResponse {
   results: EditorImageCandidateSearchResult[];
+  /**
+     * @minimum 1
+     * @maximum 1000
+     * @nullable
+     */
+  nextPage: number | null;
 }

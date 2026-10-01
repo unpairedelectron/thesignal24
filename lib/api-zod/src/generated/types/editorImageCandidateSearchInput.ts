@@ -14,4 +14,9 @@ export interface EditorImageCandidateSearchInput {
      */
   query: string;
   source?: EditorImageCandidateSearchInputSource;
+  /**
+     * @minimum 1
+     * @maximum 1000
+     */
+  page?: number;
 }

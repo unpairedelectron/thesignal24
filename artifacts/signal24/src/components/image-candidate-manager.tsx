@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useRef, useState, type FormEvent, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   getGetEditorDiscoveryItemImageCandidatesQueryKey,
@@ -18,6 +18,7 @@ import type {
   EditorImageCandidateSourceRecheckPreviewChangedFieldsItem,
   ImageCandidateRightsDecision,
 } from "@workspace/api-client-react";
+import { mergeImageSearchResults } from "../lib/image-search";
 
 type CandidateDraft = {
   license: string;
@@ -211,7 +212,14 @@ function SearchResult({
 export function ImageCandidateManager({ itemId }: { itemId: number }) {
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
+  const searchRequestId = useRef(0);
   const [searchText, setSearchText] = useState("");
+  const [searchResults, setSearchResults] = useState<
+    EditorImageCandidateSearchResult[]
+  >([]);
+  const [activeSearchQuery, setActiveSearchQuery] = useState("");
+  const [nextSearchPage, setNextSearchPage] = useState<number | null>(null);
+  const [hasSearched, setHasSearched] = useState(false);
   const [archiveSource, setArchiveSource] =
     useState<EditorImageCandidateSearchResult["source"]>("Wikimedia Commons");
   const [drafts, setDrafts] = useState<Record<number, CandidateDraft>>({});
@@ -235,7 +243,6 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
   const applySourceRecheck = useApplyEditorImageCandidateSourceRecheck();
   const reviewRights = useReviewEditorImageCandidateRights();
   const candidates = candidatesQuery.data?.candidates ?? [];
-  const searchResults = search.data?.results ?? [];
 
   function clearDraft(candidateId: number) {
     setDrafts((current) => {
@@ -455,11 +462,55 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
     event.preventDefault();
     setError("");
     setNotice("");
+    setSearchResults([]);
+    setNextSearchPage(null);
+    setHasSearched(true);
+    const query = searchText.trim();
+    setActiveSearchQuery(query);
+    const requestId = ++searchRequestId.current;
     search.mutate(
-      { data: { query: searchText.trim(), source: archiveSource } },
+      { data: { query, source: archiveSource, page: 1 } },
       {
-        onError: (reason) =>
-          setError(errorMessage(reason, `${archiveSource} search failed.`)),
+        onSuccess: (response) => {
+          if (requestId !== searchRequestId.current) return;
+          setSearchResults(mergeImageSearchResults([], response.results));
+          setNextSearchPage(response.nextPage);
+        },
+        onError: (reason) => {
+          if (requestId === searchRequestId.current) {
+            setError(errorMessage(reason, `${archiveSource} search failed.`));
+          }
+        },
+      },
+    );
+  }
+
+  function loadMoreSearchResults() {
+    if (nextSearchPage === null || search.isPending) return;
+    setError("");
+    setNotice("");
+    const requestId = ++searchRequestId.current;
+    search.mutate(
+      {
+        data: {
+          query: activeSearchQuery,
+          source: "Internet Archive",
+          page: nextSearchPage,
+        },
+      },
+      {
+        onSuccess: (response) => {
+          if (requestId !== searchRequestId.current) return;
+          setSearchResults((current) =>
+            mergeImageSearchResults(current, response.results),
+          );
+          setNextSearchPage(response.nextPage);
+        },
+        onError: (reason) => {
+          if (requestId === searchRequestId.current) {
+            setError(errorMessage(reason, "Internet Archive search failed."));
+          }
+        },
       },
     );
   }
@@ -502,7 +553,12 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
                   setArchiveSource(
                     event.target.value as EditorImageCandidateSearchResult["source"],
                   );
+                  searchRequestId.current += 1;
                   search.reset();
+                  setSearchResults([]);
+                  setActiveSearchQuery("");
+                  setNextSearchPage(null);
+                  setHasSearched(false);
                   setError("");
                   setNotice("");
                 }}
@@ -531,6 +587,12 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
             </button>
           </form>
 
+          {search.isPending && (
+            <p className="mt-3 signal-kicker text-muted-foreground" role="status">
+              Searching {archiveSource}…
+            </p>
+          )}
+
           {searchResults.length > 0 && (
             <div className="mt-3 border-t border-foreground/15">
               {searchResults.map((result) => (
@@ -551,6 +613,37 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
               ))}
             </div>
           )}
+
+          {hasSearched &&
+            !search.isPending &&
+            !error &&
+            searchResults.length === 0 &&
+            nextSearchPage === null && (
+              <p className="mt-3 text-sm text-muted-foreground" role="status">
+                No matching images were found.
+              </p>
+            )}
+
+          {archiveSource === "Internet Archive" && nextSearchPage !== null && (
+            <button
+              type="button"
+              className="signal-rule-link mt-3"
+              disabled={search.isPending}
+              onClick={loadMoreSearchResults}
+            >
+              {search.isPending ? "Loading more matches…" : "Load more matches"}
+            </button>
+          )}
+
+          {archiveSource === "Internet Archive" &&
+            hasSearched &&
+            !search.isPending &&
+            nextSearchPage === null &&
+            searchResults.length > 0 && (
+              <p className="mt-3 signal-kicker text-muted-foreground" role="status">
+                All matching Internet Archive results are shown.
+              </p>
+            )}
 
           <div className="mt-6 border-t-2 border-foreground/20 pt-4">
             <h5 className="font-display text-xl">Saved image candidates</h5>

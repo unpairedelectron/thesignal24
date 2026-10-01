@@ -1082,6 +1082,11 @@ export interface EditorImageCandidateSearchInput {
      */
   query: string;
   source?: EditorImageCandidateSearchInputSource;
+  /**
+     * @minimum 1
+     * @maximum 1000
+     */
+  page?: number;
 }
 
 export type EditorImageCandidateSearchResultSource = typeof EditorImageCandidateSearchResultSource[keyof typeof EditorImageCandidateSearchResultSource];
@@ -1110,6 +1115,12 @@ export interface EditorImageCandidateSearchResult {
 
 export interface EditorImageCandidateSearchResponse {
   results: EditorImageCandidateSearchResult[];
+  /**
+     * @minimum 1
+     * @maximum 1000
+     * @nullable
+     */
+  nextPage: number | null;
 }
 
 export type EditorImageCandidateCreateInputSource = typeof EditorImageCandidateCreateInputSource[keyof typeof EditorImageCandidateCreateInputSource];

@@ -4,6 +4,7 @@ const INTERNET_ARCHIVE_ORIGIN = "https://archive.org";
 const SEARCH_ENDPOINT = `${INTERNET_ARCHIVE_ORIGIN}/advancedsearch.php`;
 const METADATA_ENDPOINT = `${INTERNET_ARCHIVE_ORIGIN}/metadata`;
 const MAX_RESULTS = 8;
+const MAX_SEARCH_PAGE = 1000;
 const IMAGE_EXTENSIONS = new Set([
   ".avif",
   ".bmp",
@@ -19,7 +20,13 @@ const IMAGE_EXTENSIONS = new Set([
 type JsonRecord = Record<string, unknown>;
 
 export interface InternetArchiveClient {
-  searchImages(query: string): Promise<EditorImageCandidateSearchResult[]>;
+  searchImages(
+    query: string,
+    page?: number,
+  ): Promise<{
+    results: EditorImageCandidateSearchResult[];
+    nextPage: number | null;
+  }>;
   getImageByItemUrl(
     filePageUrl: string,
     imageUrl: string,
@@ -254,7 +261,10 @@ export function createInternetArchiveClient(
   }
 
   return {
-    async searchImages(query) {
+    async searchImages(query, page = 1) {
+      if (!Number.isInteger(page) || page < 1 || page > MAX_SEARCH_PAGE) {
+        throw new Error("Internet Archive search page is out of range.");
+      }
       const url = new URL(SEARCH_ENDPOINT);
       const escapedQuery = query.trim().replaceAll("\\", "\\\\").replaceAll('"', '\\"');
       url.searchParams.set("q", `mediatype:image AND "${escapedQuery}"`);
@@ -262,10 +272,24 @@ export function createInternetArchiveClient(
       url.searchParams.append("fl[]", "title");
       url.searchParams.set("output", "json");
       url.searchParams.set("rows", String(MAX_RESULTS));
+      const start = (page - 1) * MAX_RESULTS;
+      url.searchParams.set("start", String(start));
 
       const { payload } = await fetchJson(url);
       const response = asRecord(asRecord(payload)?.response);
-      if (!response || !Array.isArray(response.docs)) {
+      const totalResults =
+        typeof response?.numFound === "number"
+          ? response.numFound
+          : typeof response?.numFound === "string" &&
+              response.numFound.trim() !== ""
+            ? Number(response.numFound)
+            : Number.NaN;
+      if (
+        !response ||
+        !Array.isArray(response.docs) ||
+        !Number.isSafeInteger(totalResults) ||
+        totalResults < 0
+      ) {
         throw new Error("Internet Archive returned an invalid search response.");
       }
 
@@ -279,9 +303,19 @@ export function createInternetArchiveClient(
       const results = await Promise.all(
         identifiers.map((identifier) => getImageByIdentifier(identifier)),
       );
-      return results.filter(
+      const normalizedResults = results.filter(
         (result): result is EditorImageCandidateSearchResult => result !== null,
       );
+      const nextStart = start + response.docs.length;
+      return {
+        results: normalizedResults,
+        nextPage:
+          response.docs.length > 0 &&
+          start + MAX_RESULTS < totalResults &&
+          page < MAX_SEARCH_PAGE
+            ? page + 1
+            : null,
+      };
     },
 
     async getImageByItemUrl(filePageUrl, imageUrl) {

@@ -424,11 +424,18 @@ export function createContentDeskRouter(
       return;
     }
     const source = parsed.data.source ?? "Wikimedia Commons";
-    const provider =
-      source === "Internet Archive" ? archiveClient : commonsClient;
     try {
-      const results = await provider.searchImages(parsed.data.query.trim());
-      res.json(SearchEditorImageCandidatesResponse.parse({ results }));
+      const page = parsed.data.page ?? 1;
+      const searchResult =
+        source === "Internet Archive"
+          ? await archiveClient.searchImages(parsed.data.query.trim(), page)
+          : {
+              results: await commonsClient.searchImages(
+                parsed.data.query.trim(),
+              ),
+              nextPage: null,
+            };
+      res.json(SearchEditorImageCandidatesResponse.parse(searchResult));
     } catch {
       req.log?.warn({ source }, "Image archive search failed");
       res.status(502).json({
