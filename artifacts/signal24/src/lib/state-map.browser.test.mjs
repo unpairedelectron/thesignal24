@@ -24,8 +24,12 @@ const baseUrl = new URL(
 const snapshotExpression = (missingStateSlug) => `(() => {
   const buttons = [...document.querySelectorAll('button[data-testid^="button-map-state-"]')];
   const selectedButton = buttons.find((button) => button.getAttribute('aria-pressed') === 'true');
+  const selectedMapShape = [...document.querySelectorAll('[data-testid^="map-state-shape-"]')]
+    .find((shape) => shape.getAttribute('aria-pressed') === 'true');
   return {
     selectedState: selectedButton?.querySelector('span')?.textContent?.trim() ?? null,
+    selectedMapState: selectedMapShape?.getAttribute('aria-label')?.replace(/^Select /, '') ?? null,
+    focusedTestId: document.activeElement?.getAttribute('data-testid') ?? null,
     stateParam: new URLSearchParams(location.search).get('state'),
     recordTitles: [...document.querySelectorAll('#india-in-focus h3')].map((heading) => heading.textContent?.trim()),
     unmappedNote: document.querySelector('[data-testid="note-unmapped-map-states"]')?.textContent ?? '',
@@ -174,6 +178,44 @@ async function launchBrowser() {
       await connection.send('Page.reload', {}, sessionId);
       await loaded;
     },
+    async pressKey(key) {
+      const keyInfo = key === 'Enter'
+        ? { key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13, nativeVirtualKeyCode: 13 }
+        : key === ' '
+          ? { key: ' ', code: 'Space', windowsVirtualKeyCode: 32, nativeVirtualKeyCode: 32 }
+          : key === 'Tab'
+            ? { key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9, nativeVirtualKeyCode: 9 }
+            : null;
+      assert.ok(keyInfo, `Unsupported browser-test key: ${key}`);
+      await connection.send('Input.dispatchKeyEvent', { type: 'keyDown', ...keyInfo }, sessionId);
+      await connection.send('Input.dispatchKeyEvent', { type: 'keyUp', ...keyInfo }, sessionId);
+    },
+    async focusByTestId(testId) {
+      return this.evaluate(`(() => {
+        const element = [...document.querySelectorAll('[data-testid]')]
+          .find((candidate) => candidate.getAttribute('data-testid') === ${JSON.stringify(testId)});
+        element?.focus();
+        return document.activeElement === element;
+      })()`);
+    },
+    async tabToTestId(testId) {
+      const focusedPrevious = await this.evaluate(`(() => {
+        const focusable = [...document.querySelectorAll(
+          'a[href], area[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), iframe, [tabindex]:not([tabindex="-1"])',
+        )].filter((element) => element.getClientRects().length > 0);
+        const targetIndex = focusable.findIndex((element) => element.getAttribute('data-testid') === ${JSON.stringify(testId)});
+        if (targetIndex <= 0) return false;
+        focusable[targetIndex - 1].focus();
+        return document.activeElement === focusable[targetIndex - 1];
+      })()`);
+      assert.equal(focusedPrevious, true, `Could not move keyboard focus to the stop before ${testId}.`);
+      await this.pressKey('Tab');
+      return this.waitFor(
+        `document.activeElement?.getAttribute('data-testid') ?? null`,
+        (focusedTestId) => focusedTestId === testId,
+        `keyboard focus on ${testId}`,
+      );
+    },
     async waitFor(expression, predicate, description) {
       const deadline = Date.now() + 30_000;
       let lastValue = null;
@@ -269,15 +311,11 @@ test('state links restore records across reload and browser history, including a
       && JSON.stringify(snapshot.recordTitles) === JSON.stringify(expectedRecordTitles),
     `state ${stateName} and its matching records`,
   );
-
-  let snapshot = await waitForState(listOnlyState, expectedListOnlyTitles);
-  assert.equal(snapshot.missingStateHasMapShape, false, `${listOnlyState} should not have a rendered map shape in this test.`);
-  assert.ok(snapshot.unmappedNote.includes(listOnlyState), 'The page should explain why this selected state has no matching map boundary.');
-
-  await browser.reload();
-  snapshot = await waitForState(listOnlyState, expectedListOnlyTitles);
-  assert.equal(snapshot.missingStateHasMapShape, false, 'Reload should not make the list-only state depend on a map outline.');
-
+  const assertStateControlsAligned = (snapshot, stateName, hasMapShape = true) => {
+    assert.equal(snapshot.selectedState, stateName, 'The state-list aria-pressed value should match the selected state.');
+    assert.equal(snapshot.stateParam, stateName, 'The address bar should match the selected state.');
+    assert.equal(snapshot.selectedMapState, hasMapShape ? stateName : null, 'The map aria-pressed value should match the selected state when a shape exists.');
+  };
   const clickState = async (stateName) => {
     const clicked = await browser.evaluate(`(() => {
       const button = [...document.querySelectorAll('button[data-testid^="button-map-state-"]')]
@@ -289,17 +327,58 @@ test('state links restore records across reload and browser history, including a
     assert.equal(clicked, true, `Could not select ${stateName} from the text state list.`);
   };
 
-  await clickState(secondState);
-  await waitForState(secondState, expectedSecondTitles);
+  let snapshot = await waitForState(listOnlyState, expectedListOnlyTitles);
+  assert.equal(snapshot.missingStateHasMapShape, false, `${listOnlyState} should not have a rendered map shape in this test.`);
+  assert.ok(snapshot.unmappedNote.includes(listOnlyState), 'The page should explain why this selected state has no matching map boundary.');
+
+  await browser.reload();
+  snapshot = await waitForState(listOnlyState, expectedListOnlyTitles);
+  assert.equal(snapshot.missingStateHasMapShape, false, 'Reload should not make the list-only state depend on a map outline.');
+
+  const firstListButton = `button-map-state-${slugify(listOnlyState)}`;
+  const secondListButton = `button-map-state-${slugify(secondState)}`;
+  await browser.tabToTestId(firstListButton);
+  await browser.pressKey('Enter');
+  snapshot = await waitForState(listOnlyState, expectedListOnlyTitles);
+  assertStateControlsAligned(snapshot, listOnlyState, false);
+
+  await browser.pressKey('Tab');
+  snapshot = await browser.waitFor(
+    snapshotExpressionText,
+    (value) => value?.focusedTestId === secondListButton,
+    `keyboard focus on the ${secondState} state-list button`,
+  );
+  await browser.pressKey(' ');
+  snapshot = await waitForState(secondState, expectedSecondTitles);
+  assertStateControlsAligned(snapshot, secondState);
+
   await browser.evaluate('history.back()');
   snapshot = await waitForState(listOnlyState, expectedListOnlyTitles);
+  assertStateControlsAligned(snapshot, listOnlyState, false);
   assert.equal(snapshot.missingStateHasMapShape, false);
   await browser.evaluate('history.forward()');
-  await waitForState(secondState, expectedSecondTitles);
+  snapshot = await waitForState(secondState, expectedSecondTitles);
+  assertStateControlsAligned(snapshot, secondState);
+
+  const secondMapShape = `map-state-shape-${slugify(secondState)}`;
+  const focusedMapShape = await browser.focusByTestId(secondMapShape);
+  assert.equal(focusedMapShape, true, `The active map shape for ${secondState} should be focusable.`);
+  await browser.pressKey('Enter');
+  snapshot = await browser.waitFor(
+    snapshotExpressionText,
+    (value) => value?.selectedState === null && value.stateParam === null,
+    'the all-states view after Enter on the selected map shape',
+  );
+  assert.equal(snapshot.selectedMapState, null, 'Enter should clear aria-pressed on the map shape.');
+  await browser.pressKey(' ');
+  snapshot = await waitForState(secondState, expectedSecondTitles);
+  assertStateControlsAligned(snapshot, secondState);
 
   // Selecting the boundary-free state from its text-list entry must still work.
-  await clickState(listOnlyState);
+  assert.equal(await browser.focusByTestId(firstListButton), true, 'The list-only state button should be focusable.');
+  await browser.pressKey(' ');
   snapshot = await waitForState(listOnlyState, expectedListOnlyTitles);
+  assertStateControlsAligned(snapshot, listOnlyState, false);
   assert.equal(snapshot.missingStateHasMapShape, false);
 
   // A previously valid shared URL must not fall back to recent records if its state is no longer published.
@@ -324,5 +403,6 @@ test('state links restore records across reload and browser history, including a
   );
   await clickState(secondState);
   snapshot = await waitForState(secondState, expectedSecondTitles);
+  assertStateControlsAligned(snapshot, secondState);
   assert.equal(snapshot.unavailableNote, '', 'Selecting a currently available state should clear the unavailable-link notice.');
 });
