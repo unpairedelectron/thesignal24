@@ -1073,6 +1073,7 @@ export type EditorImageCandidateSearchInputSource = typeof EditorImageCandidateS
 export const EditorImageCandidateSearchInputSource = {
   Wikimedia_Commons: 'Wikimedia Commons',
   Internet_Archive: 'Internet Archive',
+  Art_Institute_of_Chicago: 'Art Institute of Chicago',
 } as const;
 
 export interface EditorImageCandidateSearchInput {
@@ -1095,6 +1096,7 @@ export type EditorImageCandidateSearchResultSource = typeof EditorImageCandidate
 export const EditorImageCandidateSearchResultSource = {
   Wikimedia_Commons: 'Wikimedia Commons',
   Internet_Archive: 'Internet Archive',
+  Art_Institute_of_Chicago: 'Art Institute of Chicago',
 } as const;
 
 export interface EditorImageCandidateSearchResult {
@@ -1129,6 +1131,7 @@ export type EditorImageCandidateCreateInputSource = typeof EditorImageCandidateC
 export const EditorImageCandidateCreateInputSource = {
   Wikimedia_Commons: 'Wikimedia Commons',
   Internet_Archive: 'Internet Archive',
+  Art_Institute_of_Chicago: 'Art Institute of Chicago',
 } as const;
 
 export interface EditorImageCandidateCreateInput {
@@ -1213,6 +1216,7 @@ export type EditorImageCandidateSource = typeof EditorImageCandidateSource[keyof
 export const EditorImageCandidateSource = {
   Wikimedia_Commons: 'Wikimedia Commons',
   Internet_Archive: 'Internet Archive',
+  Art_Institute_of_Chicago: 'Art Institute of Chicago',
 } as const;
 
 export type EditorImageCandidateSourceAvailabilityStatus = typeof EditorImageCandidateSourceAvailabilityStatus[keyof typeof EditorImageCandidateSourceAvailabilityStatus];

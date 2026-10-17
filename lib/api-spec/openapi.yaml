@@ -1235,7 +1235,7 @@ paths:
       operationId: searchEditorImageCandidates
       tags: [editor, evidence]
       summary: Search public image archive candidates
-      description: Requires verified editor access. Search Wikimedia Commons or Internet Archive. Results are suggestions only and are not saved, rights-approved, or published.
+      description: Requires verified editor access. Search Wikimedia Commons, Internet Archive, or the Art Institute of Chicago. Results are suggestions only and are not saved, rights-approved, or published.
       requestBody:
         required: true
         content:
@@ -2861,7 +2861,7 @@ components:
           maxLength: 160
         source:
           type: string
-          enum: [Wikimedia Commons, Internet Archive]
+          enum: [Wikimedia Commons, Internet Archive, Art Institute of Chicago]
         page:
           type: integer
           minimum: 1
@@ -2872,7 +2872,7 @@ components:
       properties:
         source:
           type: string
-          enum: [Wikimedia Commons, Internet Archive]
+          enum: [Wikimedia Commons, Internet Archive, Art Institute of Chicago]
         fileTitle:
           type: string
           maxLength: 500
@@ -2916,7 +2916,7 @@ components:
       properties:
         source:
           type: string
-          enum: [Wikimedia Commons, Internet Archive]
+          enum: [Wikimedia Commons, Internet Archive, Art Institute of Chicago]
         fileTitle:
           type: string
           minLength: 6
@@ -3020,7 +3020,7 @@ components:
           type: integer
         source:
           type: string
-          enum: [Wikimedia Commons, Internet Archive]
+          enum: [Wikimedia Commons, Internet Archive, Art Institute of Chicago]
         fileTitle:
           type: string
         imageUrl:

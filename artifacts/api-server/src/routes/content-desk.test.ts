@@ -12,6 +12,12 @@ import {
   isInternetArchiveImageUrlForItem,
   parseInternetArchiveItemPageUrl,
 } from "../lib/internet-archive";
+import {
+  createArtInstituteClient,
+  isArtInstituteImageUrl,
+  parseArtInstituteArtworkPageUrl,
+  type ArtInstituteClient,
+} from "../lib/art-institute";
 import { createContentDeskRouter } from "./content-desk";
 import { eq } from "drizzle-orm";
 import { db, issuesTable } from "@workspace/db";
@@ -258,6 +264,142 @@ test("Internet Archive adapter validates provider URLs and preserves item rights
   );
 });
 
+test("Art Institute adapter validates canonical URLs and normalizes artwork reuse metadata", async () => {
+  const requests: URL[] = [];
+  const artwork = {
+    id: 123,
+    title: "Sample campus portrait",
+    artist_title: "A. Photographer",
+    credit_line: "Gift of the Example Foundation",
+    is_public_domain: true,
+    copyright_notice: "Copyright notice retained from the museum record.",
+    image_id: "abcdef01-2345-6789-abcd-0123456789ab",
+  };
+  const client = createArtInstituteClient(async (input) => {
+    const url = new URL(String(input));
+    requests.push(url);
+    return new Response(
+      JSON.stringify(
+        url.pathname.endsWith("/search")
+          ? { data: [artwork] }
+          : { data: artwork },
+      ),
+      { status: 200, headers: { "content-type": "application/json" } },
+    );
+  });
+
+  const results = await client.searchImages("campus portrait");
+  const [result] = results;
+  assert.equal(results.length, 1);
+  assert.equal(result.source, "Art Institute of Chicago");
+  assert.equal(
+    result.fileTitle,
+    "Sample campus portrait [Art Institute ID 123]",
+  );
+  assert.equal(
+    result.filePageUrl,
+    "https://www.artic.edu/artworks/123/sample-campus-portrait",
+  );
+  assert.equal(
+    result.imageUrl,
+    "https://www.artic.edu/iiif/2/abcdef01-2345-6789-abcd-0123456789ab/full/2000,/0/default.jpg",
+  );
+  assert.equal(
+    result.thumbnailUrl,
+    "https://www.artic.edu/iiif/2/abcdef01-2345-6789-abcd-0123456789ab/full/640,/0/default.jpg",
+  );
+  assert.equal(result.creator, "A. Photographer");
+  assert.equal(result.credit, "Gift of the Example Foundation");
+  assert.equal(
+    result.license,
+    "Public domain (Art Institute designation; verify the source record)",
+  );
+  assert.equal(result.licenseUrl, null);
+  assert.equal(
+    result.copyright,
+    "Copyright notice retained from the museum record.",
+  );
+  assert.match(result.usageRights, /marks this artwork as public domain/);
+  assert.match(result.usageRights, /API metadata terms do not establish image reuse rights/);
+  assert.equal(requests[0].hostname, "api.artic.edu");
+  assert.equal(requests[0].searchParams.get("q"), "campus portrait");
+  assert.equal(requests[0].searchParams.get("limit"), "8");
+
+  assert.equal(
+    parseArtInstituteArtworkPageUrl(
+      "https://www.artic.edu/artworks/123/sample-campus-portrait",
+    ),
+    123,
+  );
+  assert.equal(
+    parseArtInstituteArtworkPageUrl(
+      "https://www.artic.edu.evil.example/artworks/123",
+    ),
+    null,
+  );
+  assert.equal(
+    parseArtInstituteArtworkPageUrl(
+      "https://www.artic.edu/artworks/123/sample-campus-portrait?redirect=https://evil.test",
+    ),
+    null,
+  );
+  assert.equal(
+    isArtInstituteImageUrl(result.imageUrl),
+    true,
+  );
+  assert.equal(
+    isArtInstituteImageUrl(
+      "https://www.artic.edu.evil.example/iiif/2/image/full/2000,/0/default.jpg",
+    ),
+    false,
+  );
+
+  assert.equal(
+    await client.getImageByArtworkPageUrl(
+      "https://www.artic.edu.evil.example/artworks/123",
+      result.imageUrl,
+    ),
+    null,
+  );
+  assert.equal(
+    await client.getImageByArtworkPageUrl(
+      result.filePageUrl,
+      result.imageUrl.replace("abcdef01", "bad-image"),
+    ),
+    null,
+  );
+  const refreshed = await client.getImageByArtworkPageUrl(
+    result.filePageUrl,
+    result.imageUrl,
+  );
+  assert.equal(refreshed?.fileTitle, result.fileTitle);
+  assert.equal(requests.length, 3);
+});
+
+test("Art Institute adapter leaves unavailable artwork rights metadata explicit", async () => {
+  const client = createArtInstituteClient(async () =>
+    new Response(
+      JSON.stringify({
+        data: [
+          {
+            id: 456,
+            title: "Unclear reuse status",
+            image_id: "museum-image-456",
+            is_public_domain: false,
+          },
+        ],
+      }),
+      { status: 200, headers: { "content-type": "application/json" } },
+    ),
+  );
+  const [result] = await client.searchImages("unclear");
+  assert.equal(result.license, "");
+  assert.equal(result.creator, "");
+  assert.equal(result.credit, "");
+  assert.equal(result.copyright, "");
+  assert.match(result.usageRights, /does not mark this artwork as public domain/);
+});
+
 test("Internet Archive search paginates, preserves item validation, and signals exhaustion", async () => {
   const searchRequests: URL[] = [];
   const client = createInternetArchiveClient(async (input) => {
@@ -425,6 +567,23 @@ test("editor source registry and manual discovery queue validate and retain revi
         copyright: "Contributor copyright statement",
         usageRights: "Use under CC BY 4.0 with attribution.",
       };
+      const museumResult: EditorImageCandidateSearchResult = {
+        source: "Art Institute of Chicago" as const,
+        fileTitle: "The campus portrait [Art Institute ID 8123]",
+        imageUrl:
+          "https://www.artic.edu/iiif/2/abcdef01-2345-6789-abcd-0123456789ab/full/2000,/0/default.jpg",
+        thumbnailUrl:
+          "https://www.artic.edu/iiif/2/abcdef01-2345-6789-abcd-0123456789ab/full/640,/0/default.jpg",
+        filePageUrl:
+          "https://www.artic.edu/artworks/8123/the-campus-portrait",
+        license: "Public domain (Art Institute designation; verify the source record)",
+        licenseUrl: null,
+        creator: "Museum photographer",
+        credit: "Gift of the Campus Foundation",
+        copyright: "Museum copyright notice",
+        usageRights:
+          "The Art Institute of Chicago marks this artwork as public domain. API metadata terms do not establish image reuse rights; editor review is required.",
+      };
       let currentCommonsResult: EditorImageCandidateSearchResult | null =
         commonsResult;
       let commonsLookupError = false;
@@ -432,6 +591,9 @@ test("editor source registry and manual discovery queue validate and retain revi
         archiveResult;
       let archiveLookupError = false;
       let archiveLookupCalled = false;
+      let currentMuseumResult: EditorImageCandidateSearchResult | null =
+        museumResult;
+      let museumLookupCalled = false;
       const commonsClient: WikimediaCommonsClient = {
         searchImages: async () =>
           currentCommonsResult ? [currentCommonsResult] : [],
@@ -460,6 +622,17 @@ test("editor source registry and manual discovery queue validate and retain revi
             : null;
         },
       };
+      const museumClient: ArtInstituteClient = {
+        searchImages: async () =>
+          currentMuseumResult ? [currentMuseumResult] : [],
+        getImageByArtworkPageUrl: async (filePageUrl, imageUrl) => {
+          museumLookupCalled = true;
+          return currentMuseumResult?.filePageUrl === filePageUrl &&
+            currentMuseumResult.imageUrl === imageUrl
+            ? currentMuseumResult
+            : null;
+        },
+      };
       const app = express();
       app.use(express.json());
       app.use(
@@ -468,6 +641,7 @@ test("editor source registry and manual discovery queue validate and retain revi
           editorGuard,
           commonsClient,
           archiveClient,
+          museumClient,
         ),
       );
       app.use(
@@ -723,6 +897,86 @@ test("editor source registry and manual discovery queue validate and retain revi
           },
         );
         assert.equal(duplicateArchiveCandidate.response.status, 409);
+
+        const museumSearch = await requestJson(
+          baseUrl,
+          "/editor/image-search",
+          "POST",
+          {
+            query: "campus portrait",
+            source: "Art Institute of Chicago",
+          },
+        );
+        assert.equal(museumSearch.response.status, 200);
+        assert.equal(
+          museumSearch.body.results[0].source,
+          "Art Institute of Chicago",
+        );
+        assert.equal(museumSearch.body.results[0].credit, museumResult.credit);
+
+        museumLookupCalled = false;
+        const invalidMuseumCandidate = await requestJson(
+          baseUrl,
+          `/editor/discovery-items/${createdLead.body.id}/image-candidates`,
+          "POST",
+          {
+            source: "Art Institute of Chicago",
+            fileTitle: museumResult.fileTitle,
+            filePageUrl:
+              "https://www.artic.edu.attacker.example/artworks/8123/the-campus-portrait",
+            imageUrl: museumResult.imageUrl,
+          },
+        );
+        assert.equal(invalidMuseumCandidate.response.status, 400);
+        assert.equal(museumLookupCalled, false);
+
+        const createdMuseumCandidate = await requestJson(
+          baseUrl,
+          `/editor/discovery-items/${createdLead.body.id}/image-candidates`,
+          "POST",
+          {
+            source: "Art Institute of Chicago",
+            fileTitle: museumResult.fileTitle,
+            filePageUrl: museumResult.filePageUrl,
+            imageUrl: museumResult.imageUrl,
+          },
+        );
+        assert.equal(createdMuseumCandidate.response.status, 201);
+        assert.equal(museumLookupCalled, true);
+        assert.equal(
+          createdMuseumCandidate.body.source,
+          "Art Institute of Chicago",
+        );
+        assert.equal(createdMuseumCandidate.body.rightsStatus, "pending");
+        assert.equal(createdMuseumCandidate.body.reviewedAt, null);
+        assert.equal(createdMuseumCandidate.body.filePageUrl, museumResult.filePageUrl);
+        assert.equal(createdMuseumCandidate.body.creator, museumResult.creator);
+        assert.equal(createdMuseumCandidate.body.credit, museumResult.credit);
+        assert.equal(
+          createdMuseumCandidate.body.license,
+          museumResult.license,
+        );
+        assert.equal(
+          createdMuseumCandidate.body.copyright,
+          museumResult.copyright,
+        );
+        assert.equal(
+          createdMuseumCandidate.body.usageRights,
+          museumResult.usageRights,
+        );
+
+        const duplicateMuseumCandidate = await requestJson(
+          baseUrl,
+          `/editor/discovery-items/${createdLead.body.id}/image-candidates`,
+          "POST",
+          {
+            source: "Art Institute of Chicago",
+            fileTitle: museumResult.fileTitle,
+            filePageUrl: museumResult.filePageUrl,
+            imageUrl: museumResult.imageUrl,
+          },
+        );
+        assert.equal(duplicateMuseumCandidate.response.status, 409);
 
         currentArchiveResult = {
           ...archiveResult,

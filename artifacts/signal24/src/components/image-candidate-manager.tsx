@@ -531,7 +531,9 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
           <p className="max-w-3xl text-xs leading-relaxed text-muted-foreground">
             {archiveSource === "Internet Archive"
               ? "Internet Archive item metadata may be incomplete or supplied by uploaders, and the archive does not guarantee an item’s copyright status. Inspect the original record and rights terms. Every saved candidate stays pending until an editor records a rights decision; candidates are not attached to stories or published automatically."
-              : "Search Wikimedia Commons and inspect each original file page. Commons availability is not reuse clearance. Every saved candidate stays pending until an editor records a rights decision; candidates are not attached to stories or published automatically."}
+              : archiveSource === "Art Institute of Chicago"
+                ? "The Art Institute of Chicago API supplies artwork-level public-domain status, copyright notice, creator, and credit line where available. Its general API metadata terms do not establish image reuse rights. Inspect the original record; every candidate remains pending until an editor records a rights decision, and is never attached or published automatically."
+                : "Search Wikimedia Commons and inspect each original file page. Commons availability is not reuse clearance. Every saved candidate stays pending until an editor records a rights decision; candidates are not attached to stories or published automatically."}
           </p>
 
           {(error || notice) && (
@@ -565,6 +567,9 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
               >
                 <option value="Wikimedia Commons">Wikimedia Commons</option>
                 <option value="Internet Archive">Internet Archive</option>
+                <option value="Art Institute of Chicago">
+                  Art Institute of Chicago
+                </option>
               </select>
             </label>
             <label className="grid flex-1 gap-1 signal-kicker text-muted-foreground">

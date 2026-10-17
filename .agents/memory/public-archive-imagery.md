@@ -7,6 +7,8 @@ Use identifiable public-archive imagery for historical and documentary visuals, 
 
 Internet Archive is the current second image provider because its public search and metadata APIs were reachable from this workspace; direct Library of Congress API requests were challenged by Cloudflare. Internet Archive rights fields may be incomplete or uploader-supplied and are not reuse clearance.
 
+The Art Institute of Chicago API was reachable from this workspace on 2026-10-01 and provides artwork-level `is_public_domain`, `copyright_notice`, artist, and credit-line values. Its response-level CC0 / CC BY terms apply to API metadata, not automatically to the artwork image. Artwork pages returned HTTP 403 from workspace requests at that time, so preserve the official page URL but do not treat a failed workspace page fetch as evidence about image rights.
+
 **Why:** The publication’s subject is politically and socially sensitive; visual context can mislead readers as easily as a headline can, and provider metadata does not establish reuse rights.
 
-**How to apply:** Prefer Wikimedia Commons or another traceable public archive, retain the original file/page attribution when downloading assets, and label images as archive visuals unless they are directly tied to the record being reported. Before adding providers, verify API reachability and keep unverified rights under editor review.
+**How to apply:** Prefer Wikimedia Commons or another traceable public archive, retain the original file/page attribution when downloading assets, and label images as archive visuals unless they are directly tied to the record being reported. Before adding providers, verify API reachability, distinguish metadata terms from artwork rights, and keep unverified rights under editor review.

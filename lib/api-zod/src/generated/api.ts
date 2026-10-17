@@ -2080,7 +2080,7 @@ export const PromoteEditorDiscoveryItemResponse = zod.object({
 
 
 /**
- * Requires verified editor access. Search Wikimedia Commons or Internet Archive. Results are suggestions only and are not saved, rights-approved, or published.
+ * Requires verified editor access. Search Wikimedia Commons, Internet Archive, or the Art Institute of Chicago. Results are suggestions only and are not saved, rights-approved, or published.
  * @summary Search public image archive candidates
  */
 export const searchEditorImageCandidatesBodyQueryMin = 2;
@@ -2092,7 +2092,7 @@ export const searchEditorImageCandidatesBodyPageMax = 1000;
 
 export const SearchEditorImageCandidatesBody = zod.object({
   "query": zod.string().min(searchEditorImageCandidatesBodyQueryMin).max(searchEditorImageCandidatesBodyQueryMax),
-  "source": zod.enum(['Wikimedia Commons', 'Internet Archive']).optional(),
+  "source": zod.enum(['Wikimedia Commons', 'Internet Archive', 'Art Institute of Chicago']).optional(),
   "page": zod.number().int().min(1).max(searchEditorImageCandidatesBodyPageMax).optional()
 })
 
@@ -2104,7 +2104,7 @@ export const searchEditorImageCandidatesResponseNextPageMax = 1000;
 
 export const SearchEditorImageCandidatesResponse = zod.object({
   "results": zod.array(zod.object({
-  "source": zod.enum(['Wikimedia Commons', 'Internet Archive']),
+  "source": zod.enum(['Wikimedia Commons', 'Internet Archive', 'Art Institute of Chicago']),
   "fileTitle": zod.string().max(searchEditorImageCandidatesResponseResultsItemFileTitleMax),
   "imageUrl": zod.string().url(),
   "thumbnailUrl": zod.string().url(),
@@ -2135,7 +2135,7 @@ export const GetEditorDiscoveryItemImageCandidatesResponse = zod.object({
   "candidates": zod.array(zod.object({
   "id": zod.number().int(),
   "discoveryItemId": zod.number().int(),
-  "source": zod.enum(['Wikimedia Commons', 'Internet Archive']),
+  "source": zod.enum(['Wikimedia Commons', 'Internet Archive', 'Art Institute of Chicago']),
   "fileTitle": zod.string(),
   "imageUrl": zod.string().url(),
   "thumbnailUrl": zod.string().url(),
@@ -2209,7 +2209,7 @@ export const createEditorDiscoveryItemImageCandidateBodyCaptionMax = 1000;
 
 
 export const CreateEditorDiscoveryItemImageCandidateBody = zod.object({
-  "source": zod.enum(['Wikimedia Commons', 'Internet Archive']).optional(),
+  "source": zod.enum(['Wikimedia Commons', 'Internet Archive', 'Art Institute of Chicago']).optional(),
   "fileTitle": zod.string().min(createEditorDiscoveryItemImageCandidateBodyFileTitleMin).max(createEditorDiscoveryItemImageCandidateBodyFileTitleMax),
   "filePageUrl": zod.string().url().optional(),
   "imageUrl": zod.string().url().optional(),
@@ -2220,7 +2220,7 @@ export const CreateEditorDiscoveryItemImageCandidateBody = zod.object({
 export const CreateEditorDiscoveryItemImageCandidateResponse = zod.object({
   "id": zod.number().int(),
   "discoveryItemId": zod.number().int(),
-  "source": zod.enum(['Wikimedia Commons', 'Internet Archive']),
+  "source": zod.enum(['Wikimedia Commons', 'Internet Archive', 'Art Institute of Chicago']),
   "fileTitle": zod.string(),
   "imageUrl": zod.string().url(),
   "thumbnailUrl": zod.string().url(),
@@ -2313,7 +2313,7 @@ export const UpdateEditorImageCandidateBody = zod.object({
 export const UpdateEditorImageCandidateResponse = zod.object({
   "id": zod.number().int(),
   "discoveryItemId": zod.number().int(),
-  "source": zod.enum(['Wikimedia Commons', 'Internet Archive']),
+  "source": zod.enum(['Wikimedia Commons', 'Internet Archive', 'Art Institute of Chicago']),
   "fileTitle": zod.string(),
   "imageUrl": zod.string().url(),
   "thumbnailUrl": zod.string().url(),
@@ -2417,7 +2417,7 @@ export const ApplyEditorImageCandidateSourceRecheckResponse = zod.object({
   "candidate": zod.object({
   "id": zod.number().int(),
   "discoveryItemId": zod.number().int(),
-  "source": zod.enum(['Wikimedia Commons', 'Internet Archive']),
+  "source": zod.enum(['Wikimedia Commons', 'Internet Archive', 'Art Institute of Chicago']),
   "fileTitle": zod.string(),
   "imageUrl": zod.string().url(),
   "thumbnailUrl": zod.string().url(),
@@ -2494,7 +2494,7 @@ export const ReviewEditorImageCandidateRightsBody = zod.object({
 export const ReviewEditorImageCandidateRightsResponse = zod.object({
   "id": zod.number().int(),
   "discoveryItemId": zod.number().int(),
-  "source": zod.enum(['Wikimedia Commons', 'Internet Archive']),
+  "source": zod.enum(['Wikimedia Commons', 'Internet Archive', 'Art Institute of Chicago']),
   "fileTitle": zod.string(),
   "imageUrl": zod.string().url(),
   "thumbnailUrl": zod.string().url(),

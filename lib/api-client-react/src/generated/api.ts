@@ -4331,7 +4331,7 @@ export const getSearchEditorImageCandidatesUrl = () => {
 }
 
 /**
- * Requires verified editor access. Search Wikimedia Commons or Internet Archive. Results are suggestions only and are not saved, rights-approved, or published.
+ * Requires verified editor access. Search Wikimedia Commons, Internet Archive, or the Art Institute of Chicago. Results are suggestions only and are not saved, rights-approved, or published.
  * @summary Search public image archive candidates
  */
 export const searchEditorImageCandidates = async (editorImageCandidateSearchInput: EditorImageCandidateSearchInput, options?: Parameters<typeof customFetch>[1]): Promise<EditorImageCandidateSearchResponse> => {

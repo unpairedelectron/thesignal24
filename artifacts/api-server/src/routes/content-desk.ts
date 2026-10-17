@@ -64,6 +64,12 @@ import {
   isInternetArchiveImageUrlForItem,
   type InternetArchiveClient,
 } from "../lib/internet-archive";
+import {
+  artInstituteClient,
+  isArtInstituteImageUrl,
+  parseArtInstituteArtworkPageUrl,
+  type ArtInstituteClient,
+} from "../lib/art-institute";
 
 const sourceTypes = new Set([
   "government",
@@ -377,6 +383,7 @@ export function createContentDeskRouter(
   editorGuard: RequestHandler = requireEditor,
   commonsClient: WikimediaCommonsClient = wikimediaCommonsClient,
   archiveClient: InternetArchiveClient = internetArchiveClient,
+  museumClient: ArtInstituteClient = artInstituteClient,
 ): IRouter {
   const router: IRouter = Router();
   router.use(editorGuard);
@@ -389,6 +396,12 @@ export function createContentDeskRouter(
     }
     if (candidate.source === "Internet Archive") {
       return archiveClient.getImageByItemUrl(
+        candidate.filePageUrl,
+        candidate.imageUrl,
+      );
+    }
+    if (candidate.source === "Art Institute of Chicago") {
+      return museumClient.getImageByArtworkPageUrl(
         candidate.filePageUrl,
         candidate.imageUrl,
       );
@@ -429,7 +442,14 @@ export function createContentDeskRouter(
       const searchResult =
         source === "Internet Archive"
           ? await archiveClient.searchImages(parsed.data.query.trim(), page)
-          : {
+          : source === "Art Institute of Chicago"
+            ? {
+                results: await museumClient.searchImages(
+                  parsed.data.query.trim(),
+                ),
+                nextPage: null,
+              }
+            : {
               results: await commonsClient.searchImages(
                 parsed.data.query.trim(),
               ),
@@ -794,6 +814,19 @@ export function createContentDeskRouter(
         });
         return;
       }
+      if (
+        source === "Art Institute of Chicago" &&
+        (!parsed.data.filePageUrl ||
+          !parsed.data.imageUrl ||
+          parseArtInstituteArtworkPageUrl(parsed.data.filePageUrl) === null ||
+          !isArtInstituteImageUrl(parsed.data.imageUrl))
+      ) {
+        res.status(400).json({
+          message:
+            "Choose an artwork page and IIIF image from the Art Institute of Chicago.",
+        });
+        return;
+      }
       const editorId = req.editorIdentity?.id;
       if (!editorId) {
         res.status(403).json({ message: "Verified editor identity is required." });
@@ -808,6 +841,11 @@ export function createContentDeskRouter(
                 parsed.data.filePageUrl!,
                 parsed.data.imageUrl!,
               )
+            : source === "Art Institute of Chicago"
+              ? await museumClient.getImageByArtworkPageUrl(
+                  parsed.data.filePageUrl!,
+                  parsed.data.imageUrl!,
+                )
             : await commonsClient.getFileByTitle(
                 parsed.data.fileTitle.trim(),
               );
