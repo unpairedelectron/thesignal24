@@ -1155,7 +1155,7 @@ test("editor source registry and manual discovery queue validate and retain revi
         assert.equal(changedRightsTerms.body.rightsStatus, "pending");
         assert.equal(changedRightsTerms.body.reviewedBy, null);
         assert.equal(changedRightsTerms.body.reviewedAt, null);
-        assert.equal(changedRightsTerms.body.rightsHistory.length, 2);
+        assert.equal(changedRightsTerms.body.rightsHistory.length, 3);
         assert.equal(
           changedRightsTerms.body.rightsHistory[0].previousRightsStatus,
           "approved",
@@ -1265,7 +1265,7 @@ test("editor source registry and manual discovery queue validate and retain revi
         );
         assert.equal(
           historyAfterPreview.body.candidates[0].rightsHistory.length,
-          2,
+          3,
         );
         const beforeApplyingSourceChanges = await requestJson(
           baseUrl,
@@ -1309,7 +1309,7 @@ test("editor source registry and manual discovery queue validate and retain revi
         );
         assert.equal(
           afterStaleSourceApply.body.candidates[0].rightsHistory.length,
-          2,
+          3,
         );
 
         const latestSourcePreview = await requestJson(
@@ -1340,7 +1340,7 @@ test("editor source registry and manual discovery queue validate and retain revi
         );
         assert.equal(
           appliedSourceChanges.body.candidate.rightsHistory.length,
-          3,
+          4,
         );
         assert.equal(
           appliedSourceChanges.body.candidate.rightsHistory[0].previousRightsStatus,
@@ -1405,7 +1405,7 @@ test("editor source registry and manual discovery queue validate and retain revi
         );
         assert.equal(
           afterFailedSourceApply.body.candidates[0].rightsHistory.length,
-          3,
+          4,
         );
 
         currentCommonsResult = null;
@@ -1451,7 +1451,7 @@ test("editor source registry and manual discovery queue validate and retain revi
         );
         assert.equal(
           afterRemovedSourceRecheck.body.candidates[0].rightsHistory.length,
-          3,
+          4,
         );
 
         currentCommonsResult = changedCommonsTerms;
@@ -1538,6 +1538,29 @@ test("editor source registry and manual discovery queue validate and retain revi
         );
         assert.equal(unreviewPromotedLead.response.status, 409);
 
+        currentCommonsResult = {
+          ...changedCommonsTerms,
+          credit: "A newer credit statement during the archive race.",
+        };
+        const archiveRacePreview = await requestJson(
+          baseUrl,
+          `/editor/image-candidates/${createdImageCandidate.body.id}/recheck`,
+          "POST",
+        );
+        assert.equal(archiveRacePreview.response.status, 200);
+        const archiveRaceGate = {
+          started: deferred(),
+          release: deferred(),
+        };
+        commonsLookupGate = archiveRaceGate;
+        const applyAgainstArchivedCandidate = requestJson(
+          baseUrl,
+          `/editor/image-candidates/${createdImageCandidate.body.id}/recheck/apply`,
+          "POST",
+          { expectedMetadata: archiveRacePreview.body.currentMetadata },
+        );
+        await archiveRaceGate.started.promise;
+
         const candidateBeforeRemoval = imageCandidates.body.candidates.find(
           (candidate: { id: number }) =>
             candidate.id === createdImageCandidate.body.id,
@@ -1552,6 +1575,13 @@ test("editor source registry and manual discovery queue validate and retain revi
         assert.equal(removedCandidate.body.removedBy, "content-desk-test-editor");
         assert.ok(removedCandidate.body.removedAt);
         assert.equal(removedCandidate.body.fileTitle, candidateBeforeRemoval.fileTitle);
+        archiveRaceGate.release.resolve();
+        const lateSourceApply = await applyAgainstArchivedCandidate;
+        assert.equal(lateSourceApply.response.status, 404);
+        assert.equal(
+          lateSourceApply.body.message,
+          "Image candidate not found.",
+        );
         assert.deepEqual(
           removedCandidate.body.rightsHistory,
           candidateBeforeRemoval.rightsHistory,
@@ -1582,9 +1612,11 @@ test("editor source registry and manual discovery queue validate and retain revi
         assert.ok(archivedCandidate);
         assert.equal(archivedCandidate.removedBy, "content-desk-test-editor");
         assert.equal(archivedCandidate.fileTitle, candidateBeforeRemoval.fileTitle);
+        assert.equal(archivedCandidate.credit, candidateBeforeRemoval.credit);
+        assert.equal(archivedCandidate.license, candidateBeforeRemoval.license);
         assert.deepEqual(
           archivedCandidate.rightsHistory,
-          candidateBeforeRemoval.rightsHistory,
+          removedCandidate.body.rightsHistory,
         );
         assert.equal(
           archivedCandidate.rightsHistory[0].changedBy,

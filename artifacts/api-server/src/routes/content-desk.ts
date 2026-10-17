@@ -428,7 +428,20 @@ export function createContentDeskRouter(
     status: "available" | "missing",
     editorId: string | undefined,
   ): Promise<ContentImageCandidate | null> {
-    if (candidate.sourceAvailabilityStatus === status) return candidate;
+    if (candidate.sourceAvailabilityStatus === status) {
+      const [activeCandidate] = await database
+        .select({ id: contentImageCandidatesTable.id })
+        .from(contentImageCandidatesTable)
+        .where(
+          and(
+            eq(contentImageCandidatesTable.id, candidate.id),
+            isNull(contentImageCandidatesTable.removedAt),
+            isNotNull(contentImageCandidatesTable.discoveryItemId),
+          ),
+        )
+        .limit(1);
+      return activeCandidate ? candidate : null;
+    }
     const [updatedCandidate] = await database
       .update(contentImageCandidatesTable)
       .set({
@@ -1187,12 +1200,16 @@ export function createContentDeskRouter(
         });
         return;
       }
-      candidate =
-        (await updateSourceAvailability(
-          candidate,
-          "available",
-          req.editorIdentity?.id,
-        )) ?? candidate;
+      const availableCandidate = await updateSourceAvailability(
+        candidate,
+        "available",
+        req.editorIdentity?.id,
+      );
+      if (!availableCandidate) {
+        res.status(404).json({ message: "Image candidate not found." });
+        return;
+      }
+      candidate = availableCandidate;
 
       const currentMetadata = sourceRightsMetadata(sourceFile);
       res.json(
@@ -1272,12 +1289,16 @@ export function createContentDeskRouter(
         });
         return;
       }
-      candidate =
-        (await updateSourceAvailability(
-          candidate,
-          "available",
-          req.editorIdentity?.id,
-        )) ?? candidate;
+      const availableCandidate = await updateSourceAvailability(
+        candidate,
+        "available",
+        req.editorIdentity?.id,
+      );
+      if (!availableCandidate) {
+        res.status(404).json({ message: "Image candidate not found." });
+        return;
+      }
+      candidate = availableCandidate;
 
       const currentMetadata = sourceRightsMetadata(sourceFile);
       if (
