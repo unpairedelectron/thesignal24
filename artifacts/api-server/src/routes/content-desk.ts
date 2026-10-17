@@ -443,12 +443,7 @@ export function createContentDeskRouter(
         source === "Internet Archive"
           ? await archiveClient.searchImages(parsed.data.query.trim(), page)
           : source === "Art Institute of Chicago"
-            ? {
-                results: await museumClient.searchImages(
-                  parsed.data.query.trim(),
-                ),
-                nextPage: null,
-              }
+            ? await museumClient.searchImages(parsed.data.query.trim(), page)
             : {
               results: await commonsClient.searchImages(
                 parsed.data.query.trim(),

@@ -281,16 +281,20 @@ test("Art Institute adapter validates canonical URLs and normalizes artwork reus
     return new Response(
       JSON.stringify(
         url.pathname.endsWith("/search")
-          ? { data: [artwork] }
+          ? {
+              pagination: { current_page: 1, total_pages: 1 },
+              data: [artwork],
+            }
           : { data: artwork },
       ),
       { status: 200, headers: { "content-type": "application/json" } },
     );
   });
 
-  const results = await client.searchImages("campus portrait");
+  const { results, nextPage } = await client.searchImages("campus portrait");
   const [result] = results;
   assert.equal(results.length, 1);
+  assert.equal(nextPage, null);
   assert.equal(result.source, "Art Institute of Chicago");
   assert.equal(
     result.fileTitle,
@@ -324,6 +328,7 @@ test("Art Institute adapter validates canonical URLs and normalizes artwork reus
   assert.equal(requests[0].hostname, "api.artic.edu");
   assert.equal(requests[0].searchParams.get("q"), "campus portrait");
   assert.equal(requests[0].searchParams.get("limit"), "8");
+  assert.equal(requests[0].searchParams.get("page"), "1");
 
   assert.equal(
     parseArtInstituteArtworkPageUrl(
@@ -380,6 +385,7 @@ test("Art Institute adapter leaves unavailable artwork rights metadata explicit"
   const client = createArtInstituteClient(async () =>
     new Response(
       JSON.stringify({
+        pagination: { current_page: 1, total_pages: 1 },
         data: [
           {
             id: 456,
@@ -392,12 +398,50 @@ test("Art Institute adapter leaves unavailable artwork rights metadata explicit"
       { status: 200, headers: { "content-type": "application/json" } },
     ),
   );
-  const [result] = await client.searchImages("unclear");
+  const { results, nextPage } = await client.searchImages("unclear");
+  const [result] = results;
+  assert.equal(nextPage, null);
   assert.equal(result.license, "");
   assert.equal(result.creator, "");
   assert.equal(result.credit, "");
   assert.equal(result.copyright, "");
   assert.match(result.usageRights, /does not mark this artwork as public domain/);
+});
+
+test("Art Institute adapter uses provider pagination and reports the last page", async () => {
+  const requests: URL[] = [];
+  const artworks = [
+    { id: 123, title: "First artwork", image_id: "museum-image-123" },
+    { id: 456, title: "Repeated artwork", image_id: "museum-image-456" },
+    { id: 789, title: "Last artwork", image_id: "museum-image-789" },
+  ];
+  const client = createArtInstituteClient(async (input) => {
+    const url = new URL(String(input));
+    requests.push(url);
+    const page = Number(url.searchParams.get("page"));
+    return new Response(
+      JSON.stringify({
+        pagination: { current_page: page, total_pages: 2 },
+        data: page === 1 ? artworks.slice(0, 2) : artworks.slice(1),
+      }),
+      { status: 200, headers: { "content-type": "application/json" } },
+    );
+  });
+
+  const firstPage = await client.searchImages("campus", 1);
+  const lastPage = await client.searchImages("campus", 2);
+
+  assert.equal(firstPage.results.length, 2);
+  assert.equal(firstPage.nextPage, 2);
+  assert.equal(lastPage.results.length, 2);
+  assert.equal(lastPage.nextPage, null);
+  assert.equal(
+    firstPage.results[1].filePageUrl,
+    lastPage.results[0].filePageUrl,
+    "a repeated artwork across pages keeps one canonical artwork URL",
+  );
+  assert.equal(requests[0].searchParams.get("page"), "1");
+  assert.equal(requests[1].searchParams.get("page"), "2");
 });
 
 test("Internet Archive search paginates, preserves item validation, and signals exhaustion", async () => {
@@ -623,8 +667,10 @@ test("editor source registry and manual discovery queue validate and retain revi
         },
       };
       const museumClient: ArtInstituteClient = {
-        searchImages: async () =>
-          currentMuseumResult ? [currentMuseumResult] : [],
+        searchImages: async (_query, page = 1) => ({
+          results: currentMuseumResult ? [currentMuseumResult] : [],
+          nextPage: page === 1 ? 2 : null,
+        }),
         getImageByArtworkPageUrl: async (filePageUrl, imageUrl) => {
           museumLookupCalled = true;
           return currentMuseumResult?.filePageUrl === filePageUrl &&
@@ -912,7 +958,20 @@ test("editor source registry and manual discovery queue validate and retain revi
           museumSearch.body.results[0].source,
           "Art Institute of Chicago",
         );
+        assert.equal(museumSearch.body.nextPage, 2);
         assert.equal(museumSearch.body.results[0].credit, museumResult.credit);
+        const museumSearchPageTwo = await requestJson(
+          baseUrl,
+          "/editor/image-search",
+          "POST",
+          {
+            query: "campus portrait",
+            source: "Art Institute of Chicago",
+            page: 2,
+          },
+        );
+        assert.equal(museumSearchPageTwo.response.status, 200);
+        assert.equal(museumSearchPageTwo.body.nextPage, null);
 
         museumLookupCalled = false;
         const invalidMuseumCandidate = await requestJson(

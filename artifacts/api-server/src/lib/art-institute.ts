@@ -13,11 +13,17 @@ const ARTWORK_FIELDS = [
   "copyright_notice",
   "image_id",
 ].join(",");
+const MAX_PAGE = 1000;
 
 type JsonRecord = Record<string, unknown>;
 
+export interface ArtInstituteSearchPage {
+  results: EditorImageCandidateSearchResult[];
+  nextPage: number | null;
+}
+
 export interface ArtInstituteClient {
-  searchImages(query: string): Promise<EditorImageCandidateSearchResult[]>;
+  searchImages(query: string, page?: number): Promise<ArtInstituteSearchPage>;
   getImageByArtworkPageUrl(
     filePageUrl: string,
     imageUrl: string,
@@ -45,6 +51,23 @@ function validArtworkId(value: unknown): number | null {
 function validImageId(value: unknown): string | null {
   return typeof value === "string" &&
     /^[A-Za-z0-9-]{1,64}$/.test(value)
+    ? value
+    : null;
+}
+
+function validPage(value: unknown): number | null {
+  return typeof value === "number" &&
+    Number.isSafeInteger(value) &&
+    value >= 1 &&
+    value <= MAX_PAGE
+    ? value
+    : null;
+}
+
+function validPageCount(value: unknown): number | null {
+  return typeof value === "number" &&
+    Number.isSafeInteger(value) &&
+    value >= 0
     ? value
     : null;
 }
@@ -179,24 +202,44 @@ export function createArtInstituteClient(
   }
 
   return {
-    async searchImages(query) {
+    async searchImages(query, page = 1) {
+      if (validPage(page) === null) {
+        throw new Error("Art Institute page must be between 1 and 1000.");
+      }
       const url = new URL(
         "/api/v1/artworks/search",
         ART_INSTITUTE_API_ORIGIN,
       );
       url.searchParams.set("q", query.trim());
       url.searchParams.set("limit", String(MAX_RESULTS));
+      url.searchParams.set("page", String(page));
       url.searchParams.set("fields", ARTWORK_FIELDS);
       const payload = asRecord(await request(url));
-      if (!payload || !Array.isArray(payload.data)) {
+      const pagination = asRecord(payload?.pagination);
+      const currentPage = validPage(pagination?.current_page);
+      const totalPages = validPageCount(pagination?.total_pages);
+      if (
+        !payload ||
+        !Array.isArray(payload.data) ||
+        currentPage === null ||
+        totalPages === null ||
+        currentPage !== page
+      ) {
         throw new Error("Art Institute of Chicago returned an invalid search response.");
       }
-      return payload.data
-        .map(normalizeArtwork)
-        .filter(
-          (result): result is EditorImageCandidateSearchResult =>
-            result !== null,
-        );
+      const nextPage =
+        currentPage < totalPages && currentPage < MAX_PAGE
+          ? currentPage + 1
+          : null;
+      return {
+        results: payload.data
+          .map(normalizeArtwork)
+          .filter(
+            (result): result is EditorImageCandidateSearchResult =>
+              result !== null,
+          ),
+        nextPage,
+      };
     },
 
     async getImageByArtworkPageUrl(filePageUrl, imageUrl) {

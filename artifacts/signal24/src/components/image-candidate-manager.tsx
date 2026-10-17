@@ -494,7 +494,7 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
       {
         data: {
           query: activeSearchQuery,
-          source: "Internet Archive",
+          source: archiveSource,
           page: nextSearchPage,
         },
       },
@@ -508,7 +508,7 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
         },
         onError: (reason) => {
           if (requestId === searchRequestId.current) {
-            setError(errorMessage(reason, "Internet Archive search failed."));
+            setError(errorMessage(reason, `${archiveSource} search failed.`));
           }
         },
       },
@@ -629,7 +629,9 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
               </p>
             )}
 
-          {archiveSource === "Internet Archive" && nextSearchPage !== null && (
+          {(archiveSource === "Internet Archive" ||
+            archiveSource === "Art Institute of Chicago") &&
+            nextSearchPage !== null && (
             <button
               type="button"
               className="signal-rule-link mt-3"
@@ -640,13 +642,14 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
             </button>
           )}
 
-          {archiveSource === "Internet Archive" &&
+          {(archiveSource === "Internet Archive" ||
+            archiveSource === "Art Institute of Chicago") &&
             hasSearched &&
             !search.isPending &&
             nextSearchPage === null &&
             searchResults.length > 0 && (
               <p className="mt-3 signal-kicker text-muted-foreground" role="status">
-                All matching Internet Archive results are shown.
+                All matching {archiveSource} results are shown.
               </p>
             )}
 

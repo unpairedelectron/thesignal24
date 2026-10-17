@@ -23,6 +23,34 @@ test("merges archive search pages without repeating item identifiers", () => {
   );
 });
 
+test("merges Art Institute pages without repeating artwork records", () => {
+  const firstPage = [
+    {
+      source: "Art Institute of Chicago",
+      filePageUrl: "https://www.artic.edu/artworks/123/first-artwork",
+    },
+    {
+      source: "Art Institute of Chicago",
+      filePageUrl: "https://www.artic.edu/artworks/456/repeated-artwork",
+    },
+  ];
+  const secondPage = [
+    {
+      source: "Art Institute of Chicago",
+      filePageUrl: "https://www.artic.edu/artworks/456/repeated-artwork",
+    },
+    {
+      source: "Art Institute of Chicago",
+      filePageUrl: "https://www.artic.edu/artworks/789/last-artwork",
+    },
+  ];
+
+  assert.deepEqual(mergeImageSearchResults(firstPage, secondPage), [
+    ...firstPage,
+    secondPage[1],
+  ]);
+});
+
 test("removes duplicate identifiers within a single returned page", () => {
   assert.deepEqual(
     mergeImageSearchResults([], [
