@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { mergeImageSearchResults } from "./image-search.ts";
+import {
+  mergeImageSearchResults,
+  shouldShowSearchExhaustionNotice,
+} from "./image-search.ts";
 
 function result(identifier, title = identifier) {
   return {
@@ -59,4 +62,37 @@ test("removes duplicate identifiers within a single returned page", () => {
     ]),
     [result("archive-one")],
   );
+});
+
+test("shows exhausted state only after a successful final page with results", () => {
+  assert.equal(
+    shouldShowSearchExhaustionNotice({
+      hasSearched: true,
+      isPending: false,
+      hasError: false,
+      nextPage: null,
+      resultCount: 2,
+    }),
+    true,
+  );
+  for (const change of [
+    { hasError: true },
+    { isPending: true },
+    { nextPage: 2 },
+    { resultCount: 0 },
+    { hasSearched: false },
+  ]) {
+    assert.equal(
+      shouldShowSearchExhaustionNotice({
+        hasSearched: true,
+        isPending: false,
+        hasError: false,
+        nextPage: null,
+        resultCount: 2,
+        ...change,
+      }),
+      false,
+      `should not show exhausted state for ${JSON.stringify(change)}`,
+    );
+  }
 });

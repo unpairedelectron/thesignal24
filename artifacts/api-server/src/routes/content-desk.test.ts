@@ -444,6 +444,31 @@ test("Art Institute adapter uses provider pagination and reports the last page",
   assert.equal(requests[1].searchParams.get("page"), "2");
 });
 
+test("Art Institute adapter rejects missing, malformed, and mismatched pagination", async () => {
+  const invalidResponses = [
+    { data: [] },
+    { pagination: { total_pages: 2 }, data: [] },
+    { pagination: { current_page: 1 }, data: [] },
+    { pagination: { current_page: "1", total_pages: 2 }, data: [] },
+    { pagination: { current_page: 1, total_pages: "2" }, data: [] },
+    { pagination: { current_page: 2, total_pages: 3 }, data: [] },
+  ];
+
+  for (const payload of invalidResponses) {
+    const client = createArtInstituteClient(async () =>
+      new Response(JSON.stringify(payload), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    await assert.rejects(
+      client.searchImages("campus", 1),
+      /invalid search response/,
+      `rejected malformed response: ${JSON.stringify(payload)}`,
+    );
+  }
+});
+
 test("Internet Archive search paginates, preserves item validation, and signals exhaustion", async () => {
   const searchRequests: URL[] = [];
   const client = createInternetArchiveClient(async (input) => {
@@ -637,6 +662,7 @@ test("editor source registry and manual discovery queue validate and retain revi
       let archiveLookupCalled = false;
       let currentMuseumResult: EditorImageCandidateSearchResult | null =
         museumResult;
+      let museumSearchUnavailable = false;
       let museumLookupCalled = false;
       const commonsClient: WikimediaCommonsClient = {
         searchImages: async () =>
@@ -667,10 +693,15 @@ test("editor source registry and manual discovery queue validate and retain revi
         },
       };
       const museumClient: ArtInstituteClient = {
-        searchImages: async (_query, page = 1) => ({
-          results: currentMuseumResult ? [currentMuseumResult] : [],
-          nextPage: page === 1 ? 2 : null,
-        }),
+        searchImages: async (_query, page = 1) => {
+          if (museumSearchUnavailable) {
+            throw new Error("Art Institute of Chicago returned an invalid search response.");
+          }
+          return {
+            results: currentMuseumResult ? [currentMuseumResult] : [],
+            nextPage: page === 1 ? 2 : null,
+          };
+        },
         getImageByArtworkPageUrl: async (filePageUrl, imageUrl) => {
           museumLookupCalled = true;
           return currentMuseumResult?.filePageUrl === filePageUrl &&
@@ -972,6 +1003,24 @@ test("editor source registry and manual discovery queue validate and retain revi
         );
         assert.equal(museumSearchPageTwo.response.status, 200);
         assert.equal(museumSearchPageTwo.body.nextPage, null);
+
+        museumSearchUnavailable = true;
+        const failedMuseumSearch = await requestJson(
+          baseUrl,
+          "/editor/image-search",
+          "POST",
+          {
+            query: "campus portrait",
+            source: "Art Institute of Chicago",
+            page: 2,
+          },
+        );
+        assert.equal(failedMuseumSearch.response.status, 502);
+        assert.equal(
+          failedMuseumSearch.body.message,
+          "Art Institute of Chicago could not be reached. Try again later.",
+        );
+        museumSearchUnavailable = false;
 
         museumLookupCalled = false;
         const invalidMuseumCandidate = await requestJson(

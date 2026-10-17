@@ -21,7 +21,10 @@ import type {
   EditorImageCandidateSourceRecheckPreviewChangedFieldsItem,
   ImageCandidateRightsDecision,
 } from "@workspace/api-client-react";
-import { mergeImageSearchResults } from "../lib/image-search";
+import {
+  mergeImageSearchResults,
+  shouldShowSearchExhaustionNotice,
+} from "../lib/image-search";
 
 type CandidateDraft = {
   license: string;
@@ -760,10 +763,13 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
 
           {(archiveSource === "Internet Archive" ||
             archiveSource === "Art Institute of Chicago") &&
-            hasSearched &&
-            !search.isPending &&
-            nextSearchPage === null &&
-            searchResults.length > 0 && (
+            shouldShowSearchExhaustionNotice({
+              hasSearched,
+              isPending: search.isPending,
+              hasError: Boolean(error),
+              nextPage: nextSearchPage,
+              resultCount: searchResults.length,
+            }) && (
               <p className="mt-3 signal-kicker text-muted-foreground" role="status">
                 All matching {archiveSource} results are shown.
               </p>

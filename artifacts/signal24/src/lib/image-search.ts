@@ -14,3 +14,19 @@ export function mergeImageSearchResults(
     }),
   ];
 }
+
+export function shouldShowSearchExhaustionNotice(input: {
+  hasSearched: boolean;
+  isPending: boolean;
+  hasError: boolean;
+  nextPage: number | null;
+  resultCount: number;
+}): boolean {
+  return (
+    input.hasSearched &&
+    !input.isPending &&
+    !input.hasError &&
+    input.nextPage === null &&
+    input.resultCount > 0
+  );
+}
