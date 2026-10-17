@@ -72,47 +72,6 @@ function deferred<T = void>() {
   });
   return { promise, resolve: (value?: T) => resolve(value as T) };
 }
-  const requests: URL[] = [];
-  const payload = {
-    metadata: {
-      identifier: "public-archive-photo",
-      mediatype: "image",
-      title: "The college courtyard",
-      creator: ["Photographer A", "Institution Photo Unit"],
-      credit: "Photo courtesy of Example Archive",
-      copyright: "Copyright notice retained from the item record.",
-      license: "CC BY 4.0",
-      licenseurl: "http://creativecommons.org/licenses/by/4.0/",
-      rights: "CC BY 4.0; preserve the original credit line.",
-    },
-    files: [
-      { name: "courtyard.jpg", source: "original", format: "JPEG" },
-      {
-        name: "courtyard_thumb.jpg",
-        source: "derivative",
-        format: "JPEG Thumb",
-      },
-    ],
-  };
-  const client = createInternetArchiveClient(async () =>
-    new Response(
-      JSON.stringify({ response: { docs: [], numFound: 0 } }),
-      { status: 200, headers: { "content-type": "application/json" } },
-    ),
-  );
-
-  const results = await client.searchImages("campus records");
-  assert.equal(results.length, 1);
-  assert.equal(results[0].fileTitle, "File:Campus record.jpg");
-  assert.equal(results[0].license, "CC BY-SA 4.0");
-  assert.equal(results[0].creator, "Sample Creator");
-  assert.equal(results[0].credit, "Photo by Sample Creator");
-  assert.equal(results[0].copyright, "Copyright statement supplied by source");
-  assert.match(results[0].usageRights, /Attribution required/);
-  assert.match(results[0].usageRights, /Restrictions:/);
-  assert.match(requests[0], /gsrnamespace=6/);
-  assert.match(requests[0], /gsrlimit=8/);
-});
 
 test("Internet Archive adapter validates provider URLs and preserves item rights metadata", async () => {
   const requests: URL[] = [];
@@ -1086,6 +1045,31 @@ test("editor source registry and manual discovery queue validate and retain revi
           "content-desk-test-editor",
         );
         assert.ok(checkedImageRights.body.reviewedAt);
+        assert.equal(checkedImageRights.body.rightsHistory.length, 2);
+        assert.equal(
+          checkedImageRights.body.rightsHistory[0].eventType,
+          "decision_recorded",
+        );
+        assert.equal(
+          checkedImageRights.body.rightsHistory[0].previousRightsStatus,
+          "pending",
+        );
+        assert.equal(
+          checkedImageRights.body.rightsHistory[0].newRightsStatus,
+          "approved",
+        );
+        assert.equal(
+          checkedImageRights.body.rightsHistory[0].newReviewNotes,
+          "Confirmed the license and required attribution on Commons.",
+        );
+        assert.equal(
+          checkedImageRights.body.rightsHistory[0].newReviewedBy,
+          "content-desk-test-editor",
+        );
+        assert.deepEqual(
+          checkedImageRights.body.rightsHistory[0].previousMetadata,
+          checkedImageRights.body.rightsHistory[0].newMetadata,
+        );
 
         const changedRightsTerms = await requestJson(
           baseUrl,
@@ -1103,7 +1087,7 @@ test("editor source registry and manual discovery queue validate and retain revi
         assert.equal(changedRightsTerms.body.rightsStatus, "pending");
         assert.equal(changedRightsTerms.body.reviewedBy, null);
         assert.equal(changedRightsTerms.body.reviewedAt, null);
-        assert.equal(changedRightsTerms.body.rightsHistory.length, 2);
+        assert.equal(changedRightsTerms.body.rightsHistory.length, 3);
         assert.equal(
           changedRightsTerms.body.rightsHistory[0].previousRightsStatus,
           "approved",
@@ -1155,6 +1139,15 @@ test("editor source registry and manual discovery queue validate and retain revi
         );
         assert.equal(reapprovedImageRights.response.status, 200);
         assert.equal(reapprovedImageRights.body.rightsStatus, "approved");
+        assert.equal(reapprovedImageRights.body.rightsHistory.length, 4);
+        assert.equal(
+          reapprovedImageRights.body.rightsHistory[0].eventType,
+          "decision_recorded",
+        );
+        assert.equal(
+          reapprovedImageRights.body.rightsHistory[0].newRightsStatus,
+          "approved",
+        );
 
         const unchangedSourcePreview = await requestJson(
           baseUrl,
@@ -1213,7 +1206,7 @@ test("editor source registry and manual discovery queue validate and retain revi
         );
         assert.equal(
           historyAfterPreview.body.candidates[0].rightsHistory.length,
-          2,
+          4,
         );
         const beforeApplyingSourceChanges = await requestJson(
           baseUrl,
@@ -1257,7 +1250,7 @@ test("editor source registry and manual discovery queue validate and retain revi
         );
         assert.equal(
           afterStaleSourceApply.body.candidates[0].rightsHistory.length,
-          2,
+          4,
         );
 
         const latestSourcePreview = await requestJson(
@@ -1288,7 +1281,7 @@ test("editor source registry and manual discovery queue validate and retain revi
         );
         assert.equal(
           appliedSourceChanges.body.candidate.rightsHistory.length,
-          3,
+          5,
         );
         assert.equal(
           appliedSourceChanges.body.candidate.rightsHistory[0].previousRightsStatus,
@@ -1353,7 +1346,7 @@ test("editor source registry and manual discovery queue validate and retain revi
         );
         assert.equal(
           afterFailedSourceApply.body.candidates[0].rightsHistory.length,
-          3,
+          5,
         );
 
         currentCommonsResult = null;
@@ -1399,7 +1392,40 @@ test("editor source registry and manual discovery queue validate and retain revi
         );
         assert.equal(
           afterRemovedSourceRecheck.body.candidates[0].rightsHistory.length,
-          3,
+          5,
+        );
+
+        const rejectedImageRights = await requestJson(
+          baseUrl,
+          `/editor/image-candidates/${createdImageCandidate.body.id}/rights`,
+          "PATCH",
+          {
+            rightsStatus: "rejected",
+            reviewNotes: "The source does not establish acceptable reuse terms.",
+          },
+        );
+        assert.equal(rejectedImageRights.response.status, 200);
+        assert.equal(rejectedImageRights.body.rightsStatus, "rejected");
+        assert.equal(rejectedImageRights.body.rightsHistory.length, 6);
+        assert.equal(
+          rejectedImageRights.body.rightsHistory[0].eventType,
+          "decision_recorded",
+        );
+        assert.equal(
+          rejectedImageRights.body.rightsHistory[0].previousRightsStatus,
+          "pending",
+        );
+        assert.equal(
+          rejectedImageRights.body.rightsHistory[0].newRightsStatus,
+          "rejected",
+        );
+        assert.equal(
+          rejectedImageRights.body.rightsHistory[0].newReviewNotes,
+          "The source does not establish acceptable reuse terms.",
+        );
+        assert.deepEqual(
+          rejectedImageRights.body.rightsHistory[0].previousMetadata,
+          rejectedImageRights.body.rightsHistory[0].newMetadata,
         );
 
         currentCommonsResult = changedCommonsTerms;

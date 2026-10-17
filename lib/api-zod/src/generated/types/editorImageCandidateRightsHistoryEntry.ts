@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { EditorImageCandidateRightsHistoryEntryChangeSource } from './editorImageCandidateRightsHistoryEntryChangeSource';
+import type { EditorImageCandidateRightsHistoryEntryEventType } from './editorImageCandidateRightsHistoryEntryEventType';
 import type { EditorImageCandidateRightsMetadata } from './editorImageCandidateRightsMetadata';
 import type { ImageCandidateRightsStatus } from './imageCandidateRightsStatus';
 
@@ -19,6 +20,13 @@ export interface EditorImageCandidateRightsHistoryEntry {
   previousReviewedBy: string | null;
   /** @nullable */
   previousReviewedAt: Date | null;
+  eventType: EditorImageCandidateRightsHistoryEntryEventType;
+  newRightsStatus: ImageCandidateRightsStatus;
+  newReviewNotes: string;
+  /** @nullable */
+  newReviewedBy: string | null;
+  /** @nullable */
+  newReviewedAt: Date | null;
   changedBy: string;
   changeSource: EditorImageCandidateRightsHistoryEntryChangeSource;
   changedAt: Date;

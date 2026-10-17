@@ -56,6 +56,7 @@ export * from './editorImageCandidateCreateInputSource';
 export * from './editorImageCandidateMetadataInput';
 export * from './editorImageCandidateRightsHistoryEntry';
 export * from './editorImageCandidateRightsHistoryEntryChangeSource';
+export * from './editorImageCandidateRightsHistoryEntryEventType';
 export * from './editorImageCandidateRightsMetadata';
 export * from './editorImageCandidateRightsReviewInput';
 export * from './editorImageCandidateSearchInput';

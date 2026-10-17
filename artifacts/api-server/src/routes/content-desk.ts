@@ -288,6 +288,7 @@ function serializeImageCandidateRightsHistory(
   return {
     ...entry,
     previousReviewedAt: asIso(entry.previousReviewedAt),
+    newReviewedAt: asIso(entry.newReviewedAt),
     changedAt: entry.changedAt.toISOString(),
   };
 }
@@ -1414,60 +1415,85 @@ export function createContentDeskRouter(
         res.status(403).json({ message: "Verified editor identity is required." });
         return;
       }
-      const [existing] = await database
-        .select()
-        .from(contentImageCandidatesTable)
-        .where(
-          and(
-            eq(contentImageCandidatesTable.id, params.data.candidateId),
-            isNull(contentImageCandidatesTable.removedAt),
-            isNotNull(contentImageCandidatesTable.discoveryItemId),
-          ),
-        )
-        .limit(1);
-      if (!existing) {
+      const reviewNotes = parsed.data.reviewNotes.trim();
+      const reviewResult = await database.transaction(async (tx) => {
+        const [existing] = await tx
+          .select()
+          .from(contentImageCandidatesTable)
+          .where(
+            and(
+              eq(contentImageCandidatesTable.id, params.data.candidateId),
+              isNull(contentImageCandidatesTable.removedAt),
+              isNotNull(contentImageCandidatesTable.discoveryItemId),
+            ),
+          )
+          .for("update")
+          .limit(1);
+        if (!existing) return { kind: "missing" as const };
+        if (
+          parsed.data.rightsStatus === "approved" &&
+          [
+            existing.license,
+            existing.creator,
+            existing.credit,
+            existing.copyright,
+            existing.usageRights,
+            existing.altText,
+            existing.caption,
+          ].some((value) => !value.trim())
+        ) {
+          return { kind: "incomplete" as const };
+        }
+        const reviewedAt = new Date();
+        const [candidate] = await tx
+          .update(contentImageCandidatesTable)
+          .set({
+            rightsStatus: parsed.data.rightsStatus,
+            reviewNotes,
+            reviewedBy: editorId,
+            reviewedAt,
+            updatedBy: editorId,
+          })
+          .where(
+            and(
+              eq(contentImageCandidatesTable.id, params.data.candidateId),
+              isNull(contentImageCandidatesTable.removedAt),
+              isNotNull(contentImageCandidatesTable.discoveryItemId),
+            ),
+          )
+          .returning();
+        if (!candidate) return { kind: "missing" as const };
+        const metadata = candidateRightsMetadata(existing);
+        await tx.insert(contentImageCandidateRightsHistoryTable).values({
+          candidateId: existing.id,
+          previousMetadata: metadata,
+          newMetadata: metadata,
+          previousRightsStatus: existing.rightsStatus,
+          previousReviewNotes: existing.reviewNotes,
+          previousReviewedBy: existing.reviewedBy,
+          previousReviewedAt: existing.reviewedAt,
+          eventType: "decision_recorded",
+          newRightsStatus: candidate.rightsStatus,
+          newReviewNotes: candidate.reviewNotes,
+          newReviewedBy: candidate.reviewedBy,
+          newReviewedAt: candidate.reviewedAt,
+          changedBy: editorId,
+          changeSource: "editor_review",
+        });
+        return { kind: "updated" as const, candidate };
+      });
+      if (reviewResult.kind === "missing") {
         res.status(404).json({ message: "Image candidate not found." });
         return;
       }
-      if (
-        parsed.data.rightsStatus === "approved" &&
-        [
-          existing.license,
-          existing.creator,
-          existing.credit,
-          existing.copyright,
-          existing.usageRights,
-          existing.altText,
-          existing.caption,
-        ].some((value) => !value.trim())
-      ) {
+      if (reviewResult.kind === "incomplete") {
         res.status(400).json({
           message:
             "Complete the license, creator, credit, copyright, usage terms, alt text, and caption before confirming rights.",
         });
         return;
       }
-      const [candidate] = await database
-        .update(contentImageCandidatesTable)
-        .set({
-          rightsStatus: parsed.data.rightsStatus,
-          reviewNotes: parsed.data.reviewNotes.trim(),
-          reviewedBy: editorId,
-          reviewedAt: new Date(),
-          updatedBy: editorId,
-        })
-        .where(
-          and(
-            eq(contentImageCandidatesTable.id, params.data.candidateId),
-            isNull(contentImageCandidatesTable.removedAt),
-            isNotNull(contentImageCandidatesTable.discoveryItemId),
-          ),
-        )
-        .returning();
-      if (!candidate) {
-        res.status(404).json({ message: "Image candidate not found." });
-        return;
-      }
+      const { candidate } = reviewResult;
       const rightsHistory = await getImageCandidateRightsHistory(
         database,
         candidate.id,

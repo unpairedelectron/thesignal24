@@ -3146,15 +3146,27 @@ components:
         previousReviewedAt:
           type: ["string", "null"]
           format: date-time
+        eventType:
+          type: string
+          enum: [terms_changed, decision_recorded]
+        newRightsStatus:
+          $ref: "#/components/schemas/ImageCandidateRightsStatus"
+        newReviewNotes:
+          type: string
+        newReviewedBy:
+          type: ["string", "null"]
+        newReviewedAt:
+          type: ["string", "null"]
+          format: date-time
         changedBy:
           type: string
         changeSource:
           type: string
-          enum: [editor_edit, source_recheck]
+          enum: [editor_edit, source_recheck, editor_review]
         changedAt:
           type: string
           format: date-time
-      required: [id, previousMetadata, newMetadata, previousRightsStatus, previousReviewNotes, previousReviewedBy, previousReviewedAt, changedBy, changeSource, changedAt]
+      required: [id, previousMetadata, newMetadata, previousRightsStatus, previousReviewNotes, previousReviewedBy, previousReviewedAt, eventType, newRightsStatus, newReviewNotes, newReviewedBy, newReviewedAt, changedBy, changeSource, changedAt]
     EditorImageCandidateSourceRecheckApplyResponse:
       type: object
       properties:

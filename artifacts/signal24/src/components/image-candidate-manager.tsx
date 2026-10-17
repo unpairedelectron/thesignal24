@@ -120,37 +120,62 @@ function ArchivedCandidateCard({
         </summary>
         {candidate.rightsHistory.length === 0 ? (
           <p className="mt-3 text-xs text-muted-foreground">
-            No rights-term changes were recorded for this candidate.
+            No rights decisions or rights-term changes were recorded for this candidate.
           </p>
         ) : (
           <ol className="mt-3 divide-y divide-foreground/15 border-t border-foreground/15">
             {candidate.rightsHistory.map((entry) => (
               <li key={entry.id} className="py-3">
                 <p className="signal-kicker text-foreground">
-                  Changed by {entry.changedBy} ·{" "}
+                  {entry.eventType === "decision_recorded"
+                    ? `Rights decision: ${rightsStatusLabel(entry.newRightsStatus)} by ${entry.newReviewedBy ?? entry.changedBy}`
+                    : `Terms changed by ${entry.changedBy}`}{" "}
+                  ·{" "}
                   {new Date(entry.changedAt).toLocaleString()}
                 </p>
-                <dl className="mt-2 grid gap-2 text-xs leading-relaxed sm:grid-cols-2">
-                  {(Object.keys(rightsFieldLabels) as Array<
-                    keyof EditorImageCandidateRightsMetadata
-                  >).map((field) => (
-                    <div key={field} className="border-t border-foreground/10 pt-2">
-                      <dt className="signal-kicker text-foreground">
-                        {rightsFieldLabels[field]}
-                      </dt>
-                      <dd className="mt-1 break-words text-muted-foreground">
-                        Previous:{" "}
-                        {rightsMetadataValue(
-                          field,
-                          entry.previousMetadata[field],
-                        )}
-                      </dd>
-                      <dd className="mt-1 break-words text-muted-foreground">
-                        New: {rightsMetadataValue(field, entry.newMetadata[field])}
-                      </dd>
-                    </div>
-                  ))}
-                </dl>
+                {entry.eventType === "decision_recorded" ? (
+                  <>
+                    <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                      Previous decision: {rightsStatusLabel(entry.previousRightsStatus)}
+                      {entry.previousReviewedBy
+                        ? ` · reviewed by ${entry.previousReviewedBy}`
+                        : ""}
+                      {entry.previousReviewedAt
+                        ? ` · ${new Date(entry.previousReviewedAt).toLocaleString()}`
+                        : ""}
+                    </p>
+                    {entry.previousReviewNotes && (
+                      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                        Previous review note: {entry.previousReviewNotes}
+                      </p>
+                    )}
+                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                      Review note: {entry.newReviewNotes || "No note recorded."}
+                    </p>
+                  </>
+                ) : (
+                  <dl className="mt-2 grid gap-2 text-xs leading-relaxed sm:grid-cols-2">
+                    {(Object.keys(rightsFieldLabels) as Array<
+                      keyof EditorImageCandidateRightsMetadata
+                    >).map((field) => (
+                      <div key={field} className="border-t border-foreground/10 pt-2">
+                        <dt className="signal-kicker text-foreground">
+                          {rightsFieldLabels[field]}
+                        </dt>
+                        <dd className="mt-1 break-words text-muted-foreground">
+                          Previous:{" "}
+                          {rightsMetadataValue(
+                            field,
+                            entry.previousMetadata[field],
+                          )}
+                        </dd>
+                        <dd className="mt-1 break-words text-muted-foreground">
+                          New: {rightsMetadataValue(field, entry.newMetadata[field])}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                )}
               </li>
             ))}
           </ol>
@@ -1181,12 +1206,33 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
                               {candidate.rightsHistory.map((entry) => (
                                 <li key={entry.id} className="py-4">
                                   <p className="signal-kicker text-foreground">
-                                    Terms changed by {entry.changedBy} ·{" "}
-                                    {new Date(entry.changedAt).toLocaleString()} ·{" "}
-                                    {entry.changeSource === "source_recheck"
-                                      ? "source recheck"
-                                      : "editor edit"}
+                                    {entry.eventType === "decision_recorded"
+                                      ? `Rights decision: ${rightsStatusLabel(entry.newRightsStatus)} by ${entry.newReviewedBy ?? entry.changedBy}`
+                                      : `Terms changed by ${entry.changedBy} · ${entry.changeSource === "source_recheck" ? "source recheck" : "editor edit"}`}{" "}
+                                    · {new Date(entry.changedAt).toLocaleString()}
                                   </p>
+                                  {entry.eventType === "decision_recorded" ? (
+                                    <>
+                                      <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                                        Previous decision: {rightsStatusLabel(entry.previousRightsStatus)}
+                                        {entry.previousReviewedBy
+                                          ? ` · reviewed by ${entry.previousReviewedBy}`
+                                          : ""}
+                                        {entry.previousReviewedAt
+                                          ? ` · ${new Date(entry.previousReviewedAt).toLocaleString()}`
+                                          : ""}
+                                      </p>
+                                      {entry.previousReviewNotes && (
+                                        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                                          Previous review note: {entry.previousReviewNotes}
+                                        </p>
+                                      )}
+                                      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                                        Review note: {entry.newReviewNotes || "No note recorded."}
+                                      </p>
+                                    </>
+                                  ) : (
+                                    <>
                                   <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
                                     Previous decision:{" "}
                                     {rightsStatusLabel(entry.previousRightsStatus)}
@@ -1204,6 +1250,7 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
                                       Previous review note: {entry.previousReviewNotes}
                                     </p>
                                   )}
+                                  {entry.eventType === "terms_changed" && (
                                   <dl className="mt-3 grid gap-3 text-xs leading-relaxed sm:grid-cols-2">
                                     {(Object.keys(rightsFieldLabels) as Array<
                                       keyof EditorImageCandidateRightsMetadata
@@ -1232,6 +1279,9 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
                                       </div>
                                     ))}
                                   </dl>
+                                  )}
+                                    </>
+                                  )}
                                 </li>
                               ))}
                             </ol>

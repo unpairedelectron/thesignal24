@@ -12,4 +12,5 @@ export type EditorImageCandidateRightsHistoryEntryChangeSource = typeof EditorIm
 export const EditorImageCandidateRightsHistoryEntryChangeSource = {
   editor_edit: 'editor_edit',
   source_recheck: 'source_recheck',
+  editor_review: 'editor_review',
 } as const;

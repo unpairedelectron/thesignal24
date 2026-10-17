@@ -91,6 +91,11 @@ export const contentImageCandidateRightsHistoryTable = pgTable(
     previousReviewedAt: timestamp("previous_reviewed_at", {
       withTimezone: true,
     }),
+    eventType: text("event_type").notNull().default("terms_changed"),
+    newRightsStatus: text("new_rights_status").notNull().default("pending"),
+    newReviewNotes: text("new_review_notes").notNull().default(""),
+    newReviewedBy: text("new_reviewed_by"),
+    newReviewedAt: timestamp("new_reviewed_at", { withTimezone: true }),
     changedBy: text("changed_by").notNull(),
     changeSource: text("change_source").notNull(),
     changedAt: timestamp("changed_at", { withTimezone: true })

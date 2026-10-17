@@ -1227,12 +1227,21 @@ export const EditorImageCandidateSourceAvailabilityStatus = {
   missing: 'missing',
 } as const;
 
+export type EditorImageCandidateRightsHistoryEntryEventType = typeof EditorImageCandidateRightsHistoryEntryEventType[keyof typeof EditorImageCandidateRightsHistoryEntryEventType];
+
+
+export const EditorImageCandidateRightsHistoryEntryEventType = {
+  terms_changed: 'terms_changed',
+  decision_recorded: 'decision_recorded',
+} as const;
+
 export type EditorImageCandidateRightsHistoryEntryChangeSource = typeof EditorImageCandidateRightsHistoryEntryChangeSource[keyof typeof EditorImageCandidateRightsHistoryEntryChangeSource];
 
 
 export const EditorImageCandidateRightsHistoryEntryChangeSource = {
   editor_edit: 'editor_edit',
   source_recheck: 'source_recheck',
+  editor_review: 'editor_review',
 } as const;
 
 export interface EditorImageCandidateRightsHistoryEntry {
@@ -1245,6 +1254,13 @@ export interface EditorImageCandidateRightsHistoryEntry {
   previousReviewedBy: string | null;
   /** @nullable */
   previousReviewedAt: string | null;
+  eventType: EditorImageCandidateRightsHistoryEntryEventType;
+  newRightsStatus: ImageCandidateRightsStatus;
+  newReviewNotes: string;
+  /** @nullable */
+  newReviewedBy: string | null;
+  /** @nullable */
+  newReviewedAt: string | null;
   changedBy: string;
   changeSource: EditorImageCandidateRightsHistoryEntryChangeSource;
   changedAt: string;

@@ -2182,8 +2182,13 @@ export const GetEditorDiscoveryItemImageCandidatesResponse = zod.object({
   "previousReviewNotes": zod.string(),
   "previousReviewedBy": zod.string().nullable(),
   "previousReviewedAt": zod.coerce.date().nullable(),
+  "eventType": zod.enum(['terms_changed', 'decision_recorded']),
+  "newRightsStatus": zod.enum(['pending', 'approved', 'rejected']),
+  "newReviewNotes": zod.string(),
+  "newReviewedBy": zod.string().nullable(),
+  "newReviewedAt": zod.coerce.date().nullable(),
   "changedBy": zod.string(),
-  "changeSource": zod.enum(['editor_edit', 'source_recheck']),
+  "changeSource": zod.enum(['editor_edit', 'source_recheck', 'editor_review']),
   "changedAt": zod.coerce.date()
 }))
 }))
@@ -2269,8 +2274,13 @@ export const CreateEditorDiscoveryItemImageCandidateResponse = zod.object({
   "previousReviewNotes": zod.string(),
   "previousReviewedBy": zod.string().nullable(),
   "previousReviewedAt": zod.coerce.date().nullable(),
+  "eventType": zod.enum(['terms_changed', 'decision_recorded']),
+  "newRightsStatus": zod.enum(['pending', 'approved', 'rejected']),
+  "newReviewNotes": zod.string(),
+  "newReviewedBy": zod.string().nullable(),
+  "newReviewedAt": zod.coerce.date().nullable(),
   "changedBy": zod.string(),
-  "changeSource": zod.enum(['editor_edit', 'source_recheck']),
+  "changeSource": zod.enum(['editor_edit', 'source_recheck', 'editor_review']),
   "changedAt": zod.coerce.date()
 }))
 })
@@ -2331,8 +2341,13 @@ export const GetEditorImageCandidateArchiveResponse = zod.object({
   "previousReviewNotes": zod.string(),
   "previousReviewedBy": zod.string().nullable(),
   "previousReviewedAt": zod.coerce.date().nullable(),
+  "eventType": zod.enum(['terms_changed', 'decision_recorded']),
+  "newRightsStatus": zod.enum(['pending', 'approved', 'rejected']),
+  "newReviewNotes": zod.string(),
+  "newReviewedBy": zod.string().nullable(),
+  "newReviewedAt": zod.coerce.date().nullable(),
   "changedBy": zod.string(),
-  "changeSource": zod.enum(['editor_edit', 'source_recheck']),
+  "changeSource": zod.enum(['editor_edit', 'source_recheck', 'editor_review']),
   "changedAt": zod.coerce.date()
 }))
 }))
@@ -2400,8 +2415,13 @@ export const RemoveEditorImageCandidateResponse = zod.object({
   "previousReviewNotes": zod.string(),
   "previousReviewedBy": zod.string().nullable(),
   "previousReviewedAt": zod.coerce.date().nullable(),
+  "eventType": zod.enum(['terms_changed', 'decision_recorded']),
+  "newRightsStatus": zod.enum(['pending', 'approved', 'rejected']),
+  "newReviewNotes": zod.string(),
+  "newReviewedBy": zod.string().nullable(),
+  "newReviewedAt": zod.coerce.date().nullable(),
   "changedBy": zod.string(),
-  "changeSource": zod.enum(['editor_edit', 'source_recheck']),
+  "changeSource": zod.enum(['editor_edit', 'source_recheck', 'editor_review']),
   "changedAt": zod.coerce.date()
 }))
 })
@@ -2495,8 +2515,13 @@ export const UpdateEditorImageCandidateResponse = zod.object({
   "previousReviewNotes": zod.string(),
   "previousReviewedBy": zod.string().nullable(),
   "previousReviewedAt": zod.coerce.date().nullable(),
+  "eventType": zod.enum(['terms_changed', 'decision_recorded']),
+  "newRightsStatus": zod.enum(['pending', 'approved', 'rejected']),
+  "newReviewNotes": zod.string(),
+  "newReviewedBy": zod.string().nullable(),
+  "newReviewedAt": zod.coerce.date().nullable(),
   "changedBy": zod.string(),
-  "changeSource": zod.enum(['editor_edit', 'source_recheck']),
+  "changeSource": zod.enum(['editor_edit', 'source_recheck', 'editor_review']),
   "changedAt": zod.coerce.date()
 }))
 })
@@ -2601,8 +2626,13 @@ export const ApplyEditorImageCandidateSourceRecheckResponse = zod.object({
   "previousReviewNotes": zod.string(),
   "previousReviewedBy": zod.string().nullable(),
   "previousReviewedAt": zod.coerce.date().nullable(),
+  "eventType": zod.enum(['terms_changed', 'decision_recorded']),
+  "newRightsStatus": zod.enum(['pending', 'approved', 'rejected']),
+  "newReviewNotes": zod.string(),
+  "newReviewedBy": zod.string().nullable(),
+  "newReviewedAt": zod.coerce.date().nullable(),
   "changedBy": zod.string(),
-  "changeSource": zod.enum(['editor_edit', 'source_recheck']),
+  "changeSource": zod.enum(['editor_edit', 'source_recheck', 'editor_review']),
   "changedAt": zod.coerce.date()
 }))
 }),
@@ -2680,8 +2710,13 @@ export const ReviewEditorImageCandidateRightsResponse = zod.object({
   "previousReviewNotes": zod.string(),
   "previousReviewedBy": zod.string().nullable(),
   "previousReviewedAt": zod.coerce.date().nullable(),
+  "eventType": zod.enum(['terms_changed', 'decision_recorded']),
+  "newRightsStatus": zod.enum(['pending', 'approved', 'rejected']),
+  "newReviewNotes": zod.string(),
+  "newReviewedBy": zod.string().nullable(),
+  "newReviewedAt": zod.coerce.date().nullable(),
   "changedBy": zod.string(),
-  "changeSource": zod.enum(['editor_edit', 'source_recheck']),
+  "changeSource": zod.enum(['editor_edit', 'source_recheck', 'editor_review']),
   "changedAt": zod.coerce.date()
 }))
 })
