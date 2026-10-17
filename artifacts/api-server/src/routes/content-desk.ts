@@ -1322,7 +1322,12 @@ export function createContentDeskRouter(
           changedImageRightsMetadataFields(
             candidateRightsMetadata(candidate),
             candidateRightsMetadata(lockedCandidate),
-          ).length > 0
+          ).length > 0 ||
+          lockedCandidate.rightsStatus !== candidate.rightsStatus ||
+          lockedCandidate.reviewNotes !== candidate.reviewNotes ||
+          lockedCandidate.reviewedBy !== candidate.reviewedBy ||
+          lockedCandidate.reviewedAt?.getTime() !==
+            candidate.reviewedAt?.getTime()
         ) {
           return { kind: "changed" as const };
         }

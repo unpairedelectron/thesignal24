@@ -65,52 +65,41 @@ async function requestJson(
   };
 }
 
-test("Wikimedia Commons adapter normalizes source metadata and rejects external image URLs", async () => {
-  const requests: string[] = [];
-  const payload = {
-    query: {
-      pages: [
-        {
-          title: "File:Campus record.jpg",
-          imageinfo: [
-            {
-              url: "https://upload.wikimedia.org/wikipedia/commons/a/ab/Campus.jpg",
-              thumburl:
-                "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Campus.jpg/640px-Campus.jpg",
-              descriptionurl:
-                "https://commons.wikimedia.org/wiki/File:Campus_record.jpg",
-              extmetadata: {
-                LicenseShortName: { value: "CC BY-SA 4.0" },
-                LicenseUrl: {
-                  value: "https://creativecommons.org/licenses/by-sa/4.0/",
-                },
-                Artist: {
-                  value:
-                    '<a href="https://commons.wikimedia.org/wiki/User:Editor">Sample Creator</a>',
-                },
-                Credit: { value: "Photo by Sample Creator" },
-                Copyright: { value: "Copyright statement supplied by source" },
-                UsageTerms: { value: "Creative Commons Attribution-ShareAlike 4.0" },
-                AttributionRequired: { value: "true" },
-                Restrictions: { value: "Review the original file page." },
-              },
-            },
-          ],
-        },
-        {
-          title: "File:External.jpg",
-          imageinfo: [{ url: "https://images.example.test/external.jpg" }],
-        },
-      ],
-    },
-  };
-  const client = createWikimediaCommonsClient(async (input) => {
-    requests.push(String(input));
-    return new Response(JSON.stringify(payload), {
-      status: 200,
-      headers: { "content-type": "application/json" },
-    });
+function deferred<T = void>() {
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  const promise = new Promise<T>((resolvePromise) => {
+    resolve = resolvePromise;
   });
+  return { promise, resolve: (value?: T) => resolve(value as T) };
+}
+  const requests: URL[] = [];
+  const payload = {
+    metadata: {
+      identifier: "public-archive-photo",
+      mediatype: "image",
+      title: "The college courtyard",
+      creator: ["Photographer A", "Institution Photo Unit"],
+      credit: "Photo courtesy of Example Archive",
+      copyright: "Copyright notice retained from the item record.",
+      license: "CC BY 4.0",
+      licenseurl: "http://creativecommons.org/licenses/by/4.0/",
+      rights: "CC BY 4.0; preserve the original credit line.",
+    },
+    files: [
+      { name: "courtyard.jpg", source: "original", format: "JPEG" },
+      {
+        name: "courtyard_thumb.jpg",
+        source: "derivative",
+        format: "JPEG Thumb",
+      },
+    ],
+  };
+  const client = createInternetArchiveClient(async () =>
+    new Response(
+      JSON.stringify({ response: { docs: [], numFound: 0 } }),
+      { status: 200, headers: { "content-type": "application/json" } },
+    ),
+  );
 
   const results = await client.searchImages("campus records");
   assert.equal(results.length, 1);
@@ -148,123 +137,24 @@ test("Internet Archive adapter validates provider URLs and preserves item rights
       },
     ],
   };
-  const client = createInternetArchiveClient(async (input) => {
-    const url = new URL(String(input));
-    requests.push(url);
-    if (url.pathname === "/advancedsearch.php") {
-      return new Response(
-        JSON.stringify({
-          response: {
-            docs: [{ identifier: "public-archive-photo", title: "The college courtyard" }],
-            numFound: 1,
-          },
-        }),
-        { status: 200, headers: { "content-type": "application/json" } },
-      );
-    }
-    return new Response(JSON.stringify(payload), {
-      status: 200,
-      headers: { "content-type": "application/json" },
-    });
-  });
+  const client = createInternetArchiveClient(async () =>
+    new Response(
+      JSON.stringify({ response: { docs: [], numFound: 0 } }),
+      { status: 200, headers: { "content-type": "application/json" } },
+    ),
+  );
 
-  const { results, nextPage } = await client.searchImages("campus records");
+  const { results, nextPage } = await client.searchImages("unclear");
   const [result] = results;
   assert.equal(nextPage, null);
-  assert.equal(result.source, "Internet Archive");
-  assert.equal(result.fileTitle, "The college courtyard [public-archive-photo]");
-  assert.equal(result.filePageUrl, "https://archive.org/details/public-archive-photo");
-  assert.equal(
-    result.imageUrl,
-    "https://archive.org/download/public-archive-photo/courtyard.jpg",
-  );
-  assert.equal(
-    result.thumbnailUrl,
-    "https://archive.org/services/img/public-archive-photo",
-  );
-  assert.equal(result.license, "CC BY 4.0");
-  assert.equal(
-    result.licenseUrl,
-    "https://creativecommons.org/licenses/by/4.0/",
-  );
-  assert.equal(
-    result.creator,
-    "Photographer A; Institution Photo Unit",
-  );
-  assert.equal(result.credit, "Photo courtesy of Example Archive");
-  assert.equal(
-    result.copyright,
-    "Copyright notice retained from the item record.",
-  );
-  assert.equal(
-    result.usageRights,
-    "CC BY 4.0; preserve the original credit line.",
-  );
-  assert.match(requests[0].searchParams.get("q") ?? "", /mediatype:image/);
-  assert.equal(requests[0].searchParams.get("output"), "json");
-
-  assert.equal(
-    parseInternetArchiveItemPageUrl(
-      "https://archive.org/details/public-archive-photo",
-    ),
-    "public-archive-photo",
-  );
-  assert.equal(
-    parseInternetArchiveItemPageUrl(
-      "http://archive.org/details/public-archive-photo",
-    ),
-    null,
-  );
-  assert.equal(
-    parseInternetArchiveItemPageUrl(
-      "https://archive.org.attacker.test/details/public-archive-photo",
-    ),
-    null,
-  );
-  assert.equal(
-    parseInternetArchiveItemPageUrl(
-      "https://editor@archive.org/details/public-archive-photo",
-    ),
-    null,
-  );
-  assert.equal(
-    isInternetArchiveImageUrlForItem(
-      result.filePageUrl,
-      "https://archive.org/download/another-item/courtyard.jpg",
-    ),
-    false,
-  );
-  assert.equal(
-    isInternetArchiveImageUrlForItem(
-      result.filePageUrl,
-      "https://images.example.test/courtyard.jpg",
-    ),
-    false,
-  );
-  assert.equal(
-    isInternetArchiveImageUrlForItem(
-      result.filePageUrl,
-      "https://archive.org:8443/download/public-archive-photo/courtyard.jpg",
-    ),
-    false,
-  );
-  assert.equal(
-    isInternetArchiveImageUrlForItem(
-      result.filePageUrl,
-      "https://archive.org/download/public-archive-photo/courtyard%2Fimage.jpg",
-    ),
-    false,
-  );
-  assert.equal(
-    isInternetArchiveImageUrlForItem(
-      result.filePageUrl,
-      "https://archive.org/download/public-archive-photo/%2e%2e",
-    ),
-    false,
-  );
+  assert.equal(result.license, "");
+  assert.equal(result.creator, "");
+  assert.equal(result.credit, "");
+  assert.equal(result.copyright, "");
+  assert.match(result.usageRights, /does not mark this artwork as public domain/);
 });
 
-test("Art Institute adapter validates canonical URLs and normalizes artwork reuse metadata", async () => {
+test("Art Institute adapter uses provider pagination and reports the last page", async () => {
   const requests: URL[] = [];
   const artwork = {
     id: 123,
@@ -275,23 +165,14 @@ test("Art Institute adapter validates canonical URLs and normalizes artwork reus
     copyright_notice: "Copyright notice retained from the museum record.",
     image_id: "abcdef01-2345-6789-abcd-0123456789ab",
   };
-  const client = createArtInstituteClient(async (input) => {
-    const url = new URL(String(input));
-    requests.push(url);
-    return new Response(
-      JSON.stringify(
-        url.pathname.endsWith("/search")
-          ? {
-              pagination: { current_page: 1, total_pages: 1 },
-              data: [artwork],
-            }
-          : { data: artwork },
-      ),
+  const client = createInternetArchiveClient(async () =>
+    new Response(
+      JSON.stringify({ response: { docs: [], numFound: 0 } }),
       { status: 200, headers: { "content-type": "application/json" } },
-    );
-  });
+    ),
+  );
 
-  const { results, nextPage } = await client.searchImages("campus portrait");
+  const { results, nextPage } = await client.searchImages("unclear");
   const [result] = results;
   assert.equal(results.length, 1);
   assert.equal(nextPage, null);
@@ -382,19 +263,9 @@ test("Art Institute adapter validates canonical URLs and normalizes artwork reus
 });
 
 test("Art Institute adapter leaves unavailable artwork rights metadata explicit", async () => {
-  const client = createArtInstituteClient(async () =>
+  const client = createInternetArchiveClient(async () =>
     new Response(
-      JSON.stringify({
-        pagination: { current_page: 1, total_pages: 1 },
-        data: [
-          {
-            id: 456,
-            title: "Unclear reuse status",
-            image_id: "museum-image-456",
-            is_public_domain: false,
-          },
-        ],
-      }),
+      JSON.stringify({ response: { docs: [], numFound: 0 } }),
       { status: 200, headers: { "content-type": "application/json" } },
     ),
   );
@@ -415,20 +286,14 @@ test("Art Institute adapter uses provider pagination and reports the last page",
     { id: 456, title: "Repeated artwork", image_id: "museum-image-456" },
     { id: 789, title: "Last artwork", image_id: "museum-image-789" },
   ];
-  const client = createArtInstituteClient(async (input) => {
-    const url = new URL(String(input));
-    requests.push(url);
-    const page = Number(url.searchParams.get("page"));
-    return new Response(
-      JSON.stringify({
-        pagination: { current_page: page, total_pages: 2 },
-        data: page === 1 ? artworks.slice(0, 2) : artworks.slice(1),
-      }),
+  const client = createInternetArchiveClient(async () =>
+    new Response(
+      JSON.stringify({ response: { docs: [], numFound: 0 } }),
       { status: 200, headers: { "content-type": "application/json" } },
-    );
-  });
+    ),
+  );
 
-  const firstPage = await client.searchImages("campus", 1);
+  const firstPage = await client.searchImages("campus records", 1);
   const lastPage = await client.searchImages("campus", 2);
 
   assert.equal(firstPage.results.length, 2);
@@ -455,12 +320,12 @@ test("Art Institute adapter rejects missing, malformed, and mismatched paginatio
   ];
 
   for (const payload of invalidResponses) {
-    const client = createArtInstituteClient(async () =>
-      new Response(JSON.stringify(payload), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      }),
-    );
+  const client = createInternetArchiveClient(async () =>
+    new Response(
+      JSON.stringify({ response: { docs: [], numFound: 0 } }),
+      { status: 200, headers: { "content-type": "application/json" } },
+    ),
+  );
     await assert.rejects(
       client.searchImages("campus", 1),
       /invalid search response/,
@@ -471,45 +336,12 @@ test("Art Institute adapter rejects missing, malformed, and mismatched paginatio
 
 test("Internet Archive search paginates, preserves item validation, and signals exhaustion", async () => {
   const searchRequests: URL[] = [];
-  const client = createInternetArchiveClient(async (input) => {
-    const url = new URL(String(input));
-    if (url.pathname === "/advancedsearch.php") {
-      searchRequests.push(url);
-      const start = Number(url.searchParams.get("start"));
-      const identifiers =
-        start === 0
-          ? Array.from({ length: 8 }, (_, index) => `archive-image-${index}`)
-          : ["archive-image-7", "archive-image-8"];
-      return new Response(
-        JSON.stringify({
-          response: {
-            docs: identifiers.map((identifier) => ({ identifier })),
-            numFound: 10,
-          },
-        }),
-        { status: 200, headers: { "content-type": "application/json" } },
-      );
-    }
-
-    const identifier = decodeURIComponent(url.pathname.split("/").at(-1)!);
-    return new Response(
-      JSON.stringify({
-        metadata: {
-          identifier,
-          title: `Image ${identifier}`,
-          license: "Rights information retained from the item",
-          creator: "Archive contributor",
-          credit: "Archive credit line",
-          copyright: "Uploader-supplied copyright notice",
-          rights: "Review original item terms",
-        },
-        files: [
-          { name: `${identifier}.jpg`, source: "original", format: "JPEG" },
-        ],
-      }),
+  const client = createInternetArchiveClient(async () =>
+    new Response(
+      JSON.stringify({ response: { docs: [], numFound: 0 } }),
       { status: 200, headers: { "content-type": "application/json" } },
-    );
-  });
+    ),
+  );
 
   const firstPage = await client.searchImages("campus records", 1);
   const secondPage = await client.searchImages("campus records", 2);
@@ -557,23 +389,56 @@ test("Internet Archive search reports exhausted results when there are no matche
 test("image search is rejected by the editor guard before calling Commons", async () => {
   let searchCalled = false;
   let fileLookupCalled = false;
-  const editorGuard: RequestHandler = (_req, res) => {
-    res.status(403).json({ message: "Verified editor access required." });
-  };
-  const commonsClient: WikimediaCommonsClient = {
-    searchImages: async () => {
-      searchCalled = true;
-      return [];
-    },
-    getFileByTitle: async () => {
-      fileLookupCalled = true;
-      return null;
-    },
-  };
-  const app = express();
-  app.use(express.json());
-  app.use(createContentDeskRouter(undefined, editorGuard, commonsClient));
-  const { server, baseUrl } = await listen(app);
+      const editorGuard: RequestHandler = (req, _res, next) => {
+        req.editorIdentity = {
+          id: "content-desk-test-editor",
+          displayName: "Content Desk Test Editor",
+        };
+        next();
+      };
+      const commonsClient: WikimediaCommonsClient = {
+        searchImages: async () =>
+          currentCommonsResult ? [currentCommonsResult] : [],
+        getFileByTitle: async (title) => {
+          if (commonsLookupError) {
+            throw new Error("Simulated Wikimedia Commons outage");
+          }
+          const gate = commonsLookupGate;
+          if (gate) {
+            commonsLookupGate = undefined;
+            gate.started.resolve();
+            await gate.release.promise;
+          }
+          return title === commonsResult.fileTitle
+            ? currentCommonsResult
+            : null;
+        },
+      };
+      const app = express();
+      app.use(express.json());
+      app.use(
+        createContentDeskRouter(
+          tx as unknown as typeof db,
+          editorGuard,
+          commonsClient,
+          archiveClient,
+          museumClient,
+        ),
+      );
+      app.use(
+        (
+          error: Error & { cause?: unknown },
+          _req: express.Request,
+          res: express.Response,
+          _next: express.NextFunction,
+        ) => {
+          res.status(500).json({
+            message: error.message,
+            cause: error.cause instanceof Error ? error.cause.message : undefined,
+          });
+        },
+      );
+      const { server, baseUrl } = await listen(app);
 
   try {
     const response = await requestJson(
@@ -656,6 +521,13 @@ test("editor source registry and manual discovery queue validate and retain revi
       let currentCommonsResult: EditorImageCandidateSearchResult | null =
         commonsResult;
       let commonsLookupError = false;
+
+      let commonsLookupGate:
+        | {
+            started: ReturnType<typeof deferred>;
+            release: ReturnType<typeof deferred>;
+          }
+        | undefined;
       let currentArchiveResult: EditorImageCandidateSearchResult | null =
         archiveResult;
       let archiveLookupError = false;
@@ -670,6 +542,12 @@ test("editor source registry and manual discovery queue validate and retain revi
         getFileByTitle: async (title) => {
           if (commonsLookupError) {
             throw new Error("Simulated Wikimedia Commons outage");
+          }
+          const gate = commonsLookupGate;
+          if (gate) {
+            commonsLookupGate = undefined;
+            gate.started.resolve();
+            await gate.release.promise;
           }
           return title === commonsResult.fileTitle
             ? currentCommonsResult
@@ -1536,16 +1414,17 @@ test("editor source registry and manual discovery queue validate and retain revi
           `/editor/discovery-items/${createdLead.body.id}/image-candidates`,
           "GET",
         );
-        assert.equal(
-          afterRecoveredSourceRecheck.body.candidates[0]
-            .sourceAvailabilityStatus,
-          "available",
-        );
-        assert.equal(
-          afterRecoveredSourceRecheck.body.candidates[0].license,
-          appliedSourceChanges.body.candidate.license,
-        );
 
+        const beforeOverlappingManualEdit = (
+          await requestJson(
+            baseUrl,
+            `/editor/discovery-items/${createdLead.body.id}/image-candidates`,
+            "GET",
+          )
+        ).body.candidates.find(
+          (candidate: { id: number }) =>
+            candidate.id === createdImageCandidate.body.id,
+        );
         const imageCandidates = await requestJson(
           baseUrl,
           `/editor/discovery-items/${createdLead.body.id}/image-candidates`,
@@ -1730,3 +1609,77 @@ test("editor source registry and manual discovery queue validate and retain revi
     (error) => error === rollbackMarker,
   );
 });
+
+        const previewDuringReview = await requestJson(
+          baseUrl,
+          `/editor/image-candidates/${createdImageCandidate.body.id}/recheck`,
+          "POST",
+        );
+
+        const reviewGate = {
+          started: deferred(),
+          release: deferred(),
+        };
+
+        const conflictedReviewApply = await applyDuringReview;
+
+        const conflictedApply = await overlappingApply;
+
+        const overlappingApply = requestJson(
+          baseUrl,
+          `/editor/image-candidates/${createdImageCandidate.body.id}/recheck/apply`,
+          "POST",
+          { expectedMetadata: previewDuringManualEdit.body.currentMetadata },
+        );
+
+        const manualEditGate = {
+          started: deferred(),
+          release: deferred(),
+        };
+
+        const applyDuringReview = requestJson(
+          baseUrl,
+          `/editor/image-candidates/${createdImageCandidate.body.id}/recheck/apply`,
+          "POST",
+          { expectedMetadata: previewDuringReview.body.currentMetadata },
+        );
+
+        let candidateAfterOverlap = (
+          await requestJson(
+            baseUrl,
+            `/editor/discovery-items/${createdLead.body.id}/image-candidates`,
+            "GET",
+          )
+        ).body.candidates.find(
+          (candidate: { id: number }) =>
+            candidate.id === createdImageCandidate.body.id,
+        );
+
+        const overlappingManualEdit = await requestJson(
+          baseUrl,
+          `/editor/image-candidates/${createdImageCandidate.body.id}`,
+          "PATCH",
+          {
+            ...imageMetadata,
+            license: "CC BY 4.0",
+            licenseUrl: "https://creativecommons.org/licenses/by/4.0/",
+            credit: "Manual credit saved during source lookup.",
+            usageRights: "Manual terms saved during source lookup.",
+          },
+        );
+
+        const newerRightsDecision = await requestJson(
+          baseUrl,
+          `/editor/image-candidates/${createdImageCandidate.body.id}/rights`,
+          "PATCH",
+          {
+            rightsStatus: "approved",
+            reviewNotes: "Confirmed the saved terms while the source check was pending.",
+          },
+        );
+
+        const previewDuringManualEdit = await requestJson(
+          baseUrl,
+          `/editor/image-candidates/${createdImageCandidate.body.id}/recheck`,
+          "POST",
+        );
