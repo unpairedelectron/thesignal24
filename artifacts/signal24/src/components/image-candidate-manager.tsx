@@ -1,4 +1,10 @@
-import { useRef, useState, type FormEvent, type ReactNode } from "react";
+import {
+  useReducer,
+  useRef,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   getGetEditorImageCandidateArchiveQueryKey,
@@ -22,7 +28,8 @@ import type {
   ImageCandidateRightsDecision,
 } from "@workspace/api-client-react";
 import {
-  mergeImageSearchResults,
+  createImageSearchState,
+  reduceImageSearchState,
   shouldShowSearchExhaustionNotice,
 } from "../lib/image-search";
 
@@ -391,14 +398,10 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
   const [isOpen, setIsOpen] = useState(false);
   const searchRequestId = useRef(0);
   const [searchText, setSearchText] = useState("");
-  const [searchResults, setSearchResults] = useState<
-    EditorImageCandidateSearchResult[]
-  >([]);
-  const [activeSearchQuery, setActiveSearchQuery] = useState("");
-  const [nextSearchPage, setNextSearchPage] = useState<number | null>(null);
-  const [hasSearched, setHasSearched] = useState(false);
-  const [archiveSource, setArchiveSource] =
-    useState<EditorImageCandidateSearchResult["source"]>("Wikimedia Commons");
+  const [imageSearch, dispatchImageSearch] = useReducer(
+    reduceImageSearchState,
+    createImageSearchState(),
+  );
   const [drafts, setDrafts] = useState<Record<number, CandidateDraft>>({});
   const [sourcePreviews, setSourcePreviews] = useState<
     Record<number, EditorImageCandidateSourceRecheckPreview>
@@ -680,23 +683,30 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
     event.preventDefault();
     setError("");
     setNotice("");
-    setSearchResults([]);
-    setNextSearchPage(null);
-    setHasSearched(true);
     const query = searchText.trim();
-    setActiveSearchQuery(query);
+    const source = imageSearch.source;
     const requestId = ++searchRequestId.current;
+    dispatchImageSearch({
+      type: "search-started",
+      requestId,
+      query,
+      source,
+    });
     search.mutate(
-      { data: { query, source: archiveSource, page: 1 } },
+      { data: { query, source, page: 1 } },
       {
         onSuccess: (response) => {
-          if (requestId !== searchRequestId.current) return;
-          setSearchResults(mergeImageSearchResults([], response.results));
-          setNextSearchPage(response.nextPage);
+          dispatchImageSearch({
+            type: "succeeded",
+            requestId,
+            results: response.results,
+            nextPage: response.nextPage,
+          });
         },
         onError: (reason) => {
+          dispatchImageSearch({ type: "failed", requestId });
           if (requestId === searchRequestId.current) {
-            setError(errorMessage(reason, `${archiveSource} search failed.`));
+            setError(errorMessage(reason, `${source} search failed.`));
           }
         },
       },
@@ -704,29 +714,33 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
   }
 
   function loadMoreSearchResults() {
-    if (nextSearchPage === null || search.isPending) return;
+    if (imageSearch.nextPage === null || imageSearch.pendingRequestId !== null) {
+      return;
+    }
     setError("");
     setNotice("");
+    const page = imageSearch.nextPage;
+    const query = imageSearch.activeSearchQuery;
+    const source = imageSearch.source;
     const requestId = ++searchRequestId.current;
+    dispatchImageSearch({ type: "load-more-started", requestId });
     search.mutate(
       {
-        data: {
-          query: activeSearchQuery,
-          source: archiveSource,
-          page: nextSearchPage,
-        },
+        data: { query, source, page },
       },
       {
         onSuccess: (response) => {
-          if (requestId !== searchRequestId.current) return;
-          setSearchResults((current) =>
-            mergeImageSearchResults(current, response.results),
-          );
-          setNextSearchPage(response.nextPage);
+          dispatchImageSearch({
+            type: "succeeded",
+            requestId,
+            results: response.results,
+            nextPage: response.nextPage,
+          });
         },
         onError: (reason) => {
+          dispatchImageSearch({ type: "failed", requestId });
           if (requestId === searchRequestId.current) {
-            setError(errorMessage(reason, `${archiveSource} search failed.`));
+            setError(errorMessage(reason, `${source} search failed.`));
           }
         },
       },
@@ -747,9 +761,9 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
       {isOpen && (
         <div className="mt-4">
           <p className="max-w-3xl text-xs leading-relaxed text-muted-foreground">
-            {archiveSource === "Internet Archive"
+            {imageSearch.source === "Internet Archive"
               ? "Internet Archive item metadata may be incomplete or supplied by uploaders, and the archive does not guarantee an item’s copyright status. Inspect the original record and rights terms. Every saved candidate stays pending until an editor records a rights decision; candidates are not attached to stories or published automatically."
-              : archiveSource === "Art Institute of Chicago"
+              : imageSearch.source === "Art Institute of Chicago"
                 ? "The Art Institute of Chicago API supplies artwork-level public-domain status, copyright notice, creator, and credit line where available. Its general API metadata terms do not establish image reuse rights. Inspect the original record; every candidate remains pending until an editor records a rights decision, and is never attached or published automatically."
                 : "Search Wikimedia Commons and inspect each original file page. Commons availability is not reuse clearance. Every saved candidate stays pending until an editor records a rights decision; candidates are not attached to stories or published automatically."}
           </p>
@@ -768,17 +782,16 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
               Image archive
               <select
                 className="signal-input min-h-10 normal-case tracking-normal text-foreground"
-                value={archiveSource}
+                value={imageSearch.source}
                 onChange={(event) => {
-                  setArchiveSource(
-                    event.target.value as EditorImageCandidateSearchResult["source"],
-                  );
-                  searchRequestId.current += 1;
-                  search.reset();
-                  setSearchResults([]);
-                  setActiveSearchQuery("");
-                  setNextSearchPage(null);
-                  setHasSearched(false);
+                  const source = event.target.value as
+                    EditorImageCandidateSearchResult["source"];
+                  const requestId = ++searchRequestId.current;
+                  dispatchImageSearch({
+                    type: "archive-changed",
+                    requestId,
+                    source,
+                  });
                   setError("");
                   setNotice("");
                 }}
@@ -804,21 +817,25 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
             <button
               type="submit"
               className="signal-button self-end"
-              disabled={search.isPending || searchText.trim().length < 2}
+              disabled={searchText.trim().length < 2}
             >
-              {search.isPending ? "Searching…" : `Search ${archiveSource}`}
+              {imageSearch.pendingMode === "search"
+                ? "Searching…"
+                : `Search ${imageSearch.source}`}
             </button>
           </form>
 
-          {search.isPending && (
+          {imageSearch.pendingRequestId !== null && (
             <p className="mt-3 signal-kicker text-muted-foreground" role="status">
-              Searching {archiveSource}…
+              {imageSearch.pendingMode === "load-more"
+                ? `Loading more ${imageSearch.source} matches…`
+                : `Searching ${imageSearch.source}…`}
             </p>
           )}
 
-          {searchResults.length > 0 && (
+          {imageSearch.results.length > 0 && (
             <div className="mt-3 border-t border-foreground/15">
-              {searchResults.map((result) => (
+              {imageSearch.results.map((result) => (
                 <SearchResult
                   key={result.fileTitle}
                   itemId={itemId}
@@ -837,40 +854,42 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
             </div>
           )}
 
-          {hasSearched &&
-            !search.isPending &&
+          {imageSearch.hasSearched &&
+            imageSearch.pendingRequestId === null &&
             !error &&
-            searchResults.length === 0 &&
-            nextSearchPage === null && (
+            imageSearch.results.length === 0 &&
+            imageSearch.nextPage === null && (
               <p className="mt-3 text-sm text-muted-foreground" role="status">
                 No matching images were found.
               </p>
             )}
 
-          {(archiveSource === "Internet Archive" ||
-            archiveSource === "Art Institute of Chicago") &&
-            nextSearchPage !== null && (
+          {(imageSearch.source === "Internet Archive" ||
+            imageSearch.source === "Art Institute of Chicago") &&
+            imageSearch.nextPage !== null && (
             <button
               type="button"
               className="signal-rule-link mt-3"
-              disabled={search.isPending}
+              disabled={imageSearch.pendingRequestId !== null}
               onClick={loadMoreSearchResults}
             >
-              {search.isPending ? "Loading more matches…" : "Load more matches"}
+              {imageSearch.pendingMode === "load-more"
+                ? "Loading more matches…"
+                : "Load more matches"}
             </button>
           )}
 
-          {(archiveSource === "Internet Archive" ||
-            archiveSource === "Art Institute of Chicago") &&
+          {(imageSearch.source === "Internet Archive" ||
+            imageSearch.source === "Art Institute of Chicago") &&
             shouldShowSearchExhaustionNotice({
-              hasSearched,
-              isPending: search.isPending,
+              hasSearched: imageSearch.hasSearched,
+              isPending: imageSearch.pendingRequestId !== null,
               hasError: Boolean(error),
-              nextPage: nextSearchPage,
-              resultCount: searchResults.length,
+              nextPage: imageSearch.nextPage,
+              resultCount: imageSearch.results.length,
             }) && (
               <p className="mt-3 signal-kicker text-muted-foreground" role="status">
-                All matching {archiveSource} results are shown.
+                All matching {imageSearch.source} results are shown.
               </p>
             )}
 
