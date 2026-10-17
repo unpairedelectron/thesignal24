@@ -1322,7 +1322,51 @@ paths:
           description: This archive image is already saved for the lead
         "502":
           description: The selected image archive is unavailable
+  /editor/image-candidates/archive:
+    get:
+      operationId: getEditorImageCandidateArchive
+      tags: [editor, evidence]
+      summary: List removed image candidates with retained rights history
+      description: Requires verified editor access. Includes candidates removed by an editor and candidates whose discovery lead was removed.
+      responses:
+        "200":
+          description: Retained image candidates and rights history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EditorImageCandidatesResponse"
+        "401":
+          description: Sign-in required
+        "403":
+          description: Verified editor access required
   /editor/image-candidates/{candidateId}:
+    delete:
+      operationId: removeEditorImageCandidate
+      tags: [editor, evidence]
+      summary: Remove an image candidate without deleting rights history
+      description: Requires verified editor access. Removal is retained as an archived record and does not delete rights history.
+      parameters:
+        - name: candidateId
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        "200":
+          description: Candidate archived with rights history retained
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EditorImageCandidate"
+        "400":
+          description: Invalid candidate ID
+        "401":
+          description: Sign-in required
+        "403":
+          description: Verified editor access required
+        "404":
+          description: Candidate not found
     patch:
       operationId: updateEditorImageCandidate
       tags: [editor, evidence]
@@ -3017,7 +3061,7 @@ components:
         id:
           type: integer
         discoveryItemId:
-          type: integer
+          type: ["integer", "null"]
         source:
           type: string
           enum: [Wikimedia Commons, Internet Archive, Art Institute of Chicago]
@@ -3061,6 +3105,11 @@ components:
         reviewedAt:
           type: ["string", "null"]
           format: date-time
+        removedBy:
+          type: ["string", "null"]
+        removedAt:
+          type: ["string", "null"]
+          format: date-time
         discoveredAt:
           type: string
           format: date-time
@@ -3078,7 +3127,7 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/EditorImageCandidateRightsHistoryEntry"
-      required: [id, discoveryItemId, source, fileTitle, imageUrl, thumbnailUrl, filePageUrl, license, licenseUrl, creator, credit, copyright, usageRights, altText, caption, sourceAvailabilityStatus, rightsStatus, reviewNotes, reviewedBy, reviewedAt, discoveredAt, createdBy, createdAt, updatedBy, updatedAt, rightsHistory]
+      required: [id, discoveryItemId, source, fileTitle, imageUrl, thumbnailUrl, filePageUrl, license, licenseUrl, creator, credit, copyright, usageRights, altText, caption, sourceAvailabilityStatus, rightsStatus, reviewNotes, reviewedBy, reviewedAt, removedBy, removedAt, discoveredAt, createdBy, createdAt, updatedBy, updatedAt, rightsHistory]
     EditorImageCandidateRightsHistoryEntry:
       type: object
       properties:

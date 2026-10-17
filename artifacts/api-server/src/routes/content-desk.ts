@@ -1,4 +1,13 @@
-import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  inArray,
+  isNotNull,
+  isNull,
+  or,
+} from "drizzle-orm";
 import { Router, type IRouter, type RequestHandler } from "express";
 import {
   CreateEditorDiscoveryItemImageCandidateBody,
@@ -10,6 +19,7 @@ import {
   CreateEditorDiscoveryItemResponse,
   GetEditorDiscoveryItemImageCandidatesParams,
   GetEditorDiscoveryItemImageCandidatesResponse,
+  GetEditorImageCandidateArchiveResponse,
   GetEditorContentSourcesResponse,
   GetEditorDiscoveryItemsResponse,
   PromoteEditorDiscoveryItemBody,
@@ -18,6 +28,8 @@ import {
   ReviewEditorImageCandidateRightsBody,
   ReviewEditorImageCandidateRightsParams,
   ReviewEditorImageCandidateRightsResponse,
+  RemoveEditorImageCandidateParams,
+  RemoveEditorImageCandidateResponse,
   SearchEditorImageCandidatesBody,
   SearchEditorImageCandidatesResponse,
   UpdateEditorImageCandidateBody,
@@ -287,6 +299,7 @@ function serializeImageCandidate(
   return {
     ...candidate,
     reviewedAt: asIso(candidate.reviewedAt),
+    removedAt: asIso(candidate.removedAt),
     discoveredAt: candidate.discoveredAt.toISOString(),
     createdAt: candidate.createdAt.toISOString(),
     updatedAt: candidate.updatedAt.toISOString(),
@@ -421,7 +434,13 @@ export function createContentDeskRouter(
         sourceAvailabilityStatus: status,
         updatedBy: editorId ?? candidate.updatedBy,
       })
-      .where(eq(contentImageCandidatesTable.id, candidate.id))
+      .where(
+        and(
+          eq(contentImageCandidatesTable.id, candidate.id),
+          isNull(contentImageCandidatesTable.removedAt),
+          isNotNull(contentImageCandidatesTable.discoveryItemId),
+        ),
+      )
       .returning();
     return updatedCandidate ?? null;
   }
@@ -719,7 +738,10 @@ export function createContentDeskRouter(
         .select()
         .from(contentImageCandidatesTable)
         .where(
-          eq(contentImageCandidatesTable.discoveryItemId, params.data.itemId),
+          and(
+            eq(contentImageCandidatesTable.discoveryItemId, params.data.itemId),
+            isNull(contentImageCandidatesTable.removedAt),
+          ),
         )
         .orderBy(desc(contentImageCandidatesTable.discoveredAt));
       const historyRows =
@@ -759,6 +781,57 @@ export function createContentDeskRouter(
       );
     },
   );
+
+  router.get("/editor/image-candidates/archive", async (_req, res) => {
+    const candidates = await database
+      .select()
+      .from(contentImageCandidatesTable)
+      .where(
+        or(
+          isNotNull(contentImageCandidatesTable.removedAt),
+          isNull(contentImageCandidatesTable.discoveryItemId),
+        ),
+      )
+      .orderBy(
+        desc(contentImageCandidatesTable.removedAt),
+        desc(contentImageCandidatesTable.updatedAt),
+      );
+    const historyRows =
+      candidates.length === 0
+        ? []
+        : await database
+            .select()
+            .from(contentImageCandidateRightsHistoryTable)
+            .where(
+              inArray(
+                contentImageCandidateRightsHistoryTable.candidateId,
+                candidates.map((candidate) => candidate.id),
+              ),
+            )
+            .orderBy(
+              desc(contentImageCandidateRightsHistoryTable.changedAt),
+              desc(contentImageCandidateRightsHistoryTable.id),
+            );
+    const historyByCandidate = new Map<
+      number,
+      ContentImageCandidateRightsHistory[]
+    >();
+    for (const historyRow of historyRows) {
+      const current = historyByCandidate.get(historyRow.candidateId) ?? [];
+      current.push(historyRow);
+      historyByCandidate.set(historyRow.candidateId, current);
+    }
+    res.json(
+      GetEditorImageCandidateArchiveResponse.parse({
+        candidates: candidates.map((candidate) =>
+          serializeImageCandidate(
+            candidate,
+            historyByCandidate.get(candidate.id),
+          ),
+        ),
+      }),
+    );
+  });
 
   router.post(
     "/editor/discovery-items/:itemId/image-candidates",
@@ -901,6 +974,50 @@ export function createContentDeskRouter(
     },
   );
 
+  router.delete(
+    "/editor/image-candidates/:candidateId",
+    async (req, res): Promise<void> => {
+      const params = RemoveEditorImageCandidateParams.safeParse(req.params);
+      if (!params.success) {
+        res.status(400).json({ message: params.error.message });
+        return;
+      }
+      const editorId = req.editorIdentity?.id;
+      if (!editorId) {
+        res.status(403).json({ message: "Verified editor identity is required." });
+        return;
+      }
+      const [candidate] = await database
+        .update(contentImageCandidatesTable)
+        .set({
+          removedBy: editorId,
+          removedAt: new Date(),
+          updatedBy: editorId,
+        })
+        .where(
+          and(
+            eq(contentImageCandidatesTable.id, params.data.candidateId),
+            isNull(contentImageCandidatesTable.removedAt),
+            isNotNull(contentImageCandidatesTable.discoveryItemId),
+          ),
+        )
+        .returning();
+      if (!candidate) {
+        res.status(404).json({ message: "Active image candidate not found." });
+        return;
+      }
+      const rightsHistory = await getImageCandidateRightsHistory(
+        database,
+        candidate.id,
+      );
+      res.json(
+        RemoveEditorImageCandidateResponse.parse(
+          serializeImageCandidate(candidate, rightsHistory),
+        ),
+      );
+    },
+  );
+
   router.patch(
     "/editor/image-candidates/:candidateId",
     async (req, res): Promise<void> => {
@@ -946,7 +1063,13 @@ export function createContentDeskRouter(
         const [existing] = await tx
           .select()
           .from(contentImageCandidatesTable)
-          .where(eq(contentImageCandidatesTable.id, params.data.candidateId))
+          .where(
+            and(
+              eq(contentImageCandidatesTable.id, params.data.candidateId),
+              isNull(contentImageCandidatesTable.removedAt),
+              isNotNull(contentImageCandidatesTable.discoveryItemId),
+            ),
+          )
           .for("update")
           .limit(1);
         if (!existing) return { candidate: undefined };
@@ -967,7 +1090,13 @@ export function createContentDeskRouter(
             reviewedAt: rightsTermsChanged ? null : existing.reviewedAt,
             updatedBy: editorId,
           })
-          .where(eq(contentImageCandidatesTable.id, params.data.candidateId))
+          .where(
+            and(
+              eq(contentImageCandidatesTable.id, params.data.candidateId),
+              isNull(contentImageCandidatesTable.removedAt),
+              isNotNull(contentImageCandidatesTable.discoveryItemId),
+            ),
+          )
           .returning();
         if (!candidate) return { candidate: undefined };
         if (rightsTermsChanged) {
@@ -1015,7 +1144,13 @@ export function createContentDeskRouter(
       let [candidate] = await database
         .select()
         .from(contentImageCandidatesTable)
-        .where(eq(contentImageCandidatesTable.id, params.data.candidateId))
+        .where(
+          and(
+            eq(contentImageCandidatesTable.id, params.data.candidateId),
+            isNull(contentImageCandidatesTable.removedAt),
+            isNotNull(contentImageCandidatesTable.discoveryItemId),
+          ),
+        )
         .limit(1);
       if (!candidate) {
         res.status(404).json({ message: "Image candidate not found." });
@@ -1095,7 +1230,13 @@ export function createContentDeskRouter(
       let [candidate] = await database
         .select()
         .from(contentImageCandidatesTable)
-        .where(eq(contentImageCandidatesTable.id, params.data.candidateId))
+        .where(
+          and(
+            eq(contentImageCandidatesTable.id, params.data.candidateId),
+            isNull(contentImageCandidatesTable.removedAt),
+            isNotNull(contentImageCandidatesTable.discoveryItemId),
+          ),
+        )
         .limit(1);
       if (!candidate) {
         res.status(404).json({ message: "Image candidate not found." });
@@ -1167,7 +1308,13 @@ export function createContentDeskRouter(
         const [lockedCandidate] = await tx
           .select()
           .from(contentImageCandidatesTable)
-          .where(eq(contentImageCandidatesTable.id, candidate.id))
+          .where(
+            and(
+              eq(contentImageCandidatesTable.id, candidate.id),
+              isNull(contentImageCandidatesTable.removedAt),
+              isNotNull(contentImageCandidatesTable.discoveryItemId),
+            ),
+          )
           .for("update")
           .limit(1);
         if (!lockedCandidate) return { kind: "missing" as const };
@@ -1190,7 +1337,13 @@ export function createContentDeskRouter(
             reviewedAt: null,
             updatedBy: editorId,
           })
-          .where(eq(contentImageCandidatesTable.id, lockedCandidate.id))
+          .where(
+            and(
+              eq(contentImageCandidatesTable.id, lockedCandidate.id),
+              isNull(contentImageCandidatesTable.removedAt),
+              isNotNull(contentImageCandidatesTable.discoveryItemId),
+            ),
+          )
           .returning();
         if (!updatedCandidate) return { kind: "changed" as const };
         await tx.insert(contentImageCandidateRightsHistoryTable).values({
@@ -1259,7 +1412,13 @@ export function createContentDeskRouter(
       const [existing] = await database
         .select()
         .from(contentImageCandidatesTable)
-        .where(eq(contentImageCandidatesTable.id, params.data.candidateId))
+        .where(
+          and(
+            eq(contentImageCandidatesTable.id, params.data.candidateId),
+            isNull(contentImageCandidatesTable.removedAt),
+            isNotNull(contentImageCandidatesTable.discoveryItemId),
+          ),
+        )
         .limit(1);
       if (!existing) {
         res.status(404).json({ message: "Image candidate not found." });
@@ -1292,7 +1451,13 @@ export function createContentDeskRouter(
           reviewedAt: new Date(),
           updatedBy: editorId,
         })
-        .where(eq(contentImageCandidatesTable.id, params.data.candidateId))
+        .where(
+          and(
+            eq(contentImageCandidatesTable.id, params.data.candidateId),
+            isNull(contentImageCandidatesTable.removedAt),
+            isNotNull(contentImageCandidatesTable.discoveryItemId),
+          ),
+        )
         .returning();
       if (!candidate) {
         res.status(404).json({ message: "Image candidate not found." });

@@ -1,10 +1,13 @@
 import { useRef, useState, type FormEvent, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
+  getGetEditorImageCandidateArchiveQueryKey,
   getGetEditorDiscoveryItemImageCandidatesQueryKey,
   useApplyEditorImageCandidateSourceRecheck,
   useCreateEditorDiscoveryItemImageCandidate,
+  useGetEditorImageCandidateArchive,
   useGetEditorDiscoveryItemImageCandidates,
+  useRemoveEditorImageCandidate,
   useRecheckEditorImageCandidateSource,
   useReviewEditorImageCandidateRights,
   useSearchEditorImageCandidates,
@@ -80,6 +83,78 @@ function candidateDraft(candidate: EditorImageCandidate): CandidateDraft {
 
 function errorMessage(error: unknown, fallback: string) {
   return error instanceof Error && error.message ? error.message : fallback;
+}
+
+function ArchivedCandidateCard({
+  candidate,
+}: {
+  candidate: EditorImageCandidate;
+}) {
+  return (
+    <article className="border-b border-foreground/15 py-4">
+      <p className="signal-kicker text-muted-foreground">
+        {candidate.removedAt
+          ? `Candidate removed by ${candidate.removedBy ?? "an editor"} · ${new Date(candidate.removedAt).toLocaleString()}`
+          : "Discovery lead removed · candidate and rights history retained"}
+      </p>
+      <div className="mt-1 flex flex-wrap items-baseline justify-between gap-2">
+        <h6 className="font-display text-lg">{candidate.fileTitle}</h6>
+        <span className="signal-kicker text-muted-foreground">
+          {candidate.source} · {rightsStatusLabel(candidate.rightsStatus)}
+        </span>
+      </div>
+      <a
+        href={candidate.filePageUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="mt-1 inline-block text-xs text-accent hover:underline"
+      >
+        Open original file page
+      </a>
+      <details className="mt-3 border border-foreground/15 p-3">
+        <summary className="cursor-pointer signal-kicker text-accent">
+          Retained rights history ({candidate.rightsHistory.length})
+        </summary>
+        {candidate.rightsHistory.length === 0 ? (
+          <p className="mt-3 text-xs text-muted-foreground">
+            No rights-term changes were recorded for this candidate.
+          </p>
+        ) : (
+          <ol className="mt-3 divide-y divide-foreground/15 border-t border-foreground/15">
+            {candidate.rightsHistory.map((entry) => (
+              <li key={entry.id} className="py-3">
+                <p className="signal-kicker text-foreground">
+                  Changed by {entry.changedBy} ·{" "}
+                  {new Date(entry.changedAt).toLocaleString()}
+                </p>
+                <dl className="mt-2 grid gap-2 text-xs leading-relaxed sm:grid-cols-2">
+                  {(Object.keys(rightsFieldLabels) as Array<
+                    keyof EditorImageCandidateRightsMetadata
+                  >).map((field) => (
+                    <div key={field} className="border-t border-foreground/10 pt-2">
+                      <dt className="signal-kicker text-foreground">
+                        {rightsFieldLabels[field]}
+                      </dt>
+                      <dd className="mt-1 break-words text-muted-foreground">
+                        Previous:{" "}
+                        {rightsMetadataValue(
+                          field,
+                          entry.previousMetadata[field],
+                        )}
+                      </dd>
+                      <dd className="mt-1 break-words text-muted-foreground">
+                        New: {rightsMetadataValue(field, entry.newMetadata[field])}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              </li>
+            ))}
+          </ol>
+        )}
+      </details>
+    </article>
+  );
 }
 
 function rightsStatusLabel(status: EditorImageCandidate["rightsStatus"]) {
@@ -237,12 +312,20 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
       enabled: isOpen,
     },
   });
+  const archiveQuery = useGetEditorImageCandidateArchive({
+    query: {
+      queryKey: getGetEditorImageCandidateArchiveQueryKey(),
+      enabled: isOpen,
+    },
+  });
   const search = useSearchEditorImageCandidates();
+  const removeCandidate = useRemoveEditorImageCandidate();
   const updateCandidate = useUpdateEditorImageCandidate();
   const recheckSource = useRecheckEditorImageCandidateSource();
   const applySourceRecheck = useApplyEditorImageCandidateSourceRecheck();
   const reviewRights = useReviewEditorImageCandidateRights();
   const candidates = candidatesQuery.data?.candidates ?? [];
+  const archivedCandidates = archiveQuery.data?.candidates ?? [];
 
   function clearDraft(candidateId: number) {
     setDrafts((current) => {
@@ -270,6 +353,39 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
     return queryClient.invalidateQueries({
       queryKey: getGetEditorDiscoveryItemImageCandidatesQueryKey(itemId),
     });
+  }
+
+  function invalidateArchive() {
+    return queryClient.invalidateQueries({
+      queryKey: getGetEditorImageCandidateArchiveQueryKey(),
+    });
+  }
+
+  function archiveCandidate(candidate: EditorImageCandidate) {
+    if (
+      !window.confirm(
+        `Remove ${candidate.fileTitle} from this lead? Its rights history will remain in the archive.`,
+      )
+    ) {
+      return;
+    }
+    setError("");
+    removeCandidate.mutate(
+      { candidateId: candidate.id },
+      {
+        onSuccess: () => {
+          clearDraft(candidate.id);
+          clearSourcePreview(candidate.id);
+          void invalidateCandidates();
+          void invalidateArchive();
+          setNotice(
+            "Candidate removed from this lead. Its image record and rights history remain in the archive.",
+          );
+        },
+        onError: (reason) =>
+          setError(errorMessage(reason, "Image candidate could not be removed.")),
+      },
+    );
   }
 
   function clearSourcePreview(candidateId: number) {
@@ -743,12 +859,22 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
                             </p>
                             <h6 className="mt-1 font-display text-lg">{candidate.fileTitle}</h6>
                           </div>
-                          {candidate.reviewedAt && (
-                            <p className="signal-kicker text-muted-foreground">
-                              Reviewed by {candidate.reviewedBy} ·{" "}
-                              {new Date(candidate.reviewedAt).toLocaleDateString()}
-                            </p>
-                          )}
+                          <div className="flex flex-wrap items-center gap-3">
+                            {candidate.reviewedAt && (
+                              <p className="signal-kicker text-muted-foreground">
+                                Reviewed by {candidate.reviewedBy} ·{" "}
+                                {new Date(candidate.reviewedAt).toLocaleDateString()}
+                              </p>
+                            )}
+                            <button
+                              type="button"
+                              className="signal-rule-link text-destructive"
+                              disabled={removeCandidate.isPending}
+                              onClick={() => archiveCandidate(candidate)}
+                            >
+                              Remove candidate
+                            </button>
+                          </div>
                         </div>
 
                         {candidate.sourceAvailabilityStatus === "missing" && (
@@ -1175,6 +1301,35 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
                     </article>
                   );
                 })}
+              </div>
+            )}
+          </div>
+          <div className="mt-6 border-t-2 border-foreground/20 pt-4">
+            <h5 className="font-display text-xl">Archived image candidates</h5>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+              Removed candidates and candidates whose discovery lead was removed
+              remain here with their rights history.
+            </p>
+            {archiveQuery.isLoading ? (
+              <p className="mt-3 signal-kicker text-muted-foreground" role="status">
+                Loading retained rights records…
+              </p>
+            ) : archiveQuery.isError ? (
+              <p className="mt-3 text-sm text-destructive" role="alert">
+                Archived rights records could not be loaded.
+              </p>
+            ) : archivedCandidates.length === 0 ? (
+              <p className="mt-3 text-sm text-muted-foreground">
+                No image candidates have been archived.
+              </p>
+            ) : (
+              <div className="mt-3 border-t border-foreground/15">
+                {archivedCandidates.map((candidate) => (
+                  <ArchivedCandidateCard
+                    key={candidate.id}
+                    candidate={candidate}
+                  />
+                ))}
               </div>
             )}
           </div>

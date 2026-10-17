@@ -9,3 +9,4 @@
 - [Situation-room evidence boundary](situation-room-evidence-boundary.md) — connect current events to decision pressure, but expose missing migration evidence instead of inventing trends.
 - [Transactional route tests](transactional-route-tests.md) — duplicate-write tests inside rollback transactions should use conflict-safe SQL to avoid poisoning the rest of the test transaction.
 - [Browser test services](browser-test-services.md) — state-map browser tests need both the web and API artifact workflows running before Chromium can exercise the page.
+- [Image-rights retention](image-rights-retention.md) — archive candidate records instead of deleting them; lead deletion detaches candidates, and rights-history rows restrict hard deletion.

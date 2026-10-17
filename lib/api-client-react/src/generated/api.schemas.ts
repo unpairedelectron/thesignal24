@@ -1252,7 +1252,8 @@ export interface EditorImageCandidateRightsHistoryEntry {
 
 export interface EditorImageCandidate {
   id: number;
-  discoveryItemId: number;
+  /** @nullable */
+  discoveryItemId: number | null;
   source: EditorImageCandidateSource;
   fileTitle: string;
   imageUrl: string;
@@ -1274,6 +1275,10 @@ export interface EditorImageCandidate {
   reviewedBy: string | null;
   /** @nullable */
   reviewedAt: string | null;
+  /** @nullable */
+  removedBy: string | null;
+  /** @nullable */
+  removedAt: string | null;
   discoveredAt: string;
   createdBy: string;
   createdAt: string;

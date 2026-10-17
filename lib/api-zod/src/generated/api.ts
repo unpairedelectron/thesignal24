@@ -2134,7 +2134,7 @@ export const GetEditorDiscoveryItemImageCandidatesParams = zod.object({
 export const GetEditorDiscoveryItemImageCandidatesResponse = zod.object({
   "candidates": zod.array(zod.object({
   "id": zod.number().int(),
-  "discoveryItemId": zod.number().int(),
+  "discoveryItemId": zod.number().int().nullable(),
   "source": zod.enum(['Wikimedia Commons', 'Internet Archive', 'Art Institute of Chicago']),
   "fileTitle": zod.string(),
   "imageUrl": zod.string().url(),
@@ -2153,6 +2153,8 @@ export const GetEditorDiscoveryItemImageCandidatesResponse = zod.object({
   "reviewNotes": zod.string(),
   "reviewedBy": zod.string().nullable(),
   "reviewedAt": zod.coerce.date().nullable(),
+  "removedBy": zod.string().nullable(),
+  "removedAt": zod.coerce.date().nullable(),
   "discoveredAt": zod.coerce.date(),
   "createdBy": zod.string(),
   "createdAt": zod.coerce.date(),
@@ -2219,7 +2221,7 @@ export const CreateEditorDiscoveryItemImageCandidateBody = zod.object({
 
 export const CreateEditorDiscoveryItemImageCandidateResponse = zod.object({
   "id": zod.number().int(),
-  "discoveryItemId": zod.number().int(),
+  "discoveryItemId": zod.number().int().nullable(),
   "source": zod.enum(['Wikimedia Commons', 'Internet Archive', 'Art Institute of Chicago']),
   "fileTitle": zod.string(),
   "imageUrl": zod.string().url(),
@@ -2238,6 +2240,139 @@ export const CreateEditorDiscoveryItemImageCandidateResponse = zod.object({
   "reviewNotes": zod.string(),
   "reviewedBy": zod.string().nullable(),
   "reviewedAt": zod.coerce.date().nullable(),
+  "removedBy": zod.string().nullable(),
+  "removedAt": zod.coerce.date().nullable(),
+  "discoveredAt": zod.coerce.date(),
+  "createdBy": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedBy": zod.string(),
+  "updatedAt": zod.coerce.date(),
+  "rightsHistory": zod.array(zod.object({
+  "id": zod.number().int(),
+  "previousMetadata": zod.object({
+  "license": zod.string(),
+  "licenseUrl": zod.string().url().nullable(),
+  "creator": zod.string(),
+  "credit": zod.string(),
+  "copyright": zod.string(),
+  "usageRights": zod.string()
+}),
+  "newMetadata": zod.object({
+  "license": zod.string(),
+  "licenseUrl": zod.string().url().nullable(),
+  "creator": zod.string(),
+  "credit": zod.string(),
+  "copyright": zod.string(),
+  "usageRights": zod.string()
+}),
+  "previousRightsStatus": zod.enum(['pending', 'approved', 'rejected']),
+  "previousReviewNotes": zod.string(),
+  "previousReviewedBy": zod.string().nullable(),
+  "previousReviewedAt": zod.coerce.date().nullable(),
+  "changedBy": zod.string(),
+  "changeSource": zod.enum(['editor_edit', 'source_recheck']),
+  "changedAt": zod.coerce.date()
+}))
+})
+
+
+/**
+ * Requires verified editor access. Includes candidates removed by an editor and candidates whose discovery lead was removed.
+ * @summary List removed image candidates with retained rights history
+ */
+export const GetEditorImageCandidateArchiveResponse = zod.object({
+  "candidates": zod.array(zod.object({
+  "id": zod.number().int(),
+  "discoveryItemId": zod.number().int().nullable(),
+  "source": zod.enum(['Wikimedia Commons', 'Internet Archive', 'Art Institute of Chicago']),
+  "fileTitle": zod.string(),
+  "imageUrl": zod.string().url(),
+  "thumbnailUrl": zod.string().url(),
+  "filePageUrl": zod.string().url(),
+  "license": zod.string(),
+  "licenseUrl": zod.string().url().nullable(),
+  "creator": zod.string(),
+  "credit": zod.string(),
+  "copyright": zod.string(),
+  "usageRights": zod.string(),
+  "altText": zod.string(),
+  "caption": zod.string(),
+  "sourceAvailabilityStatus": zod.enum(['available', 'missing']),
+  "rightsStatus": zod.enum(['pending', 'approved', 'rejected']),
+  "reviewNotes": zod.string(),
+  "reviewedBy": zod.string().nullable(),
+  "reviewedAt": zod.coerce.date().nullable(),
+  "removedBy": zod.string().nullable(),
+  "removedAt": zod.coerce.date().nullable(),
+  "discoveredAt": zod.coerce.date(),
+  "createdBy": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedBy": zod.string(),
+  "updatedAt": zod.coerce.date(),
+  "rightsHistory": zod.array(zod.object({
+  "id": zod.number().int(),
+  "previousMetadata": zod.object({
+  "license": zod.string(),
+  "licenseUrl": zod.string().url().nullable(),
+  "creator": zod.string(),
+  "credit": zod.string(),
+  "copyright": zod.string(),
+  "usageRights": zod.string()
+}),
+  "newMetadata": zod.object({
+  "license": zod.string(),
+  "licenseUrl": zod.string().url().nullable(),
+  "creator": zod.string(),
+  "credit": zod.string(),
+  "copyright": zod.string(),
+  "usageRights": zod.string()
+}),
+  "previousRightsStatus": zod.enum(['pending', 'approved', 'rejected']),
+  "previousReviewNotes": zod.string(),
+  "previousReviewedBy": zod.string().nullable(),
+  "previousReviewedAt": zod.coerce.date().nullable(),
+  "changedBy": zod.string(),
+  "changeSource": zod.enum(['editor_edit', 'source_recheck']),
+  "changedAt": zod.coerce.date()
+}))
+}))
+})
+
+
+/**
+ * Requires verified editor access. Removal is retained as an archived record and does not delete rights history.
+ * @summary Remove an image candidate without deleting rights history
+ */
+
+
+
+export const RemoveEditorImageCandidateParams = zod.object({
+  "candidateId": zod.coerce.number().int().min(1)
+})
+
+export const RemoveEditorImageCandidateResponse = zod.object({
+  "id": zod.number().int(),
+  "discoveryItemId": zod.number().int().nullable(),
+  "source": zod.enum(['Wikimedia Commons', 'Internet Archive', 'Art Institute of Chicago']),
+  "fileTitle": zod.string(),
+  "imageUrl": zod.string().url(),
+  "thumbnailUrl": zod.string().url(),
+  "filePageUrl": zod.string().url(),
+  "license": zod.string(),
+  "licenseUrl": zod.string().url().nullable(),
+  "creator": zod.string(),
+  "credit": zod.string(),
+  "copyright": zod.string(),
+  "usageRights": zod.string(),
+  "altText": zod.string(),
+  "caption": zod.string(),
+  "sourceAvailabilityStatus": zod.enum(['available', 'missing']),
+  "rightsStatus": zod.enum(['pending', 'approved', 'rejected']),
+  "reviewNotes": zod.string(),
+  "reviewedBy": zod.string().nullable(),
+  "reviewedAt": zod.coerce.date().nullable(),
+  "removedBy": zod.string().nullable(),
+  "removedAt": zod.coerce.date().nullable(),
   "discoveredAt": zod.coerce.date(),
   "createdBy": zod.string(),
   "createdAt": zod.coerce.date(),
@@ -2312,7 +2447,7 @@ export const UpdateEditorImageCandidateBody = zod.object({
 
 export const UpdateEditorImageCandidateResponse = zod.object({
   "id": zod.number().int(),
-  "discoveryItemId": zod.number().int(),
+  "discoveryItemId": zod.number().int().nullable(),
   "source": zod.enum(['Wikimedia Commons', 'Internet Archive', 'Art Institute of Chicago']),
   "fileTitle": zod.string(),
   "imageUrl": zod.string().url(),
@@ -2331,6 +2466,8 @@ export const UpdateEditorImageCandidateResponse = zod.object({
   "reviewNotes": zod.string(),
   "reviewedBy": zod.string().nullable(),
   "reviewedAt": zod.coerce.date().nullable(),
+  "removedBy": zod.string().nullable(),
+  "removedAt": zod.coerce.date().nullable(),
   "discoveredAt": zod.coerce.date(),
   "createdBy": zod.string(),
   "createdAt": zod.coerce.date(),
@@ -2416,7 +2553,7 @@ export const ApplyEditorImageCandidateSourceRecheckBody = zod.object({
 export const ApplyEditorImageCandidateSourceRecheckResponse = zod.object({
   "candidate": zod.object({
   "id": zod.number().int(),
-  "discoveryItemId": zod.number().int(),
+  "discoveryItemId": zod.number().int().nullable(),
   "source": zod.enum(['Wikimedia Commons', 'Internet Archive', 'Art Institute of Chicago']),
   "fileTitle": zod.string(),
   "imageUrl": zod.string().url(),
@@ -2435,6 +2572,8 @@ export const ApplyEditorImageCandidateSourceRecheckResponse = zod.object({
   "reviewNotes": zod.string(),
   "reviewedBy": zod.string().nullable(),
   "reviewedAt": zod.coerce.date().nullable(),
+  "removedBy": zod.string().nullable(),
+  "removedAt": zod.coerce.date().nullable(),
   "discoveredAt": zod.coerce.date(),
   "createdBy": zod.string(),
   "createdAt": zod.coerce.date(),
@@ -2493,7 +2632,7 @@ export const ReviewEditorImageCandidateRightsBody = zod.object({
 
 export const ReviewEditorImageCandidateRightsResponse = zod.object({
   "id": zod.number().int(),
-  "discoveryItemId": zod.number().int(),
+  "discoveryItemId": zod.number().int().nullable(),
   "source": zod.enum(['Wikimedia Commons', 'Internet Archive', 'Art Institute of Chicago']),
   "fileTitle": zod.string(),
   "imageUrl": zod.string().url(),
@@ -2512,6 +2651,8 @@ export const ReviewEditorImageCandidateRightsResponse = zod.object({
   "reviewNotes": zod.string(),
   "reviewedBy": zod.string().nullable(),
   "reviewedAt": zod.coerce.date().nullable(),
+  "removedBy": zod.string().nullable(),
+  "removedAt": zod.coerce.date().nullable(),
   "discoveredAt": zod.coerce.date(),
   "createdBy": zod.string(),
   "createdAt": zod.coerce.date(),

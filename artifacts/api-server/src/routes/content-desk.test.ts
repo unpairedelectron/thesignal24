@@ -20,7 +20,7 @@ import {
 } from "../lib/art-institute";
 import { createContentDeskRouter } from "./content-desk";
 import { eq } from "drizzle-orm";
-import { db, issuesTable } from "@workspace/db";
+import { db, discoveryItemsTable, issuesTable } from "@workspace/db";
 
 const rollbackMarker = new Error("Rollback content desk test fixtures");
 
@@ -1557,6 +1557,121 @@ test("editor source registry and manual discovery queue validate and retain revi
           { status: "rejected", reviewNotes: "Do not change promoted state." },
         );
         assert.equal(unreviewPromotedLead.response.status, 409);
+
+        const candidateBeforeRemoval = imageCandidates.body.candidates.find(
+          (candidate: { id: number }) =>
+            candidate.id === createdImageCandidate.body.id,
+        );
+        assert.ok(candidateBeforeRemoval);
+        const removedCandidate = await requestJson(
+          baseUrl,
+          `/editor/image-candidates/${createdImageCandidate.body.id}`,
+          "DELETE",
+        );
+        assert.equal(removedCandidate.response.status, 200);
+        assert.equal(removedCandidate.body.removedBy, "content-desk-test-editor");
+        assert.ok(removedCandidate.body.removedAt);
+        assert.equal(removedCandidate.body.fileTitle, candidateBeforeRemoval.fileTitle);
+        assert.deepEqual(
+          removedCandidate.body.rightsHistory,
+          candidateBeforeRemoval.rightsHistory,
+        );
+
+        const activeCandidatesAfterRemoval = await requestJson(
+          baseUrl,
+          `/editor/discovery-items/${createdLead.body.id}/image-candidates`,
+          "GET",
+        );
+        assert.equal(
+          activeCandidatesAfterRemoval.body.candidates.some(
+            (candidate: { id: number }) =>
+              candidate.id === createdImageCandidate.body.id,
+          ),
+          false,
+        );
+        const archiveAfterCandidateRemoval = await requestJson(
+          baseUrl,
+          "/editor/image-candidates/archive",
+          "GET",
+        );
+        const archivedCandidate =
+          archiveAfterCandidateRemoval.body.candidates.find(
+            (candidate: { id: number }) =>
+              candidate.id === createdImageCandidate.body.id,
+          );
+        assert.ok(archivedCandidate);
+        assert.equal(archivedCandidate.removedBy, "content-desk-test-editor");
+        assert.equal(archivedCandidate.fileTitle, candidateBeforeRemoval.fileTitle);
+        assert.deepEqual(
+          archivedCandidate.rightsHistory,
+          candidateBeforeRemoval.rightsHistory,
+        );
+        assert.equal(
+          archivedCandidate.rightsHistory[0].changedBy,
+          "content-desk-test-editor",
+        );
+        assert.ok(archivedCandidate.rightsHistory[0].changedAt);
+        assert.equal(
+          archivedCandidate.rightsHistory[0].previousMetadata.credit,
+          candidateBeforeRemoval.rightsHistory[0].previousMetadata.credit,
+        );
+        assert.equal(
+          archivedCandidate.rightsHistory[0].newMetadata.credit,
+          candidateBeforeRemoval.rightsHistory[0].newMetadata.credit,
+        );
+        const editArchivedCandidate = await requestJson(
+          baseUrl,
+          `/editor/image-candidates/${createdImageCandidate.body.id}`,
+          "PATCH",
+          {
+            license: "CC BY-SA 4.0",
+            licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+            creator: "Commons Artist",
+            credit: "Changed after removal",
+            copyright: "Source copyright statement",
+            usageRights: "CC BY-SA 4.0; attribution required.",
+            altText: "Campus",
+            caption: "Campus archive image",
+          },
+        );
+        assert.equal(editArchivedCandidate.response.status, 404);
+
+        const detachedCandidateHistory = (
+          await requestJson(
+            baseUrl,
+            `/editor/discovery-items/${createdLead.body.id}/image-candidates`,
+            "GET",
+          )
+        ).body.candidates.find(
+          (candidate: { id: number }) =>
+            candidate.id === createdArchiveCandidate.body.id,
+        ).rightsHistory;
+        assert.ok(detachedCandidateHistory.length > 0);
+        await tx
+          .delete(discoveryItemsTable)
+          .where(eq(discoveryItemsTable.id, createdLead.body.id));
+        const archiveAfterLeadRemoval = await requestJson(
+          baseUrl,
+          "/editor/image-candidates/archive",
+          "GET",
+        );
+        const detachedCandidate = archiveAfterLeadRemoval.body.candidates.find(
+          (candidate: { id: number }) =>
+            candidate.id === createdArchiveCandidate.body.id,
+        );
+        assert.ok(detachedCandidate);
+        assert.equal(detachedCandidate.discoveryItemId, null);
+        assert.equal(detachedCandidate.removedAt, null);
+        assert.equal(detachedCandidate.fileTitle, createdArchiveCandidate.body.fileTitle);
+        assert.deepEqual(
+          detachedCandidate.rightsHistory,
+          detachedCandidateHistory,
+        );
+        assert.equal(
+          detachedCandidate.rightsHistory[0].changedBy,
+          "content-desk-test-editor",
+        );
+        assert.ok(detachedCandidate.rightsHistory[0].changedAt);
       } finally {
         await close(server);
       }

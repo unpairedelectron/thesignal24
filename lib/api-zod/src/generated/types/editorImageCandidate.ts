@@ -12,7 +12,8 @@ import type { ImageCandidateRightsStatus } from './imageCandidateRightsStatus';
 
 export interface EditorImageCandidate {
   id: number;
-  discoveryItemId: number;
+  /** @nullable */
+  discoveryItemId: number | null;
   source: EditorImageCandidateSource;
   fileTitle: string;
   imageUrl: string;
@@ -34,6 +35,10 @@ export interface EditorImageCandidate {
   reviewedBy: string | null;
   /** @nullable */
   reviewedAt: Date | null;
+  /** @nullable */
+  removedBy: string | null;
+  /** @nullable */
+  removedAt: Date | null;
   discoveredAt: Date;
   createdBy: string;
   createdAt: Date;

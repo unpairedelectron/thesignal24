@@ -17,8 +17,7 @@ export const contentImageCandidatesTable = pgTable(
   {
     id: serial("id").primaryKey(),
     discoveryItemId: integer("discovery_item_id")
-      .notNull()
-      .references(() => discoveryItemsTable.id, { onDelete: "cascade" }),
+      .references(() => discoveryItemsTable.id, { onDelete: "set null" }),
     source: text("source").notNull().default("Wikimedia Commons"),
     fileTitle: text("file_title").notNull(),
     imageUrl: text("image_url").notNull(),
@@ -39,6 +38,8 @@ export const contentImageCandidatesTable = pgTable(
     reviewNotes: text("review_notes").notNull().default(""),
     reviewedBy: text("reviewed_by"),
     reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+    removedBy: text("removed_by"),
+    removedAt: timestamp("removed_at", { withTimezone: true }),
     discoveredAt: timestamp("discovered_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -77,7 +78,7 @@ export const contentImageCandidateRightsHistoryTable = pgTable(
     id: serial("id").primaryKey(),
     candidateId: integer("candidate_id")
       .notNull()
-      .references(() => contentImageCandidatesTable.id, { onDelete: "cascade" }),
+      .references(() => contentImageCandidatesTable.id, { onDelete: "restrict" }),
     previousMetadata: jsonb("previous_metadata")
       .$type<ContentImageCandidateRightsMetadataSnapshot>()
       .notNull(),

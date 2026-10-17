@@ -4579,6 +4579,159 @@ export const useCreateEditorDiscoveryItemImageCandidate = <TError = ErrorType<vo
       return useMutation(getCreateEditorDiscoveryItemImageCandidateMutationOptions(options));
     }
 
+export const getGetEditorImageCandidateArchiveUrl = () => {
+
+
+
+
+  return `/api/editor/image-candidates/archive`
+}
+
+/**
+ * Requires verified editor access. Includes candidates removed by an editor and candidates whose discovery lead was removed.
+ * @summary List removed image candidates with retained rights history
+ */
+export const getEditorImageCandidateArchive = async ( options?: Parameters<typeof customFetch>[1]): Promise<EditorImageCandidatesResponse> => {
+
+  return customFetch<EditorImageCandidatesResponse>(getGetEditorImageCandidateArchiveUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetEditorImageCandidateArchiveQueryKey = () => {
+    return [
+    `/api/editor/image-candidates/archive`
+    ] as const;
+    }
+
+
+export const getGetEditorImageCandidateArchiveQueryOptions = <TData = Awaited<ReturnType<typeof getEditorImageCandidateArchive>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getEditorImageCandidateArchive>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetEditorImageCandidateArchiveQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getEditorImageCandidateArchive>>> = ({ signal }) => getEditorImageCandidateArchive({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getEditorImageCandidateArchive>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetEditorImageCandidateArchiveQueryResult = NonNullable<Awaited<ReturnType<typeof getEditorImageCandidateArchive>>>
+export type GetEditorImageCandidateArchiveQueryError = ErrorType<void>
+
+
+/**
+ * @summary List removed image candidates with retained rights history
+ */
+
+export function useGetEditorImageCandidateArchive<TData = Awaited<ReturnType<typeof getEditorImageCandidateArchive>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getEditorImageCandidateArchive>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetEditorImageCandidateArchiveQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRemoveEditorImageCandidateUrl = (candidateId: number,) => {
+
+
+
+
+  return `/api/editor/image-candidates/${candidateId}`
+}
+
+/**
+ * Requires verified editor access. Removal is retained as an archived record and does not delete rights history.
+ * @summary Remove an image candidate without deleting rights history
+ */
+export const removeEditorImageCandidate = async (candidateId: number, options?: Parameters<typeof customFetch>[1]): Promise<EditorImageCandidate> => {
+
+  return customFetch<EditorImageCandidate>(getRemoveEditorImageCandidateUrl(candidateId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getRemoveEditorImageCandidateMutationKey = () => ['removeEditorImageCandidate'] as const;
+
+export const getRemoveEditorImageCandidateMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeEditorImageCandidate>>, TError,RemoveEditorImageCandidateMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof removeEditorImageCandidate>>, TError,RemoveEditorImageCandidateMutationVariables, TContext> => {
+
+const mutationKey = getRemoveEditorImageCandidateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof removeEditorImageCandidate>>, RemoveEditorImageCandidateMutationVariables> = (props) => {
+          const {candidateId} = props ?? {};
+
+          return  removeEditorImageCandidate(candidateId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RemoveEditorImageCandidateMutationResult = NonNullable<Awaited<ReturnType<typeof removeEditorImageCandidate>>>
+
+    export type RemoveEditorImageCandidateMutationError = ErrorType<void>
+    export type RemoveEditorImageCandidateMutationVariables = {candidateId: number}
+
+    /**
+ * @summary Remove an image candidate without deleting rights history
+ */
+export const useRemoveEditorImageCandidate = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeEditorImageCandidate>>, TError,RemoveEditorImageCandidateMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof removeEditorImageCandidate>>,
+        TError,
+        RemoveEditorImageCandidateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRemoveEditorImageCandidateMutationOptions(options));
+    }
+
 export const getUpdateEditorImageCandidateUrl = (candidateId: number,) => {
 
 
