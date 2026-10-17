@@ -114,6 +114,48 @@ function ArchivedCandidateCard({
       >
         Open original file page
       </a>
+      {candidate.source === "Art Institute of Chicago" && (
+        <section
+          className="mt-3 border-l-2 border-accent/50 pl-3"
+          aria-label="Art Institute catalog details"
+        >
+          <p className="signal-kicker text-muted-foreground">
+            Catalog details supplied by Art Institute of Chicago
+          </p>
+          <dl className="mt-2 grid gap-2 text-xs leading-relaxed text-muted-foreground">
+            <div>
+              <dt className="inline font-semibold text-foreground">
+                Catalog reference:{" "}
+              </dt>
+              <dd className="inline break-words">
+                {candidate.catalogReference ||
+                  "Not supplied by Art Institute of Chicago"}
+              </dd>
+            </div>
+            <div>
+              <dt className="inline font-semibold text-foreground">
+                Artwork date:{" "}
+              </dt>
+              <dd className="inline break-words">
+                {candidate.artworkDate ||
+                  "Not supplied by Art Institute of Chicago"}
+              </dd>
+            </div>
+            <div>
+              <dt className="inline font-semibold text-foreground">
+                Provenance:{" "}
+              </dt>
+              <dd className="inline break-words">
+                {candidate.provenance ||
+                  "Not supplied by Art Institute of Chicago"}
+              </dd>
+            </div>
+          </dl>
+          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+            Provenance describes ownership history; it is not rights clearance.
+          </p>
+        </section>
+      )}
       <details className="mt-3 border border-foreground/15 p-3">
         <summary className="cursor-pointer signal-kicker text-accent">
           Retained rights history ({candidate.rightsHistory.length})
@@ -234,6 +276,38 @@ function SearchResult({
           {result.source} search result · not rights-cleared
         </p>
         <dl className="mt-3 grid gap-2 text-xs leading-relaxed text-muted-foreground">
+          {result.source === "Art Institute of Chicago" && (
+            <>
+              <div>
+                <dt className="inline font-semibold text-foreground">
+                  Art Institute catalog reference:{" "}
+                </dt>
+                <dd className="inline">
+                  {result.catalogReference || "Not supplied by Art Institute of Chicago"}
+                </dd>
+              </div>
+              <div>
+                <dt className="inline font-semibold text-foreground">
+                  Artwork date:{" "}
+                </dt>
+                <dd className="inline">
+                  {result.artworkDate || "Not supplied by Art Institute of Chicago"}
+                </dd>
+              </div>
+              <div>
+                <dt className="inline font-semibold text-foreground">
+                  Provenance:{" "}
+                </dt>
+                <dd className="inline">
+                  {result.provenance || "Not supplied by Art Institute of Chicago"}
+                </dd>
+              </div>
+              <p className="text-muted-foreground">
+                Catalog details supplied by Art Institute of Chicago. Provenance
+                describes ownership history; it does not establish image reuse rights.
+              </p>
+            </>
+          )}
           <div>
             <dt className="inline font-semibold text-foreground">License: </dt>
             <dd className="inline">
@@ -907,6 +981,51 @@ export function ImageCandidateManager({ itemId }: { itemId: number }) {
                             </button>
                           </div>
                         </div>
+
+                        {candidate.source === "Art Institute of Chicago" && (
+                          <section
+                            className="mt-3 border-l-2 border-accent/50 pl-3"
+                            aria-label="Art Institute catalog details"
+                          >
+                            <p className="signal-kicker text-muted-foreground">
+                              Catalog details supplied by Art Institute of Chicago
+                            </p>
+                            <dl className="mt-2 grid gap-2 text-xs leading-relaxed text-muted-foreground">
+                              <div>
+                                <dt className="inline font-semibold text-foreground">
+                                  Catalog reference:{" "}
+                                </dt>
+                                <dd className="inline break-words">
+                                  {candidate.catalogReference ||
+                                    "Not supplied by Art Institute of Chicago"}
+                                </dd>
+                              </div>
+                              <div>
+                                <dt className="inline font-semibold text-foreground">
+                                  Artwork date:{" "}
+                                </dt>
+                                <dd className="inline break-words">
+                                  {candidate.artworkDate ||
+                                    "Not supplied by Art Institute of Chicago"}
+                                </dd>
+                              </div>
+                              <div>
+                                <dt className="inline font-semibold text-foreground">
+                                  Provenance:{" "}
+                                </dt>
+                                <dd className="inline break-words">
+                                  {candidate.provenance ||
+                                    "Not supplied by Art Institute of Chicago"}
+                                </dd>
+                              </div>
+                            </dl>
+                            <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                              Provenance describes ownership history; it is not
+                              rights clearance. Review copyright and reuse terms
+                              separately before recording a rights decision.
+                            </p>
+                          </section>
+                        )}
 
                         {candidate.sourceAvailabilityStatus === "missing" && (
                           <p

@@ -11,6 +11,9 @@ const ARTWORK_FIELDS = [
   "credit_line",
   "is_public_domain",
   "copyright_notice",
+  "main_reference_number",
+  "date_display",
+  "provenance_text",
   "image_id",
 ].join(",");
 const MAX_PAGE = 1000;
@@ -170,6 +173,9 @@ function normalizeArtwork(
     credit: textValue(artwork.credit_line),
     copyright: textValue(artwork.copyright_notice),
     usageRights: `${rightsStatus} Review the original record and copyright notice. API metadata terms do not establish image reuse rights; editor review is required.`,
+    catalogReference: textValue(artwork.main_reference_number),
+    artworkDate: textValue(artwork.date_display),
+    provenance: textValue(artwork.provenance_text),
   };
 }
 

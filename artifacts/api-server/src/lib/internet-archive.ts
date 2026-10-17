@@ -224,6 +224,9 @@ function normalizeItem(
       "usage",
       "access_conditions",
     ]),
+    catalogReference: "",
+    artworkDate: "",
+    provenance: "",
   };
 }
 

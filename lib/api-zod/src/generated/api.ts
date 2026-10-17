@@ -26,7 +26,6 @@ export const getCurrentIssueResponseStoriesItemEventCountMin = 0;
 export const getCurrentIssueResponseStoriesItemSourceCountMin = 0;
 
 
-
 export const GetCurrentIssueResponse = zod.object({
   "issue": zod.object({
   "id": zod.number().int(),
@@ -110,7 +109,6 @@ export const GetLiveUpdatesResponse = zod.object({
 export const getCommunityPostsQuerySortDefault = `recent`;
 export const getCommunityPostsQueryLimitDefault = 20;
 export const getCommunityPostsQueryLimitMax = 50;
-
 
 
 export const GetCommunityPostsQueryParams = zod.object({
@@ -239,7 +237,6 @@ export const getCommunityPostResponseRepliesItemOneBodyMin = 2;
 export const getCommunityPostResponseRepliesItemOneBodyMax = 5000;
 
 
-
 export const GetCommunityPostResponse = zod.object({
   "post": zod.object({
   "authorName": zod.string().min(getCommunityPostResponsePostOneAuthorNameMin).max(getCommunityPostResponsePostOneAuthorNameMax),
@@ -281,7 +278,6 @@ export const createCommunityReplyBodyBodyMin = 2;
 export const createCommunityReplyBodyBodyMax = 5000;
 
 
-
 export const CreateCommunityReplyBody = zod.object({
   "authorName": zod.string().min(createCommunityReplyBodyAuthorNameMin).max(createCommunityReplyBodyAuthorNameMax),
   "body": zod.string().min(createCommunityReplyBodyBodyMin).max(createCommunityReplyBodyBodyMax)
@@ -292,7 +288,6 @@ export const createCommunityReplyResponseOneAuthorNameMax = 80;
 
 export const createCommunityReplyResponseOneBodyMin = 2;
 export const createCommunityReplyResponseOneBodyMax = 5000;
-
 
 
 export const CreateCommunityReplyResponse = zod.object({
@@ -325,7 +320,6 @@ export const getEditorialIssueResponseStoriesItemRecordDateRegExp = new RegExp('
 export const getEditorialIssueResponseStoriesItemEventCountMin = 0;
 
 export const getEditorialIssueResponseStoriesItemSourceCountMin = 0;
-
 
 
 export const GetEditorialIssueResponse = zod.object({
@@ -394,7 +388,6 @@ export const getArchiveQueryLimitDefault = 50;
 export const getArchiveQueryLimitMax = 100;
 
 
-
 export const GetArchiveQueryParams = zod.object({
   "q": zod.coerce.string().optional(),
   "topic": zod.enum(['Latest', 'Courts & Policy', 'States', 'History', 'Ground Reports', 'Data & Notes']).optional(),
@@ -407,7 +400,6 @@ export const getArchiveResponseStoriesItemRecordDateRegExp = new RegExp('^\\d{4}
 export const getArchiveResponseStoriesItemEventCountMin = 0;
 
 export const getArchiveResponseStoriesItemSourceCountMin = 0;
-
 
 
 export const GetArchiveResponse = zod.object({
@@ -462,7 +454,6 @@ export const getEvidenceEventsQueryLimitDefault = 100;
 export const getEvidenceEventsQueryLimitMax = 100;
 
 
-
 export const GetEvidenceEventsQueryParams = zod.object({
   "topic": zod.enum(['Latest', 'Courts & Policy', 'States', 'History', 'Ground Reports', 'Data & Notes']).optional(),
   "limit": zod.coerce.number().int().min(1).max(getEvidenceEventsQueryLimitMax).default(getEvidenceEventsQueryLimitDefault)
@@ -475,7 +466,6 @@ export const getEvidenceEventsResponseEventsItemSecondarySourcesItemPublicationD
 export const getEvidenceEventsResponseEventsItemArticleCountMin = 0;
 
 export const getEvidenceEventsResponseEventsItemSourceCountMin = 0;
-
 
 
 export const GetEvidenceEventsResponse = zod.object({
@@ -529,7 +519,6 @@ export const GetEvidenceEventsResponse = zod.object({
  */
 
 
-
 export const GetEvidenceEventParams = zod.object({
   "eventId": zod.coerce.number().int().min(1)
 })
@@ -541,7 +530,6 @@ export const getEvidenceEventResponseEventSecondarySourcesItemPublicationDateReg
 export const getEvidenceEventResponseEventArticleCountMin = 0;
 
 export const getEvidenceEventResponseEventSourceCountMin = 0;
-
 
 
 export const GetEvidenceEventResponse = zod.object({
@@ -671,7 +659,6 @@ export const GetStoryEvidenceResponse = zod.object({
  */
 
 
-
 export const GetSourceDocumentParams = zod.object({
   "sourceId": zod.coerce.number().int().min(1)
 })
@@ -725,7 +712,6 @@ export const GetSourceDocumentResponse = zod.object({
  */
 
 
-
 export const SearchEvidenceRecordsQueryParams = zod.object({
   "q": zod.coerce.string().min(1)
 })
@@ -735,7 +721,6 @@ export const searchEvidenceRecordsResponseResultsItemSourcePublicationDateRegExp
 export const searchEvidenceRecordsResponseResultsItemEventCountMin = 0;
 
 export const searchEvidenceRecordsResponseResultsItemSourceCountMin = 0;
-
 
 
 export const SearchEvidenceRecordsResponse = zod.object({
@@ -878,7 +863,6 @@ export const GetEditorEvidenceResponse = zod.object({
  */
 
 
-
 export const CreateEvidenceEventBody = zod.object({
   "title": zod.string().min(1),
   "topic": zod.enum(['Latest', 'Courts & Policy', 'States', 'History', 'Ground Reports', 'Data & Notes']),
@@ -905,12 +889,9 @@ export const CreateEvidenceEventResponse = zod.object({
  */
 
 
-
 export const UpdateEvidenceEventParams = zod.object({
   "eventId": zod.coerce.number().int().min(1)
 })
-
-
 
 
 export const UpdateEvidenceEventBody = zod.object({
@@ -937,7 +918,6 @@ export const UpdateEvidenceEventResponse = zod.object({
 /**
  * @summary Delete an event and cascade its relationship rows
  */
-
 
 
 export const DeleteEvidenceEventParams = zod.object({
@@ -983,11 +963,9 @@ export const CreateSourceDocumentResponse = zod.object({
  */
 
 
-
 export const UpdateSourceDocumentParams = zod.object({
   "sourceId": zod.coerce.number().int().min(1)
 })
-
 
 
 export const updateSourceDocumentBodyPublicationDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
@@ -1021,7 +999,6 @@ export const UpdateSourceDocumentResponse = zod.object({
  */
 
 
-
 export const DeleteSourceDocumentParams = zod.object({
   "sourceId": zod.coerce.number().int().min(1)
 })
@@ -1032,8 +1009,6 @@ export const DeleteSourceDocumentResponse = zod.void()
 /**
  * @summary Explicitly link an article to an event
  */
-
-
 
 
 export const LinkArticleToEventBody = zod.object({
@@ -1051,7 +1026,6 @@ export const LinkArticleToEventResponse = zod.object({
  */
 
 
-
 export const UnlinkArticleFromEventParams = zod.object({
   "eventId": zod.coerce.number().int().min(1),
   "storyId": zod.coerce.number().int()
@@ -1063,8 +1037,6 @@ export const UnlinkArticleFromEventResponse = zod.void()
 /**
  * @summary Explicitly link an article directly to a source document
  */
-
-
 
 
 export const LinkArticleToSourceBody = zod.object({
@@ -1081,7 +1053,6 @@ export const LinkArticleToSourceResponse = zod.object({
 /**
  * @summary Change the evidentiary role of a direct article source
  */
-
 
 
 export const UpdateArticleSourceRoleParams = zod.object({
@@ -1103,7 +1074,6 @@ export const UpdateArticleSourceRoleResponse = zod.object({
  */
 
 
-
 export const UnlinkArticleFromSourceParams = zod.object({
   "storyId": zod.coerce.number().int(),
   "sourceId": zod.coerce.number().int().min(1)
@@ -1115,8 +1085,6 @@ export const UnlinkArticleFromSourceResponse = zod.void()
 /**
  * @summary Explicitly link a source document to an event
  */
-
-
 
 
 export const LinkSourceToEventBody = zod.object({
@@ -1135,8 +1103,6 @@ export const LinkSourceToEventResponse = zod.object({
  */
 
 
-
-
 export const UnlinkSourceFromEventParams = zod.object({
   "eventId": zod.coerce.number().int().min(1),
   "sourceId": zod.coerce.number().int().min(1)
@@ -1150,7 +1116,6 @@ export const UnlinkSourceFromEventResponse = zod.void()
  */
 export const getPoliciesQueryLimitDefault = 50;
 export const getPoliciesQueryLimitMax = 100;
-
 
 
 export const GetPoliciesQueryParams = zod.object({
@@ -1242,7 +1207,6 @@ export const getDecisionImpactsQueryLimitDefault = 50;
 export const getDecisionImpactsQueryLimitMax = 100;
 
 
-
 export const GetDecisionImpactsQueryParams = zod.object({
   "evidenceType": zod.enum(['lived-account', 'monitored-lead', 'quantified-finding']).optional(),
   "decisionArea": zod.enum(['migration', 'study', 'work', 'applications', 'staying', 'speaking', 'leaving']).optional(),
@@ -1294,7 +1258,6 @@ export const createDecisionImpactBodyGeographyMin = 2;
 export const createDecisionImpactBodyDefinitionMin = 20;
 
 export const createDecisionImpactBodySourceMin = 2;
-
 
 
 export const CreateDecisionImpactBody = zod.object({
@@ -1380,7 +1343,6 @@ export const updateDecisionImpactBodyGeographyMin = 2;
 export const updateDecisionImpactBodyDefinitionMin = 20;
 
 export const updateDecisionImpactBodySourceMin = 2;
-
 
 
 export const UpdateDecisionImpactBody = zod.object({
@@ -1488,7 +1450,6 @@ export const getStoryResponseEventCountMin = 0;
 export const getStoryResponseSourceCountMin = 0;
 
 
-
 export const GetStoryResponse = zod.object({
   "id": zod.number().int(),
   "issueId": zod.number().int(),
@@ -1568,7 +1529,6 @@ export const updateStoryResponseRecordDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\
 export const updateStoryResponseEventCountMin = 0;
 
 export const updateStoryResponseSourceCountMin = 0;
-
 
 
 export const UpdateStoryResponse = zod.object({
@@ -1666,7 +1626,6 @@ export const createStoryResponseEventCountMin = 0;
 export const createStoryResponseSourceCountMin = 0;
 
 
-
 export const CreateStoryResponse = zod.object({
   "id": zod.number().int(),
   "issueId": zod.number().int(),
@@ -1759,7 +1718,6 @@ export const createEditorContentSourceBodyLanguageMax = 80;
 export const createEditorContentSourceBodyStateMax = 120;
 
 
-
 export const CreateEditorContentSourceBody = zod.object({
   "sourceName": zod.string().min(1).max(createEditorContentSourceBodySourceNameMax),
   "sourceType": zod.enum(['government', 'court', 'regulator', 'reporting', 'academic', 'community', 'image', 'other']),
@@ -1799,7 +1757,6 @@ export const CreateEditorContentSourceResponse = zod.object({
  */
 
 
-
 export const UpdateEditorContentSourceParams = zod.object({
   "sourceId": zod.coerce.number().int().min(1)
 })
@@ -1812,7 +1769,6 @@ export const updateEditorContentSourceBodyDomainMax = 253;
 export const updateEditorContentSourceBodyLanguageMax = 80;
 
 export const updateEditorContentSourceBodyStateMax = 120;
-
 
 
 export const UpdateEditorContentSourceBody = zod.object({
@@ -1910,7 +1866,6 @@ export const createEditorDiscoveryItemBodyStateMax = 120;
 export const createEditorDiscoveryItemBodyCandidateEventTitleMax = 300;
 
 
-
 export const CreateEditorDiscoveryItemBody = zod.object({
   "sourceId": zod.number().int().min(1),
   "originalUrl": zod.string().url(),
@@ -1967,13 +1922,11 @@ export const CreateEditorDiscoveryItemResponse = zod.object({
  */
 
 
-
 export const UpdateEditorDiscoveryItemParams = zod.object({
   "itemId": zod.coerce.number().int().min(1)
 })
 
 export const updateEditorDiscoveryItemBodyReviewNotesMax = 2000;
-
 
 
 export const UpdateEditorDiscoveryItemBody = zod.object({
@@ -2022,7 +1975,6 @@ export const UpdateEditorDiscoveryItemResponse = zod.object({
  */
 
 
-
 export const PromoteEditorDiscoveryItemParams = zod.object({
   "itemId": zod.coerce.number().int().min(1)
 })
@@ -2033,7 +1985,6 @@ export const promoteEditorDiscoveryItemBodyTitleMax = 300;
 export const promoteEditorDiscoveryItemBodyDekMax = 500;
 
 export const promoteEditorDiscoveryItemBodyBodyMax = 50000;
-
 
 
 export const PromoteEditorDiscoveryItemBody = zod.object({
@@ -2089,7 +2040,6 @@ export const searchEditorImageCandidatesBodyQueryMax = 160;
 export const searchEditorImageCandidatesBodyPageMax = 1000;
 
 
-
 export const SearchEditorImageCandidatesBody = zod.object({
   "query": zod.string().min(searchEditorImageCandidatesBodyQueryMin).max(searchEditorImageCandidatesBodyQueryMax),
   "source": zod.enum(['Wikimedia Commons', 'Internet Archive', 'Art Institute of Chicago']).optional(),
@@ -2099,7 +2049,6 @@ export const SearchEditorImageCandidatesBody = zod.object({
 export const searchEditorImageCandidatesResponseResultsItemFileTitleMax = 500;
 
 export const searchEditorImageCandidatesResponseNextPageMax = 1000;
-
 
 
 export const SearchEditorImageCandidatesResponse = zod.object({
@@ -2114,7 +2063,10 @@ export const SearchEditorImageCandidatesResponse = zod.object({
   "creator": zod.string(),
   "credit": zod.string(),
   "copyright": zod.string(),
-  "usageRights": zod.string()
+  "usageRights": zod.string(),
+  "catalogReference": zod.string(),
+  "artworkDate": zod.string(),
+  "provenance": zod.string()
 })),
   "nextPage": zod.number().int().min(1).max(searchEditorImageCandidatesResponseNextPageMax).nullable()
 })
@@ -2124,7 +2076,6 @@ export const SearchEditorImageCandidatesResponse = zod.object({
  * Requires verified editor access. Candidate records are not public and are not publication approvals.
  * @summary List image candidates for an external lead
  */
-
 
 
 export const GetEditorDiscoveryItemImageCandidatesParams = zod.object({
@@ -2146,6 +2097,9 @@ export const GetEditorDiscoveryItemImageCandidatesResponse = zod.object({
   "credit": zod.string(),
   "copyright": zod.string(),
   "usageRights": zod.string(),
+  "catalogReference": zod.string(),
+  "artworkDate": zod.string(),
+  "provenance": zod.string(),
   "altText": zod.string(),
   "caption": zod.string(),
   "sourceAvailabilityStatus": zod.enum(['available', 'missing']),
@@ -2201,7 +2155,6 @@ export const GetEditorDiscoveryItemImageCandidatesResponse = zod.object({
  */
 
 
-
 export const CreateEditorDiscoveryItemImageCandidateParams = zod.object({
   "itemId": zod.coerce.number().int().min(1)
 })
@@ -2212,7 +2165,6 @@ export const createEditorDiscoveryItemImageCandidateBodyFileTitleMax = 500;
 export const createEditorDiscoveryItemImageCandidateBodyAltTextMax = 500;
 
 export const createEditorDiscoveryItemImageCandidateBodyCaptionMax = 1000;
-
 
 
 export const CreateEditorDiscoveryItemImageCandidateBody = zod.object({
@@ -2238,6 +2190,9 @@ export const CreateEditorDiscoveryItemImageCandidateResponse = zod.object({
   "credit": zod.string(),
   "copyright": zod.string(),
   "usageRights": zod.string(),
+  "catalogReference": zod.string(),
+  "artworkDate": zod.string(),
+  "provenance": zod.string(),
   "altText": zod.string(),
   "caption": zod.string(),
   "sourceAvailabilityStatus": zod.enum(['available', 'missing']),
@@ -2305,6 +2260,9 @@ export const GetEditorImageCandidateArchiveResponse = zod.object({
   "credit": zod.string(),
   "copyright": zod.string(),
   "usageRights": zod.string(),
+  "catalogReference": zod.string(),
+  "artworkDate": zod.string(),
+  "provenance": zod.string(),
   "altText": zod.string(),
   "caption": zod.string(),
   "sourceAvailabilityStatus": zod.enum(['available', 'missing']),
@@ -2360,7 +2318,6 @@ export const GetEditorImageCandidateArchiveResponse = zod.object({
  */
 
 
-
 export const RemoveEditorImageCandidateParams = zod.object({
   "candidateId": zod.coerce.number().int().min(1)
 })
@@ -2379,6 +2336,9 @@ export const RemoveEditorImageCandidateResponse = zod.object({
   "credit": zod.string(),
   "copyright": zod.string(),
   "usageRights": zod.string(),
+  "catalogReference": zod.string(),
+  "artworkDate": zod.string(),
+  "provenance": zod.string(),
   "altText": zod.string(),
   "caption": zod.string(),
   "sourceAvailabilityStatus": zod.enum(['available', 'missing']),
@@ -2433,7 +2393,6 @@ export const RemoveEditorImageCandidateResponse = zod.object({
  */
 
 
-
 export const UpdateEditorImageCandidateParams = zod.object({
   "candidateId": zod.coerce.number().int().min(1)
 })
@@ -2451,7 +2410,6 @@ export const updateEditorImageCandidateBodyUsageRightsMax = 3000;
 export const updateEditorImageCandidateBodyAltTextMax = 500;
 
 export const updateEditorImageCandidateBodyCaptionMax = 1000;
-
 
 
 export const UpdateEditorImageCandidateBody = zod.object({
@@ -2479,6 +2437,9 @@ export const UpdateEditorImageCandidateResponse = zod.object({
   "credit": zod.string(),
   "copyright": zod.string(),
   "usageRights": zod.string(),
+  "catalogReference": zod.string(),
+  "artworkDate": zod.string(),
+  "provenance": zod.string(),
   "altText": zod.string(),
   "caption": zod.string(),
   "sourceAvailabilityStatus": zod.enum(['available', 'missing']),
@@ -2533,7 +2494,6 @@ export const UpdateEditorImageCandidateResponse = zod.object({
  */
 
 
-
 export const RecheckEditorImageCandidateSourceParams = zod.object({
   "candidateId": zod.coerce.number().int().min(1)
 })
@@ -2557,7 +2517,6 @@ export const RecheckEditorImageCandidateSourceResponse = zod.object({
  * Requires verified editor access. The server rechecks the selected provider against the preview; changed rights terms reset review to pending.
  * @summary Apply a confirmed image-archive rights-metadata change
  */
-
 
 
 export const ApplyEditorImageCandidateSourceRecheckParams = zod.object({
@@ -2590,6 +2549,9 @@ export const ApplyEditorImageCandidateSourceRecheckResponse = zod.object({
   "credit": zod.string(),
   "copyright": zod.string(),
   "usageRights": zod.string(),
+  "catalogReference": zod.string(),
+  "artworkDate": zod.string(),
+  "provenance": zod.string(),
   "altText": zod.string(),
   "caption": zod.string(),
   "sourceAvailabilityStatus": zod.enum(['available', 'missing']),
@@ -2646,13 +2608,11 @@ export const ApplyEditorImageCandidateSourceRecheckResponse = zod.object({
  */
 
 
-
 export const ReviewEditorImageCandidateRightsParams = zod.object({
   "candidateId": zod.coerce.number().int().min(1)
 })
 
 export const reviewEditorImageCandidateRightsBodyReviewNotesMax = 2000;
-
 
 
 export const ReviewEditorImageCandidateRightsBody = zod.object({
@@ -2674,6 +2634,9 @@ export const ReviewEditorImageCandidateRightsResponse = zod.object({
   "credit": zod.string(),
   "copyright": zod.string(),
   "usageRights": zod.string(),
+  "catalogReference": zod.string(),
+  "artworkDate": zod.string(),
+  "provenance": zod.string(),
   "altText": zod.string(),
   "caption": zod.string(),
   "sourceAvailabilityStatus": zod.enum(['available', 'missing']),
@@ -2720,5 +2683,4 @@ export const ReviewEditorImageCandidateRightsResponse = zod.object({
   "changedAt": zod.coerce.date()
 }))
 })
-
 

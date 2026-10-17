@@ -2942,7 +2942,13 @@ components:
           type: string
         usageRights:
           type: string
-      required: [source, fileTitle, imageUrl, thumbnailUrl, filePageUrl, license, licenseUrl, creator, credit, copyright, usageRights]
+        catalogReference:
+          type: string
+        artworkDate:
+          type: string
+        provenance:
+          type: string
+      required: [source, fileTitle, imageUrl, thumbnailUrl, filePageUrl, license, licenseUrl, creator, credit, copyright, usageRights, catalogReference, artworkDate, provenance]
     EditorImageCandidateSearchResponse:
       type: object
       properties:
@@ -3089,6 +3095,12 @@ components:
           type: string
         usageRights:
           type: string
+        catalogReference:
+          type: string
+        artworkDate:
+          type: string
+        provenance:
+          type: string
         altText:
           type: string
         caption:
@@ -3127,7 +3139,7 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/EditorImageCandidateRightsHistoryEntry"
-      required: [id, discoveryItemId, source, fileTitle, imageUrl, thumbnailUrl, filePageUrl, license, licenseUrl, creator, credit, copyright, usageRights, altText, caption, sourceAvailabilityStatus, rightsStatus, reviewNotes, reviewedBy, reviewedAt, removedBy, removedAt, discoveredAt, createdBy, createdAt, updatedBy, updatedAt, rightsHistory]
+      required: [id, discoveryItemId, source, fileTitle, imageUrl, thumbnailUrl, filePageUrl, license, licenseUrl, creator, credit, copyright, usageRights, catalogReference, artworkDate, provenance, altText, caption, sourceAvailabilityStatus, rightsStatus, reviewNotes, reviewedBy, reviewedAt, removedBy, removedAt, discoveredAt, createdBy, createdAt, updatedBy, updatedAt, rightsHistory]
     EditorImageCandidateRightsHistoryEntry:
       type: object
       properties:

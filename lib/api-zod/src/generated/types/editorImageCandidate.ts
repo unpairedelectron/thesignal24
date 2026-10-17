@@ -26,6 +26,9 @@ export interface EditorImageCandidate {
   credit: string;
   copyright: string;
   usageRights: string;
+  catalogReference: string;
+  artworkDate: string;
+  provenance: string;
   altText: string;
   caption: string;
   sourceAvailabilityStatus: EditorImageCandidateSourceAvailabilityStatus;

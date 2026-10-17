@@ -21,4 +21,7 @@ export interface EditorImageCandidateSearchResult {
   credit: string;
   copyright: string;
   usageRights: string;
+  catalogReference: string;
+  artworkDate: string;
+  provenance: string;
 }

@@ -132,6 +132,9 @@ function normalizedImageResult(pageValue: unknown): EditorImageCandidateSearchRe
     credit,
     copyright,
     usageRights,
+    catalogReference: "",
+    artworkDate: "",
+    provenance: "",
   };
 }
 
