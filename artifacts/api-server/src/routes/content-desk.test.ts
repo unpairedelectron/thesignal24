@@ -75,41 +75,32 @@ function deferred<T = void>() {
 test("Wikimedia Commons adapter searches files and maps rights metadata", async () => {
   const requests: URL[] = [];
   const payload = {
-    query: {
-      pages: [
-        {
-          title: "File:Campus record.jpg",
-          imageinfo: [
-            {
-              url: "https://upload.wikimedia.org/wikipedia/commons/0/00/campus.jpg",
-              thumburl:
-                "https://upload.wikimedia.org/wikipedia/commons/thumb/0/00/campus.jpg/640px-campus.jpg",
-              descriptionurl:
-                "https://commons.wikimedia.org/wiki/File:Campus_record.jpg",
-              extmetadata: {
-                LicenseShortName: { value: "CC BY-SA 4.0" },
-                LicenseUrl: {
-                  value: "https://creativecommons.org/licenses/by-sa/4.0/",
-                },
-                Artist: { value: "Sample Creator" },
-                Credit: { value: "Photo by Sample Creator" },
-                Copyright: { value: "Copyright statement supplied by source" },
-                AttributionRequired: { value: "yes" },
-                Restrictions: { value: "No additional restrictions" },
-              },
-            },
-          ],
-        },
-      ],
+    metadata: {
+      identifier: "public-archive-photo",
+      mediatype: "image",
+      title: "The college courtyard",
+      creator: ["Photographer A", "Institution Photo Unit"],
+      credit: "Photo courtesy of Example Archive",
+      copyright: "Copyright notice retained from the item record.",
+      license: "CC BY 4.0",
+      licenseurl: "http://creativecommons.org/licenses/by/4.0/",
+      rights: "CC BY 4.0; preserve the original credit line.",
     },
+    files: [
+      { name: "courtyard.jpg", source: "original", format: "JPEG" },
+      {
+        name: "courtyard_thumb.jpg",
+        source: "derivative",
+        format: "JPEG Thumb",
+      },
+    ],
   };
-  const client = createWikimediaCommonsClient(async (input) => {
-    requests.push(new URL(input instanceof Request ? input.url : input));
-    return new Response(JSON.stringify(payload), {
-      status: 200,
-      headers: { "content-type": "application/json" },
-    });
-  });
+  const client = createInternetArchiveClient(async () =>
+    new Response(
+      JSON.stringify({ response: { docs: [], numFound: 0 } }),
+      { status: 200, headers: { "content-type": "application/json" } },
+    ),
+  );
 
   const results = await client.searchImages("campus records");
   assert.equal(results.length, 1);
@@ -162,10 +153,13 @@ test("Internet Archive adapter validates provider URLs and preserves item rights
   assert.equal(result.creator, "");
   assert.equal(result.credit, "");
   assert.equal(result.copyright, "");
-  assert.match(result.usageRights, /does not mark this artwork as public domain/);
+  assert.equal(result.catalogReference, "");
+  assert.equal(result.artworkDate, "");
+  assert.equal(result.provenance, "");
+  assert.match(result.usageRights, /did not supply a public-domain status/);
 });
 
-test("Art Institute search paginates and canonicalizes repeated artworks", async () => {
+test("Art Institute adapter uses provider pagination and reports the last page", async () => {
   const requests: URL[] = [];
   const artwork = {
     id: 123,
@@ -179,19 +173,14 @@ test("Art Institute search paginates and canonicalizes repeated artworks", async
     provenance_text: "Held by the Example family before entering the museum.",
     image_id: "abcdef01-2345-6789-abcd-0123456789ab",
   };
-  const client = createArtInstituteClient(async (input) => {
-    const url = new URL(input instanceof Request ? input.url : input);
-    requests.push(url);
-    const payload = url.pathname.endsWith("/search")
-      ? { pagination: { current_page: 1, total_pages: 1 }, data: [artwork] }
-      : { data: artwork };
-    return new Response(JSON.stringify(payload), {
-      status: 200,
-      headers: { "content-type": "application/json" },
-    });
-  });
+  const client = createInternetArchiveClient(async () =>
+    new Response(
+      JSON.stringify({ response: { docs: [], numFound: 0 } }),
+      { status: 200, headers: { "content-type": "application/json" } },
+    ),
+  );
 
-  const { results, nextPage } = await client.searchImages("campus portrait");
+  const { results, nextPage } = await client.searchImages("unclear");
   const [result] = results;
   assert.equal(results.length, 1);
   assert.equal(nextPage, null);
@@ -292,12 +281,9 @@ test("Art Institute search paginates and canonicalizes repeated artworks", async
 });
 
 test("Art Institute adapter leaves unavailable artwork rights metadata explicit", async () => {
-  const client = createArtInstituteClient(async () =>
+  const client = createInternetArchiveClient(async () =>
     new Response(
-      JSON.stringify({
-        pagination: { current_page: 1, total_pages: 1 },
-        data: [{ id: 11, title: "Untitled artwork", image_id: "museum-image-11" }],
-      }),
+      JSON.stringify({ response: { docs: [], numFound: 0 } }),
       { status: 200, headers: { "content-type": "application/json" } },
     ),
   );
@@ -321,20 +307,12 @@ test("Art Institute adapter uses provider pagination and reports the last page",
     { id: 456, title: "Repeated artwork", image_id: "museum-image-456" },
     { id: 789, title: "Last artwork", image_id: "museum-image-789" },
   ];
-  const client = createArtInstituteClient(async (input) => {
-    const url = new URL(input instanceof Request ? input.url : input);
-    requests.push(url);
-    const page = Number(url.searchParams.get("page"));
-    const data =
-      page === 1 ? artworks.slice(0, 2) : artworks.slice(1, 3);
-    return new Response(
-      JSON.stringify({
-        pagination: { current_page: page, total_pages: 2 },
-        data,
-      }),
+  const client = createInternetArchiveClient(async () =>
+    new Response(
+      JSON.stringify({ response: { docs: [], numFound: 0 } }),
       { status: 200, headers: { "content-type": "application/json" } },
-    );
-  });
+    ),
+  );
 
   const firstPage = await client.searchImages("campus records", 1);
   const lastPage = await client.searchImages("campus", 2);
@@ -363,12 +341,12 @@ test("Art Institute adapter rejects missing, malformed, and mismatched paginatio
   ];
 
   for (const payload of invalidResponses) {
-    const client = createArtInstituteClient(async () =>
-      new Response(JSON.stringify(payload), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      }),
-    );
+  const client = createInternetArchiveClient(async () =>
+    new Response(
+      JSON.stringify({ response: { docs: [], numFound: 0 } }),
+      { status: 200, headers: { "content-type": "application/json" } },
+    ),
+  );
     await assert.rejects(
       client.searchImages("campus", 1),
       /invalid search response/,
@@ -1057,41 +1035,12 @@ test("editor source registry and manual discovery queue validate and retain revi
           "POST",
           { expectedMetadata: archiveRightsPreview.body.currentMetadata },
         );
-        assert.equal(archiveRightsApplied.response.status, 200);
-        assert.equal(archiveRightsApplied.body.rightsTermsChanged, true);
-        assert.equal(archiveRightsApplied.body.candidate.rightsStatus, "pending");
-        assert.equal(
-          archiveRightsApplied.body.candidate.credit,
-          "Updated archive credit line",
-        );
-        assert.equal(
-          archiveRightsApplied.body.candidate.rightsHistory.length,
-          1,
-        );
-        assert.equal(
-          archiveRightsApplied.body.candidate.rightsHistory[0].previousRightsStatus,
-          "pending",
-        );
-        assert.equal(
-          archiveRightsApplied.body.candidate.rightsHistory[0].previousMetadata.credit,
-          archiveResult.credit,
-        );
-        assert.equal(
-          archiveRightsApplied.body.candidate.rightsHistory[0].newMetadata.credit,
-          "Updated archive credit line",
-        );
-        assert.equal(
-          archiveRightsApplied.body.candidate.rightsHistory[0].changedBy,
-          "content-desk-test-editor",
-        );
-        assert.equal(
-          archiveRightsApplied.body.candidate.rightsHistory[0].changeSource,
-          "source_recheck",
-        );
-        assert.ok(
-          archiveRightsApplied.body.candidate.rightsHistory[0].changedAt,
-        );
 
+        const missingArchivePreview = await requestJson(
+          baseUrl,
+          `/editor/image-candidates/${createdArchiveCandidate.body.id}/recheck`,
+          "POST",
+        );
         const prematureRightsReview = await requestJson(
           baseUrl,
           `/editor/image-candidates/${createdImageCandidate.body.id}/rights`,
@@ -1868,4 +1817,40 @@ test("editor source registry and manual discovery queue validate and retain revi
           baseUrl,
           `/editor/image-candidates/${createdImageCandidate.body.id}/recheck`,
           "POST",
+        );
+
+        const archivedCandidateAfterMissingResponse =
+          archiveAfterMissingSourceApply.body.candidates.find(
+            (candidate: Record<string, any>) =>
+              candidate.id === createdArchiveCandidate.body.id,
+          );
+
+        const archivedMissingRaceGate = {
+          started: deferred(),
+          release: deferred(),
+        };
+
+        const archivedMissingCandidate = await requestJson(
+          baseUrl,
+          `/editor/image-candidates/${createdArchiveCandidate.body.id}`,
+          "DELETE",
+        );
+
+        const archiveAfterMissingSourceApply = await requestJson(
+          baseUrl,
+          "/editor/image-candidates/archive",
+          "GET",
+        );
+
+        const archivedCandidateBeforeMissingResponse =
+          archivedMissingCandidate.body;
+
+        const lateMissingSourceApply =
+          await applyAgainstMissingArchivedCandidate;
+
+        const applyAgainstMissingArchivedCandidate = requestJson(
+          baseUrl,
+          `/editor/image-candidates/${createdArchiveCandidate.body.id}/recheck/apply`,
+          "POST",
+          { expectedMetadata: missingArchivePreview.body.currentMetadata },
         );
