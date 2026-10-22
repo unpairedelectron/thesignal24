@@ -584,6 +584,12 @@ test("editor source registry and manual discovery queue validate and retain revi
         archiveResult;
       let archiveLookupError = false;
       let archiveLookupCalled = false;
+      let archiveLookupGate:
+        | {
+            started: ReturnType<typeof deferred>;
+            release: ReturnType<typeof deferred>;
+          }
+        | undefined;
       let currentMuseumResult: EditorImageCandidateSearchResult | null =
         museumResult;
       let museumSearchUnavailable = false;
@@ -615,6 +621,12 @@ test("editor source registry and manual discovery queue validate and retain revi
           archiveLookupCalled = true;
           if (archiveLookupError) {
             throw new Error("Simulated Internet Archive outage");
+          }
+          const gate = archiveLookupGate;
+          if (gate) {
+            archiveLookupGate = undefined;
+            gate.started.resolve();
+            await gate.release.promise;
           }
           return currentArchiveResult?.filePageUrl === filePageUrl &&
             currentArchiveResult.imageUrl === imageUrl
@@ -1647,6 +1659,96 @@ test("editor source registry and manual discovery queue validate and retain revi
           },
         );
         assert.equal(editArchivedCandidate.response.status, 404);
+
+        const archiveNoChangeResult: EditorImageCandidateSearchResult = {
+          ...archiveResult,
+          fileTitle: "The college courtyard [signalhub-archive-no-change-test]",
+          imageUrl:
+            "https://archive.org/download/signalhub-archive-no-change-test/courtyard.jpg",
+          thumbnailUrl:
+            "https://archive.org/services/img/signalhub-archive-no-change-test",
+          filePageUrl:
+            "https://archive.org/details/signalhub-archive-no-change-test",
+        };
+        currentArchiveResult = archiveNoChangeResult;
+        const createdNoChangeCandidate = await requestJson(
+          baseUrl,
+          `/editor/discovery-items/${createdLead.body.id}/image-candidates`,
+          "POST",
+          {
+            source: "Internet Archive",
+            fileTitle: archiveNoChangeResult.fileTitle,
+            filePageUrl: archiveNoChangeResult.filePageUrl,
+            imageUrl: archiveNoChangeResult.imageUrl,
+          },
+        );
+        assert.equal(createdNoChangeCandidate.response.status, 201);
+        const noChangePreview = await requestJson(
+          baseUrl,
+          `/editor/image-candidates/${createdNoChangeCandidate.body.id}/recheck`,
+          "POST",
+        );
+        assert.equal(noChangePreview.response.status, 200);
+        assert.deepEqual(noChangePreview.body.changedFields, []);
+        const noChangeGate = {
+          started: deferred(),
+          release: deferred(),
+        };
+        archiveLookupGate = noChangeGate;
+        const applyWithUnchangedTerms = requestJson(
+          baseUrl,
+          `/editor/image-candidates/${createdNoChangeCandidate.body.id}/recheck/apply`,
+          "POST",
+          { expectedMetadata: noChangePreview.body.currentMetadata },
+        );
+        await noChangeGate.started.promise;
+        const noChangeCandidateBeforeArchive = (
+          await requestJson(
+            baseUrl,
+            `/editor/discovery-items/${createdLead.body.id}/image-candidates`,
+            "GET",
+          )
+        ).body.candidates.find(
+          (candidate: { id: number }) =>
+            candidate.id === createdNoChangeCandidate.body.id,
+        );
+        const archivedNoChangeCandidate = await requestJson(
+          baseUrl,
+          `/editor/image-candidates/${createdNoChangeCandidate.body.id}`,
+          "DELETE",
+        );
+        assert.equal(archivedNoChangeCandidate.response.status, 200);
+        noChangeGate.release.resolve();
+        const lateNoChangeApply = await applyWithUnchangedTerms;
+        assert.equal(lateNoChangeApply.response.status, 404);
+        assert.equal(lateNoChangeApply.body.message, "Image candidate not found.");
+        assert.equal(
+          archivedNoChangeCandidate.body.credit,
+          noChangeCandidateBeforeArchive.credit,
+        );
+        assert.deepEqual(
+          archivedNoChangeCandidate.body.rightsHistory,
+          noChangeCandidateBeforeArchive.rightsHistory,
+        );
+        const noChangeCandidateAfterArchive = (
+          await requestJson(
+            baseUrl,
+            "/editor/image-candidates/archive",
+            "GET",
+          )
+        ).body.candidates.find(
+          (candidate: { id: number }) =>
+            candidate.id === createdNoChangeCandidate.body.id,
+        );
+        assert.ok(noChangeCandidateAfterArchive);
+        assert.equal(
+          noChangeCandidateAfterArchive.credit,
+          noChangeCandidateBeforeArchive.credit,
+        );
+        assert.deepEqual(
+          noChangeCandidateAfterArchive.rightsHistory,
+          archivedNoChangeCandidate.body.rightsHistory,
+        );
 
         const detachedCandidateHistory = (
           await requestJson(
