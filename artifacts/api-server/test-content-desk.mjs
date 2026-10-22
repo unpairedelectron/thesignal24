@@ -15,16 +15,21 @@ try {
     bundle: true,
     platform: "node",
     format: "esm",
+    sourcemap: "inline",
     banner: {
       js: `import { createRequire } from "node:module";
 globalThis.require = createRequire(import.meta.url);`,
     },
   });
 
-  const result = spawnSync(process.execPath, ["--test", testFile], {
-    env: process.env,
-    stdio: "inherit",
-  });
+  const result = spawnSync(
+    process.execPath,
+    ["--enable-source-maps", "--test", testFile],
+    {
+      env: process.env,
+      stdio: "inherit",
+    },
+  );
   process.exitCode = result.status ?? 1;
 } finally {
   await rm(testDir, { recursive: true, force: true });
