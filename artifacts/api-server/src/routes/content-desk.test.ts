@@ -938,6 +938,81 @@ test("editor source registry and manual discovery queue validate and retain revi
           archiveResult.usageRights,
         );
 
+        const archivePreviewRaceResult: EditorImageCandidateSearchResult = {
+          ...archiveResult,
+          fileTitle:
+            "The college courtyard [signalhub-archive-preview-race-test]",
+          imageUrl:
+            "https://archive.org/download/signalhub-archive-preview-race-test/courtyard.jpg",
+          thumbnailUrl:
+            "https://archive.org/services/img/signalhub-archive-preview-race-test",
+          filePageUrl:
+            "https://archive.org/details/signalhub-archive-preview-race-test",
+        };
+        currentArchiveResult = archivePreviewRaceResult;
+        const createdPreviewRaceCandidate = await requestJson(
+          baseUrl,
+          `/editor/discovery-items/${createdLead.body.id}/image-candidates`,
+          "POST",
+          {
+            source: "Internet Archive",
+            fileTitle: archivePreviewRaceResult.fileTitle,
+            filePageUrl: archivePreviewRaceResult.filePageUrl,
+            imageUrl: archivePreviewRaceResult.imageUrl,
+          },
+        );
+        assert.equal(createdPreviewRaceCandidate.response.status, 201);
+        const previewRaceGate = {
+          started: deferred(),
+          release: deferred(),
+        };
+        archiveLookupGate = previewRaceGate;
+        const previewAgainstArchivedCandidate = requestJson(
+          baseUrl,
+          `/editor/image-candidates/${createdPreviewRaceCandidate.body.id}/recheck`,
+          "POST",
+        );
+        await previewRaceGate.started.promise;
+        const archivedPreviewRaceCandidate = await requestJson(
+          baseUrl,
+          `/editor/image-candidates/${createdPreviewRaceCandidate.body.id}`,
+          "DELETE",
+        );
+        assert.equal(archivedPreviewRaceCandidate.response.status, 200);
+        const archiveBeforeLatePreview = (
+          await requestJson(
+            baseUrl,
+            "/editor/image-candidates/archive",
+            "GET",
+          )
+        ).body.candidates.find(
+          (candidate: { id: number }) =>
+            candidate.id === createdPreviewRaceCandidate.body.id,
+        );
+        assert.deepEqual(
+          archiveBeforeLatePreview,
+          archivedPreviewRaceCandidate.body,
+        );
+        previewRaceGate.release.resolve();
+        const lateSourcePreview = await previewAgainstArchivedCandidate;
+        assert.equal(lateSourcePreview.response.status, 404);
+        assert.equal(
+          lateSourcePreview.body.message,
+          "Image candidate not found.",
+        );
+        const archiveAfterLatePreview = (
+          await requestJson(
+            baseUrl,
+            "/editor/image-candidates/archive",
+            "GET",
+          )
+        ).body.candidates.find(
+          (candidate: { id: number }) =>
+            candidate.id === createdPreviewRaceCandidate.body.id,
+        );
+        assert.deepEqual(archiveAfterLatePreview, archiveBeforeLatePreview);
+        currentArchiveResult = archiveResult;
+
         const duplicateArchiveCandidate = await requestJson(
           baseUrl,
           `/editor/discovery-items/${createdLead.body.id}/image-candidates`,
