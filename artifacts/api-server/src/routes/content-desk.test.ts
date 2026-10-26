@@ -1448,6 +1448,97 @@ test("editor source registry and manual discovery queue validate and retain revi
           reapprovedImageRights.body.reviewedAt,
         );
 
+        const approvedCandidateBeforeMissingApply = (
+          await requestJson(
+            baseUrl,
+            `/editor/discovery-items/${createdLead.body.id}/image-candidates`,
+            "GET",
+          )
+        ).body.candidates.find(
+          (candidate: { id: number }) =>
+            candidate.id === createdImageCandidate.body.id,
+        );
+        assert.equal(approvedCandidateBeforeMissingApply.rightsStatus, "approved");
+        assert.equal(
+          approvedCandidateBeforeMissingApply.reviewNotes,
+          "Rechecked the current Commons file page.",
+        );
+        assert.equal(
+          approvedCandidateBeforeMissingApply.reviewedBy,
+          "content-desk-test-editor",
+        );
+        assert.ok(approvedCandidateBeforeMissingApply.reviewedAt);
+        assert.equal(
+          approvedCandidateBeforeMissingApply.rightsHistory.length,
+          4,
+        );
+
+        currentCommonsResult = null;
+        const missingApprovedSourceApply = await requestJson(
+          baseUrl,
+          `/editor/image-candidates/${createdImageCandidate.body.id}/recheck/apply`,
+          "POST",
+          { expectedMetadata: unchangedSourcePreview.body.currentMetadata },
+        );
+        assert.equal(missingApprovedSourceApply.response.status, 404);
+        assert.match(missingApprovedSourceApply.body.message, /no longer available/);
+        const approvedCandidateAfterMissingApply = (
+          await requestJson(
+            baseUrl,
+            `/editor/discovery-items/${createdLead.body.id}/image-candidates`,
+            "GET",
+          )
+        ).body.candidates.find(
+          (candidate: { id: number }) =>
+            candidate.id === createdImageCandidate.body.id,
+        );
+        assert.equal(
+          approvedCandidateAfterMissingApply.sourceAvailabilityStatus,
+          "missing",
+        );
+        assert.equal(
+          approvedCandidateAfterMissingApply.rightsStatus,
+          approvedCandidateBeforeMissingApply.rightsStatus,
+        );
+        assert.equal(
+          approvedCandidateAfterMissingApply.reviewNotes,
+          approvedCandidateBeforeMissingApply.reviewNotes,
+        );
+        assert.equal(
+          approvedCandidateAfterMissingApply.reviewedBy,
+          approvedCandidateBeforeMissingApply.reviewedBy,
+        );
+        assert.equal(
+          approvedCandidateAfterMissingApply.reviewedAt,
+          approvedCandidateBeforeMissingApply.reviewedAt,
+        );
+        for (const field of [
+          "license",
+          "licenseUrl",
+          "creator",
+          "credit",
+          "copyright",
+          "usageRights",
+          "altText",
+          "caption",
+        ]) {
+          assert.equal(
+            approvedCandidateAfterMissingApply[field],
+            approvedCandidateBeforeMissingApply[field],
+            `missing-source apply must preserve ${field}`,
+          );
+        }
+        assert.deepEqual(
+          approvedCandidateAfterMissingApply.rightsHistory,
+          approvedCandidateBeforeMissingApply.rightsHistory,
+        );
+        assert.equal(
+          approvedCandidateAfterMissingApply.discoveryItemId,
+          approvedCandidateBeforeMissingApply.discoveryItemId,
+        );
+        assert.equal(approvedCandidateAfterMissingApply.removedAt, null);
+        currentCommonsResult = { ...commonsResult, ...savedRightsMetadata };
+
         const changedCommonsTerms: EditorImageCandidateSearchResult = {
           ...currentCommonsResult!,
           license: "CC BY 3.0",
