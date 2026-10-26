@@ -1353,16 +1353,52 @@ test("editor source registry and manual discovery queue validate and retain revi
         );
         assert.ok(checkedImageRights.body.reviewedAt);
 
+        const nextImageMetadata = {
+          ...imageMetadata,
+          license: "CC BY 4.0",
+          licenseUrl: "https://creativecommons.org/licenses/by/4.0/",
+          usageRights: "Updated terms requiring editor confirmation.",
+        };
+        const candidatesBeforeFailedMetadataEdit = await requestJson(
+          baseUrl,
+          `/editor/discovery-items/${createdLead.body.id}/image-candidates`,
+          "GET",
+        );
+        const candidateBeforeFailedMetadataEdit = imageCandidateFrom(
+          candidatesBeforeFailedMetadataEdit,
+        );
+        failNextRightsHistoryWrite = true;
+        const failedMetadataEdit = await requestJson(
+          baseUrl,
+          `/editor/image-candidates/${createdImageCandidate.body.id}`,
+          "PATCH",
+          nextImageMetadata,
+        );
+        assert.equal(failedMetadataEdit.response.status, 500);
+        assert.equal(
+          failedMetadataEdit.body.message,
+          "Simulated rights history insert failure",
+        );
+        assert.equal(failNextRightsHistoryWrite, false);
+        const candidatesAfterFailedMetadataEdit = await requestJson(
+          baseUrl,
+          `/editor/discovery-items/${createdLead.body.id}/image-candidates`,
+          "GET",
+        );
+        const candidateAfterFailedMetadataEdit = imageCandidateFrom(
+          candidatesAfterFailedMetadataEdit,
+        );
+        assert.deepEqual(
+          candidateAfterFailedMetadataEdit,
+          candidateBeforeFailedMetadataEdit,
+          "failed metadata history write must leave candidate fields and history unchanged",
+        );
+
         const changedRightsTerms = await requestJson(
           baseUrl,
           `/editor/image-candidates/${createdImageCandidate.body.id}`,
           "PATCH",
-          {
-            ...imageMetadata,
-            license: "CC BY 4.0",
-            licenseUrl: "https://creativecommons.org/licenses/by/4.0/",
-            usageRights: "Updated terms requiring editor confirmation.",
-          },
+          nextImageMetadata,
         );
         assert.equal(changedRightsTerms.response.status, 200);
         assert.equal(changedRightsTerms.body.license, "CC BY 4.0");
