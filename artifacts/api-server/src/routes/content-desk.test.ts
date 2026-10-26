@@ -20,7 +20,12 @@ import {
 } from "../lib/art-institute";
 import { createContentDeskRouter } from "./content-desk";
 import { eq } from "drizzle-orm";
-import { db, discoveryItemsTable, issuesTable } from "@workspace/db";
+import {
+  contentImageCandidateRightsHistoryTable,
+  db,
+  discoveryItemsTable,
+  issuesTable,
+} from "@workspace/db";
 
 const rollbackMarker = new Error("Rollback content desk test fixtures");
 
@@ -606,6 +611,7 @@ test("editor source registry and manual discovery queue validate and retain revi
             release: ReturnType<typeof deferred>;
           }
         | undefined;
+      let failNextRightsHistoryWrite = false;
       let currentArchiveResult: EditorImageCandidateSearchResult | null =
         archiveResult;
       let archiveLookupError = false;
@@ -684,15 +690,56 @@ test("editor source registry and manual discovery queue validate and retain revi
         get(target, property) {
           if (property === "transaction") {
             return (...args: any[]) => {
+              const runTransaction = () => {
+                const [callback, ...transactionOptions] = args;
+                return Reflect.apply(target.transaction, target, [
+                  (transaction: any, ...callbackArgs: any[]) =>
+                    callback(
+                      new Proxy(transaction, {
+                        get(innerTarget, innerProperty) {
+                          if (innerProperty === "insert") {
+                            return (table: unknown) => {
+                              if (
+                                failNextRightsHistoryWrite &&
+                                table ===
+                                  contentImageCandidateRightsHistoryTable
+                              ) {
+                                failNextRightsHistoryWrite = false;
+                                throw new Error(
+                                  "Simulated rights history insert failure",
+                                );
+                              }
+                              return Reflect.apply(
+                                Reflect.get(
+                                  innerTarget,
+                                  innerProperty,
+                                  innerTarget,
+                                ),
+                                innerTarget,
+                                [table],
+                              );
+                            };
+                          }
+                          const value = Reflect.get(
+                            innerTarget,
+                            innerProperty,
+                            innerTarget,
+                          );
+                          return typeof value === "function"
+                            ? value.bind(innerTarget)
+                            : value;
+                        },
+                      }),
+                      ...callbackArgs,
+                    ),
+                  ...transactionOptions,
+                ]);
+              };
               const gate = rightsReviewTransactionGate;
-              if (!gate) {
-                return Reflect.apply(target.transaction, target, args);
-              }
+              if (!gate) return runTransaction();
               rightsReviewTransactionGate = undefined;
               gate.started.resolve();
-              return gate.release.promise.then(() =>
-                Reflect.apply(target.transaction, target, args),
-              );
+              return gate.release.promise.then(runTransaction);
             };
           }
           const value = Reflect.get(target, property, target);
@@ -1238,6 +1285,56 @@ test("editor source registry and manual discovery queue validate and retain revi
         assert.equal(savedImageMetadata.body.copyright, imageMetadata.copyright);
         assert.equal(savedImageMetadata.body.altText, imageMetadata.altText);
         assert.equal(savedImageMetadata.body.rightsStatus, "pending");
+
+        const candidatesBeforeFailedReview = await requestJson(
+          baseUrl,
+          `/editor/discovery-items/${createdLead.body.id}/image-candidates`,
+          "GET",
+        );
+        const candidateBeforeFailedReview = imageCandidateFrom(
+          candidatesBeforeFailedReview,
+        );
+        failNextRightsHistoryWrite = true;
+        const failedImageRightsReview = await requestJson(
+          baseUrl,
+          `/editor/image-candidates/${createdImageCandidate.body.id}/rights`,
+          "PATCH",
+          {
+            rightsStatus: "approved",
+            reviewNotes: "This review must roll back if its history cannot be saved.",
+          },
+        );
+        assert.equal(failedImageRightsReview.response.status, 500);
+        assert.equal(
+          failedImageRightsReview.body.message,
+          "Simulated rights history insert failure",
+        );
+        assert.equal(failNextRightsHistoryWrite, false);
+        const candidatesAfterFailedReview = await requestJson(
+          baseUrl,
+          `/editor/discovery-items/${createdLead.body.id}/image-candidates`,
+          "GET",
+        );
+        const candidateAfterFailedReview = imageCandidateFrom(
+          candidatesAfterFailedReview,
+        );
+        for (const field of [
+          "rightsStatus",
+          "reviewNotes",
+          "reviewedBy",
+          "reviewedAt",
+        ]) {
+          assert.deepEqual(
+            candidateAfterFailedReview[field],
+            candidateBeforeFailedReview[field],
+            `failed history write must not change ${field}`,
+          );
+        }
+        assert.deepEqual(
+          candidateAfterFailedReview.rightsHistory,
+          candidateBeforeFailedReview.rightsHistory,
+          "failed manual review must not append a partial history entry",
+        );
 
         const checkedImageRights = await requestJson(
           baseUrl,
