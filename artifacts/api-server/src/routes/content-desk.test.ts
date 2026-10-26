@@ -600,6 +600,12 @@ test("editor source registry and manual discovery queue validate and retain revi
             release: ReturnType<typeof deferred>;
           }
         | undefined;
+      let rightsReviewTransactionGate:
+        | {
+            started: ReturnType<typeof deferred>;
+            release: ReturnType<typeof deferred>;
+          }
+        | undefined;
       let currentArchiveResult: EditorImageCandidateSearchResult | null =
         archiveResult;
       let archiveLookupError = false;
@@ -674,9 +680,28 @@ test("editor source registry and manual discovery queue validate and retain revi
       };
       const app = express();
       app.use(express.json());
+      const databaseForRouter = new Proxy(tx as unknown as typeof db, {
+        get(target, property) {
+          if (property === "transaction") {
+            return (...args: any[]) => {
+              const gate = rightsReviewTransactionGate;
+              if (!gate) {
+                return Reflect.apply(target.transaction, target, args);
+              }
+              rightsReviewTransactionGate = undefined;
+              gate.started.resolve();
+              return gate.release.promise.then(() =>
+                Reflect.apply(target.transaction, target, args),
+              );
+            };
+          }
+          const value = Reflect.get(target, property, target);
+          return typeof value === "function" ? value.bind(target) : value;
+        },
+      });
       app.use(
         createContentDeskRouter(
-          tx as unknown as typeof db,
+          databaseForRouter,
           editorGuard,
           commonsClient,
           archiveClient,
@@ -1640,6 +1665,16 @@ test("editor source registry and manual discovery queue validate and retain revi
           "POST",
         );
         assert.equal(archiveRacePreview.response.status, 200);
+        const reviewedBeforeArchiveRace = await requestJson(
+          baseUrl,
+          `/editor/image-candidates/${createdImageCandidate.body.id}/rights`,
+          "PATCH",
+          {
+            rightsStatus: "approved",
+            reviewNotes: "Confirmed rights before the archive-race test.",
+          },
+        );
+        assert.equal(reviewedBeforeArchiveRace.response.status, 200);
         const archiveRaceGate = {
           started: deferred(),
           release: deferred(),
@@ -1653,11 +1688,44 @@ test("editor source registry and manual discovery queue validate and retain revi
         );
         await archiveRaceGate.started.promise;
 
-        const candidateBeforeRemoval = imageCandidates.body.candidates.find(
-          (candidate: { id: number }) =>
-            candidate.id === createdImageCandidate.body.id,
+        const candidateBeforeRemovalResponse = await requestJson(
+          baseUrl,
+          `/editor/discovery-items/${createdLead.body.id}/image-candidates`,
+          "GET",
         );
+        const candidateBeforeRemoval =
+          candidateBeforeRemovalResponse.body.candidates.find(
+            (candidate: { id: number }) =>
+              candidate.id === createdImageCandidate.body.id,
+          );
         assert.ok(candidateBeforeRemoval);
+        assert.equal(candidateBeforeRemoval.rightsStatus, "approved");
+        assert.equal(
+          candidateBeforeRemoval.reviewNotes,
+          "Confirmed rights before the archive-race test.",
+        );
+        assert.equal(
+          candidateBeforeRemoval.reviewedBy,
+          "content-desk-test-editor",
+        );
+        assert.ok(candidateBeforeRemoval.reviewedAt);
+
+        const rightsReviewGate = {
+          started: deferred(),
+          release: deferred(),
+        };
+        rightsReviewTransactionGate = rightsReviewGate;
+        const lateManualRightsReview = requestJson(
+          baseUrl,
+          `/editor/image-candidates/${createdImageCandidate.body.id}/rights`,
+          "PATCH",
+          {
+            rightsStatus: "rejected",
+            reviewNotes: "Late review after archival must not be recorded.",
+          },
+        );
+        await rightsReviewGate.started.promise;
+
         const removedCandidate = await requestJson(
           baseUrl,
           `/editor/image-candidates/${createdImageCandidate.body.id}`,
@@ -1667,6 +1735,29 @@ test("editor source registry and manual discovery queue validate and retain revi
         assert.equal(removedCandidate.body.removedBy, "content-desk-test-editor");
         assert.ok(removedCandidate.body.removedAt);
         assert.equal(removedCandidate.body.fileTitle, candidateBeforeRemoval.fileTitle);
+        rightsReviewGate.release.resolve();
+        const rejectedLateManualReview = await lateManualRightsReview;
+        assert.equal(rejectedLateManualReview.response.status, 404);
+        assert.equal(
+          rejectedLateManualReview.body.message,
+          "Image candidate not found.",
+        );
+        for (const field of [
+          "rightsStatus",
+          "reviewNotes",
+          "reviewedBy",
+          "reviewedAt",
+        ]) {
+          assert.deepEqual(
+            removedCandidate.body[field],
+            candidateBeforeRemoval[field],
+            `archival must preserve ${field} when a late manual review is rejected`,
+          );
+        }
+        assert.deepEqual(
+          removedCandidate.body.rightsHistory,
+          candidateBeforeRemoval.rightsHistory,
+        );
         archiveRaceGate.release.resolve();
         const lateSourceApply = await applyAgainstArchivedCandidate;
         assert.equal(lateSourceApply.response.status, 404);
@@ -1706,6 +1797,18 @@ test("editor source registry and manual discovery queue validate and retain revi
         assert.equal(archivedCandidate.fileTitle, candidateBeforeRemoval.fileTitle);
         assert.equal(archivedCandidate.credit, candidateBeforeRemoval.credit);
         assert.equal(archivedCandidate.license, candidateBeforeRemoval.license);
+        for (const field of [
+          "rightsStatus",
+          "reviewNotes",
+          "reviewedBy",
+          "reviewedAt",
+        ]) {
+          assert.deepEqual(
+            archivedCandidate[field],
+            candidateBeforeRemoval[field],
+            `archive listing must preserve ${field} after the late review is rejected`,
+          );
+        }
         assert.deepEqual(
           archivedCandidate.rightsHistory,
           removedCandidate.body.rightsHistory,
