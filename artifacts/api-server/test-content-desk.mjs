@@ -5,6 +5,18 @@ import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 
 const artifactDir = path.dirname(fileURLToPath(import.meta.url));
+const suite = process.argv[2] ?? "all";
+const suitePatterns = {
+  adapters: "Provider adapter:",
+  routes: "Editor route:",
+};
+if (suite !== "all" && !Object.hasOwn(suitePatterns, suite)) {
+  console.error(
+    `Unknown content-desk suite "${suite}". Choose adapters, routes, or all.`,
+  );
+  process.exit(1);
+}
+
 const testDir = await mkdtemp(path.join(artifactDir, ".content-desk-test-"));
 const testFile = path.join(testDir, "content-desk.test.mjs");
 
@@ -22,14 +34,15 @@ globalThis.require = createRequire(import.meta.url);`,
     },
   });
 
-  const result = spawnSync(
-    process.execPath,
-    ["--enable-source-maps", "--test", testFile],
-    {
-      env: process.env,
-      stdio: "inherit",
-    },
-  );
+  const args = ["--enable-source-maps", "--test"];
+  if (suite !== "all") {
+    args.push(`--test-name-pattern=${suitePatterns[suite]}`);
+  }
+  args.push(testFile);
+  const result = spawnSync(process.execPath, args, {
+    env: process.env,
+    stdio: "inherit",
+  });
   process.exitCode = result.status ?? 1;
 } finally {
   await rm(testDir, { recursive: true, force: true });

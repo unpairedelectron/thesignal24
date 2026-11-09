@@ -8,8 +8,10 @@
     "build": "node ./build.mjs",
     "start": "node --enable-source-maps ./dist/index.mjs",
     "test:evidence": "node ./test-evidence.mjs",
+    "test:content-desk:adapters": "node ./test-content-desk.mjs adapters",
+    "test:content-desk:routes": "node ./test-content-desk.mjs routes",
     "test:content-desk": "node ./test-content-desk.mjs",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc --allowJs --checkJs --noEmit --skipLibCheck --target es2022 --module esnext --moduleResolution bundler --types node test-content-desk.mjs"
   },
   "dependencies": {
     "@clerk/express": "^2.1.69",

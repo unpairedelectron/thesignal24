@@ -18,14 +18,7 @@ import {
   parseArtInstituteArtworkPageUrl,
   type ArtInstituteClient,
 } from "../lib/art-institute";
-import { createContentDeskRouter } from "./content-desk";
 import { eq } from "drizzle-orm";
-import {
-  contentImageCandidateRightsHistoryTable,
-  db,
-  discoveryItemsTable,
-  issuesTable,
-} from "@workspace/db";
 
 const rollbackMarker = new Error("Rollback content desk test fixtures");
 
@@ -109,6 +102,19 @@ async function withContentDeskRouteFixture(
     }>;
   }) => Promise<void>,
 ) {
+  const [
+    { createContentDeskRouter },
+    {
+      contentImageCandidateRightsHistoryTable,
+      db,
+      discoveryItemsTable,
+      issuesTable,
+    },
+  ] = await Promise.all([
+    import("./content-desk"),
+    import("@workspace/db"),
+  ]);
+
   await assert.rejects(
     db.transaction(async (tx) => {
       const editorGuard: RequestHandler = (req, _res, next) => {
@@ -242,7 +248,7 @@ async function withContentDeskRouteFixture(
   );
 }
 
-test("content sources and discovery leads validate editor submissions", async () => {
+test("Editor route: content sources and discovery leads validate submissions", async () => {
   await withContentDeskRouteFixture(async ({ baseUrl }) => {
     const sourceInput = {
       sourceName: "Focused Route Source",
@@ -313,7 +319,7 @@ test("content sources and discovery leads validate editor submissions", async ()
   });
 });
 
-test("image search saves a provider candidate with pending rights review", async () => {
+test("Editor route: image search saves a provider candidate with pending rights review", async () => {
   await withContentDeskRouteFixture(async ({ baseUrl, createSourceAndLead }) => {
     const { lead } = await createSourceAndLead("image");
     const invalidSearch = await requestJson(
@@ -355,7 +361,7 @@ test("image search saves a provider candidate with pending rights review", async
   });
 });
 
-test("image rights edits require review and record the reviewing editor", async () => {
+test("Editor route: image rights edits require review and record the reviewing editor", async () => {
   await withContentDeskRouteFixture(async ({ baseUrl, createSourceAndLead }) => {
     const { lead } = await createSourceAndLead("rights");
     const created = await requestJson(
@@ -400,7 +406,7 @@ test("image rights edits require review and record the reviewing editor", async 
   });
 });
 
-test("archived image candidates leave the active list and remain in the archive", async () => {
+test("Editor route: archived image candidates leave the active list and remain in the archive", async () => {
   await withContentDeskRouteFixture(async ({ baseUrl, createSourceAndLead }) => {
     const { lead } = await createSourceAndLead("archive");
     const created = await requestJson(
@@ -447,7 +453,7 @@ test("archived image candidates leave the active list and remain in the archive"
   });
 });
 
-test("discovery leads require review before promotion and cannot be promoted twice", async () => {
+test("Editor route: discovery leads require review before promotion and cannot be promoted twice", async () => {
   await withContentDeskRouteFixture(async ({
     baseUrl,
     issue,
@@ -495,7 +501,7 @@ test("discovery leads require review before promotion and cannot be promoted twi
     assert.equal(duplicatePromotion.response.status, 409);
   });
 });
-test("Wikimedia Commons adapter searches files and maps rights metadata", async () => {
+test("Provider adapter: Wikimedia Commons searches files and maps rights metadata", async () => {
   const requests: URL[] = [];
   const client = createWikimediaCommonsClient(async (input) => {
     requests.push(new URL(String(input)));
@@ -550,7 +556,7 @@ test("Wikimedia Commons adapter searches files and maps rights metadata", async 
   assert.equal(requests[0].searchParams.get("gsrlimit"), "8");
 });
 
-test("Internet Archive adapter validates provider URLs and preserves item rights metadata", async () => {
+test("Provider adapter: Internet Archive validates provider URLs and preserves item rights metadata", async () => {
   const requests: URL[] = [];
   const payload = {
     metadata: {
@@ -598,7 +604,7 @@ test("Internet Archive adapter validates provider URLs and preserves item rights
   assert.match(result.usageRights, /preserve the original credit line/);
 });
 
-test("Art Institute adapter preserves artwork metadata and validates artwork URLs", async () => {
+test("Provider adapter: Art Institute preserves artwork metadata and validates artwork URLs", async () => {
   const requests: URL[] = [];
   const artwork = {
     id: 123,
@@ -725,7 +731,7 @@ test("Art Institute adapter preserves artwork metadata and validates artwork URL
   assert.equal(requests.length, 3);
 });
 
-test("Art Institute adapter leaves unavailable artwork rights metadata explicit", async () => {
+test("Provider adapter: Art Institute leaves unavailable artwork rights metadata explicit", async () => {
   const client = createArtInstituteClient(async () =>
     new Response(
       JSON.stringify({
@@ -748,7 +754,7 @@ test("Art Institute adapter leaves unavailable artwork rights metadata explicit"
   assert.match(result.usageRights, /did not supply a public-domain status/);
 });
 
-test("Art Institute adapter uses provider pagination and reports the last page", async () => {
+test("Provider adapter: Art Institute uses provider pagination and reports the last page", async () => {
   const requests: URL[] = [];
   const artworks = [
     { id: 123, title: "First artwork", image_id: "museum-image-123" },
@@ -785,7 +791,7 @@ test("Art Institute adapter uses provider pagination and reports the last page",
   assert.equal(requests[1].searchParams.get("page"), "2");
 });
 
-test("Art Institute adapter rejects missing, malformed, and mismatched pagination", async () => {
+test("Provider adapter: Art Institute rejects missing, malformed, and mismatched pagination", async () => {
   const invalidResponses = [
     { data: [] },
     { pagination: { total_pages: 2 }, data: [] },
@@ -810,7 +816,7 @@ test("Art Institute adapter rejects missing, malformed, and mismatched paginatio
   }
 });
 
-test("Internet Archive search paginates, preserves item validation, and signals exhaustion", async () => {
+test("Provider adapter: Internet Archive paginates, preserves item validation, and signals exhaustion", async () => {
   const searchRequests: URL[] = [];
   const client = createInternetArchiveClient(async (input) => {
     const url = new URL(String(input));
@@ -877,7 +883,7 @@ test("Internet Archive search paginates, preserves item validation, and signals 
   }
 });
 
-test("Internet Archive search reports exhausted results when there are no matches", async () => {
+test("Provider adapter: Internet Archive reports exhausted results when there are no matches", async () => {
   const client = createInternetArchiveClient(async () =>
     new Response(
       JSON.stringify({ response: { docs: [], numFound: 0 } }),
@@ -891,7 +897,11 @@ test("Internet Archive search reports exhausted results when there are no matche
   });
 });
 
-test("image search is rejected by the editor guard before calling Commons", async () => {
+test("Editor route: image search is rejected by the editor guard before calling Commons", async () => {
+  const [{ createContentDeskRouter }, { db }] = await Promise.all([
+    import("./content-desk"),
+    import("@workspace/db"),
+  ]);
   let searchCalled = false;
   let fileLookupCalled = false;
   const editorGuard: RequestHandler = (_req, res) => {
@@ -947,7 +957,15 @@ test("image search is rejected by the editor guard before calling Commons", asyn
   }
 });
 
-test("end-to-end content desk flows preserve provider, rights, promotion, and archive invariants", async () => {
+test("Editor route: end-to-end content desk flows preserve provider, rights, promotion, and archive invariants", async () => {
+  const {
+    contentImageCandidateRightsHistoryTable,
+    db,
+    discoveryItemsTable,
+    issuesTable,
+  } = await import("@workspace/db");
+  const { createContentDeskRouter } = await import("./content-desk");
+
   await assert.rejects(
     db.transaction(async (tx) => {
       const editorGuard: RequestHandler = (req, _res, next) => {

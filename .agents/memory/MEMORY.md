@@ -11,3 +11,4 @@
 - [Browser test services](browser-test-services.md) — state-map browser tests need both the web and API artifact workflows running before Chromium can exercise the page.
 - [Image-rights retention](image-rights-retention.md) — archive candidate records instead of deleting them; lead deletion detaches candidates, and rights-history rows restrict hard deletion.
 - [Stale rights rechecks](stale-rights-rechecks.md) — source applies must conflict when either saved terms or review state changes during the provider lookup.
+- [Node test suite filters](node-test-suite-filters.md) — use positive suite-name prefixes for `--test-name-pattern` filtering; negative patterns did not reliably exclude the intended tests here.
