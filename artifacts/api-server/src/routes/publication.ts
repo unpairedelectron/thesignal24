@@ -48,7 +48,7 @@ const topicList = [
 ] as const;
 const topicValues = new Set(topicList);
 type Topic = (typeof topicList)[number];
-const kindList = ["Article", "Paper note", "Archive", "Explainer"] as const;
+const kindList = ["Article", "Paper note", "Archive", "Explainer", "Opinion"] as const;
 const kindValues = new Set(kindList);
 type StoryKind = (typeof kindList)[number];
 const recordFamilyList = [
@@ -215,6 +215,8 @@ function serializeStory(
     scheduledFor: story.scheduledFor?.toISOString() ?? null,
     aiDisclosure: story.aiDisclosure,
     correctionNote: story.correctionNote,
+    byline: story.byline,
+    hi: story.hi ?? null,
   };
 }
 
@@ -354,7 +356,12 @@ const SITE_ORIGIN = (process.env.SITE_URL || "https://thesignal24.com").replace(
   "",
 );
 
-type SitemapEntry = { path: string; lastmod?: Date | null };
+/** `hi: true` when the page exists as a reviewed Hindi edition at /hi{path}. */
+type SitemapEntry = { path: string; lastmod?: Date | null; hi?: boolean };
+
+function hindiPath(path: string) {
+  return path === "/" ? "/hi" : `/hi${path}`;
+}
 
 function latestDate(dates: Array<Date | null | undefined>) {
   let latest: Date | null = null;
@@ -364,11 +371,25 @@ function latestDate(dates: Array<Date | null | undefined>) {
   return latest;
 }
 
-function sitemapUrl({ path, lastmod }: SitemapEntry) {
+function sitemapUrl({ path, lastmod, hi }: SitemapEntry) {
   const lastmodTag = lastmod
     ? `<lastmod>${lastmod.toISOString()}</lastmod>`
     : "";
-  return `<url><loc>${xmlEscape(`${SITE_ORIGIN}${path}`)}</loc>${lastmodTag}</url>`;
+  const english = `${SITE_ORIGIN}${path}`;
+  if (!hi) return `<url><loc>${xmlEscape(english)}</loc>${lastmodTag}</url>`;
+  const hindi = `${SITE_ORIGIN}${hindiPath(path)}`;
+  const alternates = [
+    `<xhtml:link rel="alternate" hreflang="en-IN" href="${xmlEscape(english)}"/>`,
+    `<xhtml:link rel="alternate" hreflang="hi-IN" href="${xmlEscape(hindi)}"/>`,
+    `<xhtml:link rel="alternate" hreflang="x-default" href="${xmlEscape(english)}"/>`,
+  ].join("");
+  return [english, hindi]
+    .map((loc) => `<url><loc>${xmlEscape(loc)}</loc>${lastmodTag}${alternates}</url>`)
+    .join("");
+}
+
+function hasStoryTranslation(story: typeof storiesTable.$inferSelect) {
+  return Boolean(story.hi?.title && story.hi.dek && story.hi.body);
 }
 
 router.get("/issues/current", async (_req, res, next) => {
@@ -557,30 +578,39 @@ router.get("/sitemap.xml", async (_req, res, next) => {
       sources.set(source.id, source);
     }
 
+    const opinionLastmod = latestDate(
+      indexableStories.filter((story) => story.kind === "Opinion").map((story) => story.updatedAt),
+    );
+    // Site pages are fully bilingual. Records get a Hindi URL only once they carry a Hindi edition;
+    // event and source pages show English database text and stay English-only.
     const entries: SitemapEntry[] = [
-      { path: "/", lastmod: latestDate([storiesLastmod, policiesLastmod]) },
-      { path: "/archive", lastmod: storiesLastmod },
-      { path: "/policies", lastmod: policiesLastmod },
-      { path: "/topics", lastmod: storiesLastmod },
-      { path: "/topics/open-category-competition" },
-      { path: "/timeline", lastmod: latestDate([storiesLastmod, policiesLastmod]) },
-      { path: "/events", lastmod: eventsLastmod },
-      { path: "/data" },
-      { path: "/about" },
-      { path: "/editorial-standards" },
-      { path: "/methodology" },
-      { path: "/authors/signal-24" },
+      { path: "/", lastmod: latestDate([storiesLastmod, policiesLastmod]), hi: true },
+      { path: "/archive", lastmod: storiesLastmod, hi: true },
+      { path: "/policies", lastmod: policiesLastmod, hi: true },
+      { path: "/opinion", lastmod: opinionLastmod, hi: true },
+      { path: "/topics", lastmod: storiesLastmod, hi: true },
+      { path: "/topics/open-category-competition", hi: true },
+      { path: "/timeline", lastmod: latestDate([storiesLastmod, policiesLastmod]), hi: true },
+      { path: "/events", lastmod: eventsLastmod, hi: true },
+      { path: "/data", hi: true },
+      { path: "/about", hi: true },
+      { path: "/editorial-standards", hi: true },
+      { path: "/methodology", hi: true },
+      { path: "/authors/signal-24", hi: true },
       ...Array.from(topicLastmod, ([topic, lastmod]) => ({
         path: `/topics/${encodeURIComponent(topic)}`,
         lastmod,
+        hi: true,
       })),
       ...indexableStories.map((story) => ({
         path: getCanonicalPath(story),
         lastmod: story.updatedAt,
+        hi: hasStoryTranslation(story),
       })),
       ...policyResults.map((policy) => ({
         path: `/policies/${policy.slug}`,
         lastmod: policy.updatedAt,
+        hi: Boolean(policy.hi?.title && policy.hi.summary),
       })),
       ...eventResults.map((event) => ({
         path: `/events/${event.id}`,
@@ -593,7 +623,7 @@ router.get("/sitemap.xml", async (_req, res, next) => {
     ];
 
     res.type("application/xml").send(
-      `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${entries.map(sitemapUrl).join("")}</urlset>`,
+      `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">${entries.map(sitemapUrl).join("")}</urlset>`,
     );
   } catch (error) {
     next(error);
@@ -804,6 +834,8 @@ router.post("/stories", requireEditor, async (req, res, next) => {
         scheduledFor: input.scheduledFor ? new Date(input.scheduledFor) : null,
         aiDisclosure: input.aiDisclosure ?? null,
         correctionNote: input.correctionNote ?? null,
+        byline: input.byline ?? null,
+        hi: input.hi ?? null,
       })
       .returning();
     await recordRevision(story, input.revisionNote ?? "Created record");
@@ -915,6 +947,8 @@ router.put("/stories/:storyId", requireEditor, async (req, res, next) => {
           input.correctionNote === undefined
             ? existing.correctionNote
             : input.correctionNote,
+        byline: input.byline === undefined ? existing.byline : input.byline,
+        hi: input.hi === undefined ? existing.hi : input.hi,
         updatedAt: new Date(),
       })
       .where(eq(storiesTable.id, storyId))
@@ -947,6 +981,7 @@ function serializePolicy(
     effectiveDate: policy.effectiveDate,
     publishedOn: policy.publishedOn,
     sources: sources.map(serializePolicySource),
+    hi: policy.hi ?? null,
   };
 }
 

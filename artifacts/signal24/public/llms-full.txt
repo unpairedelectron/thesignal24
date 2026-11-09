@@ -1,88 +1,147 @@
-# The Signal 24 — full reference text
+# The Signal 24 — reference text
 
-> The Signal 24 is India's reservation and representation monitor: a public-interest newsroom and research archive for policy, courts, documents, data and the histories behind them. Canonical site: https://thesignal24.com. This file reproduces the text of the About, Editorial standards and Methodology pages. Individual records are listed in the sitemap: https://thesignal24.com/sitemap.xml
+Full text of the About, Editorial standards and Methodology pages, in English and Hindi. Canonical pages: https://thesignal24.com/about, https://thesignal24.com/editorial-standards, https://thesignal24.com/methodology (Hindi: /hi/about, /hi/editorial-standards, /hi/methodology).
 
-## About — A permanent record for a difficult debate
+## About
 
-Source: https://thesignal24.com/about
+The Signal 24 is a public-interest newsroom that holds governments, courts, commissions and agencies to their own records on reservation and representation in India. We read the judgments, notifications and reports so you do not have to take anyone’s word for it, including ours.
 
-The Signal 24 is India's reservation and representation monitor: a public-interest newsroom and research archive for policy, courts, documents, data and the histories behind them.
+### Who we answer to
 
-### What this is
+Readers. Not a party, a government, a caste organisation or an advertiser. Every story carries its source so you can check us, and every correction is logged in public.
 
-A source-first place to follow reservation-related developments without reducing a national question to a daily outrage cycle. The archive is designed to help readers understand what happened, where it came from, what changed, and what remains uncertain.
+### What we go after
 
-### What this is not
+Promises with deadlines. Reports that were commissioned and then buried. Data collected with public money and then withheld. Laws passed in an election season and struck down in court. The gap between what the state says on a stage and what it files on paper.
 
-It is not a party publication, a campaign platform, or a substitute for the original judgment, notification, report or dataset. It does not rank governments or communities.
+### What we refuse to do
 
-### A growing record
+We do not target communities, rank castes or trade in outrage. Our scrutiny is aimed at institutions and office-holders: the people with power over a policy, not the people living under it.
 
-The first release establishes the publication shell, archive, source labels and editorial desk. Live ingestion, document storage, state pages and data tools will be added only when they can meet the same sourcing standard.
+### English and Hindi
 
-## Editorial standards — Every claim has a source. Every number has a document.
+The Signal 24 publishes in English and Hindi. When a record’s Hindi edition is not ready, the page says so and shows the English text. We do not publish unreviewed machine translation as reporting.
 
-Source: https://thesignal24.com/editorial-standards
+## परिचय
 
-The subject demands a higher standard than speed alone. We distinguish reporting, documents, analysis and opinion so a reader can tell what kind of record they are reading.
+द सिग्नल 24 एक जनहित न्यूज़रूम है, जो भारत में आरक्षण और प्रतिनिधित्व के सवाल पर सरकारों, अदालतों, आयोगों और एजेंसियों को उनके अपने दस्तावेज़ों पर परखता है। हम फ़ैसले, अधिसूचनाएँ और रिपोर्टें पढ़ते हैं, ताकि आपको किसी की बात पर आँख मूँदकर भरोसा न करना पड़े, हमारी बात पर भी नहीं।
+
+### हम किसके प्रति जवाबदेह हैं
+
+पाठकों के प्रति। किसी पार्टी, सरकार, जातीय संगठन या विज्ञापनदाता के प्रति नहीं। हर ख़बर के साथ उसका स्रोत है, ताकि आप हमें जाँच सकें, और हर सुधार सार्वजनिक रूप से दर्ज होता है।
+
+### हम किसका पीछा करते हैं
+
+समय-सीमा वाले वादों का। उन रिपोर्टों का, जो बनवाई गईं और फिर दबा दी गईं। जनता के पैसे से जुटाए गए और फिर रोके गए आंकड़ों का। चुनावी मौसम में पास हुए और अदालत में रद्द हुए क़ानूनों का। उस फ़ासले का, जो सरकार के मंच के भाषण और उसके दफ़्तरी काग़ज़ के बीच है।
+
+### हम क्या नहीं करेंगे
+
+हम किसी समुदाय को निशाना नहीं बनाते, जातियों की रैंकिंग नहीं करते और ग़ुस्से का कारोबार नहीं करते। हमारी पड़ताल संस्थाओं और पदाधिकारियों पर है: उन पर जिनके हाथ में नीति की ताक़त है, उन पर नहीं जो उस नीति के तले जीते हैं।
+
+### अंग्रेज़ी और हिंदी
+
+द सिग्नल 24 अंग्रेज़ी और हिंदी दोनों में प्रकाशित होता है। जब किसी रिकॉर्ड का हिंदी संस्करण तैयार न हो, तो पेज यह साफ़ बताता है और अंग्रेज़ी पाठ दिखाता है। बिना जाँचे मशीनी अनुवाद को हम रिपोर्टिंग के तौर पर नहीं छापते।
+
+## Editorial standards
+
+Being tough on the state is only worth something if we are right. These are the rules we hold ourselves to before we hold anyone else to theirs.
 
 ### Reporting
 
-What happened, attributed to a source and dated. We do not present an allegation as an established fact or infer motives without reliable documentation.
+What happened, who did it and when, with the document that proves it. Allegations stay allegations until the record establishes them. We name the ministry, department or office that acted, not just “the government”.
 
 ### Documents
 
-What an original source says. Court orders, government notifications, commission reports and statutory text should be linked or identified wherever possible.
+Judgments, gazette notifications, commission reports, parliamentary answers and RTI replies are linked or identified. If a primary source is unavailable, the record says so.
+
+### Right of reply
+
+Before we publish a finding against a named office or official, we ask for their response and record whether they gave one. Silence is reported as silence.
 
 ### Analysis
 
-What the available evidence suggests. Analysis must show its method, preserve uncertainty and avoid turning a partial record into a universal claim.
+What the evidence supports, with the method shown. If the data cannot carry a conclusion, we do not draw it.
 
 ### Opinion
 
-A clearly labelled viewpoint with an identified author and relevant disclosure. Opinion must never be presented as neutral reporting.
+Opinion is labelled, carries a named author or the editorial board, and is never mixed into reporting. Our opinion pieces criticise institutions and decisions, not communities.
 
 ### Corrections and AI
 
-If we get a fact wrong, the record should say what changed and when. AI may assist with organization, summarization or metadata, but publication requires editorial review against source material.
+Mistakes are corrected in public: the record says what changed and when. AI tools may help with translation, organisation or first drafts; nothing is published until an editor has checked it against the source.
 
-## Methodology — A record is only useful when its frame is visible.
+## संपादकीय मानक
 
-Source: https://thesignal24.com/methodology
+सरकार पर सख़्ती तभी मायने रखती है, जब हम सही हों। किसी और को उसके नियमों पर परखने से पहले, हम ख़ुद को इन नियमों पर परखते हैं।
 
-The archive preserves source type, date, state, record type and verification context because numbers and claims change meaning when their definitions disappear.
+### रिपोर्टिंग
+
+क्या हुआ, किसने किया और कब, उस दस्तावेज़ के साथ जो इसे साबित करता है। आरोप तब तक आरोप ही रहता है, जब तक रिकॉर्ड उसे साबित न कर दे। हम उस मंत्रालय, विभाग या दफ़्तर का नाम लेते हैं जिसने कार्रवाई की, सिर्फ़ “सरकार” कहकर नहीं छोड़ते।
+
+### दस्तावेज़
+
+फ़ैसले, गज़ट अधिसूचनाएँ, आयोगों की रिपोर्टें, संसद में दिए जवाब और आरटीआई के उत्तर लिंक किए जाते हैं या उनकी पहचान दी जाती है। अगर मूल स्रोत उपलब्ध नहीं है, तो रिकॉर्ड यह साफ़ कहता है।
+
+### जवाब का अधिकार
+
+किसी नामित दफ़्तर या अधिकारी के ख़िलाफ़ कोई निष्कर्ष छापने से पहले हम उनसे जवाब माँगते हैं और दर्ज करते हैं कि जवाब आया या नहीं। चुप्पी को चुप्पी ही लिखा जाता है।
+
+### विश्लेषण
+
+सबूत जिस बात का समर्थन करते हैं, तरीक़ा दिखाते हुए। अगर आंकड़े किसी निष्कर्ष का बोझ नहीं उठा सकते, तो हम वह निष्कर्ष नहीं निकालते।
+
+### राय
+
+राय पर साफ़ लेबल होता है, उसके साथ लेखक या संपादकीय बोर्ड का नाम होता है, और उसे रिपोर्टिंग में नहीं मिलाया जाता। हमारी राय संस्थाओं और फ़ैसलों की आलोचना करती है, समुदायों की नहीं।
+
+### सुधार और एआई
+
+ग़लतियाँ सार्वजनिक रूप से सुधारी जाती हैं: रिकॉर्ड बताता है कि क्या बदला और कब। अनुवाद, व्यवस्था या पहले मसौदे में एआई की मदद ली जा सकती है; लेकिन कोई भी चीज़ तब तक प्रकाशित नहीं होती, जब तक संपादक उसे स्रोत से मिलाकर जाँच न ले।
+
+## Methodology
+
+Numbers and claims change meaning when their definitions disappear. Every record keeps its source type, date, jurisdiction and verification status attached.
 
 ### Source hierarchy
 
-Primary government documents, court records, constitutional and statutory text, official statistical releases, parliamentary records, commission reports, academic research and reputable news organizations each play different roles. We name the role rather than hiding it behind a score.
+Constitutional and statutory text, court judgments, gazette notifications, parliamentary records, commission reports and official statistics come first. Reporting by other outlets is used for context and is always attributed.
+
+### Verification labels
+
+Unverified: not yet checked against a primary source. Source-linked: tied to a named, linked source. Verified: checked line by line by the desk. The label is shown on every record.
 
 ### Data integrity
 
-For an important number, the eventual data room should show value, unit, year, geography, definition, source, source date, collection method and last verified date. Population share, reservation allocation, representation and selection rates must remain distinct.
+Every important number carries its unit, year, geography, definition and source. Population share, reserved seats and actual representation are different quantities, and we never substitute one for another.
 
-### Archive status
+### Legal status
 
-Records should be marked as current, historical, proposed, challenged, stayed, struck down or unavailable where those distinctions matter. A missing source is a limitation to disclose, not a gap to fill with invention.
+Records are marked current, proposed, challenged, stayed or struck down. A law a court has stayed is never reported as being in force.
 
-### Starter content
+### The Hindi edition
 
-Some records in this first release are clearly marked starter records or source-link-pending records. They demonstrate the structure of the publication and must not be mistaken for live verified reporting.
+Hindi pages are translations of the same record, not separate stories. Where a Hindi edition is not ready, the page says so and shows the English text, and search engines are told not to index it as Hindi.
 
-## Open-category competition — topic file
+## कार्यप्रणाली
 
-Source: https://thesignal24.com/topics/open-category-competition
+परिभाषा हट जाए, तो आंकड़ों और दावों का अर्थ बदल जाता है। इसलिए हर रिकॉर्ड के साथ उसके स्रोत का प्रकार, तारीख़, क्षेत्राधिकार और सत्यापन की स्थिति जुड़ी रहती है।
 
-Open seats are generally available to eligible candidates across categories; they are not a reserved pool for any one caste group. Rules, selection lists and court orders must be read in their own context.
+### स्रोतों का क्रम
 
-A demand, a litigant's argument, an interim order and a final judgment are different kinds of records. This page keeps external coverage apart from verified Signal 24 publications and does not infer an open-seat share from a quota headline.
+संविधान और क़ानून का पाठ, अदालती फ़ैसले, गज़ट अधिसूचनाएँ, संसदीय रिकॉर्ड, आयोगों की रिपोर्टें और आधिकारिक आंकड़े सबसे पहले आते हैं। दूसरे मीडिया संस्थानों की रिपोर्टिंग संदर्भ के लिए इस्तेमाल होती है और हमेशा उनके नाम के साथ।
 
-## Editorial desk
+### सत्यापन के लेबल
 
-Source: https://thesignal24.com/authors/signal-24
+असत्यापित: अभी मूल स्रोत से नहीं मिलाया गया। स्रोत से जुड़ा: किसी नामित, लिंक किए गए स्रोत से जुड़ा। सत्यापित: डेस्क ने पंक्ति-दर-पंक्ति जाँचा। यह लेबल हर रिकॉर्ड पर दिखता है।
 
-The Signal 24 editorial desk keeps reporting, documents, analysis and opinion distinct, and names the source and date behind each published record. The desk is a publication identity rather than a claim that every record has one author. Individual bylines, disclosures and corrections belong on the record when they are available.
+### आंकड़ों की ईमानदारी
 
-## Labels used across the site
+हर अहम आंकड़े के साथ उसकी इकाई, वर्ष, भूगोल, परिभाषा और स्रोत होता है। आबादी में हिस्सा, आरक्षित सीटें और वास्तविक प्रतिनिधित्व तीन अलग चीज़ें हैं, और हम एक की जगह दूसरी का इस्तेमाल कभी नहीं करते।
 
-- External leads: items from monitored external feeds. This is not published Signal 24 reporting: every item remains unreviewed until the editorial desk checks the source and builds a record.
-- Community noticeboard: public participant contributions. Contributions are not Signal 24 reporting.
+### क़ानूनी स्थिति
+
+रिकॉर्ड पर लिखा होता है कि नियम लागू है, प्रस्तावित है, चुनौती में है, उस पर रोक है या वह रद्द हो चुका है। जिस क़ानून पर अदालत ने रोक लगाई हो, उसे हम कभी लागू नहीं बताते।
+
+### हिंदी संस्करण
+
+हिंदी पेज उसी रिकॉर्ड का अनुवाद हैं, अलग ख़बरें नहीं। जहाँ हिंदी संस्करण तैयार नहीं है, वहाँ पेज यह बताता है और अंग्रेज़ी पाठ दिखाता है, और सर्च इंजनों को कहा जाता है कि उसे हिंदी पेज के तौर पर इंडेक्स न करें।

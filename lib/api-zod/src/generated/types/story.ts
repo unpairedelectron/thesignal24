@@ -7,6 +7,7 @@
  */
 import type { StoryKind } from './storyKind';
 import type { StoryRecordFamily } from './storyRecordFamily';
+import type { StoryTranslation } from './storyTranslation';
 import type { StoryWorkflowStatus } from './storyWorkflowStatus';
 import type { Topic } from './topic';
 import type { VerificationStatus } from './verificationStatus';
@@ -62,4 +63,10 @@ export interface Story {
   aiDisclosure: string | null;
   /** @nullable */
   correctionNote: string | null;
+  /**
+     * Named author or desk for opinion and signed pieces.
+     * @nullable
+     */
+  byline: string | null;
+  hi: StoryTranslation | null;
 }

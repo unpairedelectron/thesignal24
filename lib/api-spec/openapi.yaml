@@ -1545,7 +1545,7 @@ components:
       enum: [Latest, Courts & Policy, States, History, Ground Reports, Data & Notes]
     StoryKind:
       type: string
-      enum: [Article, Paper note, Archive, Explainer]
+      enum: [Article, Paper note, Archive, Explainer, Opinion]
     StoryWorkflowStatus:
       type: string
       enum: [draft, review, scheduled, published, archived]
@@ -1611,6 +1611,40 @@ components:
         intro:
           type: string
       required: [issueDate, issueNumber, title, intro]
+    StoryTranslation:
+      type: object
+      description: Hindi edition of a record. Only fields that have been translated and reviewed are present.
+      properties:
+        eyebrow:
+          type: string
+        title:
+          type: string
+        dek:
+          type: string
+        body:
+          type: string
+      required: [title, dek, body]
+    PolicyTranslation:
+      type: object
+      description: Hindi edition of a policy ledger record.
+      properties:
+        title:
+          type: string
+        summary:
+          type: string
+        sector:
+          type: string
+        authority:
+          type: string
+        previousFramework:
+          type: string
+        newFramework:
+          type: string
+        legalBasis:
+          type: string
+        courtStatus:
+          type: string
+      required: [title, summary]
     Story:
       type: object
       properties:
@@ -1700,7 +1734,14 @@ components:
           type: ["string", "null"]
         correctionNote:
           type: ["string", "null"]
-      required: [id, issueId, topic, kind, state, source, sourceUrl, publishedOn, recordDate, articlePublishedAt, eyebrow, title, dek, body, time, read, tone, number, sortOrder, slug, recordFamily, canonicalPath, indexable, workflowStatus, verificationStatus, verificationNotes, sourcePublishedOn, sourceRetrievedOn, lastVerifiedAt, reviewedAt, scheduledFor, aiDisclosure, correctionNote]
+        byline:
+          type: ["string", "null"]
+          description: Named author or desk for opinion and signed pieces.
+        hi:
+          oneOf:
+            - $ref: "#/components/schemas/StoryTranslation"
+            - type: "null"
+      required: [id, issueId, topic, kind, state, source, sourceUrl, publishedOn, recordDate, articlePublishedAt, eyebrow, title, dek, body, time, read, tone, number, sortOrder, slug, recordFamily, canonicalPath, indexable, workflowStatus, verificationStatus, verificationNotes, sourcePublishedOn, sourceRetrievedOn, lastVerifiedAt, reviewedAt, scheduledFor, aiDisclosure, correctionNote, byline, hi]
     StoryInput:
       type: object
       properties:
@@ -1766,6 +1807,12 @@ components:
           type: ["string", "null"]
         revisionNote:
           type: ["string", "null"]
+        byline:
+          type: ["string", "null"]
+        hi:
+          oneOf:
+            - $ref: "#/components/schemas/StoryTranslation"
+            - type: "null"
       required: [issueId, topic, kind, source, eyebrow, title, dek, body, time, read, tone, sortOrder]
     StoryRevision:
       type: object
@@ -2279,7 +2326,11 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/PolicySource"
-      required: [id, slug, canonicalPath, title, summary, state, sector, status, authority, previousFramework, newFramework, legalBasis, courtStatus, effectiveDate, publishedOn, sources]
+        hi:
+          oneOf:
+            - $ref: "#/components/schemas/PolicyTranslation"
+            - type: "null"
+      required: [id, slug, canonicalPath, title, summary, state, sector, status, authority, previousFramework, newFramework, legalBasis, courtStatus, effectiveDate, publishedOn, sources, hi]
     PolicyListResult:
       type: object
       properties:

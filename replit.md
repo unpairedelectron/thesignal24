@@ -38,6 +38,16 @@ A source-first public-interest publication and research archive covering UGC equ
 - Production web and API requests share one origin; the browser calls `/api` rather than a hard-coded API host.
 - Canonical metadata is generated at runtime because a literal root canonical in the Vite HTML entry can break production builds. Canonicals, `og:url`, share images and sitemap URLs always use the fixed site origin (`artifacts/signal24/src/lib/seo.ts`, `SITE_ORIGIN` in `artifacts/api-server/src/routes/publication.ts`), never the request host, so mirror hosts such as `*.replit.app` don't create duplicate content.
 
+## Bilingual edition (English and Hindi)
+
+- English lives at `/`, Hindi at `/hi/...` (wouter nested route in `artifacts/signal24/src/App.tsx`). Language context, labels and the switch are in `src/lib/i18n.tsx`; URL localization, canonicals and hreflang are in `src/lib/seo.ts`.
+- UI copy is inline: `t('English', 'हिंदी')`. Fixed API values (topics, kinds, states, statuses) are translated by `useLabel()`.
+- Record translations are stored in the `hi` jsonb column on stories and policy records and edited in the editorial desk. A Hindi page without a translation shows the English text with a notice and is `noindex`; the sitemap only lists `/hi` URLs that are translated.
+- Devanagari typography rules are scoped with `:lang(hi)` at the end of `src/index.css`. Never letter-space Devanagari, never use `::first-letter` on it, and keep display line-height at 1.25 or more.
+- Story bodies support a small Markdown subset (`## `, `? `, `> `, `- `, `::: Key facts`, `**bold**`, links), rendered by `src/components/rich-body.tsx`.
+- `artifacts/api-server/src/lib/content-pack*.ts` holds bilingual sourced explainers and labelled opinion. On startup they are inserted once, in `review` status, into a draft issue titled "The accountability record"; nothing is published automatically.
+- The front-page Accountability Watch lives in `src/lib/accountability.ts`; update `ACCOUNTABILITY_CHECKED_ON` whenever items are re-verified.
+
 ## Product
 
 The publication provides a current briefing, a source-linked archive, a policy ledger, court and state coverage, a data room, editorial standards, and a public participant noticeboard. The private editorial desk manages publication records and revision history.

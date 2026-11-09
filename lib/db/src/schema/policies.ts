@@ -3,6 +3,7 @@ import {
   boolean,
   date,
   integer,
+  jsonb,
   pgTable,
   serial,
   text,
@@ -10,6 +11,18 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { z } from "zod/v4";
+
+/** Hindi edition of a policy ledger record. */
+export type PolicyTranslation = {
+  title: string;
+  summary: string;
+  sector?: string;
+  authority?: string;
+  previousFramework?: string;
+  newFramework?: string;
+  legalBasis?: string;
+  courtStatus?: string;
+};
 
 export const policyRecordsTable = pgTable(
   "policy_ledger_records",
@@ -29,6 +42,7 @@ export const policyRecordsTable = pgTable(
     effectiveDate: date("effective_date", { mode: "string" }),
     publishedOn: date("published_on", { mode: "string" }).notNull(),
     workflowStatus: text("workflow_status").notNull().default("published"),
+    hi: jsonb("hi").$type<PolicyTranslation>(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

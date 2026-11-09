@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { StoryKind } from './storyKind';
+import type { StoryTranslation } from './storyTranslation';
 import type { StoryWorkflowStatus } from './storyWorkflowStatus';
 import type { Topic } from './topic';
 import type { VerificationStatus } from './verificationStatus';
@@ -45,4 +46,7 @@ export interface StoryInput {
   correctionNote?: string | null;
   /** @nullable */
   revisionNote?: string | null;
+  /** @nullable */
+  byline?: string | null;
+  hi?: StoryTranslation | null;
 }

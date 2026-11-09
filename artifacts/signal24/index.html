@@ -2,14 +2,18 @@
 <html lang="en-IN">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      // Hindi edition: set the document language before first paint so Devanagari typography applies immediately.
+      if (/^\/hi(\/|$)/.test(location.pathname)) { document.documentElement.lang = 'hi-IN'; document.documentElement.classList.add('lang-hi'); }
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#202b35" />
     <meta http-equiv="content-language" content="en-IN" />
-    <title>The Signal 24 — India, on the record</title>
-    <meta name="description" content="A source-first public-interest newsroom and research archive for reservation policy, court records, official documents and data in India." />
+    <title>The Signal 24 — Power, on the record</title>
+    <meta name="description" content="A public-interest newsroom holding India’s governments, courts and agencies to their own records on reservation and representation. In English and Hindi." />
     <meta name="robots" content="index, follow" />
-    <meta property="og:title" content="The Signal 24 — India, on the record" />
-    <meta property="og:description" content="A source-first public-interest newsroom and research archive for reservation policy, court records, official documents and data in India." />
+    <meta property="og:title" content="The Signal 24 — Power, on the record" />
+    <meta property="og:description" content="A public-interest newsroom holding India’s governments, courts and agencies to their own records on reservation and representation. In English and Hindi." />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="The Signal 24" />
     <meta property="og:locale" content="en_IN" />
@@ -19,37 +23,40 @@
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:image" content="https://thesignal24.com/images/og-default.jpg" />
-    <meta name="twitter:title" content="The Signal 24 — India, on the record" />
-    <meta name="twitter:description" content="A source-first public-interest newsroom and research archive for reservation policy, court records, official documents and data in India." />
+    <meta name="twitter:title" content="The Signal 24 — Power, on the record" />
+    <meta name="twitter:description" content="A public-interest newsroom holding India’s governments, courts and agencies to their own records on reservation and representation. In English and Hindi." />
     <link rel="icon" type="image/svg+xml" href="%BASE_URL%favicon.svg" />
   </head>
   <body>
     <div id="root"></div>
     <noscript>
-      <main style="max-width:44rem;margin:0 auto;padding:2rem 1rem;font-family:Georgia,serif;line-height:1.6;color:#202b35;background:#fff">
-        <h1>The Signal 24 — India, on the record</h1>
-        <p>The Signal 24 is India’s reservation and representation monitor: a public-interest newsroom and research archive for policy, courts, documents, data and the histories behind them. It covers UGC equity rules, open-category competition, EWS eligibility and state reservation disputes.</p>
-        <h2>Editorial standards</h2>
-        <p>Every claim has a source. Every number has a document. We distinguish reporting, documents, analysis and opinion so a reader can tell what kind of record they are reading.</p>
+      <main style="max-width:44rem;margin:0 auto;padding:2rem 1rem;font-family:Georgia,'Noto Serif Devanagari',serif;line-height:1.7;color:#202b35;background:#fff">
+        <h1>The Signal 24 — Power, on the record</h1>
+        <p>A public-interest newsroom that holds India’s governments, courts, commissions and agencies to their own records on reservation and representation. Every claim is linked to its source. For the people, by the people.</p>
+        <h2>Our standards</h2>
         <ul>
-          <li><strong>Reporting:</strong> what happened, attributed to a source and dated.</li>
-          <li><strong>Documents:</strong> what an original source says. Court orders, government notifications, commission reports and statutory text should be linked or identified wherever possible.</li>
-          <li><strong>Analysis:</strong> what the available evidence suggests, with its method shown and uncertainty preserved.</li>
-          <li><strong>Opinion:</strong> a clearly labelled viewpoint with an identified author and relevant disclosure.</li>
+          <li><strong>Reporting:</strong> what happened, who did it and when, with the document that proves it. Allegations stay allegations until the record establishes them.</li>
+          <li><strong>Right of reply:</strong> before publishing a finding against a named office or official, we ask for their response and record whether they gave one.</li>
+          <li><strong>Opinion:</strong> labelled, signed, and kept separate from reporting. We criticise institutions and decisions, not communities.</li>
+          <li><strong>Corrections:</strong> made in public, with the date and what changed.</li>
         </ul>
-        <p>Unreviewed items from external feeds are leads, not Signal 24 reporting. Public participant contributions are labelled separately.</p>
+        <p>Live-desk items are unreviewed outside leads. Community posts are participant contributions. Neither is Signal 24 reporting.</p>
         <h2>Sections</h2>
         <ul>
-          <li><a href="/archive">Archive</a> — published reporting, court and policy developments, historical documents, research notes and state context</li>
-          <li><a href="/policies">Policy ledger</a> — source-linked records of reservation policy changes</li>
+          <li><a href="/policies">Policy ledger</a> — every recorded change in reservation policy, with the legal basis and court status</li>
+          <li><a href="/archive">Archive</a> and <a href="/timeline">Timeline</a></li>
+          <li><a href="/opinion">Opinion</a> — signed and labelled</li>
           <li><a href="/topics">Topics</a> and <a href="/topics/open-category-competition">Open-category competition</a></li>
-          <li><a href="/timeline">Source timeline</a> — a dated index of published records</li>
-          <li><a href="/events">Events and evidence</a></li>
-          <li><a href="/data">Data room</a></li>
+          <li><a href="/events">Events and evidence</a> · <a href="/data">Data room</a></li>
           <li><a href="/about">About</a>, <a href="/editorial-standards">Editorial standards</a>, <a href="/methodology">Methodology</a></li>
-          <li><a href="/sitemap.xml">Sitemap</a> · <a href="/llms.txt">llms.txt</a></li>
+          <li><a href="/sitemap.xml">Sitemap</a> · <a href="/llms.txt">llms.txt</a> · <a href="/llms-full.txt">llms-full.txt</a></li>
         </ul>
-        <p>Enable JavaScript to load records, sources and search. The full reference text of these pages is in <a href="/llms-full.txt">llms-full.txt</a>.</p>
+        <div lang="hi">
+          <h2>हिंदी संस्करण</h2>
+          <p>द सिग्नल 24 एक जनहित न्यूज़रूम है, जो आरक्षण और प्रतिनिधित्व के सवाल पर भारत की सरकारों, अदालतों, आयोगों और एजेंसियों को उनके अपने दस्तावेज़ों पर परखता है। हर दावा अपने स्रोत से जुड़ा है।</p>
+          <p><a href="/hi">पहला पन्ना</a> · <a href="/hi/policies">नीति रजिस्टर</a> · <a href="/hi/archive">अभिलेखागार</a> · <a href="/hi/opinion">राय</a> · <a href="/hi/about">परिचय</a> · <a href="/hi/editorial-standards">संपादकीय मानक</a></p>
+        </div>
+        <p>Enable JavaScript to load records, sources and search. / रिकॉर्ड, स्रोत और खोज के लिए जावास्क्रिप्ट चालू करें।</p>
       </main>
     </noscript>
     <script type="module" src="/src/main.tsx"></script>

@@ -105,15 +105,18 @@ import {
   useUpdateDecisionImpact,
   useGetEditorSession,
 } from '@workspace/api-client-react';
-import type { CommunityPost, CommunityReply, CommunityPostInput, CommunityPostKind, CommunityTopic, DecisionImpactArea, DecisionImpactEvidenceType, DecisionImpactInput, DecisionImpactRecord, DecisionImpactRevision, DecisionImpactWorkflowStatus, GetCommunityPostsParams, GetCommunityPostsSort, GetPoliciesParams, Issue, IssueInput, LiveUpdate, PolicyRecord, PolicySource, Story, StoryInput, StoryKind, StoryWorkflowStatus, Topic, VerificationStatus } from '@workspace/api-client-react';
+import type { ArchiveResult, CommunityPost, CommunityReply, CommunityPostInput, CommunityPostKind, CommunityTopic, DecisionImpactArea, DecisionImpactEvidenceType, DecisionImpactInput, DecisionImpactRecord, DecisionImpactRevision, DecisionImpactWorkflowStatus, GetCommunityPostsParams, GetCommunityPostsSort, GetPoliciesParams, Issue, IssueInput, LiveUpdate, PolicyRecord, PolicySource, Story, StoryInput, StoryKind, StoryWorkflowStatus, Topic, VerificationStatus } from '@workspace/api-client-react';
 import NotFound from '@/pages/not-found';
-import { absoluteSiteUrl, basePath, SITE_LANGUAGE, useSeo } from '@/lib/seo';
+import { absoluteSiteUrl, basePath, getActiveLang, SITE_LANGUAGE, useSeo } from '@/lib/seo';
+import { LangProvider, LanguageSwitch, localizePolicy, localizeStory, useLabel, useLang, useLocalHref, useLocalizeStories, useT, type LocalizedStory } from '@/lib/i18n';
+import { ACCOUNTABILITY_CHECKED_ON, ACCOUNTABILITY_ITEMS } from '@/lib/accountability';
+import { RichBody, plainText } from '@/components/rich-body';
 import { breadcrumbNode, collectionPageNode, EDITORIAL_DESK_PATH, editorialDeskNode, editorialDeskRef, externalDocument, imageObject, organizationRef, placeForState, siteGraph, webPageNode, websiteRef } from '@/lib/structured-data';
 
 const queryClient = new QueryClient();
 
 const TOPICS = ['Latest', 'Courts & Policy', 'States', 'History', 'Ground Reports', 'Data & Notes'] as Topic[];
-const KINDS = ['Article', 'Paper note', 'Archive', 'Explainer'] as StoryKind[];
+const KINDS = ['Article', 'Paper note', 'Archive', 'Explainer', 'Opinion'] as StoryKind[];
 const WORKFLOW_STATUSES = ['draft', 'review', 'scheduled', 'published', 'archived'] as StoryWorkflowStatus[];
 const VERIFICATION_STATUSES = ['unverified', 'source-linked', 'verified'] as VerificationStatus[];
 const DECISION_IMPACT_EVIDENCE_TYPES = ['lived-account', 'monitored-lead', 'quantified-finding'] as DecisionImpactEvidenceType[];
@@ -137,105 +140,44 @@ function isFocusLiveUpdate(update: LiveUpdate) {
   return false;
 }
 function formatDate(value?: string | null) {
-  if (!value) return 'Date not supplied';
+  const hindi = getActiveLang() === 'hi';
+  if (!value) return hindi ? 'तारीख़ उपलब्ध नहीं' : 'Date not supplied';
   const date = /^\d{4}-\d{2}-\d{2}$/.test(value) ? new Date(`${value}T12:00:00`) : new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  if (Number.isNaN(date.getTime())) return value;
+  return hindi
+    ? date.toLocaleDateString('hi-IN', { day: 'numeric', month: 'long', year: 'numeric', numberingSystem: 'latn' })
+    : date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 function BrandMark() {
   return <span className="signal-mark shrink-0" aria-label="The Signal 24 mark"><span className="sr-only">The Signal 24</span></span>;
 }
 
-/*
-// hint: Logic changed on both sides. Requires understanding intent of each change.
-function Header({ editor = false }: { editor?: boolean }) {
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const mobileToggleRef = useRef<HTMLButtonElement>(null);
-  const close = () => setMobileOpen(false);
-  return (
-    <>
-      <div className="bg-primary py-2.5 text-primary-foreground">
-        <div className="signal-container flex items-center justify-between gap-4">
-           <p className="signal-kicker flex items-center gap-2 text-[9px]"><span className="h-1.5 w-1.5 rounded-full bg-accent" /> Follow the evidence</p>
-           <p className="hidden signal-kicker opacity-60 sm:block">THE SIGNAL 24 / public-interest newsroom</p>
-        </div>
-      </div>
-      <header className="signal-container relative z-30 flex items-center justify-between border-b border-foreground/20 py-5" onKeyDown={(event) => {
-        if (event.key === 'Escape' && mobileOpen) {
-          close();
-          mobileToggleRef.current?.focus();
-        }
-      }}>
-        <Link href="/" onClick={close} className="signal-link flex items-center gap-3" data-testid="link-brand">
-          <BrandMark />
-          <span className="font-display text-[1.4rem] font-semibold leading-none tracking-[-.045em]">THE SIGNAL <span className="text-accent">24</span></span>
-        </Link>
-        <nav className="hidden items-center gap-7 md:flex" aria-label="Main navigation">
-          {editor ? (
-            <>
-              <Link href="/" className="signal-kicker signal-link" data-testid="link-back-publication">Back to publication</Link>
-              <Link href="/editor" className="signal-kicker signal-link" data-testid="link-editorial-desk">Editorial desk</Link>
-              <Link href="/editor/evidence" className="signal-kicker text-accent" data-testid="link-editor-evidence">Evidence graph</Link>
-            </>
-          ) : (
-            <>
-              <Link href="/archive" className="signal-kicker signal-link" data-testid="link-investigations">Investigations</Link>
-              <a href="/#briefing" className="signal-kicker signal-link" data-testid="link-signals">Signals</a>
-              <Link href="/events" className="signal-kicker signal-link" data-testid="link-evidence-events">Evidence</Link>
-              <Link href="/data" className="signal-kicker signal-link" data-testid="link-data">Data</Link>
-              <Link href="/timeline" className="signal-kicker signal-link" data-testid="link-timeline">Timeline</Link>
-              <Link href="/archive" className="signal-kicker signal-link" data-testid="link-archive">Archive</Link>
-              <Link href="/topics" className="signal-kicker signal-link" data-testid="link-topics">Topics</Link>
-              <Link href="/about" className="signal-kicker signal-link" data-testid="link-about">About</Link>
-            </>
-          )}
-        </nav>
-        <div className="flex items-center gap-2">
-          {!editor && <><Link href="/search" className="hidden items-center gap-2 border-b border-foreground/30 px-1 py-2 signal-kicker sm:inline-flex" data-testid="link-search"><Search size={13} /> Search</Link><a href="/#newsletter" className="hidden rounded-full bg-accent px-4 py-2 text-[.65rem] font-bold uppercase tracking-[.12em] text-accent-foreground transition-transform hover:-translate-y-0.5 sm:inline-block" data-testid="link-subscribe">Subscribe</a></>}
-          <button ref={mobileToggleRef} type="button" className="grid h-9 w-9 place-items-center md:hidden" aria-label={mobileOpen ? 'Close navigation' : 'Open navigation'} aria-expanded={mobileOpen} aria-controls="mobile-navigation" onClick={() => setMobileOpen((value) => !value)} data-testid="button-mobile-navigation">
-            {mobileOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
-        </div>
-        <nav id="mobile-navigation" hidden={!mobileOpen} className="absolute left-0 right-0 top-full border-b border-foreground/20 bg-background p-5 shadow-md md:hidden" aria-label="Mobile navigation">
-            <div className="flex flex-col gap-5">
-              {editor ? <>
-                 <Link href="/" onClick={close} className="signal-kicker signal-link">Back to publication</Link>
-                 <Link href="/editor" onClick={close} className="signal-kicker signal-link">Editorial desk</Link>
-                 <Link href="/editor/evidence" onClick={close} className="signal-kicker signal-link">Evidence graph</Link>
-              </> : <>
-                 <Link href="/archive" onClick={close} className="signal-kicker signal-link">Investigations</Link>
-                 <a href="/#briefing" onClick={close} className="signal-kicker signal-link">Signals</a>
-                 <Link href="/events" onClick={close} className="signal-kicker signal-link">Evidence</Link>
-                 <Link href="/data" onClick={close} className="signal-kicker signal-link">Data</Link>
-                 <Link href="/timeline" onClick={close} className="signal-kicker signal-link">Timeline</Link>
-                 <Link href="/archive" onClick={close} className="signal-kicker signal-link">Archive</Link>
-                 <Link href="/topics" onClick={close} className="signal-kicker signal-link">Topics</Link>
-                 <Link href="/about" onClick={close} className="signal-kicker signal-link">About</Link>
-                 <div className="my-1 border-t border-foreground/15 pt-4" />
-                 <Link href="/policies" onClick={close} className="signal-kicker signal-link">Policy ledger</Link>
-                 <Link href="/community" onClick={close} className="signal-kicker signal-link" data-testid="link-community-mobile">Community</Link>
-                 <Link href="/editorial-standards" onClick={close} className="signal-kicker signal-link">Standards</Link>
-                 <Link href="/methodology" onClick={close} className="signal-kicker signal-link">Methodology</Link>
-                 <Link href="/search" onClick={close} className="signal-kicker signal-link">Search</Link>
-              </>}
-            </div>
-          </nav>
-      </header>
-    </>
-  );
-}
-*/
 function Header({ editor = false }: { editor?: boolean }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const mobileToggleRef = useRef<HTMLButtonElement>(null);
+  const t = useT();
+  const href = useLocalHref();
   const close = () => setMobileOpen(false);
+  const publicLinks: Array<[string, string, string, string]> = [
+    ['/', t('Home', 'होम'), 'link-home', ''],
+    ['/policies', t('Policy ledger', 'नीति रजिस्टर'), 'link-policy-ledger', ''],
+    ['/events', t('Evidence', 'सबूत'), 'link-evidence-events', ''],
+    ['/timeline', t('Timeline', 'समयरेखा'), 'link-timeline', ''],
+    ['/opinion', t('Opinion', 'राय'), 'link-opinion', ''],
+    ['/data', t('Data', 'आंकड़े'), 'link-data', ''],
+    ['/archive', t('Archive', 'अभिलेखागार'), 'link-archive', ''],
+    ['/topics', t('Topics', 'विषय'), 'link-topics', ''],
+    ['/community', t('Community', 'समुदाय'), 'link-community', ''],
+    ['/about', t('About', 'परिचय'), 'link-about', ''],
+  ];
   return (
     <>
       <div className="signal-topline bg-primary py-2.5 text-primary-foreground">
         <div className="signal-container flex items-center justify-between gap-4">
-          <p className="signal-kicker flex items-center gap-2 text-[9px]"><span className="h-1.5 w-1.5 rounded-full bg-accent" /> A public-interest desk on UGC rules and open-category competition</p>
-          <p className="hidden signal-kicker text-primary-foreground/65 sm:block">The Signal 24 / source desk</p>
+          <p className="signal-kicker flex items-center gap-2 text-[9px]"><span className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent" /> {t('Public-interest accountability desk · Reservation, courts and the state, on the record', 'जनहित जवाबदेही डेस्क · आरक्षण, अदालतें और सरकार, दस्तावेज़ों के साथ')}</p>
+          <p className="hidden signal-kicker text-primary-foreground/65 sm:block">{t('For the people, by the people', 'जनता के लिए, जनता की ओर से')}</p>
         </div>
       </div>
       <header className="signal-site-header" onKeyDown={(event) => {
@@ -246,74 +188,52 @@ function Header({ editor = false }: { editor?: boolean }) {
         }
       }}>
         <div className="signal-container signal-site-header-inner flex items-center justify-between gap-5">
-          <Link href="/" onClick={close} className="signal-link flex shrink-0 items-center gap-3" data-testid="link-brand">
+          <Link href="/" onClick={close} className="signal-link flex shrink-0 items-center gap-3" data-testid="link-brand" lang="en">
             <BrandMark />
             <span className="font-display text-[1.4rem] font-semibold leading-none tracking-[-.045em]">The Signal <span className="text-accent">24</span></span>
           </Link>
-          <nav className="signal-site-nav hidden items-center gap-5 lg:gap-6 lg:flex" aria-label="Main navigation">
+          <nav className="signal-site-nav hidden items-center gap-5 lg:gap-6 lg:flex" aria-label={t('Main navigation', 'मुख्य नेविगेशन')}>
             {editor ? (
               <>
                 <Link href="/" className="signal-kicker signal-link" data-testid="link-back-publication">Back to publication</Link>
                 <Link href="/editor" className="signal-kicker signal-link" data-testid="link-editorial-desk">Editorial desk</Link>
                 <Link href="/editor/evidence" className="signal-kicker text-accent" data-testid="link-editor-evidence">Evidence graph</Link>
               </>
-            ) : (
-              <>
-                <Link href="/" className="signal-kicker signal-link" data-testid="link-home">Home</Link>
-                <a href={`${basePath}/#briefing`} className="signal-kicker signal-link" data-testid="link-latest">Latest</a>
-                <Link href="/events" className="signal-kicker signal-link" data-testid="link-evidence-events">Evidence</Link>
-                <Link href="/timeline" className="signal-kicker signal-link" data-testid="link-timeline">Timeline</Link>
-                <Link href="/policies" className="signal-kicker signal-link" data-testid="link-policy-ledger">Policy ledger</Link>
-                <Link href="/data" className="signal-kicker signal-link" data-testid="link-data">Data</Link>
-                <Link href="/archive" className="signal-kicker signal-link" data-testid="link-archive">Archive</Link>
-              <Link href="/topics" className="signal-kicker signal-link" data-testid="link-topics">Topics</Link>
-                <Link href="/community" className="signal-kicker signal-link" data-testid="link-community">Community</Link>
-                <Link href="/about" className="signal-kicker signal-link" data-testid="link-about">About</Link>
-              </>
-            )}
+            ) : publicLinks.map(([path, label, testId]) => <Link key={path} href={path} className="signal-kicker signal-link" data-testid={testId}>{label}</Link>)}
           </nav>
-          <div className="flex shrink-0 items-center gap-1">
-            {!editor && <button type="button" className="grid h-10 w-10 place-items-center border border-transparent hover:border-border" aria-label={searchOpen ? 'Close search' : 'Open search'} aria-expanded={searchOpen} aria-controls="site-search-panel" onClick={() => setSearchOpen((value) => !value)} data-testid="button-open-search">{searchOpen ? <X size={17} /> : <Search size={17} />}</button>}
-            {!editor && <Link href="/policies" className="signal-button browse-ledger-link !min-h-[36px] !px-3" data-testid="button-browse-archive">Explore the ledger</Link>}
-            {!editor && <a href={`${basePath}/#newsletter`} className="hidden signal-kicker text-accent hover:underline xl:inline-flex" data-testid="link-subscribe">Subscribe</a>}
-            <button ref={mobileToggleRef} type="button" className="grid h-10 w-10 place-items-center border border-transparent hover:border-border lg:hidden" aria-label={mobileOpen ? 'Close navigation' : 'Open navigation'} aria-expanded={mobileOpen} aria-controls="mobile-navigation" onClick={() => setMobileOpen((value) => !value)} data-testid="button-mobile-navigation">
+          <div className="flex shrink-0 items-center gap-1.5">
+            {!editor && <LanguageSwitch />}
+            {!editor && <button type="button" className="grid h-10 w-10 place-items-center border border-transparent hover:border-border" aria-label={searchOpen ? t('Close search', 'खोज बंद करें') : t('Open search', 'खोज खोलें')} aria-expanded={searchOpen} aria-controls="site-search-panel" onClick={() => setSearchOpen((value) => !value)} data-testid="button-open-search">{searchOpen ? <X size={17} /> : <Search size={17} />}</button>}
+            {!editor && <a href={href('/#newsletter')} className="hidden signal-kicker text-accent hover:underline xl:inline-flex" data-testid="link-subscribe">{t('Subscribe', 'सदस्यता')}</a>}
+            <button ref={mobileToggleRef} type="button" className="grid h-10 w-10 place-items-center border border-transparent hover:border-border lg:hidden" aria-label={mobileOpen ? t('Close navigation', 'मेन्यू बंद करें') : t('Open navigation', 'मेन्यू खोलें')} aria-expanded={mobileOpen} aria-controls="mobile-navigation" onClick={() => setMobileOpen((value) => !value)} data-testid="button-mobile-navigation">
               {mobileOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
           </div>
         </div>
-        {!editor && searchOpen && <form id="site-search-panel" role="search" action={`${basePath}/search`} method="get" className="signal-search-panel">
+        {!editor && searchOpen && <form id="site-search-panel" role="search" action={href('/search')} method="get" className="signal-search-panel">
           <div className="signal-container flex flex-col gap-3 py-4 sm:flex-row sm:items-end">
             <label className="flex-1">
-              <span className="signal-kicker mb-1 block text-accent">Search the source desk</span>
-              <input autoFocus type="search" name="q" placeholder="Records, sources, dates, topics…" className="w-full" data-testid="input-site-search" />
+              <span className="signal-kicker mb-1 block text-accent">{t('Search the record', 'रिकॉर्ड में खोजें')}</span>
+              <input autoFocus type="search" name="q" placeholder={t('Judgments, notifications, commissions, states…', 'फ़ैसले, अधिसूचनाएँ, आयोग, राज्य…')} className="w-full" data-testid="input-site-search" />
             </label>
-            <button className="signal-button" type="submit">Search archive</button>
+            <button className="signal-button" type="submit">{t('Search', 'खोजें')}</button>
           </div>
         </form>}
-        <nav id="mobile-navigation" hidden={!mobileOpen} className="absolute left-0 right-0 top-full border-b border-foreground/20 bg-background p-5 shadow-md lg:hidden" aria-label="Mobile navigation">
+        <nav id="mobile-navigation" hidden={!mobileOpen} className="absolute left-0 right-0 top-full border-b border-foreground/20 bg-background p-5 shadow-md lg:hidden" aria-label={t('Mobile navigation', 'मोबाइल नेविगेशन')}>
             <div className="flex flex-col gap-5">
               {editor ? <>
                 <Link href="/" onClick={close} className="signal-kicker signal-link">Back to publication</Link>
                 <Link href="/editor" onClick={close} className="signal-kicker signal-link">Editorial desk</Link>
                 <Link href="/editor/evidence" onClick={close} className="signal-kicker signal-link">Evidence graph</Link>
               </> : <>
-                <Link href="/" onClick={close} className="signal-kicker signal-link">Home</Link>
-                <a href={`${basePath}/#briefing`} onClick={close} className="signal-kicker signal-link">Latest</a>
-                <a href={`${basePath}/#live-desk`} onClick={close} className="signal-kicker signal-link">Live desk</a>
-                <Link href="/events" onClick={close} className="signal-kicker signal-link">Evidence</Link>
-                <Link href="/timeline" onClick={close} className="signal-kicker signal-link">Timeline</Link>
-                <Link href="/policies" onClick={close} className="signal-kicker signal-link">Policy ledger</Link>
-                <Link href="/data" onClick={close} className="signal-kicker signal-link">Data</Link>
-                <Link href="/archive" onClick={close} className="signal-kicker signal-link">Archive</Link>
-                <Link href="/community" onClick={close} className="signal-kicker signal-link" data-testid="link-community-mobile">Community</Link>
-                <Link href="/about" onClick={close} className="signal-kicker signal-link">About</Link>
-                <Link href="/editorial-standards" onClick={close} className="signal-kicker signal-link">Standards</Link>
-                <Link href="/methodology" onClick={close} className="signal-kicker signal-link">Methodology</Link>
-                <Link href="/topics" onClick={close} className="signal-kicker signal-link">Topics</Link>
-                <Link href="/topics/open-category-competition" onClick={close} className="signal-kicker signal-link">Open-category competition</Link>
-                <Link href="/search" onClick={close} className="signal-kicker signal-link">Search archive</Link>
-                <Link href="/evidence/search" onClick={close} className="signal-kicker signal-link">Search linked evidence</Link>
-                <a href={`${basePath}/#newsletter`} onClick={close} className="signal-kicker signal-link">Subscribe</a>
+                {publicLinks.map(([path, label, testId]) => <Link key={path} href={path} onClick={close} className="signal-kicker signal-link" data-testid={`${testId}-mobile`}>{label}</Link>)}
+                <a href={href('/#live-desk')} onClick={close} className="signal-kicker signal-link">{t('Live desk', 'लाइव डेस्क')}</a>
+                <Link href="/editorial-standards" onClick={close} className="signal-kicker signal-link">{t('Editorial standards', 'संपादकीय मानक')}</Link>
+                <Link href="/methodology" onClick={close} className="signal-kicker signal-link">{t('Methodology', 'कार्यप्रणाली')}</Link>
+                <Link href="/topics/open-category-competition" onClick={close} className="signal-kicker signal-link">{t('Open-category competition', 'खुली श्रेणी की प्रतिस्पर्धा')}</Link>
+                <Link href="/search" onClick={close} className="signal-kicker signal-link">{t('Search the archive', 'अभिलेखागार में खोजें')}</Link>
+                <Link href="/evidence/search" onClick={close} className="signal-kicker signal-link">{t('Search linked evidence', 'जुड़े सबूतों में खोजें')}</Link>
+                <a href={href('/#newsletter')} onClick={close} className="signal-kicker signal-link">{t('Subscribe', 'सदस्यता लें')}</a>
               </>}
             </div>
           </nav>
@@ -322,42 +242,47 @@ function Header({ editor = false }: { editor?: boolean }) {
   );
 }
 
-function LoadingBlock({ label = 'Opening the archive…' }: { label?: string }) {
-  return <div className="signal-container py-24" role="status" aria-live="polite"><div className="grid gap-4 animate-pulse"><div className="h-3 w-32 bg-muted" /><div className="h-14 max-w-3xl bg-muted" /><div className="h-4 max-w-xl bg-muted" /><p className="mt-3 signal-kicker text-muted-foreground">{label}</p></div></div>;
+function LoadingBlock({ label }: { label?: string }) {
+  const t = useT();
+  return <div className="signal-container py-24" role="status" aria-live="polite"><div className="grid gap-4 animate-pulse"><div className="h-3 w-32 bg-muted" /><div className="h-14 max-w-3xl bg-muted" /><div className="h-4 max-w-xl bg-muted" /><p className="mt-3 signal-kicker text-muted-foreground">{label ?? t('Opening the record…', 'रिकॉर्ड खुल रहा है…')}</p></div></div>;
 }
 
-function ErrorState({ message = 'The archive is temporarily unavailable.', onRetry }: { message?: string; onRetry?: () => void }) {
-  return <div className="signal-container border-y border-accent/50 px-5 py-20 text-center" role="alert"><p className="signal-kicker text-accent">Archive note / transmission interrupted</p><h2 className="mt-3 font-display text-4xl leading-none">The record could not be opened.</h2><p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">{message}</p>{onRetry && <button type="button" onClick={onRetry} className="mt-6 rounded-full bg-primary px-5 py-3 text-[.68rem] font-bold uppercase tracking-[.13em] text-primary-foreground" data-testid="button-retry">Try again</button>}</div>;
+function ErrorState({ message, onRetry }: { message?: string; onRetry?: () => void }) {
+  const t = useT();
+  return <div className="signal-container border-y border-accent/50 px-5 py-20 text-center" role="alert"><p className="signal-kicker text-accent">{t('Record unavailable', 'रिकॉर्ड उपलब्ध नहीं')}</p><h2 className="mt-3 font-display text-4xl leading-none">{t('This record could not be opened.', 'यह रिकॉर्ड खुल नहीं सका।')}</h2><p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">{message ?? t('The archive is temporarily unavailable. Nothing has been deleted.', 'अभिलेखागार अभी उपलब्ध नहीं है। कुछ भी हटाया नहीं गया है।')}</p>{onRetry && <button type="button" onClick={onRetry} className="mt-6 rounded-full bg-primary px-5 py-3 text-[.68rem] font-bold uppercase tracking-[.13em] text-primary-foreground" data-testid="button-retry">{t('Try again', 'फिर कोशिश करें')}</button>}</div>;
 }
 
-function EmptyState({ title = 'No records match this view.', text = 'Try a broader search, or return to the full archive.' }: { title?: string; text?: string }) {
-  return <div className="border border-dashed border-foreground/30 px-6 py-20 text-center"><Archive className="mx-auto mb-4 text-accent" size={28} /><h3 className="font-display text-3xl">{title}</h3><p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">{text}</p></div>;
+function EmptyState({ title, text }: { title?: string; text?: string }) {
+  const t = useT();
+  return <div className="border border-dashed border-foreground/30 px-6 py-20 text-center"><Archive className="mx-auto mb-4 text-accent" size={28} /><h3 className="font-display text-3xl">{title ?? t('No records match this view.', 'इस दृश्य में कोई रिकॉर्ड नहीं।')}</h3><p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">{text ?? t('Widen the search, or return to the full archive.', 'खोज का दायरा बढ़ाएँ, या पूरे अभिलेखागार पर लौटें।')}</p></div>;
 }
+
+function statusClass(status: VerificationStatus) {
+  return status === 'verified' ? 'is-verified' : status === 'source-linked' ? 'is-source-linked' : 'is-unverified';
+}
+
+function StatusBadge({ status }: { status: VerificationStatus }) {
+  const label = useLabel();
+  return <span className={`signal-status-badge ${statusClass(status)}`}>{label(status)}</span>;
+}
+
 function SourceLine({ story, detail = false }: { story: Story; detail?: boolean }) {
-  const verificationLabel = story.verificationStatus === 'verified' ? 'Verified' : story.verificationStatus === 'source-linked' ? 'Source linked' : 'Unverified';
+  const t = useT();
+  const label = useLabel();
   return <div className={`source-stamp evidence-citation ${detail ? 'px-5 py-4' : 'pl-3'}`} data-testid={`citation-story-${story.id}`}>
-    <p className="signal-kicker text-accent">Evidence citation / {verificationLabel}</p>
-    <p className="mt-1 text-sm font-medium">{story.source || 'Source not supplied'}</p>
-    <p className="mt-1 font-mono-signal text-[10px] uppercase tracking-[.1em] text-muted-foreground">{story.kind}{story.state ? ` · ${story.state}` : ''}</p>
+    <p className="signal-kicker text-accent">{t('Evidence citation', 'सबूत का हवाला')} / {label(story.verificationStatus)}</p>
+    <p className="mt-1 text-sm font-medium" lang="en">{story.source || t('Source not supplied', 'स्रोत नहीं दिया गया')}</p>
+    <p className="mt-1 font-mono-signal text-[10px] uppercase tracking-[.1em] text-muted-foreground">{label(story.kind)}{story.state ? ` · ${label(story.state)}` : ''}</p>
     <dl className="mt-3 grid gap-1 text-[11px] text-muted-foreground">
-      <div className="flex flex-wrap gap-2"><dt className="signal-kicker text-[9px]">Date attached to record</dt><dd>{formatDate(story.recordDate)}</dd></div>
-      {story.sourcePublishedOn && <div className="flex flex-wrap gap-2"><dt className="signal-kicker text-[9px]">Source published</dt><dd>{formatDate(story.sourcePublishedOn)}</dd></div>}
-      {story.sourceRetrievedOn && <div className="flex flex-wrap gap-2"><dt className="signal-kicker text-[9px]">Retrieved</dt><dd>{formatDate(story.sourceRetrievedOn)}</dd></div>}
+      <div className="flex flex-wrap gap-2"><dt className="signal-kicker text-[9px]">{t('Date attached to record', 'रिकॉर्ड की तारीख़')}</dt><dd>{formatDate(story.recordDate)}</dd></div>
+      {story.sourcePublishedOn && <div className="flex flex-wrap gap-2"><dt className="signal-kicker text-[9px]">{t('Source published', 'स्रोत प्रकाशित')}</dt><dd>{formatDate(story.sourcePublishedOn)}</dd></div>}
+      {story.sourceRetrievedOn && <div className="flex flex-wrap gap-2"><dt className="signal-kicker text-[9px]">{t('Retrieved', 'प्राप्त किया')}</dt><dd>{formatDate(story.sourceRetrievedOn)}</dd></div>}
     </dl>
-    {detail && story.verificationNotes && <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{story.verificationNotes}</p>}
-    {story.sourceUrl ? <a href={story.sourceUrl} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-1 text-[.68rem] font-bold uppercase tracking-[.12em] text-accent hover:underline" data-testid={`link-source-${story.id}`}>Open direct source <ExternalLink size={12} /></a> : <p className="mt-3 signal-kicker text-muted-foreground">Direct source link unavailable</p>}
+    {detail && story.verificationNotes && <p className="mt-3 text-sm leading-relaxed text-muted-foreground" lang="en">{story.verificationNotes}</p>}
+    {story.sourceUrl ? <a href={story.sourceUrl} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-1 text-[.68rem] font-bold uppercase tracking-[.12em] text-accent hover:underline" data-testid={`link-source-${story.id}`}>{t('Open the source', 'मूल स्रोत खोलें')} <ExternalLink size={12} /></a> : <p className="mt-3 signal-kicker text-muted-foreground">{t('No direct source link', 'सीधा स्रोत लिंक नहीं')}</p>}
   </div>;
 }
 
-/*
-// hint: Structural and logic conflict. Both design and behavior differ.
-function StoryCard({ story, compact = false }: { story: Story; compact?: boolean }) {
-  return <article className={`story-hover group ${compact ? 'grid grid-cols-[112px_1fr] gap-4 border-b border-foreground/15 py-5 last:border-0 sm:grid-cols-[145px_1fr]' : ''}`} data-testid={`card-story-${story.id}`}>
-    <Link href={storyPath(story)} className={compact ? 'block h-[112px] sm:h-[145px]' : 'block w-full'} data-testid={`link-story-art-${story.id}`}><StoryArt story={story} compact={compact} /></Link>
-    <div className={compact ? 'flex min-w-0 flex-col justify-between' : 'pt-5'}><div><p className="signal-kicker text-accent">{story.topic} / {story.kind}</p><Link href={storyPath(story)} className="mt-2 block" data-testid={`link-story-${story.id}`}><h3 className={`${compact ? 'text-[1.12rem] sm:text-[1.3rem]' : 'text-[2rem] sm:text-[2.7rem]'} font-display leading-[1.02] tracking-[-.025em] transition-colors group-hover:text-accent`}>{story.title}</h3></Link><p className={`mt-3 ${compact ? 'line-clamp-2 text-[.84rem]' : 'max-w-xl text-[1rem]'} leading-relaxed text-muted-foreground`}>{story.dek}</p></div><div className="mt-4"><SourceLine story={story} /></div>{((story.eventCount ?? 0) + (story.sourceCount ?? 0)) > 0 && <p className="mt-3 signal-kicker text-muted-foreground">{story.eventCount ?? 0} explicitly linked {(story.eventCount ?? 0) === 1 ? 'event' : 'events'} · {story.sourceCount ?? 0} {(story.sourceCount ?? 0) === 1 ? 'source' : 'sources'}</p>}</div>
-  </article>;
-}
-*/
 type StoryVisual = {
   src: string;
   alt: string;
@@ -368,53 +293,60 @@ type StoryVisual = {
 
 function imageForText(value: string): StoryVisual | null {
   const text = value.toLowerCase();
-  if (/\b(ambedkar|b\.?\s*r\.?\s*ambedkar)\b/.test(text)) {
-    return { src: `${basePath}/images/ambedkar-public.jpg`, alt: 'B. R. Ambedkar speaking at a public meeting in New Delhi', credit: 'Contextual archive visual / Wikimedia Commons', width: 460, height: 353 };
+  const hindi = getActiveLang() === 'hi';
+  const credit = hindi ? 'संदर्भ चित्र / विकिमीडिया कॉमन्स' : 'Contextual archive visual / Wikimedia Commons';
+  if (/\b(ambedkar|b\.?\s*r\.?\s*ambedkar)\b|आंबेडकर|अंबेडकर/.test(text)) {
+    return { src: `${basePath}/images/ambedkar-public.jpg`, alt: hindi ? 'नई दिल्ली की एक सार्वजनिक सभा में बोलते हुए बी. आर. आंबेडकर' : 'B. R. Ambedkar speaking at a public meeting in New Delhi', credit, width: 460, height: 353 };
   }
-  if (/\b(supreme court|high court|judgment|court order|writ petition|constitutional bench|legal order)\b/.test(text)) {
-    return { src: `${basePath}/images/supreme-court.jpg`, alt: 'Supreme Court of India building', credit: 'Contextual archive visual / Wikimedia Commons', width: 1280, height: 797 };
+  if (/\b(supreme court|high court|judgment|court order|writ petition|constitutional bench|legal order|bench)\b|सुप्रीम कोर्ट|हाईकोर्ट|उच्च न्यायालय|फ़ैसल/.test(text)) {
+    return { src: `${basePath}/images/supreme-court.jpg`, alt: hindi ? 'भारत के सुप्रीम कोर्ट की इमारत' : 'Supreme Court of India building', credit, width: 1280, height: 797 };
   }
   if (/\b(doctors?|resident doctors?|kolkata)\b/.test(text)) {
-    return { src: `${basePath}/images/doctors-movement.jpg`, alt: 'Public gathering during a doctors’ movement in Kolkata', credit: 'Contextual archive visual / Wikimedia Commons', width: 1920, height: 1080 };
+    return { src: `${basePath}/images/doctors-movement.jpg`, alt: hindi ? 'कोलकाता में डॉक्टरों के आंदोलन के दौरान सार्वजनिक सभा' : 'Public gathering during a doctors’ movement in Kolkata', credit, width: 1920, height: 1080 };
   }
-  if (/\bquit india\b/.test(text)) {
-    return { src: `${basePath}/images/quit-india.jpg`, alt: 'Archival portrait from the Quit India movement record', credit: 'Contextual archive visual / Wikimedia Commons', width: 1280, height: 1735 };
+  if (/\bquit india\b|भारत छोड़ो/.test(text)) {
+    return { src: `${basePath}/images/quit-india.jpg`, alt: hindi ? 'भारत छोड़ो आंदोलन के अभिलेख से एक तस्वीर' : 'Archival portrait from the Quit India movement record', credit, width: 1280, height: 1735 };
   }
   return null;
 }
 
 function imageForStory(story: Story) {
-  return imageForText(`${story.title} ${story.dek} ${story.source} ${story.state ?? ''}`);
+  return imageForText(`${story.title} ${story.dek} ${story.source} ${story.state ?? ''} ${story.hi?.title ?? ''}`);
 }
 
 function imageCaptionForStory(story: Story) {
   const image = imageForStory(story);
-  return image
-    ? `${image.credit} · contextual archive visual, not evidence for this specific record.`
-    : 'No relevant archive photograph is available for this record.';
+  const hindi = getActiveLang() === 'hi';
+  if (!image) return hindi ? 'इस रिकॉर्ड के लिए कोई प्रासंगिक अभिलेख चित्र उपलब्ध नहीं है।' : 'No relevant archive photograph is available for this record.';
+  return hindi ? `${image.credit} · संदर्भ के लिए, इस रिकॉर्ड का सबूत नहीं।` : `${image.credit} · contextual archive visual, not evidence for this specific record.`;
 }
 
-function StoryArt({ story, className = '', showCredit = true }: { story: Story; className?: string; showCredit?: boolean }) {
+function StoryArt({ story, className = '', showCredit = true }: { story: LocalizedStory | Story; className?: string; showCredit?: boolean }) {
   const image = imageForStory(story);
+  const t = useT();
+  const label = useLabel();
   return <div className={`story-art relative m-0 overflow-hidden bg-muted ${className}`} data-testid={`visual-story-${story.id}`}>
-    {image ? <><img src={image.src} alt={image.alt} width={image.width} height={image.height} loading="lazy" className="h-full w-full object-cover story-art-image" />{showCredit && <p className="absolute inset-x-0 bottom-0 bg-primary/85 px-3 py-2 text-[9px] uppercase tracking-[.08em] text-primary-foreground/75">{image.credit} · not evidence for this record</p>}</> : <div aria-hidden="true" className="story-art-placeholder flex h-full min-h-[180px] flex-col items-center justify-center gap-4 p-6 text-center"><span className="signal-kicker text-accent">{story.topic} / {story.kind}</span><span className="max-w-sm font-display text-2xl leading-tight sm:text-3xl">{story.title}</span><span className="signal-kicker text-muted-foreground">No relevant archive photograph available</span></div>}
+    {image ? <><img src={image.src} alt={image.alt} width={image.width} height={image.height} loading="lazy" className="h-full w-full object-cover story-art-image" />{showCredit && <p className="absolute inset-x-0 bottom-0 bg-primary/85 px-3 py-2 text-[9px] uppercase tracking-[.08em] text-primary-foreground/75">{image.credit} · {t('not evidence for this record', 'इस रिकॉर्ड का सबूत नहीं')}</p>}</> : <div aria-hidden="true" className="story-art-placeholder flex h-full min-h-[180px] flex-col items-center justify-center gap-4 p-6 text-center"><span className="signal-kicker text-accent">{label(story.topic)} / {label(story.kind)}</span><span className="max-w-sm font-display text-2xl leading-tight sm:text-3xl" lang={'contentLang' in story ? story.contentLang : undefined}>{story.title}</span></div>}
   </div>;
 }
 
-function StoryCard({ story, compact = false }: { story: Story; compact?: boolean }) {
+function StoryCard({ story, compact = false }: { story: LocalizedStory; compact?: boolean }) {
+  const t = useT();
+  const label = useLabel();
   return <article className={`archive-visual-card story-hover group ${compact ? 'compact' : ''}`} data-testid={`card-story-${story.id}`}>
     <Link href={storyPath(story)} className="archive-thumb block" data-testid={`link-story-art-${story.id}`}><StoryArt story={story} className="h-full" /></Link>
     <div className="flex min-w-0 flex-col justify-between">
       <div>
-        <div className="flex flex-wrap items-center justify-between gap-3"><p className="signal-kicker text-accent">{story.topic} / {story.kind}</p><time className="signal-kicker text-muted-foreground" dateTime={story.publishedOn ?? story.recordDate ?? undefined}>{story.publishedOn ? 'Published' : 'Record date'} / {formatDate(story.publishedOn ?? story.recordDate)}</time></div>
-        <Link href={storyPath(story)} className="mt-3 block" data-testid={`link-story-${story.id}`}><h3 className={`${compact ? 'text-2xl sm:text-3xl' : 'text-3xl sm:text-4xl'} max-w-3xl font-display leading-[1.02] tracking-[-.025em] transition-colors group-hover:text-accent`}>{story.title}</h3></Link>
-        <div className="mt-2"><span className={`signal-status-badge ${story.verificationStatus === 'verified' ? 'is-verified' : story.verificationStatus === 'source-linked' ? 'is-source-linked' : 'is-unverified'}`}>{verificationLabel(story.verificationStatus)}</span></div>
-        <p className={`${compact ? 'line-clamp-2' : 'max-w-2xl'} mt-3 text-sm leading-relaxed text-muted-foreground`}>{story.dek}</p>
+        <div className="flex flex-wrap items-center justify-between gap-3"><p className="signal-kicker text-accent">{story.kind === 'Opinion' ? <span className="opinion-label">{label('Opinion')}</span> : <>{label(story.topic)} / {label(story.kind)}</>}</p><time className="signal-kicker text-muted-foreground" dateTime={story.publishedOn ?? story.recordDate ?? undefined}>{story.publishedOn ? t('Published', 'प्रकाशित') : t('Record date', 'रिकॉर्ड तिथि')} / {formatDate(story.publishedOn ?? story.recordDate)}</time></div>
+        <Link href={storyPath(story)} className="mt-3 block" data-testid={`link-story-${story.id}`}><h3 lang={story.contentLang} className={`${compact ? 'text-2xl sm:text-3xl' : 'text-3xl sm:text-4xl'} max-w-3xl font-display leading-[1.02] tracking-[-.025em] transition-colors group-hover:text-accent`}>{story.title}</h3></Link>
+        <div className="mt-2 flex flex-wrap items-center gap-2"><StatusBadge status={story.verificationStatus} />{!story.isTranslated && <span className="signal-kicker text-muted-foreground">{t('', 'अभी केवल अंग्रेज़ी में')}</span>}</div>
+        <p lang={story.contentLang} className={`${compact ? 'line-clamp-2' : 'max-w-2xl'} mt-3 text-sm leading-relaxed text-muted-foreground`}>{story.dek}</p>
       </div>
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-foreground/15 pt-3">
-        <span className="signal-kicker text-muted-foreground">{story.state ?? 'India'} · {story.read} min read</span>
+        <span className="signal-kicker text-muted-foreground">{label(story.state ?? 'India')} · {t(`${story.read} min read`, `${story.read} मिनट`)}</span>
+        {story.byline && <span className="signal-kicker text-muted-foreground">{label(story.byline)}</span>}
       </div>
-      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 signal-kicker text-muted-foreground"><span>{story.sourceCount ?? 0} sources · {story.eventCount ?? 0} events</span><span>{story.sourceUrl ? 'Direct source available' : 'Direct source unavailable'}</span></div>
+      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 signal-kicker text-muted-foreground"><span>{t(`${story.sourceCount ?? 0} sources · ${story.eventCount ?? 0} events`, `${story.sourceCount ?? 0} स्रोत · ${story.eventCount ?? 0} घटनाएँ`)}</span><span>{story.sourceUrl ? t('Direct source linked', 'सीधा स्रोत जुड़ा') : t('No direct source', 'सीधा स्रोत नहीं')}</span></div>
     </div>
   </article>;
 }
@@ -423,12 +355,12 @@ function NewsletterSignup() {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const subscribe = useSubscribeToNewsletter();
-  const subscribed = submitted;
+  const t = useT();
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     subscribe.mutate({ data: { email } }, { onSuccess: () => setSubmitted(true) });
   }
-  return <section id="newsletter" className="signal-container mt-24 border-y-2 border-primary py-10 sm:mt-36 sm:py-14"><div className="grid gap-8 lg:grid-cols-[1fr_1fr] lg:items-center"><div><p className="signal-kicker text-accent">Stay with the record</p><h2 className="mt-3 max-w-lg font-display text-4xl leading-[.96] tracking-[-.04em] sm:text-6xl">A considered briefing, not a firehose.</h2><p className="mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">A short note when the national conversation moves: new reporting, court records, research and context.</p></div>{subscribed ? <div className="border border-accent bg-accent/10 p-6" role="status" aria-live="polite" data-testid="newsletter-confirmation"><div className="flex items-start gap-4"><div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent text-accent-foreground"><Check size={15} /></div><div><p className="font-display text-2xl">Thanks for signing up.</p><p className="mt-1 text-sm text-muted-foreground">If this address is eligible, the next note will arrive in your inbox.</p></div></div></div> : <form onSubmit={submit} className="border border-foreground/20 bg-card p-5 sm:p-7" data-testid="form-newsletter"><label htmlFor="newsletter-email" className="signal-kicker text-muted-foreground">Your email, kept private</label><div className="mt-3 flex flex-col gap-3 sm:flex-row"><input id="newsletter-email" data-testid="input-newsletter-email" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" className="min-w-0 flex-1 border-b border-foreground/30 bg-transparent px-0 py-3 text-sm outline-none focus:border-accent" /><button type="submit" disabled={subscribe.isPending} className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-[.68rem] font-bold uppercase tracking-[.13em] text-primary-foreground disabled:opacity-60" data-testid="button-newsletter-submit">{subscribe.isPending ? 'Sending…' : 'Join the briefing'} <Send size={13} /></button></div>{subscribe.isError && <p className="mt-3 text-sm text-destructive" role="alert">That address could not be added. Please try again.</p>}<p className="mt-4 signal-kicker text-[9px] text-muted-foreground">One considered email / unsubscribe anytime</p></form>}</div></section>;
+  return <section id="newsletter" className="signal-container mt-24 border-y-2 border-primary py-10 sm:mt-36 sm:py-14"><div className="grid gap-8 lg:grid-cols-[1fr_1fr] lg:items-center"><div><p className="signal-kicker text-accent">{t('The briefing', 'ब्रीफ़िंग')}</p><h2 className="mt-3 max-w-lg font-display text-4xl leading-[.96] tracking-[-.04em] sm:text-6xl">{t('When the state moves, you hear it from the record.', 'सरकार कुछ बदले, तो ख़बर दस्तावेज़ से मिले।')}</h2><p className="mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">{t('A short note when a court rules, a notification lands, or a promised report goes missing. Sources attached. No spin.', 'जब कोई अदालत फ़ैसला दे, कोई अधिसूचना आए, या कोई वादा की गई रिपोर्ट ग़ायब हो, तब एक छोटा नोट। स्रोत साथ में। कोई लीपापोती नहीं।')}</p></div>{submitted ? <div className="border border-accent bg-accent/10 p-6" role="status" aria-live="polite" data-testid="newsletter-confirmation"><div className="flex items-start gap-4"><div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent text-accent-foreground"><Check size={15} /></div><div><p className="font-display text-2xl">{t('You are on the list.', 'आप सूची में जुड़ गए हैं।')}</p><p className="mt-1 text-sm text-muted-foreground">{t('If this address is eligible, the next note will arrive in your inbox.', 'अगर यह पता मान्य है, तो अगला नोट आपके इनबॉक्स में आएगा।')}</p></div></div></div> : <form onSubmit={submit} className="border border-foreground/20 bg-card p-5 sm:p-7" data-testid="form-newsletter"><label htmlFor="newsletter-email" className="signal-kicker text-muted-foreground">{t('Your email, kept private', 'आपका ईमेल, निजी रहेगा')}</label><div className="mt-3 flex flex-col gap-3 sm:flex-row"><input id="newsletter-email" data-testid="input-newsletter-email" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" className="min-w-0 flex-1 border-b border-foreground/30 bg-transparent px-0 py-3 text-sm outline-none focus:border-accent" lang="en" /><button type="submit" disabled={subscribe.isPending} className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-[.68rem] font-bold uppercase tracking-[.13em] text-primary-foreground disabled:opacity-60" data-testid="button-newsletter-submit">{subscribe.isPending ? t('Sending…', 'भेज रहे हैं…') : t('Get the briefing', 'ब्रीफ़िंग पाएँ')} <Send size={13} /></button></div>{subscribe.isError && <p className="mt-3 text-sm text-destructive" role="alert">{t('That address could not be added. Please try again.', 'यह पता जोड़ा नहीं जा सका। कृपया फिर कोशिश करें।')}</p>}<p className="mt-4 signal-kicker text-[9px] text-muted-foreground">{t('One email at a time / unsubscribe anytime', 'एक बार में एक ईमेल / कभी भी सदस्यता छोड़ें')}</p></form>}</div></section>;
 }
 
 function LiveDesk({ onSelect }: { onSelect?: (update: LiveUpdate) => void }) {
@@ -440,151 +372,170 @@ function LiveDesk({ onSelect }: { onSelect?: (update: LiveUpdate) => void }) {
       refetchOnWindowFocus: true,
     },
   });
+  const t = useT();
   const updates = data?.updates.filter(isFocusLiveUpdate).slice(0, 8) ?? [];
 
   return <section id="live-desk" className="signal-container pt-20 sm:pt-28">
     <div className="live-desk-header flex flex-col justify-between gap-6 border-y border-foreground/20 py-6 sm:flex-row sm:items-end">
       <div>
-        <div className="flex items-center gap-3"><Radio size={17} className="text-accent" /><p className="signal-kicker text-accent">02 / Live desk</p><span className="live-pulse h-2 w-2 rounded-full bg-accent" /></div>
-        <h2 className="mt-3 max-w-3xl font-display text-5xl leading-[.92] tracking-[-.05em] sm:text-7xl">What is moving<br /><em className="font-normal text-accent">right now.</em></h2>
+        <div className="flex items-center gap-3"><Radio size={17} className="text-accent" /><p className="signal-kicker text-accent">{t('Live desk / unverified leads', 'लाइव डेस्क / असत्यापित सुराग')}</p><span className="live-pulse h-2 w-2 rounded-full bg-accent" /></div>
+        <h2 className="mt-3 max-w-3xl font-display text-5xl leading-[.92] tracking-[-.05em] sm:text-7xl">{t(<>What is moving<br /><em className="font-normal text-accent">right now.</em></>, <>अभी क्या<br /><em className="font-normal text-accent">चल रहा है।</em></>)}</h2>
       </div>
       <div className="max-w-sm text-sm leading-relaxed text-muted-foreground">
-        <p>External feeds are monitored for leads. This is not published The Signal 24 reporting: every item remains unreviewed until the editorial desk checks the source and builds a record.</p>
-        <button type="button" onClick={() => void refetch()} className="mt-4 inline-flex items-center gap-2 signal-kicker text-accent disabled:opacity-50" disabled={isFetching} data-testid="button-refresh-live-desk"><RefreshCw size={13} className={isFetching ? 'animate-spin' : ''} /> {isFetching ? 'Refreshing' : 'Refresh feeds'}</button>
+        <p>{t('Headlines pulled from outside feeds. This is not Signal 24 reporting: nothing here is checked until the desk verifies it against a primary source.', 'बाहरी फ़ीड से आई सुर्ख़ियाँ। यह द सिग्नल 24 की रिपोर्टिंग नहीं है: जब तक डेस्क इसे मूल स्रोत से न मिला ले, यहाँ कुछ भी जाँचा हुआ नहीं है।')}</p>
+        <button type="button" onClick={() => void refetch()} className="mt-4 inline-flex items-center gap-2 signal-kicker text-accent disabled:opacity-50" disabled={isFetching} data-testid="button-refresh-live-desk"><RefreshCw size={13} className={isFetching ? 'animate-spin' : ''} /> {isFetching ? t('Refreshing', 'ताज़ा हो रहा है') : t('Refresh feeds', 'फ़ीड ताज़ा करें')}</button>
       </div>
     </div>
     {isLoading ? <div className="grid gap-4 py-6 md:grid-cols-2"><div className="h-40 animate-pulse bg-muted" /><div className="h-40 animate-pulse bg-muted" /></div> :
-      isError ? <div className="border border-dashed border-foreground/25 px-5 py-10 text-sm text-muted-foreground"><p className="signal-kicker text-accent">Monitor unavailable</p><p className="mt-2">The external feeds could not be reached. The published archive remains available.</p></div> :
-        <><div className="grid gap-px border border-foreground/15 bg-foreground/15 md:grid-cols-2">{updates.map((update) => <LiveUpdateCard key={update.id} update={update} onSelect={onSelect} />)}</div>{updates.length === 0 && <EmptyState title="No on-focus leads returned." text="The monitor only surfaces UGC, open-category, EWS and relevant state quota coverage. Broader headlines are left out of this desk." />}</>}
-    {data && <div className="flex flex-wrap items-center justify-between gap-3 border-b border-foreground/15 py-4"><p className="signal-kicker text-muted-foreground">Observed {formatDate(data.observedAt)} · {updates.length} on-focus leads shown</p><p className="signal-kicker text-muted-foreground">{data.feeds.filter((feed) => feed.status === 'ok').length}/{data.feeds.length} feeds responding</p></div>}
+      isError ? <div className="border border-dashed border-foreground/25 px-5 py-10 text-sm text-muted-foreground"><p className="signal-kicker text-accent">{t('Monitor unavailable', 'मॉनिटर उपलब्ध नहीं')}</p><p className="mt-2">{t('The outside feeds could not be reached. The published archive is unaffected.', 'बाहरी फ़ीड तक पहुँच नहीं हो सकी। प्रकाशित अभिलेखागार पर कोई असर नहीं है।')}</p></div> :
+        <><div className="grid gap-px border border-foreground/15 bg-foreground/15 md:grid-cols-2">{updates.map((update) => <LiveUpdateCard key={update.id} update={update} onSelect={onSelect} />)}</div>{updates.length === 0 && <EmptyState title={t('No on-focus leads right now.', 'अभी कोई प्रासंगिक सुराग नहीं।')} text={t('The monitor only surfaces UGC, open-category, EWS and state quota coverage. Everything else is filtered out.', 'मॉनिटर केवल यूजीसी, खुली श्रेणी, ईडब्ल्यूएस और राज्य आरक्षण से जुड़ी ख़बरें दिखाता है। बाक़ी सब छाँट दिया जाता है।')} />}</>}
+    {data && <div className="flex flex-wrap items-center justify-between gap-3 border-b border-foreground/15 py-4"><p className="signal-kicker text-muted-foreground">{t('Observed', 'देखा गया')} {formatDate(data.observedAt)} · {t(`${updates.length} on-focus leads`, `${updates.length} प्रासंगिक सुराग`)}</p><p className="signal-kicker text-muted-foreground">{t(`${data.feeds.filter((feed) => feed.status === 'ok').length}/${data.feeds.length} feeds responding`, `${data.feeds.filter((feed) => feed.status === 'ok').length}/${data.feeds.length} फ़ीड चालू`)}</p></div>}
   </section>;
 }
 
 function LiveUpdateCard({ update, onSelect }: { update: LiveUpdate; onSelect?: (update: LiveUpdate) => void }) {
+  const t = useT();
   return <article className="live-update-card bg-card p-5 sm:p-6" data-testid={`card-live-update-${update.id}`}>
-    <div className="flex items-start justify-between gap-4"><p className="signal-kicker text-accent">{update.topic}</p><span className="signal-kicker whitespace-nowrap text-[9px] text-muted-foreground">Needs review</span></div>
-    <h3 className="mt-4 font-display text-2xl leading-tight tracking-[-.025em]">{update.headline}</h3>
-    <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-muted-foreground">{update.summary}</p>
-    <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-foreground/15 pt-4"><p className="signal-kicker text-muted-foreground">{update.source} · {update.publishedAt ? formatDate(update.publishedAt) : 'Date not supplied'}</p><div className="flex items-center gap-4">{onSelect && <button type="button" onClick={() => onSelect(update)} className="signal-kicker text-accent hover:underline" data-testid={`button-use-live-update-${update.id}`}>Start draft</button>}<a href={update.sourceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 signal-kicker text-accent hover:underline">Open source <ExternalLink size={12} /></a></div></div>
+    <div className="flex items-start justify-between gap-4"><p className="signal-kicker text-accent">{update.topic}</p><span className="signal-kicker whitespace-nowrap text-[9px] text-muted-foreground">{t('Needs review', 'जाँच बाक़ी')}</span></div>
+    <h3 className="mt-4 font-display text-2xl leading-tight tracking-[-.025em]" lang="en">{update.headline}</h3>
+    <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-muted-foreground" lang="en">{update.summary}</p>
+    <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-foreground/15 pt-4"><p className="signal-kicker text-muted-foreground">{update.source} · {update.publishedAt ? formatDate(update.publishedAt) : t('Date not supplied', 'तारीख़ उपलब्ध नहीं')}</p><div className="flex items-center gap-4">{onSelect && <button type="button" onClick={() => onSelect(update)} className="signal-kicker text-accent hover:underline" data-testid={`button-use-live-update-${update.id}`}>Start draft</button>}<a href={update.sourceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 signal-kicker text-accent hover:underline">{t('Open source', 'स्रोत खोलें')} <ExternalLink size={12} /></a></div></div>
   </article>;
+}
+
+function AccountabilityWatch() {
+  const t = useT();
+  const lang = useLang();
+  return <section id="accountability" className="signal-container mt-16 sm:mt-24" aria-labelledby="accountability-title">
+    <div className="grid gap-6 border-y-2 border-foreground py-6 lg:grid-cols-[.9fr_1.1fr] lg:items-end">
+      <div><p className="signal-kicker text-accent">{t('Accountability watch', 'जवाबदेही पर नज़र')}</p><h2 id="accountability-title" className="mt-3 font-display text-5xl leading-[.9] tracking-[-.05em] sm:text-7xl">{t(<>Questions the state<br /><em className="font-normal text-accent">has not answered.</em></>, <>सवाल, जिनका सरकार ने<br /><em className="font-normal text-accent">जवाब नहीं दिया।</em></>)}</h2></div>
+      <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">{t('Reports paid for with public money and then withheld. Data collected and then called unusable. Limits that were supposed to be reviewed and never were. Each item below is tied to a public source. When the government answers, we will record that too.', 'जनता के पैसे से बनी रिपोर्टें, जो फिर दबा दी गईं। जुटाए गए आंकड़े, जिन्हें बाद में बेकार बता दिया गया। सीमाएँ, जिनकी समीक्षा होनी थी और कभी नहीं हुई। नीचे हर बिंदु किसी सार्वजनिक स्रोत से जुड़ा है। सरकार जब जवाब देगी, वह भी यहाँ दर्ज होगा।')}</p>
+    </div>
+    <ol className="divide-y divide-foreground/15 border-b border-foreground/20">
+      {ACCOUNTABILITY_ITEMS.map((item, index) => <li key={item.id} className="grid gap-4 py-7 md:grid-cols-[3rem_1.1fr_1fr] md:gap-8" data-testid={`accountability-item-${item.id}`}>
+        <p className="font-display text-3xl text-accent" aria-hidden="true">{String(index + 1).padStart(2, '0')}</p>
+        <div>
+          <div className="flex flex-wrap items-center gap-3"><span className="signal-status-badge is-unverified">{item.status[lang]}</span><span className="signal-kicker text-muted-foreground">{t('Since', 'कब से')} {formatDate(item.since)}</span></div>
+          <h3 className="mt-3 font-display text-2xl leading-tight sm:text-3xl">{item.question[lang]}</h3>
+        </div>
+        <div className="text-sm leading-relaxed">
+          <p className="text-muted-foreground">{item.record[lang]}</p>
+          <p className="mt-3 border-l-2 border-accent pl-3"><span className="signal-kicker block text-accent">{t('What should happen', 'क्या होना चाहिए')}</span><span className="mt-1 block font-medium">{item.ask[lang]}</span></p>
+          <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1">{item.sources.map((source) => <a key={source.url} href={source.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 signal-kicker text-accent hover:underline">{source.name} <ExternalLink size={11} /></a>)}</p>
+        </div>
+      </li>)}
+    </ol>
+    <p className="mt-3 signal-kicker text-muted-foreground">{t('Last checked', 'आख़िरी जाँच')} {formatDate(ACCOUNTABILITY_CHECKED_ON)} · {t('Found a government response we missed? Tell the desk and we will correct the record.', 'कोई सरकारी जवाब हमसे छूट गया? डेस्क को बताइए, हम रिकॉर्ड सुधारेंगे।')}</p>
+  </section>;
 }
 
 function PolicyLedger() {
   const listParams = useMemo<GetPoliciesParams>(() => ({ limit: 1 }), []);
   const { data, isLoading, isError } = useGetPolicies(listParams, { query: { queryKey: getGetPoliciesQueryKey(listParams) } });
-  const record: PolicyRecord | undefined = data?.records?.[0];
+  const t = useT();
+  const lang = useLang();
+  const label = useLabel();
+  const raw: PolicyRecord | undefined = data?.records?.[0];
+  const record = raw ? localizePolicy(raw, lang) : undefined;
   return <section id="policy-ledger" className="signal-container mt-24 border-y border-foreground/20 py-10 sm:mt-36 sm:py-14">
     <div className="grid gap-10 lg:grid-cols-[.7fr_1.3fr] lg:gap-16">
-      <div><p className="signal-kicker text-accent">04 / Policy ledger</p><h2 className="mt-3 max-w-sm font-display text-5xl leading-[.92] tracking-[-.05em]">What changed,<br /><em className="font-normal text-accent">and when?</em></h2><p className="mt-5 max-w-sm text-sm leading-relaxed text-muted-foreground">A policy is easier to understand when the previous position, new position, authority and source sit together.</p>{record && <Link href={record.canonicalPath} className="mt-7 inline-flex items-center gap-2 signal-kicker text-accent hover:underline" data-testid="link-home-policy-ledger">Open the record <ArrowUpRight size={13} /></Link>}</div>
-      {isLoading ? <div className="border border-foreground/20 bg-card p-6" role="status" data-testid="status-policy-ledger-loading"><div className="grid animate-pulse gap-4"><div className="h-3 w-32 bg-muted" /><div className="h-8 max-w-lg bg-muted" /><div className="h-4 max-w-md bg-muted" /><div className="h-16 max-w-xl bg-muted" /></div><p className="mt-5 signal-kicker text-muted-foreground">Loading the latest policy record…</p></div> : isError ? <div className="border border-accent/50 bg-card p-6" role="alert" data-testid="status-policy-ledger-error"><p className="signal-kicker text-accent">Ledger note / unavailable</p><p className="mt-3 text-sm leading-relaxed text-muted-foreground">The latest policy record could not be loaded. The full ledger remains available to browse.</p><Link href="/policies" className="mt-5 inline-flex items-center gap-2 signal-kicker text-accent hover:underline" data-testid="link-policy-ledger-retry">Browse the ledger <ArrowUpRight size={13} /></Link></div> : !record ? <div className="border border-dashed border-foreground/25 bg-card p-6" data-testid="status-policy-ledger-empty"><p className="signal-kicker text-accent">Ledger / awaiting records</p><p className="mt-3 font-display text-2xl">No policy record has been published yet.</p><Link href="/policies" className="mt-5 inline-flex items-center gap-2 signal-kicker text-accent hover:underline" data-testid="link-policy-ledger-empty">Open the ledger <ArrowUpRight size={13} /></Link></div> : <div className="border border-foreground/20 bg-card">
-        <div className="flex items-center justify-between border-b border-foreground/15 px-5 py-4 sm:px-7"><div className="flex items-center gap-3"><Scale size={17} className="text-accent" /><p className="signal-kicker">Policy delta / source-linked record</p></div><span className="signal-kicker text-muted-foreground">{record.status}</span></div>
-        <div className="grid gap-6 p-5 sm:grid-cols-[1fr_auto_1fr] sm:items-center sm:p-7"><div><p className="signal-kicker text-muted-foreground">Previous framework</p><p className="mt-3 font-display text-2xl leading-tight">{record.previousFramework}</p></div><ArrowDownRight className="hidden text-accent sm:block" size={22} /><div><p className="signal-kicker text-accent">Record in view</p><Link href={record.canonicalPath} className="group mt-3 block" data-testid="link-home-policy-record"><p className="font-display text-2xl leading-tight group-hover:text-accent">{record.title}</p></Link><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{record.summary}</p><div className="mt-5 border-l-2 border-accent pl-3"><p className="signal-kicker text-accent">Authority / effective date</p><p className="mt-1 text-sm">{record.authority}</p><p className="mt-1 signal-kicker text-muted-foreground">{formatDate(record.effectiveDate)} · {record.state ?? 'National'}</p></div></div></div>
+      <div><p className="signal-kicker text-accent">{t('Policy ledger', 'नीति रजिस्टर')}</p><h2 className="mt-3 max-w-sm font-display text-5xl leading-[.92] tracking-[-.05em]">{t(<>What changed,<br /><em className="font-normal text-accent">and who decided?</em></>, <>क्या बदला,<br /><em className="font-normal text-accent">और किसने तय किया?</em></>)}</h2><p className="mt-5 max-w-sm text-sm leading-relaxed text-muted-foreground">{t('Every policy change on one card: the old rule, the new rule, the authority that made it, and what the courts said.', 'हर नीतिगत बदलाव एक कार्ड पर: पुराना नियम, नया नियम, किस संस्था ने बदला, और अदालतों ने क्या कहा।')}</p>{record && <Link href={record.canonicalPath} className="mt-7 inline-flex items-center gap-2 signal-kicker text-accent hover:underline" data-testid="link-home-policy-ledger">{t('Open the record', 'रिकॉर्ड खोलें')} <ArrowUpRight size={13} /></Link>}</div>
+      {isLoading ? <div className="border border-foreground/20 bg-card p-6" role="status" data-testid="status-policy-ledger-loading"><div className="grid animate-pulse gap-4"><div className="h-3 w-32 bg-muted" /><div className="h-8 max-w-lg bg-muted" /><div className="h-4 max-w-md bg-muted" /><div className="h-16 max-w-xl bg-muted" /></div><p className="mt-5 signal-kicker text-muted-foreground">{t('Loading the latest policy record…', 'ताज़ा नीति रिकॉर्ड लोड हो रहा है…')}</p></div> : isError ? <div className="border border-accent/50 bg-card p-6" role="alert" data-testid="status-policy-ledger-error"><p className="signal-kicker text-accent">{t('Ledger unavailable', 'रजिस्टर उपलब्ध नहीं')}</p><p className="mt-3 text-sm leading-relaxed text-muted-foreground">{t('The latest policy record could not be loaded. The full ledger is still available.', 'ताज़ा नीति रिकॉर्ड लोड नहीं हुआ। पूरा रजिस्टर अब भी उपलब्ध है।')}</p><Link href="/policies" className="mt-5 inline-flex items-center gap-2 signal-kicker text-accent hover:underline" data-testid="link-policy-ledger-retry">{t('Browse the ledger', 'रजिस्टर देखें')} <ArrowUpRight size={13} /></Link></div> : !record ? <div className="border border-dashed border-foreground/25 bg-card p-6" data-testid="status-policy-ledger-empty"><p className="signal-kicker text-accent">{t('Ledger / awaiting records', 'रजिस्टर / रिकॉर्ड की प्रतीक्षा')}</p><p className="mt-3 font-display text-2xl">{t('No policy record has been published yet.', 'अभी तक कोई नीति रिकॉर्ड प्रकाशित नहीं हुआ।')}</p><Link href="/policies" className="mt-5 inline-flex items-center gap-2 signal-kicker text-accent hover:underline" data-testid="link-policy-ledger-empty">{t('Open the ledger', 'रजिस्टर खोलें')} <ArrowUpRight size={13} /></Link></div> : <div className="border border-foreground/20 bg-card" lang={record.contentLang}>
+        <div className="flex items-center justify-between border-b border-foreground/15 px-5 py-4 sm:px-7"><div className="flex items-center gap-3"><Scale size={17} className="text-accent" /><p className="signal-kicker">{t('Policy change / source-linked', 'नीतिगत बदलाव / स्रोत से जुड़ा')}</p></div><span className="signal-kicker text-muted-foreground">{label(record.status)}</span></div>
+        <div className="grid gap-6 p-5 sm:grid-cols-[1fr_auto_1fr] sm:items-center sm:p-7"><div><p className="signal-kicker text-muted-foreground">{t('Before', 'पहले')}</p><p className="mt-3 font-display text-2xl leading-tight">{record.previousFramework}</p></div><ArrowDownRight className="hidden text-accent sm:block" size={22} /><div><p className="signal-kicker text-accent">{t('Now', 'अब')}</p><Link href={record.canonicalPath} className="group mt-3 block" data-testid="link-home-policy-record"><p className="font-display text-2xl leading-tight group-hover:text-accent">{record.title}</p></Link><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{record.summary}</p><div className="mt-5 border-l-2 border-accent pl-3"><p className="signal-kicker text-accent">{t('Authority / effective date', 'प्राधिकारी / लागू तिथि')}</p><p className="mt-1 text-sm">{record.authority}</p><p className="mt-1 signal-kicker text-muted-foreground">{formatDate(record.effectiveDate)} · {label(record.state ?? 'National')}</p></div></div></div>
       </div>}
     </div>
   </section>;
 }
 
-function RecordCollections({ stories }: { stories: Story[] }) {
-  const courtRecords = stories.filter((story) => story.topic === 'Courts & Policy').slice(0, 2);
-  const stateRecords = stories.filter((story) => story.topic === 'States').slice(0, 3);
-  const documents = Array.from(new Map(stories.map((story) => [story.source, story])).values()).slice(0, 4);
-  const explainer = stories.find((story) => story.kind === 'Explainer');
-  return <>
-    <section id="courtroom" className="signal-container pt-24 sm:pt-36">
-      <div className="grid gap-8 border-y border-foreground/20 py-8 lg:grid-cols-[.65fr_1.35fr] lg:gap-16"><div><div className="flex items-center gap-3"><Scale size={17} className="text-accent" /><p className="signal-kicker text-accent">05 / Courtroom</p></div><h2 className="mt-3 max-w-sm font-display text-4xl leading-[.98] tracking-[-.04em] sm:text-5xl">The case file,<br /><em className="font-normal text-accent">carefully read.</em></h2><p className="mt-5 max-w-sm text-sm leading-relaxed text-muted-foreground">Judgments and orders need their own context. This section keeps the legal record distinct from reporting about it.</p></div><div className="grid gap-6 sm:grid-cols-2">{courtRecords.map((story) => <Link href={storyPath(story)} key={story.id} className="group border-b border-foreground/15 pb-6 sm:border-b-0 sm:border-l sm:pl-6"><p className="signal-kicker text-accent">{story.kind} · {formatDate(story.publishedOn)}</p><h3 className="mt-3 font-display text-2xl leading-tight group-hover:text-accent">{story.title}</h3><p className="mt-3 text-sm leading-relaxed text-muted-foreground">{story.dek}</p><p className="mt-4 signal-kicker text-muted-foreground">{story.source}</p></Link>)}</div></div>
-    </section>
-    <section id="states" className="signal-container pt-24 sm:pt-36">
-      <div className="flex flex-col justify-between gap-6 border-b border-foreground/20 pb-5 sm:flex-row sm:items-end"><div><div className="flex items-center gap-3"><MapPin size={17} className="text-accent" /><p className="signal-kicker text-accent">06 / States</p></div><h2 className="mt-3 font-display text-4xl leading-none tracking-[-.04em] sm:text-5xl">One country,<br /><em className="font-normal text-accent">many frameworks.</em></h2></div><p className="max-w-sm text-sm leading-relaxed text-muted-foreground">State records are not interchangeable. Each one needs its own source, date, legal basis and history.</p></div>
-      <div className="grid gap-6 py-8 sm:grid-cols-3">{stateRecords.length ? stateRecords.map((story) => <Link href={storyPath(story)} key={story.id} className="group border-b border-foreground/15 pb-5 sm:border-b-0 sm:border-r sm:pr-6 last:border-0"><p className="signal-kicker text-accent">{story.state ?? 'State record'}</p><h3 className="mt-3 font-display text-2xl leading-tight group-hover:text-accent">{story.title}</h3><p className="mt-3 text-sm leading-relaxed text-muted-foreground">{story.dek}</p><p className="mt-4 signal-kicker text-muted-foreground">{story.kind} · {formatDate(story.publishedOn)}</p></Link>) : <EmptyState title="No state records yet." text="The state desk will grow as verified records are added." />}</div>
-    </section>
-    <section id="data" className="signal-container pt-24 sm:pt-36">
-      <div className="grid gap-8 border-y border-foreground/20 py-8 lg:grid-cols-[.65fr_1.35fr] lg:gap-16"><div><div className="flex items-center gap-3"><Database size={17} className="text-accent" /><p className="signal-kicker text-accent">07 / Data room</p></div><h2 className="mt-3 max-w-sm font-display text-4xl leading-[.98] tracking-[-.04em] sm:text-5xl">Numbers need<br /><em className="font-normal text-accent">a denominator.</em></h2><p className="mt-5 max-w-sm text-sm leading-relaxed text-muted-foreground">We will not force a comparison where the public record uses different definitions.</p></div><div className="flex items-center border border-dashed border-foreground/25 bg-card p-6 sm:p-8"><div className="flex items-start gap-4"><CircleAlert className="mt-1 shrink-0 text-accent" size={18} /><div><p className="font-display text-2xl">Public data is currently insufficient for a reliable comparison.</p><p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">When a dataset arrives, this room will show the value, unit, year, geography, definition, source and last verified date beside every chart.</p><Link href="/archive" className="mt-5 inline-flex items-center gap-2 signal-kicker text-accent hover:underline">Read the methodology in the record <ArrowUpRight size={13} /></Link></div></div></div></div>
-    </section>
-    <section id="documents" className="signal-container pt-24 sm:pt-36">
-      <div className="flex flex-col justify-between gap-6 border-b border-foreground/20 pb-5 sm:flex-row sm:items-end"><div><div className="flex items-center gap-3"><FileText size={17} className="text-accent" /><p className="signal-kicker text-accent">08 / Document vault</p></div><h2 className="mt-3 font-display text-4xl leading-none tracking-[-.04em] sm:text-5xl">The sources<br /><em className="font-normal text-accent">behind the story.</em></h2></div><p className="max-w-sm text-sm leading-relaxed text-muted-foreground">Primary documents, court records and research notes should be findable long after a headline moves on.</p></div>
-      <div className="grid gap-4 py-8 sm:grid-cols-2 lg:grid-cols-4">{documents.map((story) => <Link href={storyPath(story)} key={story.id} className="group border border-foreground/15 bg-card p-5 hover:border-accent"><p className="signal-kicker text-accent">Source card</p><h3 className="mt-4 font-display text-xl leading-tight group-hover:text-accent">{story.source}</h3><p className="mt-4 signal-kicker text-muted-foreground">{story.kind} · {formatDate(story.publishedOn)}</p></Link>)}</div>
-    </section>
-    <section id="explainers" className="signal-container pt-24 sm:pt-36">
-      <div className="grid gap-8 border-y border-foreground/20 py-8 lg:grid-cols-[.65fr_1.35fr] lg:gap-16"><div><div className="flex items-center gap-3"><BookOpen size={17} className="text-accent" /><p className="signal-kicker text-accent">09 / Explainers</p></div><h2 className="mt-3 max-w-sm font-display text-4xl leading-[.98] tracking-[-.04em] sm:text-5xl">Start with<br /><em className="font-normal text-accent">the terms.</em></h2><p className="mt-5 max-w-sm text-sm leading-relaxed text-muted-foreground">Evergreen context belongs beside the news, not buried underneath it.</p></div>{explainer ? <Link href={storyPath(explainer)} className="group border-l-2 border-accent bg-card p-6 sm:p-8"><p className="signal-kicker text-accent">Explainer / {formatDate(explainer.publishedOn)}</p><h3 className="mt-4 max-w-2xl font-display text-3xl leading-tight group-hover:text-accent sm:text-4xl">{explainer.title}</h3><p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground">{explainer.dek}</p><span className="mt-6 inline-flex items-center gap-2 signal-kicker text-accent">Read the explainer <ArrowUpRight size={13} /></span></Link> : <EmptyState title="No explainer published yet." />}</div>
-    </section>
-  </>;
-}
-
-function TrustNote() {
-  return <section className="signal-container mt-24 border-t-2 border-primary py-10 sm:mt-36 sm:py-14"><div className="grid gap-8 lg:grid-cols-[.7fr_1.3fr] lg:items-end"><div><div className="flex items-center gap-3"><ShieldCheck size={17} className="text-accent" /><p className="signal-kicker text-accent">10 / Editorial standards</p></div><h2 className="mt-3 max-w-md font-display text-4xl leading-[.96] tracking-[-.04em] sm:text-5xl">Trust is part<br />of the interface.</h2></div><div><p className="max-w-2xl text-lg leading-relaxed text-foreground/80">Reporting, documents, analysis and opinion must remain visibly distinct. We name sources, preserve dates, show uncertainty, and never present a starter record as live verified news.</p><div className="mt-6 flex flex-wrap gap-x-6 gap-y-3"><Link href="/editorial-standards" className="inline-flex items-center gap-2 signal-kicker text-accent hover:underline">Read editorial standards <ArrowUpRight size={13} /></Link><Link href="/methodology" className="inline-flex items-center gap-2 signal-kicker text-muted-foreground hover:text-accent">Read methodology <ArrowUpRight size={13} /></Link></div></div></div></section>;
-}
-
 function InfoPage({ page }: { page: 'about' | 'standards' | 'methodology' }) {
+  const t = useT();
   const content = {
     about: {
-      eyebrow: 'The Signal 24 / about',
-      title: <>A permanent record<br /><em className="font-normal text-accent">for a difficult debate.</em></>,
-      intro: 'The Signal 24 is India’s reservation and representation monitor: a public-interest newsroom and research archive for policy, courts, documents, data and the histories behind them.',
+      name: t('About', 'परिचय'),
+      eyebrow: t('The Signal 24 / about', 'द सिग्नल 24 / परिचय'),
+      title: t(<>Power, held<br /><em className="font-normal text-accent">to its own paperwork.</em></>, <>सत्ता को उसके<br /><em className="font-normal text-accent">अपने काग़ज़ों से परखना।</em></>),
+      intro: t('The Signal 24 is a public-interest newsroom that holds governments, courts, commissions and agencies to their own records on reservation and representation in India. We read the judgments, notifications and reports so you do not have to take anyone’s word for it, including ours.', 'द सिग्नल 24 एक जनहित न्यूज़रूम है, जो भारत में आरक्षण और प्रतिनिधित्व के सवाल पर सरकारों, अदालतों, आयोगों और एजेंसियों को उनके अपने दस्तावेज़ों पर परखता है। हम फ़ैसले, अधिसूचनाएँ और रिपोर्टें पढ़ते हैं, ताकि आपको किसी की बात पर आँख मूँदकर भरोसा न करना पड़े, हमारी बात पर भी नहीं।'),
       sections: [
-        ['What this is', 'A source-first place to follow reservation-related developments without reducing a national question to a daily outrage cycle. The archive is designed to help readers understand what happened, where it came from, what changed, and what remains uncertain.'],
-        ['What this is not', 'It is not a party publication, a campaign platform, or a substitute for the original judgment, notification, report or dataset. It does not rank governments or communities.'],
-        ['A growing record', 'The first release establishes the publication shell, archive, source labels and editorial desk. Live ingestion, document storage, state pages and data tools will be added only when they can meet the same sourcing standard.'],
+        [t('Who we answer to', 'हम किसके प्रति जवाबदेह हैं'), t('Readers. Not a party, a government, a caste organisation or an advertiser. Every story carries its source so you can check us, and every correction is logged in public.', 'पाठकों के प्रति। किसी पार्टी, सरकार, जातीय संगठन या विज्ञापनदाता के प्रति नहीं। हर ख़बर के साथ उसका स्रोत है, ताकि आप हमें जाँच सकें, और हर सुधार सार्वजनिक रूप से दर्ज होता है।')],
+        [t('What we go after', 'हम किसका पीछा करते हैं'), t('Promises with deadlines. Reports that were commissioned and then buried. Data collected with public money and then withheld. Laws passed in an election season and struck down in court. The gap between what the state says on a stage and what it files on paper.', 'समय-सीमा वाले वादों का। उन रिपोर्टों का, जो बनवाई गईं और फिर दबा दी गईं। जनता के पैसे से जुटाए गए और फिर रोके गए आंकड़ों का। चुनावी मौसम में पास हुए और अदालत में रद्द हुए क़ानूनों का। उस फ़ासले का, जो सरकार के मंच के भाषण और उसके दफ़्तरी काग़ज़ के बीच है।')],
+        [t('What we refuse to do', 'हम क्या नहीं करेंगे'), t('We do not target communities, rank castes or trade in outrage. Our scrutiny is aimed at institutions and office-holders: the people with power over a policy, not the people living under it.', 'हम किसी समुदाय को निशाना नहीं बनाते, जातियों की रैंकिंग नहीं करते और ग़ुस्से का कारोबार नहीं करते। हमारी पड़ताल संस्थाओं और पदाधिकारियों पर है: उन पर जिनके हाथ में नीति की ताक़त है, उन पर नहीं जो उस नीति के तले जीते हैं।')],
+        [t('English and Hindi', 'अंग्रेज़ी और हिंदी'), t('The Signal 24 publishes in English and Hindi. When a record’s Hindi edition is not ready, the page says so and shows the English text. We do not publish unreviewed machine translation as reporting.', 'द सिग्नल 24 अंग्रेज़ी और हिंदी दोनों में प्रकाशित होता है। जब किसी रिकॉर्ड का हिंदी संस्करण तैयार न हो, तो पेज यह साफ़ बताता है और अंग्रेज़ी पाठ दिखाता है। बिना जाँचे मशीनी अनुवाद को हम रिपोर्टिंग के तौर पर नहीं छापते।')],
       ],
     },
     standards: {
-      eyebrow: 'The Signal 24 / editorial standards',
-      title: <>Every claim has a source.<br /><em className="font-normal text-accent">Every number has a document.</em></>,
-      intro: 'The subject demands a higher standard than speed alone. We distinguish reporting, documents, analysis and opinion so a reader can tell what kind of record they are reading.',
+      name: t('Editorial standards', 'संपादकीय मानक'),
+      eyebrow: t('The Signal 24 / editorial standards', 'द सिग्नल 24 / संपादकीय मानक'),
+      title: t(<>Hard on power.<br /><em className="font-normal text-accent">Harder on ourselves.</em></>, <>सत्ता पर सख़्त।<br /><em className="font-normal text-accent">ख़ुद पर और सख़्त।</em></>),
+      intro: t('Being tough on the state is only worth something if we are right. These are the rules we hold ourselves to before we hold anyone else to theirs.', 'सरकार पर सख़्ती तभी मायने रखती है, जब हम सही हों। किसी और को उसके नियमों पर परखने से पहले, हम ख़ुद को इन नियमों पर परखते हैं।'),
       sections: [
-        ['Reporting', 'What happened, attributed to a source and dated. We do not present an allegation as an established fact or infer motives without reliable documentation.'],
-        ['Documents', 'What an original source says. Court orders, government notifications, commission reports and statutory text should be linked or identified wherever possible.'],
-        ['Analysis', 'What the available evidence suggests. Analysis must show its method, preserve uncertainty and avoid turning a partial record into a universal claim.'],
-        ['Opinion', 'A clearly labelled viewpoint with an identified author and relevant disclosure. Opinion must never be presented as neutral reporting.'],
-        ['Corrections and AI', 'If we get a fact wrong, the record should say what changed and when. AI may assist with organization, summarization or metadata, but publication requires editorial review against source material.'],
+        [t('Reporting', 'रिपोर्टिंग'), t('What happened, who did it and when, with the document that proves it. Allegations stay allegations until the record establishes them. We name the ministry, department or office that acted, not just “the government”.', 'क्या हुआ, किसने किया और कब, उस दस्तावेज़ के साथ जो इसे साबित करता है। आरोप तब तक आरोप ही रहता है, जब तक रिकॉर्ड उसे साबित न कर दे। हम उस मंत्रालय, विभाग या दफ़्तर का नाम लेते हैं जिसने कार्रवाई की, सिर्फ़ “सरकार” कहकर नहीं छोड़ते।')],
+        [t('Documents', 'दस्तावेज़'), t('Judgments, gazette notifications, commission reports, parliamentary answers and RTI replies are linked or identified. If a primary source is unavailable, the record says so.', 'फ़ैसले, गज़ट अधिसूचनाएँ, आयोगों की रिपोर्टें, संसद में दिए जवाब और आरटीआई के उत्तर लिंक किए जाते हैं या उनकी पहचान दी जाती है। अगर मूल स्रोत उपलब्ध नहीं है, तो रिकॉर्ड यह साफ़ कहता है।')],
+        [t('Right of reply', 'जवाब का अधिकार'), t('Before we publish a finding against a named office or official, we ask for their response and record whether they gave one. Silence is reported as silence.', 'किसी नामित दफ़्तर या अधिकारी के ख़िलाफ़ कोई निष्कर्ष छापने से पहले हम उनसे जवाब माँगते हैं और दर्ज करते हैं कि जवाब आया या नहीं। चुप्पी को चुप्पी ही लिखा जाता है।')],
+        [t('Analysis', 'विश्लेषण'), t('What the evidence supports, with the method shown. If the data cannot carry a conclusion, we do not draw it.', 'सबूत जिस बात का समर्थन करते हैं, तरीक़ा दिखाते हुए। अगर आंकड़े किसी निष्कर्ष का बोझ नहीं उठा सकते, तो हम वह निष्कर्ष नहीं निकालते।')],
+        [t('Opinion', 'राय'), t('Opinion is labelled, carries a named author or the editorial board, and is never mixed into reporting. Our opinion pieces criticise institutions and decisions, not communities.', 'राय पर साफ़ लेबल होता है, उसके साथ लेखक या संपादकीय बोर्ड का नाम होता है, और उसे रिपोर्टिंग में नहीं मिलाया जाता। हमारी राय संस्थाओं और फ़ैसलों की आलोचना करती है, समुदायों की नहीं।')],
+        [t('Corrections and AI', 'सुधार और एआई'), t('Mistakes are corrected in public: the record says what changed and when. AI tools may help with translation, organisation or first drafts; nothing is published until an editor has checked it against the source.', 'ग़लतियाँ सार्वजनिक रूप से सुधारी जाती हैं: रिकॉर्ड बताता है कि क्या बदला और कब। अनुवाद, व्यवस्था या पहले मसौदे में एआई की मदद ली जा सकती है; लेकिन कोई भी चीज़ तब तक प्रकाशित नहीं होती, जब तक संपादक उसे स्रोत से मिलाकर जाँच न ले।')],
       ],
     },
     methodology: {
-      eyebrow: 'The Signal 24 / methodology',
-      title: <>A record is only useful<br /><em className="font-normal text-accent">when its frame is visible.</em></>,
-      intro: 'The archive preserves source type, date, state, record type and verification context because numbers and claims change meaning when their definitions disappear.',
+      name: t('Methodology', 'कार्यप्रणाली'),
+      eyebrow: t('The Signal 24 / methodology', 'द सिग्नल 24 / कार्यप्रणाली'),
+      title: t(<>How we check<br /><em className="font-normal text-accent">the state’s paperwork.</em></>, <>सरकारी काग़ज़ों की<br /><em className="font-normal text-accent">जाँच हम कैसे करते हैं।</em></>),
+      intro: t('Numbers and claims change meaning when their definitions disappear. Every record keeps its source type, date, jurisdiction and verification status attached.', 'परिभाषा हट जाए, तो आंकड़ों और दावों का अर्थ बदल जाता है। इसलिए हर रिकॉर्ड के साथ उसके स्रोत का प्रकार, तारीख़, क्षेत्राधिकार और सत्यापन की स्थिति जुड़ी रहती है।'),
       sections: [
-        ['Source hierarchy', 'Primary government documents, court records, constitutional and statutory text, official statistical releases, parliamentary records, commission reports, academic research and reputable news organizations each play different roles. We name the role rather than hiding it behind a score.'],
-        ['Data integrity', 'For an important number, the eventual data room should show value, unit, year, geography, definition, source, source date, collection method and last verified date. Population share, reservation allocation, representation and selection rates must remain distinct.'],
-        ['Archive status', 'Records should be marked as current, historical, proposed, challenged, stayed, struck down or unavailable where those distinctions matter. A missing source is a limitation to disclose, not a gap to fill with invention.'],
-        ['Starter content', 'Some records in this first release are clearly marked starter records or source-link-pending records. They demonstrate the structure of the publication and must not be mistaken for live verified reporting.'],
+        [t('Source hierarchy', 'स्रोतों का क्रम'), t('Constitutional and statutory text, court judgments, gazette notifications, parliamentary records, commission reports and official statistics come first. Reporting by other outlets is used for context and is always attributed.', 'संविधान और क़ानून का पाठ, अदालती फ़ैसले, गज़ट अधिसूचनाएँ, संसदीय रिकॉर्ड, आयोगों की रिपोर्टें और आधिकारिक आंकड़े सबसे पहले आते हैं। दूसरे मीडिया संस्थानों की रिपोर्टिंग संदर्भ के लिए इस्तेमाल होती है और हमेशा उनके नाम के साथ।')],
+        [t('Verification labels', 'सत्यापन के लेबल'), t('Unverified: not yet checked against a primary source. Source-linked: tied to a named, linked source. Verified: checked line by line by the desk. The label is shown on every record.', 'असत्यापित: अभी मूल स्रोत से नहीं मिलाया गया। स्रोत से जुड़ा: किसी नामित, लिंक किए गए स्रोत से जुड़ा। सत्यापित: डेस्क ने पंक्ति-दर-पंक्ति जाँचा। यह लेबल हर रिकॉर्ड पर दिखता है।')],
+        [t('Data integrity', 'आंकड़ों की ईमानदारी'), t('Every important number carries its unit, year, geography, definition and source. Population share, reserved seats and actual representation are different quantities, and we never substitute one for another.', 'हर अहम आंकड़े के साथ उसकी इकाई, वर्ष, भूगोल, परिभाषा और स्रोत होता है। आबादी में हिस्सा, आरक्षित सीटें और वास्तविक प्रतिनिधित्व तीन अलग चीज़ें हैं, और हम एक की जगह दूसरी का इस्तेमाल कभी नहीं करते।')],
+        [t('Legal status', 'क़ानूनी स्थिति'), t('Records are marked current, proposed, challenged, stayed or struck down. A law a court has stayed is never reported as being in force.', 'रिकॉर्ड पर लिखा होता है कि नियम लागू है, प्रस्तावित है, चुनौती में है, उस पर रोक है या वह रद्द हो चुका है। जिस क़ानून पर अदालत ने रोक लगाई हो, उसे हम कभी लागू नहीं बताते।')],
+        [t('The Hindi edition', 'हिंदी संस्करण'), t('Hindi pages are translations of the same record, not separate stories. Where a Hindi edition is not ready, the page says so and shows the English text, and search engines are told not to index it as Hindi.', 'हिंदी पेज उसी रिकॉर्ड का अनुवाद हैं, अलग ख़बरें नहीं। जहाँ हिंदी संस्करण तैयार नहीं है, वहाँ पेज यह बताता है और अंग्रेज़ी पाठ दिखाता है, और सर्च इंजनों को कहा जाता है कि उसे हिंदी पेज के तौर पर इंडेक्स न करें।')],
       ],
     },
   }[page];
+  const path = `/${page === 'standards' ? 'editorial-standards' : page}`;
 
   useSeo({
-    title: `${content.eyebrow.split(' / ')[1]} — The Signal 24`,
+    title: `${content.name} — The Signal 24`,
     description: content.intro,
-    canonicalPath: `/${page === 'standards' ? 'editorial-standards' : page}`,
+    canonicalPath: path,
     structuredData: siteGraph(
-      webPageNode(`/${page === 'standards' ? 'editorial-standards' : page}`, { name: `${content.eyebrow.split(' / ')[1]} — The Signal 24`, description: content.intro, about: organizationRef, publisher: organizationRef }, page === 'about' ? 'AboutPage' : 'WebPage'),
-      breadcrumbNode(`/${page === 'standards' ? 'editorial-standards' : page}`, [[content.eyebrow.split(' / ')[1], `/${page === 'standards' ? 'editorial-standards' : page}`]]),
+      webPageNode(path, { name: `${content.name} — The Signal 24`, description: content.intro, about: organizationRef, publisher: organizationRef }, page === 'about' ? 'AboutPage' : 'WebPage'),
+      breadcrumbNode(path, [[content.name, path]]),
     ),
   });
-  return <main className="signal-page"><Header /><section className="signal-container pt-14 sm:pt-24"><p className="signal-kicker text-accent">{content.eyebrow}</p><h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">{content.title}</h1><p className="mt-8 max-w-2xl text-lg leading-relaxed text-muted-foreground">{content.intro}</p></section><section className="signal-container mt-16 border-t border-foreground/20 sm:mt-24"><div className="grid divide-y divide-foreground/15 lg:grid-cols-2 lg:divide-x lg:divide-y-0">{content.sections.map(([title, text], index) => <article key={title} className={`py-8 lg:px-8 ${index % 2 === 0 ? 'lg:pl-0' : 'lg:pr-0'}`}><p className="signal-kicker text-accent">0{index + 1}</p><h2 className="mt-3 font-display text-3xl leading-tight">{title}</h2><p className="mt-4 max-w-xl text-sm leading-[1.8] text-muted-foreground">{text}</p></article>)}</div></section><footer className="signal-container flex flex-wrap justify-between gap-6 border-t border-foreground/20 py-8"><Link href="/" className="signal-kicker signal-link inline-flex items-center gap-2"><ArrowLeft size={13} /> Current edition</Link><div className="flex gap-5 signal-kicker text-muted-foreground"><Link href="/about" className="signal-link">About</Link><Link href="/editorial-standards" className="signal-link">Standards</Link><Link href="/methodology" className="signal-link">Methodology</Link></div></footer></main>;
+  return <main className="signal-page"><Header /><section className="signal-container pt-14 sm:pt-24"><p className="signal-kicker text-accent">{content.eyebrow}</p><h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">{content.title}</h1><p className="mt-8 max-w-2xl text-lg leading-relaxed text-muted-foreground">{content.intro}</p></section><section className="signal-container mt-16 border-t border-foreground/20 sm:mt-24"><div className="grid divide-y divide-foreground/15 lg:grid-cols-2 lg:divide-x lg:divide-y-0">{content.sections.map(([title, text], index) => <article key={title} id={page === 'standards' && index === content.sections.length - 1 ? 'corrections' : undefined} className={`py-8 lg:px-8 ${index % 2 === 0 ? 'lg:pl-0' : 'lg:pr-0'} ${index > 1 ? 'lg:border-t lg:border-foreground/15' : ''}`}><p className="signal-kicker text-accent">{String(index + 1).padStart(2, '0')}</p><h2 className="mt-3 font-display text-3xl leading-tight">{title}</h2><p className="mt-4 max-w-xl text-[.95rem] leading-[1.8] text-muted-foreground">{text}</p></article>)}</div></section><SiteFooter /></main>;
 }
 
-function HomeIndex({ stories }: { stories: Story[] }) {
-  const jurisdictionCount = new Set(FOCUS_SOURCES.map((source) => source.place.split('/')[0].trim())).size;
-  return <section className="signal-container mt-8" aria-label="Current edition index">
-    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-      <p className="signal-kicker text-accent">Focus desk snapshot</p>
-      <time className="signal-kicker text-muted-foreground" dateTime={DESK_SNAPSHOT_DATE}>As of 26 Sep 2026</time>
+function SiteFooter() {
+  const t = useT();
+  return <footer className="signal-container mt-20 flex flex-col justify-between gap-8 border-t border-foreground/20 py-10 sm:flex-row sm:items-end">
+    <div><Link href="/" className="signal-link flex items-center gap-3" lang="en"><BrandMark /><span className="font-display text-xl">The Signal <span className="text-accent">24</span></span></Link><p className="mt-3 max-w-xs text-xs leading-relaxed text-muted-foreground">{t('A public-interest newsroom holding power to the record. For the people, by the people.', 'सत्ता को दस्तावेज़ों पर परखने वाला जनहित न्यूज़रूम। जनता के लिए, जनता की ओर से।')}</p></div>
+    <div className="flex max-w-xl flex-wrap gap-x-5 gap-y-2 signal-kicker text-[9px] text-muted-foreground">
+      <Link href="/policies" className="signal-link">{t('Policy ledger', 'नीति रजिस्टर')}</Link>
+      <Link href="/archive" className="signal-link">{t('Archive', 'अभिलेखागार')}</Link>
+      <Link href="/opinion" className="signal-link">{t('Opinion', 'राय')}</Link>
+      <Link href="/events" className="signal-link">{t('Evidence', 'सबूत')}</Link>
+      <Link href="/about" className="signal-link">{t('About', 'परिचय')}</Link>
+      <Link href="/editorial-standards" className="signal-link">{t('Standards', 'मानक')}</Link>
+      <Link href="/editorial-standards#corrections" className="signal-link">{t('Corrections', 'सुधार')}</Link>
+      <Link href="/methodology" className="signal-link">{t('Methodology', 'कार्यप्रणाली')}</Link>
+      <LanguageSwitch className="!min-h-0 !border-0 !p-0" />
+      <span lang="en">© The Signal 24</span>
     </div>
-    <div className="home-index grid-cols-2 sm:grid-cols-4">
-       <div className="home-scanline col-span-2 p-5 sm:col-span-1 sm:p-6"><p className="signal-kicker text-accent">Published focus records</p><p className="home-number mt-5" data-testid="text-home-record-count">{stories.length}</p><p className="mt-3 text-xs text-muted-foreground">Published records with status and source context kept visible</p></div>
-      <div className="p-5 sm:p-6"><p className="signal-kicker text-accent">External leads</p><p className="home-number mt-5">{FOCUS_SOURCES.length}</p><p className="mt-3 text-xs text-muted-foreground">For editorial review; not Signal 24 reporting</p></div>
-      <div className="p-5 sm:p-6"><p className="signal-kicker text-accent">Jurisdictions</p><p className="home-number mt-5">{jurisdictionCount}</p><p className="mt-3 text-xs text-muted-foreground">National and state-level source contexts</p></div>
-      <div className="signal-note col-span-2 p-5 sm:col-span-1 sm:p-6"><p className="signal-kicker text-accent">Editorial rule</p><p className="mt-5 max-w-[15rem] font-display text-2xl leading-[.95]">No source. No certainty.</p><p className="mt-4 text-xs leading-relaxed text-muted-foreground">Signals can start a question. They cannot finish one.</p></div>
-    </div>
-  </section>;
+  </footer>;
 }
 
 function evidenceTypeLabel(value: DecisionImpactEvidenceType) {
-  return value === 'lived-account' ? 'Lived account' : value === 'monitored-lead' ? 'Monitored lead' : 'Quantified finding';
+  const hindi = getActiveLang() === 'hi';
+  if (value === 'lived-account') return hindi ? 'आपबीती' : 'Lived account';
+  if (value === 'monitored-lead') return hindi ? 'निगरानी में सुराग' : 'Monitored lead';
+  return hindi ? 'मापा गया निष्कर्ष' : 'Quantified finding';
 }
 
 function verificationLabel(value: VerificationStatus) {
-  return value === 'verified' ? 'Verified' : value === 'source-linked' ? 'Source linked' : 'Unverified';
+  const hindi = getActiveLang() === 'hi';
+  if (value === 'verified') return hindi ? 'सत्यापित' : 'Verified';
+  if (value === 'source-linked') return hindi ? 'स्रोत से जुड़ा' : 'Source linked';
+  return hindi ? 'असत्यापित' : 'Unverified';
 }
 
 function verificationSummary(stories: Story[]) {
@@ -612,6 +563,7 @@ function isMeasuredDecisionImpact(record?: DecisionImpactRecord) {
 }
 
 function DecisionEvidenceSection({ records, isLoading, isError }: { records: DecisionImpactRecord[]; isLoading: boolean; isError: boolean }) {
+  const t = useT();
   const byType = (type: DecisionImpactEvidenceType) => records.find((record) => record.evidenceType === type);
   const lived = byType('lived-account');
   const monitored = byType('monitored-lead');
@@ -620,66 +572,43 @@ function DecisionEvidenceSection({ records, isLoading, isError }: { records: Dec
   const missing = DECISION_IMPACT_EVIDENCE_TYPES.filter((type) => !byType(type)).length;
   const card = (record: DecisionImpactRecord | undefined, type: DecisionImpactEvidenceType) => {
     if (!record) {
-      return <div className="border border-dashed border-foreground/25 p-5" data-testid={`decision-evidence-missing-${type}`}><p className="signal-kicker text-accent">No published record</p><p className="mt-3 font-display text-2xl leading-tight">The evidence gap stays visible.</p><p className="mt-3 text-sm leading-relaxed text-muted-foreground">The desk has not published a source-backed {evidenceTypeLabel(type).toLowerCase()} for this area yet.</p></div>;
+      return <div className="border border-dashed border-foreground/25 p-5" data-testid={`decision-evidence-missing-${type}`}><p className="signal-kicker text-accent">{t('No published record', 'कोई प्रकाशित रिकॉर्ड नहीं')}</p><p className="mt-3 font-display text-2xl leading-tight">{t('The gap stays visible.', 'यह कमी छिपाई नहीं जाएगी।')}</p><p className="mt-3 text-sm leading-relaxed text-muted-foreground">{t(`The desk has not published a source-backed ${evidenceTypeLabel(type).toLowerCase()} for this area yet.`, `डेस्क ने इस क्षेत्र में अभी तक स्रोत-आधारित ${evidenceTypeLabel(type)} प्रकाशित नहीं किया है।`)}</p></div>;
     }
     return <article className="border border-foreground/15 bg-card p-5" data-testid={`decision-evidence-card-${type}`}>
       <div className="flex flex-wrap items-center justify-between gap-3"><p className="signal-kicker text-accent">{evidenceTypeLabel(type)}</p><span className="signal-kicker text-muted-foreground">{verificationLabel(record.verificationStatus)}</span></div>
-      <h3 className="mt-4 font-display text-2xl leading-tight">{record.title}</h3>
-      <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{record.summary}</p>
+      <h3 className="mt-4 font-display text-2xl leading-tight" lang="en">{record.title}</h3>
+      <p className="mt-3 text-sm leading-relaxed text-muted-foreground" lang="en">{record.summary}</p>
       <dl className="mt-5 grid gap-2 border-t border-foreground/15 pt-4 text-xs">
-        <div className="flex justify-between gap-4"><dt className="signal-kicker text-muted-foreground">Area</dt><dd>{record.decisionArea}</dd></div>
-        <div className="flex justify-between gap-4"><dt className="signal-kicker text-muted-foreground">Geography</dt><dd>{record.geography}</dd></div>
-        <div className="flex justify-between gap-4"><dt className="signal-kicker text-muted-foreground">Observed</dt><dd>{formatDate(record.observedOn)}</dd></div>
+        <div className="flex justify-between gap-4"><dt className="signal-kicker text-muted-foreground">{t('Area', 'क्षेत्र')}</dt><dd>{record.decisionArea}</dd></div>
+        <div className="flex justify-between gap-4"><dt className="signal-kicker text-muted-foreground">{t('Geography', 'भूगोल')}</dt><dd>{record.geography}</dd></div>
+        <div className="flex justify-between gap-4"><dt className="signal-kicker text-muted-foreground">{t('Observed', 'दर्ज')}</dt><dd>{formatDate(record.observedOn)}</dd></div>
       </dl>
-      <p className="mt-4 border-l-2 border-accent pl-3 text-sm leading-relaxed"><span className="signal-kicker text-accent">What this record means</span><span className="mt-1 block text-muted-foreground">{type === 'lived-account' ? 'Context from an account, not a prevalence estimate.' : type === 'monitored-lead' ? 'A source to check, not a published finding.' : record.definition}</span></p>
-      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-foreground/15 pt-4"><p className="signal-kicker text-muted-foreground">{record.source} · retrieved {formatDate(record.sourceRetrievedOn)}</p><a href={record.sourceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 signal-kicker text-accent hover:underline" data-testid={`link-decision-evidence-source-${record.id}`}>Open source <ExternalLink size={12} /></a></div>
+      <p className="mt-4 border-l-2 border-accent pl-3 text-sm leading-relaxed"><span className="signal-kicker text-accent">{t('What this record means', 'इस रिकॉर्ड का अर्थ')}</span><span className="mt-1 block text-muted-foreground">{type === 'lived-account' ? t('Context from one account, not a measure of how common it is.', 'एक व्यक्ति के अनुभव का संदर्भ, यह कितना आम है इसका माप नहीं।') : type === 'monitored-lead' ? t('A source to check, not a published finding.', 'जाँचने लायक स्रोत, प्रकाशित निष्कर्ष नहीं।') : record.definition}</span></p>
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-foreground/15 pt-4"><p className="signal-kicker text-muted-foreground">{record.source} · {t('retrieved', 'प्राप्त')} {formatDate(record.sourceRetrievedOn)}</p><a href={record.sourceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 signal-kicker text-accent hover:underline" data-testid={`link-decision-evidence-source-${record.id}`}>{t('Open source', 'स्रोत खोलें')} <ExternalLink size={12} /></a></div>
       <div className="mt-3 border-t border-foreground/10 pt-3 text-xs leading-relaxed text-muted-foreground">
-        {record.verificationNotes && <p>Verification context / {record.verificationNotes}</p>}
-        {record.lastVerifiedAt && <p className="mt-1">Last verified / {formatDate(record.lastVerifiedAt)}</p>}
-        {record.reviewedAt && <p className="mt-1">Editorial review / {formatDate(record.reviewedAt)}</p>}
-        {record.publishedOn && <p className="mt-1">Published / {formatDate(record.publishedOn)}</p>}
+        {record.verificationNotes && <p lang="en">{t('Verification context', 'सत्यापन संदर्भ')} / {record.verificationNotes}</p>}
+        {record.lastVerifiedAt && <p className="mt-1">{t('Last verified', 'अंतिम सत्यापन')} / {formatDate(record.lastVerifiedAt)}</p>}
+        {record.reviewedAt && <p className="mt-1">{t('Editorial review', 'संपादकीय समीक्षा')} / {formatDate(record.reviewedAt)}</p>}
+        {record.publishedOn && <p className="mt-1">{t('Published', 'प्रकाशित')} / {formatDate(record.publishedOn)}</p>}
       </div>
     </article>;
   };
   return <section id="decision-evidence" className="signal-container pt-24 sm:pt-36">
-    <div className="flex flex-col justify-between gap-6 border-y-2 border-primary py-6 sm:flex-row sm:items-end"><div><p className="signal-kicker text-accent">05 / Migration + decision impacts</p><h2 className="mt-3 max-w-4xl font-display text-5xl leading-[.88] tracking-[-.055em] sm:text-7xl">What people decide,<br /><em className="font-normal text-accent">and what the record can prove.</em></h2></div><p className="max-w-sm text-sm leading-relaxed text-muted-foreground">Lived accounts show experience. Monitored leads show what needs checking. Quantified findings show measured patterns only when their source, definition and frame are visible.</p></div>
-    {isLoading ? <div className="mt-7 grid gap-5 md:grid-cols-3" role="status" data-testid="status-decision-evidence-loading">{DECISION_IMPACT_EVIDENCE_TYPES.map((type) => <div key={type} className="h-64 animate-pulse bg-muted" />)}</div> : isError ? <div className="mt-7 border border-accent/50 bg-card p-6" role="alert" data-testid="status-decision-evidence-error"><p className="signal-kicker text-accent">Evidence ledger / unavailable</p><p className="mt-3 text-sm leading-relaxed text-muted-foreground">The evidence ledger could not be reached. No movement number is shown.</p></div> : <div className="mt-7 grid gap-5 md:grid-cols-3">{card(lived, 'lived-account')}{card(monitored, 'monitored-lead')}{measured ? card(quantified, 'quantified-finding') : <div className="border border-dashed border-accent/60 p-5" data-testid="decision-evidence-quantified-gap"><p className="signal-kicker text-accent">Quantified finding / not established</p><p className="mt-3 font-display text-2xl leading-tight">{quantified ? 'A record exists, but it cannot carry a measured movement signal yet.' : 'No measured movement signal is published.'}</p><p className="mt-3 text-sm leading-relaxed text-muted-foreground">{quantified ? `The current record is missing a complete source, definition, geography, date or verification frame. ${quantified.summary}` : 'The available records do not establish a defensible migration trend. We will not replace the gap with an inferred number.'}</p>{quantified?.sourceUrl && <a href={quantified.sourceUrl} target="_blank" rel="noopener noreferrer" className="mt-5 inline-flex items-center gap-1 signal-kicker text-accent hover:underline">Review the source <ExternalLink size={12} /></a>}</div>}</div>}
-    <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-b border-foreground/20 py-4"><p className="signal-kicker text-muted-foreground">Evidence ledger / {records.length} published records</p><p className="signal-kicker text-accent">{missing} evidence class{missing === 1 ? '' : 'es'} still missing a published record</p></div>
+    <div className="flex flex-col justify-between gap-6 border-y-2 border-primary py-6 sm:flex-row sm:items-end"><div><p className="signal-kicker text-accent">{t('Lives and decisions', 'ज़िंदगियाँ और फ़ैसले')}</p><h2 className="mt-3 max-w-4xl font-display text-5xl leading-[.88] tracking-[-.055em] sm:text-7xl">{t(<>What people decide,<br /><em className="font-normal text-accent">and what the record can prove.</em></>, <>लोग क्या तय करते हैं,<br /><em className="font-normal text-accent">और रिकॉर्ड क्या साबित कर सकता है।</em></>)}</h2></div><p className="max-w-sm text-sm leading-relaxed text-muted-foreground">{t('Policy decides where people study, apply, work and whether they stay. We keep three kinds of evidence apart: one person’s account, a lead still being checked, and a measured finding with its source and definition.', 'नीति तय करती है कि लोग कहाँ पढ़ें, कहाँ आवेदन करें, कहाँ काम करें और टिकें या नहीं। हम तीन तरह के सबूत अलग रखते हैं: किसी एक की आपबीती, जाँच में चल रहा सुराग, और स्रोत व परिभाषा के साथ मापा गया निष्कर्ष।')}</p></div>
+    {isLoading ? <div className="mt-7 grid gap-5 md:grid-cols-3" role="status" data-testid="status-decision-evidence-loading">{DECISION_IMPACT_EVIDENCE_TYPES.map((type) => <div key={type} className="h-64 animate-pulse bg-muted" />)}</div> : isError ? <div className="mt-7 border border-accent/50 bg-card p-6" role="alert" data-testid="status-decision-evidence-error"><p className="signal-kicker text-accent">{t('Evidence ledger unavailable', 'सबूत रजिस्टर उपलब्ध नहीं')}</p><p className="mt-3 text-sm leading-relaxed text-muted-foreground">{t('The evidence ledger could not be reached, so no number is shown.', 'सबूत रजिस्टर तक पहुँच नहीं हो सकी, इसलिए कोई आंकड़ा नहीं दिखाया गया।')}</p></div> : <div className="mt-7 grid gap-5 md:grid-cols-3">{card(lived, 'lived-account')}{card(monitored, 'monitored-lead')}{measured ? card(quantified, 'quantified-finding') : <div className="border border-dashed border-accent/60 p-5" data-testid="decision-evidence-quantified-gap"><p className="signal-kicker text-accent">{t('Quantified finding / not established', 'मापा गया निष्कर्ष / स्थापित नहीं')}</p><p className="mt-3 font-display text-2xl leading-tight">{quantified ? t('A record exists, but it cannot yet carry a measured trend.', 'रिकॉर्ड मौजूद है, पर अभी वह किसी मापे गए रुझान का बोझ नहीं उठा सकता।') : t('No measured trend has been published.', 'कोई मापा गया रुझान प्रकाशित नहीं हुआ है।')}</p><p className="mt-3 text-sm leading-relaxed text-muted-foreground">{quantified ? t(`The record is missing a complete source, definition, geography, date or verification. ${quantified.summary}`, 'इस रिकॉर्ड में पूरा स्रोत, परिभाषा, भूगोल, तारीख़ या सत्यापन नहीं है।') : t('The available records do not establish a defensible trend. We will not fill the gap with a guessed number.', 'उपलब्ध रिकॉर्ड किसी ठोस रुझान को साबित नहीं करते। हम इस कमी को अंदाज़े के आंकड़े से नहीं भरेंगे।')}</p>{quantified?.sourceUrl && <a href={quantified.sourceUrl} target="_blank" rel="noopener noreferrer" className="mt-5 inline-flex items-center gap-1 signal-kicker text-accent hover:underline">{t('Review the source', 'स्रोत देखें')} <ExternalLink size={12} /></a>}</div>}</div>}
+    <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-b border-foreground/20 py-4"><p className="signal-kicker text-muted-foreground">{t(`Evidence ledger / ${records.length} published records`, `सबूत रजिस्टर / ${records.length} प्रकाशित रिकॉर्ड`)}</p><p className="signal-kicker text-accent">{t(`${missing} evidence class${missing === 1 ? '' : 'es'} still missing a published record`, `${missing} प्रकार के सबूत का अभी कोई प्रकाशित रिकॉर्ड नहीं`)}</p></div>
   </section>;
 }
 
-function HomeDecisionGrid({ stories }: { stories: Story[] }) {
-  const findStory = (topic: string) => stories.find((story) => story.topic === topic);
-  const cells = [
-    { number: '01', label: 'Courts + policy', title: 'What changed on paper?', story: findStory('Courts & Policy'), tone: 'bg-primary text-primary-foreground' },
-    { number: '02', label: 'States', title: 'Where does the framework shift?', story: findStory('States'), tone: '' },
-    { number: '03', label: 'Ground reports', title: 'What does it alter in a day?', story: findStory('Ground Reports'), tone: '' },
-  ];
-  return <section id="decisions" className="signal-container pt-24 sm:pt-36">
-    <div className="flex flex-col justify-between gap-6 border-y border-foreground/20 py-6 sm:flex-row sm:items-end"><div><p className="signal-kicker text-accent">04 / Decision map</p><h2 className="mt-3 max-w-3xl font-display text-5xl leading-[.88] tracking-[-.055em] sm:text-7xl">The headline is<br /><em className="font-normal text-accent">not the decision.</em></h2></div><p className="max-w-sm text-sm leading-relaxed text-muted-foreground">People use public information to decide where to study, work, apply, stay, speak or leave. We connect the record to those smaller decisions without pretending one story explains a whole life.</p></div>
-    <div className="mt-7 grid gap-px border border-foreground/20 bg-foreground/20 md:grid-cols-3">
-      {cells.map((cell) => <article key={cell.number} className={`home-topic-card min-h-[270px] p-6 sm:p-8 ${cell.tone || 'bg-card'}`} data-testid={`card-decision-${cell.number}`}>
-        <div className="flex items-start justify-between gap-4"><p className={`signal-kicker ${cell.tone ? 'text-secondary' : 'text-accent'}`}>{cell.number} / {cell.label}</p><ArrowDownRight size={17} className={cell.tone ? 'text-accent' : 'text-muted-foreground'} /></div>
-        <h3 className="mt-16 font-display text-3xl leading-[.95] tracking-[-.03em]">{cell.title}</h3>
-        {cell.story ? <Link href={storyPath(cell.story)} className={`mt-6 block border-t pt-4 text-sm leading-relaxed ${cell.tone ? 'border-primary-foreground/25 text-primary-foreground/70' : 'border-foreground/15 text-muted-foreground'}`} data-testid={`link-decision-story-${cell.story.id}`}><span className={`signal-kicker ${cell.tone ? 'text-secondary' : 'text-accent'}`}>{cell.story.source}</span><span className="mt-2 block font-medium">{cell.story.title}</span></Link> : <p className={`mt-6 border-t pt-4 text-sm leading-relaxed ${cell.tone ? 'border-primary-foreground/25 text-primary-foreground/70' : 'border-foreground/15 text-muted-foreground'}`}>No published record in this issue. The gap stays visible.</p>}
-      </article>)}
-    </div>
-    <article className="home-gap mt-7 grid gap-8 border border-accent/60 p-6 sm:p-8 lg:grid-cols-[.72fr_1.28fr] lg:items-center" data-testid="card-movement-pressure">
-      <div><p className="signal-kicker text-accent">04 / Movement pressure</p><h3 className="mt-3 max-w-md font-display text-4xl leading-[.9] tracking-[-.045em] sm:text-5xl">Some people are asking whether to leave.</h3></div>
-      <div className="border-l-2 border-accent pl-5">
-        <><p className="signal-kicker text-accent">Evidence status / see the ledger below</p><p className="mt-3 max-w-xl font-display text-2xl leading-tight">The current issue does not turn movement pressure into a trend.</p><p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">The decision-evidence ledger separates accounts, monitored leads and measured findings. Until a finding has a source, definition, geography, date and verification context, the gap stays visible.</p><a href="#decision-evidence" className="mt-5 inline-flex items-center gap-2 signal-kicker text-accent hover:underline" data-testid="link-movement-evidence">Open the evidence ledger <ArrowUpRight size={13} /></a></>
-      </div>
-    </article>
-  </section>;
-}
-
-function IndiaFocus({ stories }: { stories: Story[] }) {
+function IndiaFocus({ stories }: { stories: LocalizedStory[] }) {
   const [features, setFeatures] = useState<MapFeature[]>([]);
   const [geoStatus, setGeoStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [geoRetry, setGeoRetry] = useState(0);
   const [copyStatus, setCopyStatus] = useState('');
   const [location, setLocation] = useLocation();
   const search = useSearch();
+  const t = useT();
+  const label = useLabel();
   const stateStories = useMemo(() => getStateLinkedStories(stories), [stories]);
   const states = useMemo(() => getStateNames(stateStories), [stateStories]);
   const selected = getSelectedStateFromSearch(search, states);
@@ -696,9 +625,9 @@ function IndiaFocus({ stories }: { stories: Story[] }) {
     if (!selected) return;
     try {
       await navigator.clipboard.writeText(urlWithSelectedState(window.location.href, selected));
-      setCopyStatus('State link copied');
+      setCopyStatus(t('State link copied', 'राज्य का लिंक कॉपी हुआ'));
     } catch {
-      setCopyStatus('Unable to copy state link');
+      setCopyStatus(t('Unable to copy state link', 'लिंक कॉपी नहीं हो सका'));
     }
   };
   useEffect(() => {
@@ -733,37 +662,37 @@ function IndiaFocus({ stories }: { stories: Story[] }) {
   const selectedLatest = selectedStories[0];
   return <section className="map-shell mt-20 py-8 sm:mt-28 sm:py-12" id="india-in-focus" aria-labelledby="india-focus-title">
     <div className="signal-container">
-      <div className="flex flex-col justify-between gap-5 border-b border-foreground/20 pb-6 sm:flex-row sm:items-end"><div><p className="signal-kicker text-accent">06 / India in focus</p><h2 id="india-focus-title" className="mt-3 font-display text-5xl leading-[.9] tracking-[-.05em] sm:text-7xl">Explore<br /><em className="font-normal text-accent">by state.</em></h2></div><p className="max-w-sm text-sm leading-relaxed text-muted-foreground">A navigation map built only from published archive records with a named state. National records stay outside the map.</p></div>
-      {states.length === 0 ? <div className="py-12"><EmptyState title="No state-linked records yet." text="The map will show markers only when published archive records carry a state." /></div> : <div className="grid gap-8 py-8 lg:grid-cols-[1.15fr_.85fr] lg:items-center">
+      <div className="flex flex-col justify-between gap-5 border-b border-foreground/20 pb-6 sm:flex-row sm:items-end"><div><p className="signal-kicker text-accent">{t('States', 'राज्य')}</p><h2 id="india-focus-title" className="mt-3 font-display text-5xl leading-[.9] tracking-[-.05em] sm:text-7xl">{t(<>One country,<br /><em className="font-normal text-accent">many quota regimes.</em></>, <>एक देश,<br /><em className="font-normal text-accent">आरक्षण के कई ढाँचे।</em></>)}</h2></div><p className="max-w-sm text-sm leading-relaxed text-muted-foreground">{t('Each state writes its own reservation law and answers to its own courts. The map shows only states with published, state-linked records. National records stay off the map.', 'हर राज्य अपना आरक्षण क़ानून ख़ुद बनाता है और अपनी अदालतों के प्रति जवाबदेह है। नक्शे पर सिर्फ़ वे राज्य हैं जिनके प्रकाशित रिकॉर्ड हैं। राष्ट्रीय रिकॉर्ड नक्शे से बाहर हैं।')}</p></div>
+      {states.length === 0 ? <div className="py-12"><EmptyState title={t('No state-linked records yet.', 'अभी कोई राज्य-स्तरीय रिकॉर्ड नहीं।')} text={t('States appear on the map once a published record names them.', 'जब कोई प्रकाशित रिकॉर्ड किसी राज्य का नाम लेगा, वह नक्शे पर दिखेगा।')} /></div> : <div className="grid gap-8 py-8 lg:grid-cols-[1.15fr_.85fr] lg:items-center">
         <div className="overflow-hidden" data-testid="india-editorial-map">
-          {geoStatus === 'loading' && <div className="border border-dashed border-foreground/25 py-16 text-center" role="status" data-testid="status-india-map-loading"><div className="mx-auto h-8 w-40 animate-pulse bg-muted" /><p className="mt-4 signal-kicker text-muted-foreground">Loading the local India map…</p></div>}
-          {geoStatus === 'error' && <div className="border border-accent/50 bg-card px-6 py-10 text-center" role="alert" data-testid="status-india-map-error"><p className="signal-kicker text-accent">Map asset / unavailable</p><p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">The local state-boundary file is missing or malformed. Published state records remain available in the list.</p><button type="button" className="signal-button mt-5" onClick={() => setGeoRetry((value) => value + 1)} data-testid="button-retry-india-map">Try map again</button></div>}
-          {geoStatus === 'ready' && <svg viewBox="0 0 1000 950" role="group" aria-label="Map shapes for states with published archive records" className="india-map">{features.map((feature, index) => { const featureName = getMapFeatureName(feature); const stateName = featureName ? canonicalStateName(featureName) : null; const active = Boolean(stateName && states.some((name) => stateNameKey(name) === stateNameKey(stateName))); const isSelected = Boolean(stateName && selected && stateNameKey(selected) === stateNameKey(stateName)); return <path key={`${featureName ?? 'state'}-${index}`} data-testid={active && stateName ? `map-state-shape-${slugify(stateName)}` : undefined} d={mapPath(feature.geometry?.coordinates)} className={`${active ? 'is-active' : ''} ${isSelected ? 'is-selected' : ''}`} aria-label={active && stateName ? `Select ${stateName}` : undefined} role={active ? 'button' : undefined} tabIndex={active ? 0 : undefined} aria-pressed={active ? isSelected : undefined} onClick={() => active && stateName && toggleSelectedState(stateName)} onKeyDown={(event) => { if (active && stateName && isMapSelectionKey(event.key)) { event.preventDefault(); toggleSelectedState(stateName); } }} />; })}</svg>}
+          {geoStatus === 'loading' && <div className="border border-dashed border-foreground/25 py-16 text-center" role="status" data-testid="status-india-map-loading"><div className="mx-auto h-8 w-40 animate-pulse bg-muted" /><p className="mt-4 signal-kicker text-muted-foreground">{t('Loading the map…', 'नक्शा लोड हो रहा है…')}</p></div>}
+          {geoStatus === 'error' && <div className="border border-accent/50 bg-card px-6 py-10 text-center" role="alert" data-testid="status-india-map-error"><p className="signal-kicker text-accent">{t('Map unavailable', 'नक्शा उपलब्ध नहीं')}</p><p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">{t('The state-boundary file is missing or malformed. State records are still listed.', 'राज्य सीमाओं की फ़ाइल नहीं मिली या ख़राब है। राज्यों के रिकॉर्ड सूची में मौजूद हैं।')}</p><button type="button" className="signal-button mt-5" onClick={() => setGeoRetry((value) => value + 1)} data-testid="button-retry-india-map">{t('Try map again', 'नक्शा फिर लोड करें')}</button></div>}
+          {geoStatus === 'ready' && <svg viewBox="0 0 1000 950" role="group" aria-label={t('Map of states with published records', 'प्रकाशित रिकॉर्ड वाले राज्यों का नक्शा')} className="india-map">{features.map((feature, index) => { const featureName = getMapFeatureName(feature); const stateName = featureName ? canonicalStateName(featureName) : null; const active = Boolean(stateName && states.some((name) => stateNameKey(name) === stateNameKey(stateName))); const isSelected = Boolean(stateName && selected && stateNameKey(selected) === stateNameKey(stateName)); return <path key={`${featureName ?? 'state'}-${index}`} data-testid={active && stateName ? `map-state-shape-${slugify(stateName)}` : undefined} d={mapPath(feature.geometry?.coordinates)} className={`${active ? 'is-active' : ''} ${isSelected ? 'is-selected' : ''}`} aria-label={active && stateName ? t(`Select ${stateName}`, `${label(stateName)} चुनें`) : undefined} role={active ? 'button' : undefined} tabIndex={active ? 0 : undefined} aria-pressed={active ? isSelected : undefined} onClick={() => active && stateName && toggleSelectedState(stateName)} onKeyDown={(event) => { if (active && stateName && isMapSelectionKey(event.key)) { event.preventDefault(); toggleSelectedState(stateName); } }} />; })}</svg>}
         </div>
-        <div><p className="signal-kicker text-accent">States with published records / {states.length}</p><div className="mt-3 grid gap-0">{states.map((state) => <button key={state} type="button" className="map-state-button flex items-center justify-between gap-4 signal-kicker" aria-pressed={Boolean(selected && stateNameKey(selected) === stateNameKey(state))} onClick={() => toggleSelectedState(state)} data-testid={`button-map-state-${slugify(state)}`}><span>{state}</span><span className="text-muted-foreground">{getStoriesForState(stateStories, state).length}</span></button>)}</div></div>
+        <div><p className="signal-kicker text-accent">{t(`States with published records / ${states.length}`, `प्रकाशित रिकॉर्ड वाले राज्य / ${states.length}`)}</p><div className="mt-3 grid gap-0">{states.map((state) => <button key={state} type="button" className="map-state-button flex items-center justify-between gap-4 signal-kicker" aria-pressed={Boolean(selected && stateNameKey(selected) === stateNameKey(state))} onClick={() => toggleSelectedState(state)} data-testid={`button-map-state-${slugify(state)}`}><span>{label(state)}</span><span className="text-muted-foreground">{getStoriesForState(stateStories, state).length}</span></button>)}</div></div>
       </div>}
       {unavailableState && <div className="mt-6 border-l-2 border-accent bg-card px-4 py-4" role="status" data-testid="note-unavailable-state">
-        <p className="signal-kicker text-accent">State archive / no current records</p>
-        <p className="mt-2 text-sm leading-relaxed">No published state-linked records are currently available for {unavailableState}. This shared link may be out of date.</p>
-        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{states.length > 0 ? 'Choose a state with published records from the list above, or return to all states.' : 'No state-linked records are currently available. You can return to the all-states view.'}</p>
-        <button type="button" className="mt-3 signal-kicker text-accent hover:underline" onClick={clearStateSelection} data-testid="button-show-all-states-from-unavailable">Show all states</button>
+        <p className="signal-kicker text-accent">{t('No current records for this state', 'इस राज्य का कोई मौजूदा रिकॉर्ड नहीं')}</p>
+        <p className="mt-2 text-sm leading-relaxed">{t(`No published state-linked records are available for ${unavailableState}. This link may be out of date.`, `${label(unavailableState)} के लिए कोई प्रकाशित रिकॉर्ड उपलब्ध नहीं है। यह लिंक पुराना हो सकता है।`)}</p>
+        <button type="button" className="mt-3 signal-kicker text-accent hover:underline" onClick={clearStateSelection} data-testid="button-show-all-states-from-unavailable">{t('Show all states', 'सभी राज्य दिखाएँ')}</button>
       </div>}
-      {unmappedStates.length > 0 && <p className="mt-3 border-l-2 border-accent px-3 py-2 text-xs leading-relaxed text-muted-foreground" role="note" data-testid="note-unmapped-map-states">No matching boundary is available for {unmappedStates.join(', ')}. These records can still be selected from the state list.</p>}
-      <p className="mt-3 max-w-xl text-[10px] leading-relaxed text-muted-foreground">Map for editorial navigation only, not a legal boundary reference. <a href={`${basePath}/data/india-map-attribution.md`} className="signal-rule-link" target="_blank" rel="noopener noreferrer">Map attribution and boundary notice</a>.</p>
-      {selectedStories.length > 0 && <div className="border-t border-foreground/20 pt-6"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="signal-kicker text-accent">{selected ?? 'Recent state-linked records'}</p>{selectedLatest && <p className="mt-2 text-sm text-muted-foreground">Latest story context: {selectedLatest.title}</p>}</div><div className="flex flex-wrap items-center gap-4">{selected && <><button type="button" className="inline-flex items-center gap-2 signal-kicker text-muted-foreground hover:text-accent" onClick={() => void copySelectedStateLink()} data-testid="button-copy-map-state-link"><Copy size={13} /> Copy state link</button><button type="button" className="signal-kicker text-muted-foreground hover:text-accent" onClick={() => setLocation(`${location}${searchWithSelectedState(search, null)}${window.location.hash}`)} data-testid="button-clear-map-state">Show all states</button></>}</div></div>{selected && copyStatus && <p className="mt-3 signal-kicker text-accent" role="status" aria-live="polite" data-testid="status-copy-map-state-link">{copyStatus}</p>}<div className="mt-4 grid gap-5 sm:grid-cols-3">{selectedStories.map((story) => <Link href={storyPath(story)} key={story.id} className="group"><p className="signal-kicker text-muted-foreground">{story.publishedOn ? 'Published' : 'Record date'} / {formatDate(story.recordDate ?? story.publishedOn)}</p><h3 className="mt-2 font-display text-2xl leading-tight group-hover:text-accent">{story.title}</h3><div className="mt-2 flex flex-wrap items-center gap-2"><span className={`signal-status-badge ${story.verificationStatus === 'verified' ? 'is-verified' : story.verificationStatus === 'source-linked' ? 'is-source-linked' : 'is-unverified'}`}>{verificationLabel(story.verificationStatus)}</span><span className="signal-kicker text-muted-foreground">{story.sourceUrl ? 'Direct source available' : 'Direct source unavailable'}</span></div><p className="mt-2 text-xs leading-relaxed text-muted-foreground">{story.dek}</p></Link>)}</div></div>}
+      {unmappedStates.length > 0 && <p className="mt-3 border-l-2 border-accent px-3 py-2 text-xs leading-relaxed text-muted-foreground" role="note" data-testid="note-unmapped-map-states">{t(`No boundary is available for ${unmappedStates.join(', ')}. These records can still be selected from the list.`, `${unmappedStates.map((name) => label(name)).join(', ')} की सीमा उपलब्ध नहीं है। इनके रिकॉर्ड सूची से चुने जा सकते हैं।`)}</p>}
+      <p className="mt-3 max-w-xl text-[10px] leading-relaxed text-muted-foreground">{t('Map for navigation only, not a legal boundary reference.', 'नक्शा केवल नेविगेशन के लिए है, क़ानूनी सीमा का संदर्भ नहीं।')} <a href={`${basePath}/data/india-map-attribution.md`} className="signal-rule-link" target="_blank" rel="noopener noreferrer">{t('Map attribution and boundary notice', 'नक्शे का स्रोत और सीमा सूचना')}</a>.</p>
+      {selectedStories.length > 0 && <div className="border-t border-foreground/20 pt-6"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="signal-kicker text-accent">{selected ? label(selected) : t('Recent state records', 'हाल के राज्य रिकॉर्ड')}</p>{selectedLatest && <p className="mt-2 text-sm text-muted-foreground">{t('Latest:', 'ताज़ा:')} <span lang={selectedLatest.contentLang}>{selectedLatest.title}</span></p>}</div><div className="flex flex-wrap items-center gap-4">{selected && <><button type="button" className="inline-flex items-center gap-2 signal-kicker text-muted-foreground hover:text-accent" onClick={() => void copySelectedStateLink()} data-testid="button-copy-map-state-link"><Copy size={13} /> {t('Copy state link', 'लिंक कॉपी करें')}</button><button type="button" className="signal-kicker text-muted-foreground hover:text-accent" onClick={clearStateSelection} data-testid="button-clear-map-state">{t('Show all states', 'सभी राज्य दिखाएँ')}</button></>}</div></div>{selected && copyStatus && <p className="mt-3 signal-kicker text-accent" role="status" aria-live="polite" data-testid="status-copy-map-state-link">{copyStatus}</p>}<div className="mt-4 grid gap-5 sm:grid-cols-3">{selectedStories.map((story) => <Link href={storyPath(story)} key={story.id} className="group"><p className="signal-kicker text-muted-foreground">{story.publishedOn ? t('Published', 'प्रकाशित') : t('Record date', 'रिकॉर्ड तिथि')} / {formatDate(story.recordDate ?? story.publishedOn)}</p><h3 className="mt-2 font-display text-2xl leading-tight group-hover:text-accent" lang={story.contentLang}>{story.title}</h3><div className="mt-2 flex flex-wrap items-center gap-2"><StatusBadge status={story.verificationStatus} /></div><p className="mt-2 text-xs leading-relaxed text-muted-foreground" lang={story.contentLang}>{story.dek}</p></Link>)}</div></div>}
     </div>
   </section>;
 }
 
 function DocumentFeature() {
   const query = useGetEvidenceEvents(undefined, { query: { queryKey: getGetEvidenceEventsQueryKey(), staleTime: 60_000 } });
+  const t = useT();
   const source = query.data?.events.flatMap((event) => event.primarySources)[0] ?? query.data?.events.flatMap((event) => event.secondarySources)[0];
   return <section className="signal-container mt-20 sm:mt-28" id="the-document" aria-labelledby="document-title">
     <div className="grid gap-8 border-y-2 border-foreground py-8 lg:grid-cols-[.8fr_1.2fr] lg:items-center lg:gap-14">
-      <div><p className="signal-kicker text-accent">07 / The document</p><h2 id="document-title" className="mt-3 font-display text-5xl leading-[.9] tracking-[-.05em] sm:text-7xl">Read what<br /><em className="font-normal text-accent">the record says.</em></h2><p className="mt-5 max-w-md text-sm leading-relaxed text-muted-foreground">A source document returned by the public evidence archive, with its status and publication date kept intact.</p></div>
+      <div><p className="signal-kicker text-accent">{t('The document', 'दस्तावेज़')}</p><h2 id="document-title" className="mt-3 font-display text-5xl leading-[.9] tracking-[-.05em] sm:text-7xl">{t(<>Don’t trust us.<br /><em className="font-normal text-accent">Read the source.</em></>, <>हम पर भरोसा मत कीजिए।<br /><em className="font-normal text-accent">स्रोत पढ़िए।</em></>)}</h2><p className="mt-5 max-w-md text-sm leading-relaxed text-muted-foreground">{t('A primary document from the public evidence archive, with its status and publication date intact.', 'सार्वजनिक सबूत अभिलेखागार का एक मूल दस्तावेज़, उसकी स्थिति और प्रकाशन तिथि के साथ।')}</p></div>
       <article className="grid gap-6 sm:grid-cols-[.8fr_1.2fr] sm:items-center" data-testid="feature-the-document">
-        <div className="document-placeholder" aria-label={query.isLoading ? 'Loading source document preview' : query.isError ? 'Source document request failed' : source ? 'Source document preview unavailable' : 'No public source document returned'} />
-        <div>{query.isLoading ? <div role="status"><div className="h-3 w-40 animate-pulse bg-muted" /><p className="mt-4 signal-kicker text-muted-foreground">Loading published documents…</p></div> : query.isError ? <div role="alert"><p className="signal-kicker text-accent">Document archive / unavailable</p><h3 className="mt-3 font-display text-3xl leading-tight">The public document request failed.</h3><p className="mt-3 text-sm leading-relaxed text-muted-foreground">A missing document cannot be concluded from an unavailable request. Try again from the evidence archive.</p><Link href="/events" className="mt-6 inline-flex items-center gap-2 signal-kicker text-accent hover:underline">Open evidence archive <ArrowUpRight size={13} /></Link></div> : source ? <><p className="signal-kicker text-accent">{source.documentType} / {source.status}</p><h3 className="mt-3 font-display text-3xl leading-tight">{source.title}</h3><p className="mt-3 text-sm text-muted-foreground">{source.publisher} · Published {formatDate(source.publicationDate)}</p>{source.sourceUrl ? <a href={source.sourceUrl} target="_blank" rel="noopener noreferrer" className="mt-6 inline-flex items-center gap-2 signal-kicker text-accent hover:underline">View source <ExternalLink size={13} /></a> : <p className="mt-6 signal-kicker text-muted-foreground">Direct source link unavailable</p>}</> : <><p className="signal-kicker text-accent">No public document returned</p><h3 className="mt-3 font-display text-3xl leading-tight">Preview unavailable until a source document is published.</h3><p className="mt-3 text-sm leading-relaxed text-muted-foreground">This panel does not simulate a scan. It will open only a document that exists in the evidence archive.</p></>}</div>
+        <div className="document-placeholder" aria-label={query.isLoading ? t('Loading source document preview', 'दस्तावेज़ लोड हो रहा है') : query.isError ? t('Source document request failed', 'दस्तावेज़ नहीं मिल सका') : source ? t('Source document preview unavailable', 'दस्तावेज़ का पूर्वावलोकन उपलब्ध नहीं') : t('No public source document returned', 'कोई सार्वजनिक दस्तावेज़ नहीं मिला')} />
+        <div>{query.isLoading ? <div role="status"><div className="h-3 w-40 animate-pulse bg-muted" /><p className="mt-4 signal-kicker text-muted-foreground">{t('Loading published documents…', 'प्रकाशित दस्तावेज़ लोड हो रहे हैं…')}</p></div> : query.isError ? <div role="alert"><p className="signal-kicker text-accent">{t('Document archive unavailable', 'दस्तावेज़ अभिलेखागार उपलब्ध नहीं')}</p><h3 className="mt-3 font-display text-3xl leading-tight">{t('The document request failed.', 'दस्तावेज़ का अनुरोध विफल रहा।')}</h3><p className="mt-3 text-sm leading-relaxed text-muted-foreground">{t('A failed request does not mean the document does not exist. Try the evidence archive.', 'अनुरोध विफल होने का मतलब यह नहीं कि दस्तावेज़ मौजूद नहीं है। सबूत अभिलेखागार देखें।')}</p><Link href="/events" className="mt-6 inline-flex items-center gap-2 signal-kicker text-accent hover:underline">{t('Open the evidence archive', 'सबूत अभिलेखागार खोलें')} <ArrowUpRight size={13} /></Link></div> : source ? <><p className="signal-kicker text-accent">{source.documentType} / {source.status}</p><h3 className="mt-3 font-display text-3xl leading-tight" lang="en">{source.title}</h3><p className="mt-3 text-sm text-muted-foreground"><span lang="en">{source.publisher}</span> · {t('Published', 'प्रकाशित')} {formatDate(source.publicationDate)}</p>{source.sourceUrl ? <a href={source.sourceUrl} target="_blank" rel="noopener noreferrer" className="mt-6 inline-flex items-center gap-2 signal-kicker text-accent hover:underline">{t('View source', 'स्रोत देखें')} <ExternalLink size={13} /></a> : <p className="mt-6 signal-kicker text-muted-foreground">{t('No direct source link', 'सीधा स्रोत लिंक नहीं')}</p>}</> : <><p className="signal-kicker text-accent">{t('No public document yet', 'अभी कोई सार्वजनिक दस्तावेज़ नहीं')}</p><h3 className="mt-3 font-display text-3xl leading-tight">{t('This panel shows a document only when one exists in the archive.', 'यह पैनल तभी दस्तावेज़ दिखाता है जब वह अभिलेखागार में मौजूद हो।')}</h3><p className="mt-3 text-sm leading-relaxed text-muted-foreground">{t('We do not simulate scans or mock up documents.', 'हम नक़ली स्कैन या दस्तावेज़ नहीं बनाते।')}</p></>}</div>
       </article>
     </div>
   </section>;
@@ -774,68 +703,89 @@ function Home() {
   const archiveParams = useMemo(() => ({ limit: 100 }), []);
   const archiveQuery = useGetArchive(archiveParams, { query: { queryKey: getGetArchiveQueryKey(archiveParams) } });
   const decisionImpactQuery = useGetDecisionImpacts({ limit: 100 }, { query: { queryKey: getGetDecisionImpactsQueryKey({ limit: 100 }) } });
-  useSeo({ title: 'The Signal 24 — India, on the record', description: 'A source-first Indian newsroom for reservation policy, courts, public institutions, education and regional impact.', canonicalPath: '/', structuredData: siteGraph(webPageNode('/', { name: 'The Signal 24 — India, on the record', description: 'A source-first Indian newsroom for reservation policy, courts, public institutions, education and regional impact.', about: organizationRef, publisher: organizationRef, breadcrumb: undefined })) });
+  const t = useT();
+  const label = useLabel();
+  const localize = useLocalizeStories();
+  const homeTitle = t('The Signal 24 — Power, on the record', 'द सिग्नल 24 — सत्ता, दस्तावेज़ों के आईने में');
+  const homeDescription = t('A public-interest newsroom holding India’s governments, courts and agencies to their own records on reservation and representation. In English and Hindi.', 'आरक्षण और प्रतिनिधित्व पर भारत की सरकारों, अदालतों और एजेंसियों को उनके अपने दस्तावेज़ों पर परखने वाला जनहित न्यूज़रूम। हिंदी और अंग्रेज़ी में।');
+  useSeo({ title: homeTitle, description: homeDescription, canonicalPath: '/', structuredData: siteGraph(webPageNode('/', { name: homeTitle, description: homeDescription, about: organizationRef, publisher: organizationRef, breadcrumb: undefined })) });
   const stories = useMemo(
-    () => [...(archiveQuery.data?.stories ?? issueQuery.data?.stories ?? [])]
+    () => localize([...(archiveQuery.data?.stories ?? issueQuery.data?.stories ?? [])]
       .filter((story) => story.workflowStatus === 'published')
-      .sort((a, b) => (b.publishedOn ?? b.recordDate ?? '').localeCompare(a.publishedOn ?? a.recordDate ?? '')),
-    [archiveQuery.data, issueQuery.data],
+      .sort((a, b) => (b.publishedOn ?? b.recordDate ?? '').localeCompare(a.publishedOn ?? a.recordDate ?? ''))),
+    [archiveQuery.data, issueQuery.data, localize],
   );
-  if (issueQuery.isLoading || archiveQuery.isLoading) return <div className="signal-page"><Header /><LoadingBlock label="Assembling the India desk…" /></div>;
-  if (issueQuery.isError && archiveQuery.isError) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message="The current edition and archive could not be assembled." onRetry={() => { void issueQuery.refetch(); void archiveQuery.refetch(); }} /></div></div>;
-  const sourcedStories = stories.filter((story) => story.verificationStatus !== 'unverified' && Boolean(story.sourceUrl));
+  if (issueQuery.isLoading || archiveQuery.isLoading) return <div className="signal-page"><Header /><LoadingBlock label={t('Assembling the front page…', 'पहला पन्ना तैयार हो रहा है…')} /></div>;
+  if (issueQuery.isError && archiveQuery.isError) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message={t('The front page and archive could not be assembled.', 'पहला पन्ना और अभिलेखागार तैयार नहीं हो सके।')} onRetry={() => { void issueQuery.refetch(); void archiveQuery.refetch(); }} /></div></div>;
+  const reporting = stories.filter((story) => story.kind !== 'Opinion');
+  const opinions = stories.filter((story) => story.kind === 'Opinion');
+  const sourcedStories = reporting.filter((story) => story.verificationStatus !== 'unverified' && Boolean(story.sourceUrl));
   const featured = sourcedStories[0];
-  const visualStories = stories.filter((story) => story.id !== featured?.id).slice(0, 3);
-  const latestStories = stories.slice(0, 6);
+  const visualStories = reporting.filter((story) => story.id !== featured?.id).slice(0, 3);
+  const latestStories = reporting.slice(0, 6);
   const latestTickerStories = stories.slice(0, 3);
-  const investigation = sourcedStories.find((story) => story.kind === 'Article' || story.kind === 'Explainer');
+  const investigation = sourcedStories.find((story) => story.id !== featured?.id && (story.kind === 'Article' || story.kind === 'Explainer'));
   const featuredImage = featured ? imageForStory(featured) : null;
   const measuredRecords = (decisionImpactQuery.data?.records ?? []).filter(isMeasuredDecisionImpact);
   return <main className="signal-page"><Header />
-    <div className="signal-container mt-6 border-y border-foreground/20 py-3" aria-label="Latest published records"><div className="flex flex-wrap items-center gap-x-5 gap-y-2"><span className="signal-kicker text-accent">Latest / published records</span>{latestTickerStories.map((story) => <Link key={story.id} href={storyPath(story)} className="signal-kicker signal-link">{story.title}</Link>)}{stories.length === 0 && <span className="signal-kicker text-muted-foreground">No published records in the current archive</span>}</div>{latestTickerStories.length > 0 && <p className="mt-2 text-xs text-muted-foreground" data-testid="latest-record-status-summary">Status / {verificationSummary(latestTickerStories)}</p>}</div>
-    {featured ? <section className="signal-container visual-hero mt-7" data-testid={`card-home-hero-${featured.id}`}>{featuredImage ? <img src={featuredImage.src} alt={featuredImage.alt} width={featuredImage.width} height={featuredImage.height} fetchPriority="high" decoding="async" className="absolute inset-0 h-full w-full object-cover" /> : <div className="story-art-placeholder absolute inset-0 flex items-center justify-center"><p className="signal-kicker text-accent">No relevant archive image available</p></div>}<div className="visual-hero-copy flex min-h-[440px] flex-col justify-end p-6 sm:min-h-[560px] sm:max-w-[72%] sm:p-12 lg:min-h-[680px] lg:max-w-[62%] lg:p-16"><p className="signal-kicker text-accent">{featured.topic} / {featured.kind}</p><Link href={storyPath(featured)} className="group mt-4 block"><h1 className="max-w-4xl font-display text-5xl leading-[.91] tracking-[-.055em] group-hover:text-accent sm:text-7xl lg:text-[6.8rem]" data-testid="heading-hero">{featured.title}</h1></Link><p className="mt-5 max-w-xl text-base leading-relaxed text-primary-foreground/75 sm:text-lg">{featured.dek}</p><div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 signal-kicker text-primary-foreground/70"><span>{formatDate(featured.publishedOn ?? featured.recordDate)}</span><span>{featured.read} min read</span><span>{verificationLabel(featured.verificationStatus)}</span></div><Link href={storyPath(featured)} className="mt-7 inline-flex w-fit items-center gap-2 signal-button bg-accent text-accent-foreground" data-testid="link-read-briefing">View investigation <ArrowUpRight size={14} /></Link></div>{featuredImage && <p className="hero-credit">{featuredImage.credit} · contextual, not evidence for this record</p>}</section> : <section className="signal-container mt-7 border-y-2 border-foreground py-0"><div className="grid min-h-[480px] items-stretch lg:grid-cols-[1fr_.72fr]"><div className="order-last flex flex-col justify-center py-16 lg:order-first lg:pr-12"><p className="signal-kicker text-accent">Front page / no source-linked lead</p><h1 className="mt-4 max-w-3xl font-display text-5xl leading-[.92] sm:text-7xl">The archive is waiting for its next sourced investigation.</h1><p className="mt-5 max-w-xl text-sm leading-relaxed text-muted-foreground">No published, source-linked record is available for the hero yet. The absence is part of the record.</p><Link href="/archive" className="mt-7 inline-flex w-fit items-center gap-2 signal-button">Browse the archive <ArrowUpRight size={14} /></Link></div><figure className="order-first relative m-0 min-h-[280px] overflow-hidden border-l border-foreground/15 lg:order-last"><img src={`${basePath}/images/supreme-court.jpg`} alt="Supreme Court of India building, contextual archive visual" width="1280" height="797" className="h-full w-full object-cover grayscale-[.2]" /><figcaption className="absolute inset-x-0 bottom-0 bg-primary/85 px-3 py-3 signal-kicker text-primary-foreground/75">Contextual archive visual / Wikimedia Commons · not evidence for a specific record</figcaption></figure></div></section>}
+    <div className="signal-container mt-6 border-y border-foreground/20 py-3" aria-label={t('Latest published records', 'ताज़ा प्रकाशित रिकॉर्ड')}><div className="flex flex-wrap items-center gap-x-5 gap-y-2"><span className="signal-kicker text-accent">{t('Latest', 'ताज़ा')}</span>{latestTickerStories.map((story) => <Link key={story.id} href={storyPath(story)} className="signal-kicker signal-link" lang={story.contentLang}>{story.title}</Link>)}{stories.length === 0 && <span className="signal-kicker text-muted-foreground">{t('No published records yet', 'अभी कोई प्रकाशित रिकॉर्ड नहीं')}</span>}</div>{latestTickerStories.length > 0 && <p className="mt-2 text-xs text-muted-foreground" data-testid="latest-record-status-summary">{t('Status', 'स्थिति')} / {verificationSummary(latestTickerStories)}</p>}</div>
+    {featured ? <section className="signal-container visual-hero mt-7" data-testid={`card-home-hero-${featured.id}`}>{featuredImage ? <img src={featuredImage.src} alt={featuredImage.alt} width={featuredImage.width} height={featuredImage.height} fetchPriority="high" decoding="async" className="absolute inset-0 h-full w-full object-cover" /> : <div className="story-art-placeholder absolute inset-0" />}<div className="visual-hero-copy flex min-h-[440px] flex-col justify-end p-6 sm:min-h-[560px] sm:max-w-[72%] sm:p-12 lg:min-h-[680px] lg:max-w-[62%] lg:p-16"><p className="signal-kicker text-accent">{label(featured.topic)} / {label(featured.kind)}</p><Link href={storyPath(featured)} className="group mt-4 block"><h1 lang={featured.contentLang} className="max-w-4xl font-display text-5xl leading-[.91] tracking-[-.055em] group-hover:text-accent sm:text-7xl lg:text-[6.8rem]" data-testid="heading-hero">{featured.title}</h1></Link><p lang={featured.contentLang} className="mt-5 max-w-xl text-base leading-relaxed text-primary-foreground/75 sm:text-lg">{featured.dek}</p><div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 signal-kicker text-primary-foreground/70"><span>{formatDate(featured.publishedOn ?? featured.recordDate)}</span><span>{t(`${featured.read} min read`, `${featured.read} मिनट`)}</span><span>{verificationLabel(featured.verificationStatus)}</span></div><Link href={storyPath(featured)} className="mt-7 inline-flex w-fit items-center gap-2 signal-button bg-accent text-accent-foreground" data-testid="link-read-briefing">{t('Read the record', 'पूरा रिकॉर्ड पढ़ें')} <ArrowUpRight size={14} /></Link></div>{featuredImage && <p className="hero-credit">{featuredImage.credit} · {t('contextual, not evidence for this record', 'संदर्भ के लिए, इस रिकॉर्ड का सबूत नहीं')}</p>}</section> : <section className="signal-container mt-7 border-y-2 border-foreground py-0"><div className="grid min-h-[480px] items-stretch lg:grid-cols-[1fr_.72fr]"><div className="order-last flex flex-col justify-center py-16 lg:order-first lg:pr-12"><p className="signal-kicker text-accent">{t('For the people, by the people', 'जनता के लिए, जनता की ओर से')}</p><h1 className="mt-4 max-w-3xl font-display text-5xl leading-[.92] sm:text-7xl">{t('Power answers to the record.', 'सत्ता को दस्तावेज़ का जवाब देना होगा।')}</h1><p className="mt-5 max-w-xl text-base leading-relaxed text-muted-foreground">{t('We track what India’s governments, courts and commissions promise on reservation and representation, and what they actually file, publish and withhold. Every claim is linked to its source.', 'आरक्षण और प्रतिनिधित्व पर भारत की सरकारें, अदालतें और आयोग क्या वादा करते हैं, और असल में क्या दर्ज करते हैं, क्या छापते हैं और क्या छिपाते हैं, हम इसका हिसाब रखते हैं। हर दावा अपने स्रोत से जुड़ा है।')}</p><div className="mt-7 flex flex-wrap gap-3"><a href="#accountability" className="inline-flex w-fit items-center gap-2 signal-button bg-accent text-accent-foreground">{t('See the unanswered questions', 'अनुत्तरित सवाल देखें')} <ArrowDownRight size={14} /></a><Link href="/archive" className="inline-flex w-fit items-center gap-2 signal-button">{t('Browse the archive', 'अभिलेखागार देखें')} <ArrowUpRight size={14} /></Link></div></div><figure className="order-first relative m-0 min-h-[280px] overflow-hidden border-l border-foreground/15 lg:order-last"><img src={`${basePath}/images/supreme-court.jpg`} alt={t('Supreme Court of India building', 'भारत के सुप्रीम कोर्ट की इमारत')} width="1280" height="797" fetchPriority="high" className="h-full w-full object-cover grayscale-[.2]" /><figcaption className="absolute inset-x-0 bottom-0 bg-primary/85 px-3 py-3 signal-kicker text-primary-foreground/75">{t('Contextual visual / Wikimedia Commons', 'संदर्भ चित्र / विकिमीडिया कॉमन्स')}</figcaption></figure></div></section>}
+    <AccountabilityWatch />
+    <PolicyLedger />
     {visualStories.length > 0 && <section className="signal-container mt-16 sm:mt-24" id="visual-signals">
-      <div className="flex items-end justify-between gap-4 border-b-2 border-foreground pb-4"><div><p className="signal-kicker text-accent">01 / Visual signals</p><h2 className="mt-2 font-display text-4xl sm:text-5xl">India, in the record.</h2></div><Link href="/archive" className="signal-kicker text-accent hover:underline">All stories <ArrowUpRight size={13} className="ml-1 inline" /></Link></div>
+      <div className="flex items-end justify-between gap-4 border-b-2 border-foreground pb-4"><div><p className="signal-kicker text-accent">{t('On the record', 'रिकॉर्ड पर')}</p><h2 className="mt-2 font-display text-4xl sm:text-5xl">{t('What the documents show.', 'दस्तावेज़ क्या दिखाते हैं।')}</h2></div><Link href="/archive" className="signal-kicker text-accent hover:underline">{t('All records', 'सभी रिकॉर्ड')} <ArrowUpRight size={13} className="ml-1 inline" /></Link></div>
       <div className="mt-5 grid gap-5 md:grid-cols-3">{visualStories.map((story) => <article key={story.id} className="visual-signal-card group" data-testid={`card-visual-signal-${story.id}`}>
         <Link href={storyPath(story)} className="visual-signal-image block"><StoryArt story={story} className="h-full" /></Link>
         <div className="flex flex-1 flex-col p-5">
-          <p className="signal-kicker text-accent">{story.topic} / {story.kind}</p>
-          <Link href={storyPath(story)} className="mt-3 block"><h3 className="font-display text-3xl leading-tight group-hover:text-accent">{story.title}</h3></Link>
-          <div className="mt-2"><span className={`signal-status-badge ${story.verificationStatus === 'verified' ? 'is-verified' : story.verificationStatus === 'source-linked' ? 'is-source-linked' : 'is-unverified'}`}>{verificationLabel(story.verificationStatus)}</span></div>
-          <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-muted-foreground">{story.dek}</p>
-          <p className="mt-auto pt-6 signal-kicker text-muted-foreground">{story.publishedOn ? 'Published' : 'Record date'} / {formatDate(story.publishedOn ?? story.recordDate)} · {story.sourceCount ?? 0} sources · {story.eventCount ?? 0} events</p>
-          <p className="mt-2 signal-kicker text-muted-foreground">{story.sourceUrl ? 'Direct source available' : 'Direct source unavailable'}</p>
+          <p className="signal-kicker text-accent">{label(story.topic)} / {label(story.kind)}</p>
+          <Link href={storyPath(story)} className="mt-3 block"><h3 lang={story.contentLang} className="font-display text-3xl leading-tight group-hover:text-accent">{story.title}</h3></Link>
+          <div className="mt-2"><StatusBadge status={story.verificationStatus} /></div>
+          <p lang={story.contentLang} className="mt-3 line-clamp-3 text-sm leading-relaxed text-muted-foreground">{story.dek}</p>
+          <p className="mt-auto pt-6 signal-kicker text-muted-foreground">{story.publishedOn ? t('Published', 'प्रकाशित') : t('Record date', 'रिकॉर्ड तिथि')} / {formatDate(story.publishedOn ?? story.recordDate)} · {t(`${story.sourceCount ?? 0} sources`, `${story.sourceCount ?? 0} स्रोत`)}</p>
         </div>
       </article>)}</div>
     </section>}
-    <section className="signal-container mt-20 sm:mt-28" id="latest-stories"><div className="flex items-end justify-between gap-4 border-b-2 border-foreground pb-4"><div><p className="signal-kicker text-accent">02 / Latest stories</p><h2 className="mt-2 font-display text-4xl sm:text-5xl">Follow the thread.</h2></div><Link href="/timeline" className="signal-kicker text-accent hover:underline">Open timeline <ArrowUpRight size={13} className="ml-1 inline" /></Link></div><div className="mt-2">{latestStories.length ? latestStories.map((story) => <StoryCard key={story.id} story={story} compact />) : <EmptyState title="No latest stories yet." text="Published records will appear here with their source and verification status." />}</div></section>
-    {investigation && <section className="signal-container mt-20 sm:mt-28" id="featured-investigation"><div className="grid overflow-hidden bg-primary text-primary-foreground lg:grid-cols-[1.08fr_.92fr]"><div className="min-h-[300px]"><StoryArt story={investigation} className="h-full min-h-[300px]" /></div><div className="flex flex-col justify-center p-7 sm:p-12"><p className="signal-kicker text-accent">03 / Featured investigation</p><div className="mt-3 flex flex-wrap gap-2"><span className="signal-status-badge">{verificationLabel(investigation.verificationStatus)}</span><span className="signal-kicker text-primary-foreground/70">{investigation.sourceUrl ? 'Direct source available' : 'Direct source unavailable'}</span></div><h2 className="mt-4 font-display text-4xl leading-[.94] sm:text-6xl">{investigation.title}</h2><p className="mt-5 text-sm leading-relaxed text-primary-foreground/70">{investigation.dek}</p><p className="mt-5 signal-kicker text-primary-foreground/65">{investigation.sourceCount ?? 0} sources · {investigation.eventCount ?? 0} events</p><Link href={storyPath(investigation)} className="mt-7 inline-flex w-fit items-center gap-2 signal-kicker text-accent hover:underline">Explore investigation <ArrowUpRight size={13} /></Link></div></div></section>}
+    <section className="signal-container mt-20 sm:mt-28" id="latest-stories"><div className="flex items-end justify-between gap-4 border-b-2 border-foreground pb-4"><div><p className="signal-kicker text-accent">{t('Latest reporting', 'ताज़ा रिपोर्टिंग')}</p><h2 className="mt-2 font-display text-4xl sm:text-5xl">{t('Follow the paper trail.', 'काग़ज़ों का सिरा पकड़िए।')}</h2></div><Link href="/timeline" className="signal-kicker text-accent hover:underline">{t('Open the timeline', 'समयरेखा खोलें')} <ArrowUpRight size={13} className="ml-1 inline" /></Link></div><div className="mt-2">{latestStories.length ? latestStories.map((story) => <StoryCard key={story.id} story={story} compact />) : <EmptyState title={t('No published reporting yet.', 'अभी कोई प्रकाशित रिपोर्टिंग नहीं।')} text={t('Published records appear here with their source and verification status.', 'प्रकाशित रिकॉर्ड यहाँ अपने स्रोत और सत्यापन स्थिति के साथ दिखेंगे।')} />}</div></section>
+    {opinions.length > 0 && <section className="signal-container mt-20 sm:mt-28" id="opinion"><div className="grid gap-8 bg-primary p-7 text-primary-foreground sm:p-12 lg:grid-cols-[.7fr_1.3fr]"><div><span className="opinion-label bg-accent text-accent-foreground">{label('Opinion')}</span><h2 className="mt-4 font-display text-4xl leading-[.95] sm:text-5xl">{t('Where we take a position.', 'जहाँ हम पक्ष लेते हैं।')}</h2><p className="mt-4 text-sm leading-relaxed text-primary-foreground/70">{t('Signed, labelled and kept separate from the reporting.', 'नाम के साथ, साफ़ लेबल के साथ, और रिपोर्टिंग से अलग।')}</p><Link href="/opinion" className="mt-6 inline-flex items-center gap-2 signal-kicker text-accent hover:underline">{t('All opinion', 'सारी राय')} <ArrowUpRight size={13} /></Link></div><div className="divide-y divide-primary-foreground/20">{opinions.slice(0, 3).map((story) => <Link key={story.id} href={storyPath(story)} className="group block py-5 first:pt-0"><p className="signal-kicker text-primary-foreground/60">{label(story.byline) || t('Editorial board', 'संपादकीय बोर्ड')} · {formatDate(story.publishedOn)}</p><h3 lang={story.contentLang} className="mt-2 font-display text-3xl leading-tight group-hover:text-accent">{story.title}</h3><p lang={story.contentLang} className="mt-2 text-sm leading-relaxed text-primary-foreground/70">{story.dek}</p></Link>)}</div></div></section>}
+    {investigation && <section className="signal-container mt-20 sm:mt-28" id="featured-investigation"><div className="grid overflow-hidden bg-primary text-primary-foreground lg:grid-cols-[1.08fr_.92fr]"><div className="min-h-[300px]"><StoryArt story={investigation} className="h-full min-h-[300px]" /></div><div className="flex flex-col justify-center p-7 sm:p-12"><p className="signal-kicker text-accent">{t('In depth', 'विस्तार से')}</p><div className="mt-3 flex flex-wrap gap-2"><span className="signal-status-badge">{verificationLabel(investigation.verificationStatus)}</span></div><h2 lang={investigation.contentLang} className="mt-4 font-display text-4xl leading-[.94] sm:text-6xl">{investigation.title}</h2><p lang={investigation.contentLang} className="mt-5 text-sm leading-relaxed text-primary-foreground/70">{investigation.dek}</p><p className="mt-5 signal-kicker text-primary-foreground/65">{t(`${investigation.sourceCount ?? 0} sources · ${investigation.eventCount ?? 0} events`, `${investigation.sourceCount ?? 0} स्रोत · ${investigation.eventCount ?? 0} घटनाएँ`)}</p><Link href={storyPath(investigation)} className="mt-7 inline-flex w-fit items-center gap-2 signal-kicker text-accent hover:underline">{t('Read the full record', 'पूरा रिकॉर्ड पढ़ें')} <ArrowUpRight size={13} /></Link></div></div></section>}
     <IndiaFocus stories={stories} />
     <DocumentFeature />
-    <section className="signal-container mt-20 sm:mt-28" id="the-numbers"><div className="border-y-2 border-foreground py-8"><p className="signal-kicker text-accent">08 / The numbers</p><div className="mt-4 grid gap-8 lg:grid-cols-[.7fr_1.3fr]"><h2 className="font-display text-5xl leading-[.9] sm:text-7xl">No number<br /><em className="font-normal text-accent">without its frame.</em></h2>{measuredRecords.length ? <div className="grid gap-4 sm:grid-cols-2">{measuredRecords.slice(0, 4).map((record) => <article key={record.id} className="border-t border-foreground/20 pt-4"><p className="signal-kicker text-accent">{record.geography} · {record.decisionArea}</p><p className="mt-3 font-display text-4xl">{record.findingValue} <span className="text-base">{record.findingUnit}</span></p><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{record.definition}</p><p className="mt-3 signal-kicker text-muted-foreground">Source: {record.source}</p></article>)}</div> : <div className="border border-dashed border-foreground/25 p-6"><p className="font-display text-3xl">There is no measured movement signal to show yet.</p><p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">Only published verified records with a value, unit, definition, geography, date and source can appear here. No substitute estimate is shown.</p></div>}</div></div></section>
+    <section className="signal-container mt-20 sm:mt-28" id="the-numbers"><div className="border-y-2 border-foreground py-8"><p className="signal-kicker text-accent">{t('The numbers', 'आंकड़े')}</p><div className="mt-4 grid gap-8 lg:grid-cols-[.7fr_1.3fr]"><h2 className="font-display text-5xl leading-[.9] sm:text-7xl">{t(<>No number<br /><em className="font-normal text-accent">without its frame.</em></>, <>कोई आंकड़ा<br /><em className="font-normal text-accent">संदर्भ के बिना नहीं।</em></>)}</h2>{measuredRecords.length ? <div className="grid gap-4 sm:grid-cols-2">{measuredRecords.slice(0, 4).map((record) => <article key={record.id} className="border-t border-foreground/20 pt-4"><p className="signal-kicker text-accent">{record.geography} · {record.decisionArea}</p><p className="mt-3 font-display text-4xl">{record.findingValue} <span className="text-base">{record.findingUnit}</span></p><p className="mt-2 text-sm leading-relaxed text-muted-foreground" lang="en">{record.definition}</p><p className="mt-3 signal-kicker text-muted-foreground">{t('Source', 'स्रोत')}: {record.source}</p></article>)}</div> : <div className="border border-dashed border-foreground/25 p-6"><p className="font-display text-3xl">{t('No verified number to show yet.', 'अभी दिखाने लायक कोई सत्यापित आंकड़ा नहीं।')}</p><p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">{t('A number appears here only with its value, unit, definition, geography, date and source. Until then, the absence is the story: much of the data that would settle these debates has never been published.', 'यहाँ कोई आंकड़ा तभी दिखेगा जब उसके साथ मान, इकाई, परिभाषा, भूगोल, तारीख़ और स्रोत हो। तब तक यह ख़ाली जगह ही ख़बर है: इन बहसों को सुलझा सकने वाले ज़्यादातर आंकड़े कभी प्रकाशित ही नहीं हुए।')}</p></div>}</div></div></section>
     <section className="signal-container mt-20 sm:mt-28" id="timeline-preview">
-      <div className="flex items-end justify-between gap-4 border-b-2 border-foreground pb-4"><div><p className="signal-kicker text-accent">09 / Visual timeline</p><h2 className="mt-2 font-display text-4xl sm:text-5xl">Dates, with context.</h2></div><Link href="/timeline" className="signal-kicker text-accent hover:underline">View full timeline <ArrowUpRight size={13} className="ml-1 inline" /></Link></div>
+      <div className="flex items-end justify-between gap-4 border-b-2 border-foreground pb-4"><div><p className="signal-kicker text-accent">{t('Timeline', 'समयरेखा')}</p><h2 className="mt-2 font-display text-4xl sm:text-5xl">{t('Dates, with context.', 'तारीख़ें, संदर्भ के साथ।')}</h2></div><Link href="/timeline" className="signal-kicker text-accent hover:underline">{t('Full timeline', 'पूरी समयरेखा')} <ArrowUpRight size={13} className="ml-1 inline" /></Link></div>
       {stories.length ? <div className="mt-2">{stories.slice(0, 3).map((story) => <Link key={story.id} href={storyPath(story)} className="timeline-visual-entry group">
-        <time className="signal-kicker text-muted-foreground" dateTime={story.recordDate ?? story.publishedOn ?? undefined}>{story.publishedOn ? 'Published' : 'Record date'} / {formatDate(story.recordDate ?? story.publishedOn)}</time>
+        <time className="signal-kicker text-muted-foreground" dateTime={story.recordDate ?? story.publishedOn ?? undefined}>{formatDate(story.recordDate ?? story.publishedOn)}</time>
         <span className="timeline-dot hidden md:block" />
         <div className="timeline-visual-thumb"><StoryArt story={story} className="h-full" /></div>
         <div>
-          <p className="signal-kicker text-accent">{story.topic} / {story.kind}</p>
-          <h3 className="mt-2 font-display text-3xl leading-tight group-hover:text-accent">{story.title}</h3>
-          <div className="mt-2"><span className={`signal-status-badge ${story.verificationStatus === 'verified' ? 'is-verified' : story.verificationStatus === 'source-linked' ? 'is-source-linked' : 'is-unverified'}`}>{verificationLabel(story.verificationStatus)}</span></div>
-          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{story.dek}</p>
-          <p className="mt-3 signal-kicker text-muted-foreground">{story.sourceCount ?? 0} sources · {story.eventCount ?? 0} events · {story.sourceUrl ? 'Direct source available' : 'Direct source unavailable'}</p>
+          <p className="signal-kicker text-accent">{label(story.topic)} / {label(story.kind)}</p>
+          <h3 lang={story.contentLang} className="mt-2 font-display text-3xl leading-tight group-hover:text-accent">{story.title}</h3>
+          <div className="mt-2"><StatusBadge status={story.verificationStatus} /></div>
+          <p lang={story.contentLang} className="mt-2 text-sm leading-relaxed text-muted-foreground">{story.dek}</p>
         </div>
-      </Link>)}</div> : <div className="mt-2"><EmptyState title="No dated published records yet." text="The visual timeline will appear when the published archive returns a usable record date." /></div>}
+      </Link>)}</div> : <div className="mt-2"><EmptyState title={t('No dated records yet.', 'अभी कोई तारीख़वार रिकॉर्ड नहीं।')} /></div>}
     </section>
-    <section className="signal-container mt-20 sm:mt-28" id="archive-preview"><div className="flex items-end justify-between gap-4 border-b-2 border-foreground pb-4"><div><p className="signal-kicker text-accent">10 / Latest archive</p><h2 className="mt-2 font-display text-4xl sm:text-5xl">Keep the record close.</h2></div><Link href="/archive" className="signal-kicker text-accent hover:underline">Browse archive <ArrowUpRight size={13} className="ml-1 inline" /></Link></div><div className="mt-2">{stories.slice(0, 4).map((story) => <StoryCard key={story.id} story={story} compact />)}</div></section>
-    <LiveDesk /><DecisionEvidenceSection records={decisionImpactQuery.data?.records ?? []} isLoading={decisionImpactQuery.isLoading} isError={decisionImpactQuery.isError} /><NewsletterSignup /><footer className="signal-container flex flex-col justify-between gap-8 border-t border-foreground/20 py-10 sm:flex-row sm:items-end"><div><Link href="/" className="signal-link flex items-center gap-3"><BrandMark /><span className="font-display text-xl">The Signal <span className="text-accent">24</span></span></Link><p className="mt-3 max-w-xs text-xs leading-relaxed text-muted-foreground">A source-first public-interest newsroom for understanding India through the record.</p></div><div className="flex flex-wrap gap-x-5 gap-y-2 signal-kicker text-[9px] text-muted-foreground"><Link href="/archive" className="signal-link">Archive</Link><Link href="/events" className="signal-link">Evidence</Link><Link href="/data" className="signal-link">Data</Link><Link href="/about" className="signal-link">About</Link><span>© The Signal 24</span></div></footer>
+    <section className="signal-container mt-20 sm:mt-28" id="archive-preview"><div className="flex items-end justify-between gap-4 border-b-2 border-foreground pb-4"><div><p className="signal-kicker text-accent">{t('Archive', 'अभिलेखागार')}</p><h2 className="mt-2 font-display text-4xl sm:text-5xl">{t('Keep the record close.', 'रिकॉर्ड पास रखिए।')}</h2></div><Link href="/archive" className="signal-kicker text-accent hover:underline">{t('Browse the archive', 'अभिलेखागार देखें')} <ArrowUpRight size={13} className="ml-1 inline" /></Link></div><div className="mt-2">{stories.slice(0, 4).map((story) => <StoryCard key={story.id} story={story} compact />)}</div></section>
+    <LiveDesk /><DecisionEvidenceSection records={decisionImpactQuery.data?.records ?? []} isLoading={decisionImpactQuery.isLoading} isError={decisionImpactQuery.isError} /><NewsletterSignup /><SiteFooter />
   </main>;
 }
 
+/** Archive query whose stories are already localized for the current edition. */
+function useLocalizedArchive(...args: Parameters<typeof useGetArchive>) {
+  const query = useGetArchive(...args);
+  const lang = useLang();
+  const raw = query.data as ArchiveResult | undefined;
+  const data = useMemo<(Omit<ArchiveResult, 'stories'> & { stories: LocalizedStory[] }) | undefined>(
+    () => raw ? { ...raw, stories: raw.stories.map((story) => localizeStory(story, lang)) } : undefined,
+    [raw, lang],
+  );
+  return { ...query, data };
+}
+
 function TopicIndexPage() {
+  const t = useT();
   const params = useMemo(() => ({ limit: 100 }), []);
-  const { data, isLoading, isError, refetch } = useGetArchive(params, {
+  const { data, isLoading, isError, refetch } = useLocalizedArchive(params, {
     query: { queryKey: getGetArchiveQueryKey(params) },
   });
   const topics = useMemo(() => {
@@ -846,43 +796,45 @@ function TopicIndexPage() {
     }));
   }, [data]);
   useSeo({
-    title: 'Topics — The Signal 24',
-    description: 'Browse The Signal 24 archive records by topic, with each record’s evidence status and source visible.',
+    title: t("Topics — The Signal 24", "विषय — द सिग्नल 24"),
+    description: t("Browse Signal 24 records by subject: courts, states, history, data and ground reports, each with its source and verification status.", "विषय के हिसाब से द सिग्नल 24 के रिकॉर्ड देखें: अदालतें, राज्य, इतिहास, आंकड़े और ज़मीनी रिपोर्टें, हर एक अपने स्रोत और सत्यापन स्थिति के साथ।"),
     canonicalPath: '/topics',
     structuredData: siteGraph(
-      collectionPageNode('/topics', { name: 'Topics — The Signal 24', description: 'Browse The Signal 24 archive records by topic, with each record’s evidence status and source visible.', publisher: organizationRef }, topics.map(({ topic }) => ({ url: `/topics/${encodeURIComponent(topic)}`, name: topic }))),
+      collectionPageNode('/topics', { name: t("Topics — The Signal 24", "विषय — द सिग्नल 24"), description: t("Browse Signal 24 records by subject: courts, states, history, data and ground reports, each with its source and verification status.", "विषय के हिसाब से द सिग्नल 24 के रिकॉर्ड देखें: अदालतें, राज्य, इतिहास, आंकड़े और ज़मीनी रिपोर्टें, हर एक अपने स्रोत और सत्यापन स्थिति के साथ।"), publisher: organizationRef }, topics.map(({ topic }) => ({ url: `/topics/${encodeURIComponent(topic)}`, name: topic }))),
       breadcrumbNode('/topics', [['Topics', '/topics']]),
     ),
   });
   return <main className="signal-page">
     <Header />
     <section className="signal-container pt-14 sm:pt-24">
-      <p className="signal-kicker text-accent">THE SIGNAL 24 / topics</p>
-      <h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">Follow a subject<br /><em className="font-normal text-accent">through the record.</em></h1>
-      <p className="mt-7 max-w-2xl text-lg leading-relaxed text-muted-foreground">Topic pages group published archive records. Each record keeps its own source, date and verification status; a topic label is not evidence of a connection.</p>
+      <p className="signal-kicker text-accent">{t("The Signal 24 / topics", "द सिग्नल 24 / विषय")}</p>
+      <h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">{t("Follow a subject", "किसी विषय को")}<br /><em className="font-normal text-accent">{t("through the record.", "रिकॉर्ड के ज़रिए परखिए।")}</em></h1>
+      <p className="mt-7 max-w-2xl text-lg leading-relaxed text-muted-foreground">{t("Each topic gathers published records on one subject. Every record keeps its own source, date and verification status; sharing a topic is not evidence that two records are connected.", "हर विषय एक मुद्दे के प्रकाशित रिकॉर्ड इकट्ठा करता है। हर रिकॉर्ड का अपना स्रोत, तारीख़ और सत्यापन स्थिति रहती है; एक विषय में होना इस बात का सबूत नहीं कि दो रिकॉर्ड आपस में जुड़े हैं।")}</p>
     </section>
     <section className="signal-container mt-16 border-t border-foreground/20 py-8 sm:mt-24 sm:py-12">
-      {isLoading ? <LoadingBlock label="Reading the published archive…" /> :
-        isError ? <ErrorState message="Topics could not be assembled from the archive." onRetry={() => void refetch()} /> :
-          topics.length === 0 ? <EmptyState title="No topics are published yet." text="The index will appear when published archive records are available." /> :
+      {isLoading ? <LoadingBlock label={t("Reading the published archive…", "प्रकाशित अभिलेखागार पढ़ा जा रहा है…")} /> :
+        isError ? <ErrorState message={t("Topics could not be assembled from the archive.", "अभिलेखागार से विषय तैयार नहीं हो सके।")} onRetry={() => void refetch()} /> :
+          topics.length === 0 ? <EmptyState title={t("No topics are published yet.", "अभी कोई विषय प्रकाशित नहीं हुआ।")} text={t("The index will appear when published archive records are available.", "प्रकाशित रिकॉर्ड उपलब्ध होते ही सूची दिखेगी।")} /> :
             <div className="editorial-grid">
               {topics.map(({ topic, records }) => <Link key={topic} href={`/topics/${encodeURIComponent(topic)}`} className="col-span-12 border-b border-foreground/20 py-7 sm:col-span-6 lg:col-span-4" data-testid={`link-topic-${slugify(topic)}`}>
                 <p className="signal-kicker text-accent">{records.length} {records.length === 1 ? 'record' : 'records'}</p>
                 <h2 className="mt-3 font-display text-3xl leading-tight">{topic}</h2>
                 <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{records[0]?.dek ?? 'No description supplied.'}</p>
-                <span className="mt-5 inline-flex items-center gap-2 signal-kicker text-accent">Open topic <ArrowUpRight size={13} /></span>
+                <span className="mt-5 inline-flex items-center gap-2 signal-kicker text-accent">{t("Open topic", "विषय खोलें")} <ArrowUpRight size={13} /></span>
               </Link>)}
             </div>}
     </section>
-    <footer className="signal-container border-t border-foreground/20 py-8"><Link href="/archive" className="signal-kicker signal-link">Browse all records</Link></footer>
+    <footer className="signal-container border-t border-foreground/20 py-8"><Link href="/archive" className="signal-kicker signal-link">{t("Browse all records", "सभी रिकॉर्ड देखें")}</Link></footer>
   </main>;
 }
 
 function TopicPage() {
+  const t = useT();
+  const label = useLabel();
   const params = useParams<{ slug?: string }>();
   const topic = decodeURIComponent(params.slug ?? '') as Topic;
   const archiveParams = useMemo(() => ({ limit: 100 }), []);
-  const { data, isLoading, isError, refetch } = useGetArchive(archiveParams, { query: { queryKey: getGetArchiveQueryKey(archiveParams) } });
+  const { data, isLoading, isError, refetch } = useLocalizedArchive(archiveParams, { query: { queryKey: getGetArchiveQueryKey(archiveParams) } });
   const records = useMemo(() => (data?.stories ?? []).filter((story) => story.topic === topic), [data, topic]);
   const sourceDocuments = useMemo(() => {
     const byUrl = new Map<string, Story>();
@@ -901,38 +853,38 @@ function TopicPage() {
       breadcrumbNode(`/topics/${encodeURIComponent(topic)}`, [['Topics', '/topics'], [topic, `/topics/${encodeURIComponent(topic)}`]]),
     ) : undefined,
   });
-  if (!topic) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message="That topic address is not valid." /></div></div>;
+  if (!topic) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message={t("That topic address is not valid.", "यह विषय पता मान्य नहीं है।")} /></div></div>;
   return <main className="signal-page">
     <Header />
     <section className="signal-container pt-14 sm:pt-24">
-      <Link href="/topics" className="signal-kicker signal-link inline-flex items-center gap-2 text-muted-foreground"><ArrowLeft size={13} /> All topics</Link>
-      <p className="mt-12 signal-kicker text-accent">THE SIGNAL 24 / topic investigation</p>
-      <h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">{topic}</h1>
-      <p className="mt-7 max-w-2xl text-lg leading-relaxed text-muted-foreground">A topic view assembled from the published archive. Dates, direct sources and missing relationships remain explicit.</p>
+      <Link href="/topics" className="signal-kicker signal-link inline-flex items-center gap-2 text-muted-foreground"><ArrowLeft size={13} /> {t("All topics", "सभी विषय")}</Link>
+      <p className="mt-12 signal-kicker text-accent">{t("The Signal 24 / topic file", "द सिग्नल 24 / विषय फ़ाइल")}</p>
+      <h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">{label(topic)}</h1>
+      <p className="mt-7 max-w-2xl text-lg leading-relaxed text-muted-foreground">{t("Every published record on this subject, with dates, direct sources and the gaps in the record left visible.", "इस विषय के सभी प्रकाशित रिकॉर्ड, तारीख़ों और सीधे स्रोतों के साथ, और रिकॉर्ड की कमियाँ भी साफ़ दिखती हुई।")}</p>
     </section>
-    {isLoading ? <LoadingBlock label="Assembling the topic record…" /> :
-      isError ? <div className="signal-container py-16"><ErrorState message="This topic could not be assembled from the archive." onRetry={() => void refetch()} /></div> :
+    {isLoading ? <LoadingBlock label={t("Assembling the topic record…", "विषय का रिकॉर्ड तैयार हो रहा है…")} /> :
+      isError ? <div className="signal-container py-16"><ErrorState message={t("This topic could not be assembled from the archive.", "अभिलेखागार से यह विषय तैयार नहीं हो सका।")} onRetry={() => void refetch()} /></div> :
         <>
           <section className="signal-container mt-16 border-y border-foreground/20 py-8 sm:mt-24 sm:py-12">
             <div className="editorial-grid gap-y-8">
               <div className="col-span-12 lg:col-span-3">
-                <p className="signal-kicker text-accent">Key facts / archive count</p>
+                <p className="signal-kicker text-accent">{t("Key facts / archive count", "मुख्य तथ्य / रिकॉर्ड संख्या")}</p>
                 <p className="mt-4 font-display text-5xl">{records.length}</p>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{records.length === 1 ? 'published archive record' : 'published archive records'} under this topic.</p>
               </div>
               <div className="col-span-12 lg:col-span-9">
-                <p className="signal-kicker text-accent">Relationship map / archive data only</p>
+                <p className="signal-kicker text-accent">{t("Relationship map / archive data only", "संबंधों का नक्शा / केवल अभिलेखागार के आंकड़े")}</p>
                 <div className="mt-5 grid gap-4 sm:grid-cols-4">
-                  <div className="border-t-2 border-primary pt-3"><p className="signal-kicker text-muted-foreground">Topic</p><p className="mt-2 font-display text-xl">{topic}</p></div>
-                  <div className="border-t-2 border-foreground/25 pt-3"><p className="signal-kicker text-muted-foreground">Events</p><p className="mt-2 text-sm leading-relaxed">Not separately catalogued</p></div>
-                  <div className="border-t-2 border-foreground/25 pt-3"><p className="signal-kicker text-muted-foreground">Direct source documents</p><p className="mt-2 font-display text-xl">{sourceDocuments.length}</p></div>
-                  <div className="border-t-2 border-accent pt-3"><p className="signal-kicker text-muted-foreground">Archive records</p><p className="mt-2 font-display text-xl">{records.length}</p></div>
+                  <div className="border-t-2 border-primary pt-3"><p className="signal-kicker text-muted-foreground">{t("Topic", "विषय")}</p><p className="mt-2 font-display text-xl">{topic}</p></div>
+                  <div className="border-t-2 border-foreground/25 pt-3"><p className="signal-kicker text-muted-foreground">{t("Events", "घटनाएँ")}</p><p className="mt-2 text-sm leading-relaxed">{t("Not separately catalogued", "अलग से सूचीबद्ध नहीं")}</p></div>
+                  <div className="border-t-2 border-foreground/25 pt-3"><p className="signal-kicker text-muted-foreground">{t("Direct source documents", "सीधे स्रोत दस्तावेज़")}</p><p className="mt-2 font-display text-xl">{sourceDocuments.length}</p></div>
+                  <div className="border-t-2 border-accent pt-3"><p className="signal-kicker text-muted-foreground">{t("Archive records", "अभिलेखागार के रिकॉर्ड")}</p><p className="mt-2 font-display text-xl">{records.length}</p></div>
                 </div>
-                <p className="mt-5 text-xs leading-relaxed text-muted-foreground">The archive does not yet store event-to-document links as structured records. This map shows only topic membership and direct source links; it does not infer event relationships.</p>
+                <p className="mt-5 text-xs leading-relaxed text-muted-foreground">{t("This map shows only topic membership and direct source links. It does not invent connections between events that the record does not establish.", "यह नक्शा सिर्फ़ विषय और सीधे स्रोत लिंक दिखाता है। जो संबंध रिकॉर्ड से साबित नहीं होते, यह उन्हें गढ़ता नहीं।")}</p>
                 {sourceDocuments.length > 0 && <ul className="mt-5 divide-y divide-foreground/15 border-y border-foreground/15">
                   {sourceDocuments.map((story) => <li key={story.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
                     <span className="text-sm">{story.source || 'Direct source document'}</span>
-                    <a href={story.sourceUrl!} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 signal-kicker text-accent hover:underline">Open source <ExternalLink size={12} /></a>
+                    <a href={story.sourceUrl!} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 signal-kicker text-accent hover:underline">{t("Open source", "स्रोत खोलें")} <ExternalLink size={12} /></a>
                   </li>)}
                 </ul>}
               </div>
@@ -940,29 +892,31 @@ function TopicPage() {
           </section>
           <section className="signal-container py-10 sm:py-16">
             <div className="flex flex-wrap items-end justify-between gap-4 border-b border-foreground/20 pb-5">
-              <div><p className="signal-kicker text-accent">Latest developments / records in this topic</p><h2 className="mt-2 font-display text-4xl">The archive</h2></div>
-              <Link href="/timeline" className="signal-kicker text-accent hover:underline">View dated records <ArrowUpRight size={12} className="ml-1 inline" /></Link>
+              <div><p className="signal-kicker text-accent">{t("Latest developments / records in this topic", "ताज़ा घटनाक्रम / इस विषय के रिकॉर्ड")}</p><h2 className="mt-2 font-display text-4xl">{t("The archive", "अभिलेखागार")}</h2></div>
+              <Link href="/timeline" className="signal-kicker text-accent hover:underline">{t("View dated records", "तारीख़वार रिकॉर्ड देखें")} <ArrowUpRight size={12} className="ml-1 inline" /></Link>
             </div>
-            {records.length === 0 ? <div className="pt-8"><EmptyState title="No records in this topic." text="Return to the topics index or browse the full archive." /></div> :
+            {records.length === 0 ? <div className="pt-8"><EmptyState title={t("No records in this topic.", "इस विषय में कोई रिकॉर्ड नहीं।")} text={t("Return to the topics index or browse the full archive.", "विषयों की सूची पर लौटें या पूरा अभिलेखागार देखें।")} /></div> :
               <div className="border-t border-foreground/20">
                 {records.map((story) => <article key={story.id} className="grid gap-5 border-b border-foreground/20 py-7 md:grid-cols-[.25fr_1fr_.62fr] md:gap-10" data-testid={`card-topic-record-${story.id}`}>
-                  <div><p className="signal-kicker text-accent">Record date / as supplied</p><p className="mt-2 font-mono-signal text-xs">{formatDate(story.publishedOn)}</p><p className="mt-2 signal-kicker text-muted-foreground">{story.kind}</p></div>
+                  <div><p className="signal-kicker text-accent">{t("Record date / as supplied", "रिकॉर्ड तिथि / जैसी दी गई")}</p><p className="mt-2 font-mono-signal text-xs">{formatDate(story.publishedOn)}</p><p className="mt-2 signal-kicker text-muted-foreground">{label(story.kind)}</p></div>
                   <div><Link href={storyPath(story)} className="group"><h3 className="font-display text-3xl leading-tight group-hover:text-accent">{story.title}</h3></Link><p className="mt-3 text-sm leading-relaxed text-muted-foreground">{story.dek}</p></div>
                   <SourceLine story={story} />
                 </article>)}
               </div>}
           </section>
           {otherTopics.length > 0 && <section className="signal-container border-t border-foreground/20 py-8">
-            <p className="signal-kicker text-accent">Other indexed topics</p>
+            <p className="signal-kicker text-accent">{t("Other topics", "दूसरे विषय")}</p>
             <div className="mt-4 flex flex-wrap gap-x-6 gap-y-3">{otherTopics.map((item) => <Link key={item} href={`/topics/${encodeURIComponent(item)}`} className="signal-kicker signal-link">{item}</Link>)}</div>
           </section>}
         </>}
   </main>;
 }
 function TimelinePage() {
+  const t = useT();
+  const label = useLabel();
   const archiveParams = useMemo(() => ({ limit: 100 }), []);
   const policyParams = useMemo<GetPoliciesParams>(() => ({ limit: 100 }), []);
-  const archiveQuery = useGetArchive(archiveParams, {
+  const archiveQuery = useLocalizedArchive(archiveParams, {
     query: { queryKey: getGetArchiveQueryKey(archiveParams) },
   });
   const policyQuery = useGetPolicies(policyParams, {
@@ -972,7 +926,7 @@ function TimelinePage() {
     const policyEntries = (policyQuery.data?.records ?? []).filter((record) => record.sources.length > 0).map((record) => ({
       id: `policy-${record.id}`,
       date: record.effectiveDate || record.publishedOn,
-      dateLabel: record.effectiveDate ? 'Effective date' : 'Published',
+      dateLabel: record.effectiveDate ? t("Effective date", "लागू होने की तिथि") : 'Published',
       kind: 'official' as const,
       visual: imageForText(`${record.title} ${record.summary} ${record.authority}`),
       label: `Policy record / ${record.status}`,
@@ -986,10 +940,10 @@ function TimelinePage() {
       .map((story) => ({
         id: `story-${story.id}`,
         date: story.publishedOn ?? story.recordDate!,
-        dateLabel: story.publishedOn ? 'Signal 24 publication date' : 'Record date / as supplied',
+        dateLabel: story.publishedOn ? 'Signal 24 publication date' : t("Record date / as supplied", "रिकॉर्ड तिथि / जैसी दी गई"),
         kind: 'record' as const,
         visual: imageForStory(story),
-        label: `${story.kind} / ${verificationLabel(story.verificationStatus)}`,
+        label: `${label(story.kind)} / ${verificationLabel(story.verificationStatus)}`,
         title: story.title,
         summary: story.dek,
         source: `${story.source} · ${story.sourceUrl ? 'Direct source available' : 'Direct source unavailable'} · ${story.sourceCount ?? 0} sources · ${story.eventCount ?? 0} events`,
@@ -1012,11 +966,11 @@ function TimelinePage() {
       .sort((a, b) => b.date.localeCompare(a.date));
   }, [archiveQuery.data, policyQuery.data]);
   useSeo({
-    title: 'Source timeline — The Signal 24',
-    description: 'A dated index of published policy records, verified Signal 24 records, and separately labelled external leads.',
+    title: t("Timeline — The Signal 24", "समयरेखा — द सिग्नल 24"),
+    description: t("A dated index of policy changes, court rulings and Signal 24 records, with outside leads labelled separately.", "नीतिगत बदलावों, अदालती फ़ैसलों और द सिग्नल 24 के रिकॉर्ड की तारीख़वार सूची, बाहरी सुराग अलग से चिह्नित।"),
     canonicalPath: '/timeline',
     structuredData: siteGraph(
-      collectionPageNode('/timeline', { name: 'Source timeline — The Signal 24', description: 'A dated index of published policy records, verified Signal 24 records, and separately labelled external leads.', publisher: organizationRef }, entries.filter((entry) => entry.kind !== 'lead' && entry.href.startsWith('/')).map((entry) => ({ url: entry.href, name: entry.title }))),
+      collectionPageNode('/timeline', { name: t("Timeline — The Signal 24", "समयरेखा — द सिग्नल 24"), description: t("A dated index of policy changes, court rulings and Signal 24 records, with outside leads labelled separately.", "नीतिगत बदलावों, अदालती फ़ैसलों और द सिग्नल 24 के रिकॉर्ड की तारीख़वार सूची, बाहरी सुराग अलग से चिह्नित।"), publisher: organizationRef }, entries.filter((entry) => entry.kind !== 'lead' && entry.href.startsWith('/')).map((entry) => ({ url: entry.href, name: entry.title }))),
       breadcrumbNode('/timeline', [['Timeline', '/timeline']]),
     ),
   });
@@ -1024,19 +978,19 @@ function TimelinePage() {
   const loading = archiveQuery.isLoading || policyQuery.isLoading;
   return <main className="signal-page"><Header />
     <section className="signal-container pt-14 sm:pt-24">
-      <p className="signal-kicker text-accent">The Signal 24 / timeline</p>
-      <h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.88] tracking-[-.06em] sm:text-8xl">Dates with<br /><em className="font-normal text-accent">their record type.</em></h1>
-      <p className="mt-7 max-w-2xl text-lg leading-relaxed text-muted-foreground">This is an index of source dates, not a complete history. Effective dates, publication dates and external leads are labelled separately; a headline is not treated as a court finding.</p>
+      <p className="signal-kicker text-accent">{t("The Signal 24 / timeline", "द सिग्नल 24 / समयरेखा")}</p>
+      <h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.88] tracking-[-.06em] sm:text-8xl">{t("Dates with", "तारीख़ें,")}<br /><em className="font-normal text-accent">{t("their record type.", "रिकॉर्ड के प्रकार के साथ।")}</em></h1>
+      <p className="mt-7 max-w-2xl text-lg leading-relaxed text-muted-foreground">{t("An index of dated records, not a complete history. Effective dates, publication dates and outside leads are labelled separately, and a headline is never treated as a court finding.", "तारीख़वार रिकॉर्ड की सूची, पूरा इतिहास नहीं। लागू होने की तिथि, प्रकाशन तिथि और बाहरी सुराग अलग-अलग चिह्नित हैं, और किसी सुर्ख़ी को कभी अदालत का निष्कर्ष नहीं माना जाता।")}</p>
     </section>
     <section className="signal-container mt-12 pb-12 sm:mt-16 sm:pb-16">
-      {hasError && <p className="signal-note mb-5 p-4 text-sm text-muted-foreground" role="status">Some source lists are unavailable. The dates shown below come only from the responses that loaded.</p>}
-      {loading ? <LoadingBlock label="Assembling dated source entries…" /> :
-        !entries.length ? <EmptyState title="No dated entries are available." text="The timeline only uses dates attached to published records or attributed external sources." /> :
+      {hasError && <p className="signal-note mb-5 p-4 text-sm text-muted-foreground" role="status">{t("Some source lists did not load. The dates below come only from the lists that did.", "कुछ स्रोत सूचियाँ लोड नहीं हुईं। नीचे की तारीख़ें सिर्फ़ उन्हीं सूचियों से हैं जो लोड हुईं।")}</p>}
+      {loading ? <LoadingBlock label={t("Assembling dated source entries…", "तारीख़वार प्रविष्टियाँ तैयार हो रही हैं…")} /> :
+        !entries.length ? <EmptyState title={t("No dated entries are available.", "कोई तारीख़वार प्रविष्टि उपलब्ध नहीं।")} text={t("The timeline only uses dates attached to published records or attributed external sources.", "समयरेखा सिर्फ़ प्रकाशित रिकॉर्ड या नामित बाहरी स्रोतों से जुड़ी तारीख़ों का इस्तेमाल करती है।")} /> :
           <div className="border-t-2 border-foreground">
             {entries.map((entry) => <article key={entry.id} className="timeline-visual-entry" data-testid={`timeline-entry-${entry.id}`}>
               <time className="font-display text-2xl leading-tight" dateTime={entry.date}>{formatDate(entry.date)}<span className="mt-2 block signal-kicker text-muted-foreground">{entry.dateLabel}</span></time>
               <span className="timeline-dot hidden md:block" />
-              <div className="timeline-visual-thumb">{entry.visual ? <img src={entry.visual.src} alt={entry.visual.alt} width={entry.visual.width} height={entry.visual.height} loading="lazy" /> : <div className="story-art-placeholder flex h-full min-h-[140px] items-center justify-center p-5 text-center"><p className="signal-kicker text-accent">No relevant archive image available</p></div>}</div>
+              <div className="timeline-visual-thumb">{entry.visual ? <img src={entry.visual.src} alt={entry.visual.alt} width={entry.visual.width} height={entry.visual.height} loading="lazy" /> : <div className="story-art-placeholder flex h-full min-h-[140px] items-center justify-center p-5 text-center"><p className="signal-kicker text-accent">{t("No relevant archive image available", "कोई प्रासंगिक अभिलेख चित्र उपलब्ध नहीं")}</p></div>}</div>
               <div className={`border-l-2 pl-5 ${entry.kind === 'lead' ? 'border-secondary' : entry.kind === 'official' ? 'border-ring' : 'border-accent'}`}>
                 <p className="signal-kicker">{entry.label}</p>
                 <h2 className="mt-2 font-display text-2xl leading-tight sm:text-3xl">{entry.kind === 'lead' ? <a href={entry.href} target="_blank" rel="noopener noreferrer" className="hover:text-accent">{entry.title}</a> : <Link href={entry.href} className="hover:text-accent">{entry.title}</Link>}</h2>
@@ -1046,12 +1000,14 @@ function TimelinePage() {
               </div>
             </article>)}
           </div>}
-      <p className="mt-5 signal-kicker text-muted-foreground">External leads are not Signal 24 reporting. Verify court status against the linked order before relying on a reported update.</p>
+      <p className="mt-5 signal-kicker text-muted-foreground">{t("Outside leads are not Signal 24 reporting. Check the court’s own order before relying on any reported update.", "बाहरी सुराग द सिग्नल 24 की रिपोर्टिंग नहीं हैं। किसी ख़बर पर भरोसा करने से पहले अदालत का अपना आदेश देखें।")}</p>
     </section>
-    <footer className="signal-site-footer"><div className="signal-container flex flex-wrap justify-between gap-4 py-7"><Link href="/archive" className="signal-kicker signal-link">Browse the archive</Link><Link href="/methodology" className="signal-kicker signal-link">How dates are handled</Link></div></footer>
+    <footer className="signal-site-footer"><div className="signal-container flex flex-wrap justify-between gap-4 py-7"><Link href="/archive" className="signal-kicker signal-link">{t("Browse the archive", "अभिलेखागार देखें")}</Link><Link href="/methodology" className="signal-kicker signal-link">{t("How dates are handled", "तारीख़ें कैसे दर्ज होती हैं")}</Link></div></footer>
   </main>;
 }
 function SearchPage() {
+  const t = useT();
+  const label = useLabel();
   const initialQuery = new URLSearchParams(window.location.search).get('q') ?? '';
   const [queryInput, setQueryInput] = useState(initialQuery);
   const [query, setQuery] = useState(initialQuery);
@@ -1065,12 +1021,12 @@ function SearchPage() {
     ...(state ? { state } : {}),
     limit: 100,
   }), [kind, query, state, topic]);
-  const { data, isLoading, isError, refetch } = useGetArchive(params, {
+  const { data, isLoading, isError, refetch } = useLocalizedArchive(params, {
     query: { queryKey: getGetArchiveQueryKey(params) },
   });
   useSeo({
-    title: 'Search the archive — The Signal 24',
-    description: 'Search published Signal 24 records and browse clearly labelled external source leads.',
+    title: t("Search the archive — The Signal 24", "अभिलेखागार खोजें — द सिग्नल 24"),
+    description: t("Search published Signal 24 records and clearly labelled outside leads.", "द सिग्नल 24 के प्रकाशित रिकॉर्ड और साफ़ चिह्नित बाहरी सुराग खोजें।"),
     robots: 'noindex, follow',
   });
   const submit = (event: FormEvent<HTMLFormElement>) => {
@@ -1095,57 +1051,59 @@ function SearchPage() {
   });
   return <main className="signal-page"><Header />
     <section className="signal-container pt-14 sm:pt-24">
-      <p className="signal-kicker text-accent">The Signal 24 / search</p>
-      <h1 className="mt-4 max-w-4xl font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">Find the<br /><em className="font-normal text-accent">source record.</em></h1>
-      <p className="mt-7 max-w-2xl text-lg leading-relaxed text-muted-foreground">Search published archive records and the separate external reading list. Each result keeps its source and verification status visible.</p>
+      <p className="signal-kicker text-accent">{t("The Signal 24 / search", "द सिग्नल 24 / खोज")}</p>
+      <h1 className="mt-4 max-w-4xl font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">{t("Find the", "खोजिए")}<br /><em className="font-normal text-accent">{t("source record.", "मूल रिकॉर्ड।")}</em></h1>
+      <p className="mt-7 max-w-2xl text-lg leading-relaxed text-muted-foreground">{t("Search published records and the separate outside reading list. Every result shows its source and verification status.", "प्रकाशित रिकॉर्ड और अलग बाहरी पठन-सूची में खोजें। हर नतीजे के साथ उसका स्रोत और सत्यापन स्थिति दिखती है।")}</p>
     </section>
-    <section className="signal-container archive-grid mt-12 border-y border-foreground/20 py-6 sm:mt-16" aria-label="Search records and sources">
+    <section className="signal-container archive-grid mt-12 border-y border-foreground/20 py-6 sm:mt-16" aria-label={t("Search records and sources", "रिकॉर्ड और स्रोत खोजें")}>
       <form role="search" onSubmit={submit} className="grid gap-3 sm:grid-cols-[1fr_auto]">
         <label className="flex items-center gap-3 border border-foreground/20 bg-card px-3 py-2">
           <Search size={16} className="shrink-0 text-accent" />
-          <span className="sr-only">Search records, publishers, and topics</span>
-          <input type="search" value={queryInput} onChange={(event) => setQueryInput(event.target.value)} placeholder="Records, publishers, dates, topics…" className="min-h-10 w-full bg-transparent text-sm outline-none" data-testid="input-search-page" />
+          <span className="sr-only">{t("Search records, publishers and topics", "रिकॉर्ड, प्रकाशक और विषय खोजें")}</span>
+          <input type="search" value={queryInput} onChange={(event) => setQueryInput(event.target.value)} placeholder={t("Judgments, notifications, states, dates…", "फ़ैसले, अधिसूचनाएँ, राज्य, तारीख़ें…")} className="min-h-10 w-full bg-transparent text-sm outline-none" data-testid="input-search-page" />
         </label>
-        <button className="signal-button" type="submit" data-testid="button-search-page">Search</button>
+        <button className="signal-button" type="submit" data-testid="button-search-page">{t("Search", "खोजें")}</button>
       </form>
       <div className="mt-4 grid gap-3 sm:grid-cols-4">
-        <SelectFilter label="Topic" value={topic} options={data?.topics.length ? data.topics : TOPICS} onChange={setTopic} testId="select-search-topic" />
-        <SelectFilter label="Record type" value={kind} options={data?.kinds.length ? data.kinds : KINDS} onChange={setKind} testId="select-search-kind" />
-        <SelectFilter label="State" value={state} options={data?.states.length ? ['All states', ...data.states] : INDIA_STATES} onChange={(value) => setState(value === 'All states' ? '' : value)} testId="select-search-state" />
-        <button type="button" onClick={clear} className="border border-foreground/20 px-4 py-2 signal-kicker text-muted-foreground hover:border-accent hover:text-accent" data-testid="button-clear-search">Clear filters</button>
+        <SelectFilter label={t("Topic", "विषय")} value={topic} options={data?.topics.length ? data.topics : TOPICS} onChange={setTopic} testId="select-search-topic" />
+        <SelectFilter label={t("Record type", "रिकॉर्ड का प्रकार")} value={kind} options={data?.kinds.length ? data.kinds : KINDS} onChange={setKind} testId="select-search-kind" />
+        <SelectFilter label={t("State", "राज्य")} value={state} options={data?.states.length ? ['All states', ...data.states] : INDIA_STATES} onChange={(value) => setState(value === 'All states' ? '' : value)} testId="select-search-state" />
+        <button type="button" onClick={clear} className="border border-foreground/20 px-4 py-2 signal-kicker text-muted-foreground hover:border-accent hover:text-accent" data-testid="button-clear-search">{t("Clear filters", "फ़िल्टर हटाएँ")}</button>
       </div>
     </section>
     <section className="signal-container py-10 sm:py-14">
       <div className="flex flex-wrap items-end justify-between gap-4 border-b border-foreground/20 pb-4">
-        <div><p className="signal-kicker text-accent">01 / Published archive</p><h2 className="mt-2 font-display text-3xl sm:text-4xl">Signal 24 records</h2></div>
+        <div><p className="signal-kicker text-accent">{t("01 / Published archive", "01 / प्रकाशित अभिलेखागार")}</p><h2 className="mt-2 font-display text-3xl sm:text-4xl">{t("Signal 24 records", "द सिग्नल 24 के रिकॉर्ड")}</h2></div>
         {data && <p className="signal-kicker text-muted-foreground">{data.stories.length} returned by the archive</p>}
       </div>
-      {isLoading ? <div className="py-8"><LoadingBlock label="Searching published records…" /></div> :
-        isError ? <div className="py-8"><ErrorState message="Published records could not be searched." onRetry={() => void refetch()} /></div> :
-          !data?.stories.length ? <div className="py-8"><EmptyState title="No published record matched." text="Try another term or clear a filter. External sources are listed separately below." /></div> :
+      {isLoading ? <div className="py-8"><LoadingBlock label={t("Searching published records…", "प्रकाशित रिकॉर्ड खोजे जा रहे हैं…")} /></div> :
+        isError ? <div className="py-8"><ErrorState message={t("Published records could not be searched.", "प्रकाशित रिकॉर्ड खोजे नहीं जा सके।")} onRetry={() => void refetch()} /></div> :
+          !data?.stories.length ? <div className="py-8"><EmptyState title={t("No published record matched.", "कोई प्रकाशित रिकॉर्ड नहीं मिला।")} text={t("Try another term or clear a filter. External sources are listed separately below.", "दूसरा शब्द आज़माएँ या फ़िल्टर हटाएँ। बाहरी स्रोत नीचे अलग से दिए गए हैं।")} /></div> :
             <div className="border-t border-foreground/20">{data.stories.map((story) => <StoryCard key={story.id} story={story} compact />)}</div>}
     </section>
     <section className="signal-container pb-12 sm:pb-16">
       <div className="flex flex-wrap items-end justify-between gap-4 border-y border-foreground/20 py-5">
-        <div><p className="signal-kicker text-accent">02 / External leads</p><h2 className="mt-2 font-display text-3xl sm:text-4xl">A reading list, not Signal 24 reporting</h2></div>
-        <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">These links are external sources supplied or checked for the focus desk. Their claims have not been adopted as Signal 24 findings.</p>
+        <div><p className="signal-kicker text-accent">{t("02 / External leads", "02 / बाहरी सुराग")}</p><h2 className="mt-2 font-display text-3xl sm:text-4xl">{t("A reading list, not Signal 24 reporting", "पढ़ने की सूची, द सिग्नल 24 की रिपोर्टिंग नहीं")}</h2></div>
+        <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">{t("These are outside sources gathered for the desk. Their claims are not Signal 24 findings.", "ये डेस्क के लिए जुटाए गए बाहरी स्रोत हैं। इनके दावे द सिग्नल 24 के निष्कर्ष नहीं हैं।")}</p>
       </div>
-      {!leads.length ? <p className="py-8 text-sm text-muted-foreground">No external lead matched this search.</p> :
+      {!leads.length ? <p className="py-8 text-sm text-muted-foreground">{t("No outside lead matched this search.", "इस खोज से कोई बाहरी सुराग नहीं मिला।")}</p> :
         <div className="grid gap-x-8 sm:grid-cols-2">
           {leads.map((source) => <article key={source.href} className="story-record-row">
             <div className="flex flex-wrap items-center justify-between gap-2"><span className="signal-tag signal-tag--amber">External lead / {source.lane}</span><time className="signal-kicker text-muted-foreground" dateTime={source.date}>{formatDate(source.date)}</time></div>
-            <div><h3 className="font-display text-2xl leading-tight">{source.title}</h3><p className="mt-3 text-sm leading-relaxed text-muted-foreground">{source.summary}</p><div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-foreground/15 pt-3"><span className="signal-kicker text-muted-foreground">{source.publisher} · {source.place}</span><a href={source.href} target="_blank" rel="noopener noreferrer" className="signal-kicker text-accent hover:underline">Open source <ExternalLink size={12} className="ml-1 inline" /></a></div></div>
+            <div><h3 className="font-display text-2xl leading-tight">{source.title}</h3><p className="mt-3 text-sm leading-relaxed text-muted-foreground">{source.summary}</p><div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-foreground/15 pt-3"><span className="signal-kicker text-muted-foreground">{source.publisher} · {source.place}</span><a href={source.href} target="_blank" rel="noopener noreferrer" className="signal-kicker text-accent hover:underline">{t("Open source", "स्रोत खोलें")} <ExternalLink size={12} className="ml-1 inline" /></a></div></div>
           </article>)}
         </div>}
     </section>
-    <footer className="signal-site-footer"><div className="signal-container flex flex-wrap justify-between gap-4 py-7"><Link href="/archive" className="signal-kicker signal-link">Full archive <ArrowUpRight size={13} className="ml-1 inline" /></Link><Link href="/evidence/search" className="signal-kicker signal-link">Search linked evidence</Link><Link href="/" className="signal-kicker signal-link">Current edition</Link></div></footer>
+    <footer className="signal-site-footer"><div className="signal-container flex flex-wrap justify-between gap-4 py-7"><Link href="/archive" className="signal-kicker signal-link">{t("Full archive", "पूरा अभिलेखागार")} <ArrowUpRight size={13} className="ml-1 inline" /></Link><Link href="/evidence/search" className="signal-kicker signal-link">{t("Search linked evidence", "जुड़े सबूत खोजें")}</Link><Link href="/" className="signal-kicker signal-link">{t("Front page", "पहला पन्ना")}</Link></div></footer>
   </main>;
 }
 
 function OpenCategoryTopicPage() {
+  const t = useT();
+  const label = useLabel();
   const slug = 'open-category-competition';
   const params = useMemo(() => ({ limit: 100 }), []);
-  const { data, isLoading, isError, refetch } = useGetArchive(params, {
+  const { data, isLoading, isError, refetch } = useLocalizedArchive(params, {
     query: { enabled: slug === 'open-category-competition', queryKey: getGetArchiveQueryKey(params) },
   });
   const leads = FOCUS_SOURCES.filter((source) => ['UGC rules', 'Open competition', 'EWS / eligibility'].includes(source.lane));
@@ -1155,51 +1113,53 @@ function OpenCategoryTopicPage() {
     /\b(open|unreserved|general.?category|ugc|ews|economically weaker sections)\b/i.test(`${story.title} ${story.dek} ${story.source}`),
   );
   useSeo({
-    title: 'Open-category competition — The Signal 24',
-    description: 'Source-linked context on open-category competition, UGC equity rules, EWS eligibility, and the distinction between reported claims and legal outcomes.',
+    title: t("Open-category competition — The Signal 24", "खुली श्रेणी की प्रतिस्पर्धा — द सिग्नल 24"),
+    description: t("Open-category competition, UGC equity rules and EWS eligibility: what the law says, what was claimed, and what the courts actually decided.", "खुली श्रेणी की प्रतिस्पर्धा, यूजीसी समता नियम और ईडब्ल्यूएस पात्रता: क़ानून क्या कहता है, क्या दावा किया गया, और अदालतों ने असल में क्या फ़ैसला दिया।"),
     canonicalPath: '/topics/open-category-competition',
     structuredData: siteGraph(
-      collectionPageNode('/topics/open-category-competition', { name: 'Open-category competition — The Signal 24', description: 'Source-linked context on open-category competition, UGC equity rules, EWS eligibility, and the distinction between reported claims and legal outcomes.', about: { '@type': 'Thing', name: 'Open-category competition' }, publisher: organizationRef }, stories.filter((story) => story.indexable).map((story) => ({ url: storyPath(story), name: story.title }))),
-      breadcrumbNode('/topics/open-category-competition', [['Topics', '/topics'], ['Open-category competition', '/topics/open-category-competition']]),
+      collectionPageNode('/topics/open-category-competition', { name: t("Open-category competition — The Signal 24", "खुली श्रेणी की प्रतिस्पर्धा — द सिग्नल 24"), description: t("Open-category competition, UGC equity rules and EWS eligibility: what the law says, what was claimed, and what the courts actually decided.", "खुली श्रेणी की प्रतिस्पर्धा, यूजीसी समता नियम और ईडब्ल्यूएस पात्रता: क़ानून क्या कहता है, क्या दावा किया गया, और अदालतों ने असल में क्या फ़ैसला दिया।"), about: { '@type': 'Thing', name: t("Open-category competition", "खुली श्रेणी की प्रतिस्पर्धा") }, publisher: organizationRef }, stories.filter((story) => story.indexable).map((story) => ({ url: storyPath(story), name: story.title }))),
+      breadcrumbNode('/topics/open-category-competition', [['Topics', '/topics'], [t("Open-category competition", "खुली श्रेणी की प्रतिस्पर्धा"), '/topics/open-category-competition']]),
     ),
   });
   if (slug !== 'open-category-competition') return <NotFound />;
   return <main className="signal-page"><Header />
     <section className="signal-container pt-14 sm:pt-24">
-      <p className="signal-kicker text-accent">The Signal 24 / topic file</p>
+      <p className="signal-kicker text-accent">{t("The Signal 24 / topic file", "द सिग्नल 24 / विषय फ़ाइल")}</p>
       <div className="mt-4 grid gap-8 lg:grid-cols-[1fr_.62fr] lg:items-end">
-        <h1 className="max-w-5xl font-display text-6xl leading-[.88] tracking-[-.06em] sm:text-8xl">Open-category<br /><em className="font-normal text-accent">competition.</em></h1>
-        <p className="max-w-xl text-lg leading-relaxed text-muted-foreground">Open seats are generally available to eligible candidates across categories; they are not a reserved pool for any one caste group. Rules, selection lists and court orders must be read in their own context.</p>
+        <h1 className="max-w-5xl font-display text-6xl leading-[.88] tracking-[-.06em] sm:text-8xl">{t("Open-category", "खुली श्रेणी की")}<br /><em className="font-normal text-accent">{t("competition.", "प्रतिस्पर्धा।")}</em></h1>
+        <p className="max-w-xl text-lg leading-relaxed text-muted-foreground">{t("Open seats are open to every eligible candidate, from every category. They are not a reserved pool for any caste group, whatever a headline implies. Rules, selection lists and court orders must be read on their own terms.", "खुली सीटें हर श्रेणी के हर पात्र उम्मीदवार के लिए खुली हैं। वे किसी जाति समूह का आरक्षित कोटा नहीं हैं, सुर्ख़ियाँ चाहे जो इशारा करें। नियम, चयन सूचियाँ और अदालती आदेश उनकी अपनी शर्तों पर पढ़े जाने चाहिए।")}</p>
       </div>
       <div className="signal-note mt-8 max-w-3xl p-5 sm:p-6">
-        <p className="signal-kicker text-accent">Reading rule / evidence boundary</p>
-        <p className="mt-3 text-sm leading-relaxed">A demand, a litigant’s argument, an interim order and a final judgment are different kinds of records. This page keeps external coverage apart from verified Signal 24 publications and does not infer an open-seat share from a quota headline.</p>
+        <p className="signal-kicker text-accent">{t("Reading rule / evidence boundary", "पढ़ने का नियम / सबूत की सीमा")}</p>
+        <p className="mt-3 text-sm leading-relaxed">{t("A political demand, a litigant’s argument, an interim order and a final judgment are four different things. Headlines blur them. This page keeps them apart, and keeps outside coverage separate from verified Signal 24 records.", "राजनीतिक माँग, किसी पक्षकार की दलील, अंतरिम आदेश और अंतिम फ़ैसला चार अलग चीज़ें हैं। सुर्ख़ियाँ इन्हें गड्डमड्ड कर देती हैं। यह पेज इन्हें अलग रखता है, और बाहरी कवरेज को द सिग्नल 24 के सत्यापित रिकॉर्ड से अलग।")}</p>
       </div>
     </section>
     <section className="signal-container mt-12 sm:mt-16">
       <div className="flex flex-wrap items-end justify-between gap-4 border-y border-foreground/20 py-5">
-        <div><p className="signal-kicker text-accent">01 / Signal 24 records</p><h2 className="mt-2 font-display text-3xl sm:text-4xl">Verified archive entries</h2></div>
-        <Link href="/archive" className="signal-kicker signal-rule-link">Search all records <ArrowUpRight size={13} className="ml-1 inline" /></Link>
+        <div><p className="signal-kicker text-accent">{t("01 / Signal 24 records", "01 / द सिग्नल 24 के रिकॉर्ड")}</p><h2 className="mt-2 font-display text-3xl sm:text-4xl">{t("Verified archive entries", "सत्यापित रिकॉर्ड")}</h2></div>
+        <Link href="/archive" className="signal-kicker signal-rule-link">{t("Search all records", "सभी रिकॉर्ड खोजें")} <ArrowUpRight size={13} className="ml-1 inline" /></Link>
       </div>
-      {isLoading ? <div className="py-8"><LoadingBlock label="Loading verified topic records…" /></div> :
-        isError ? <div className="py-8"><ErrorState message="Topic records could not be loaded." onRetry={() => void refetch()} /></div> :
+      {isLoading ? <div className="py-8"><LoadingBlock label={t("Loading verified topic records…", "विषय के सत्यापित रिकॉर्ड लोड हो रहे हैं…")} /></div> :
+        isError ? <div className="py-8"><ErrorState message={t("Topic records could not be loaded.", "विषय के रिकॉर्ड लोड नहीं हो सके।")} onRetry={() => void refetch()} /></div> :
           stories.length ? <div className="border-t border-foreground/20">{stories.map((story) => <StoryCard key={story.id} story={story} compact />)}</div> :
-            <div className="signal-editorial-section"><p className="signal-kicker text-accent">No verified Signal 24 record in this topic</p><p className="mt-3 max-w-2xl font-display text-2xl leading-tight">External coverage is not a substitute for a source-linked, verified publication. The current record gap remains visible.</p></div>}
+            <div className="signal-editorial-section"><p className="signal-kicker text-accent">{t("No verified Signal 24 record on this subject yet", "इस विषय पर अभी द सिग्नल 24 का कोई सत्यापित रिकॉर्ड नहीं")}</p><p className="mt-3 max-w-2xl font-display text-2xl leading-tight">{t("Outside coverage is not a substitute for a verified record. The gap stays visible until the desk fills it.", "बाहरी कवरेज सत्यापित रिकॉर्ड का विकल्प नहीं है। जब तक डेस्क इसे न भरे, यह कमी दिखती रहेगी।")}</p></div>}
     </section>
     <section className="signal-container mt-8 pb-12 sm:pb-16">
       <div className="flex flex-wrap items-end justify-between gap-4 border-y border-foreground/20 py-5">
-        <div><p className="signal-kicker text-accent">02 / External leads</p><h2 className="mt-2 font-display text-3xl sm:text-4xl">What to read next</h2></div>
-        <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">Each link is attributed to its publisher and remains an external lead, not Signal 24 reporting.</p>
+        <div><p className="signal-kicker text-accent">{t("02 / External leads", "02 / बाहरी सुराग")}</p><h2 className="mt-2 font-display text-3xl sm:text-4xl">{t("What to read next", "आगे क्या पढ़ें")}</h2></div>
+        <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">{t("Each link is credited to its publisher. These are leads, not Signal 24 reporting.", "हर लिंक उसके प्रकाशक के नाम से है। ये सुराग हैं, द सिग्नल 24 की रिपोर्टिंग नहीं।")}</p>
       </div>
       <div className="grid gap-x-8 sm:grid-cols-2">{leads.map((source) => <article key={source.href} className="story-record-row">
         <div className="flex flex-wrap items-center justify-between gap-2"><span className="signal-tag signal-tag--amber">External lead / {source.lane}</span><time className="signal-kicker text-muted-foreground" dateTime={source.date}>{formatDate(source.date)}</time></div>
-        <div><h3 className="font-display text-2xl leading-tight">{source.title}</h3><p className="mt-3 text-sm leading-relaxed text-muted-foreground">{source.summary}</p><div className="mt-4 flex items-center justify-between gap-3 border-t border-foreground/15 pt-3"><span className="signal-kicker text-muted-foreground">{source.publisher}</span><a href={source.href} target="_blank" rel="noopener noreferrer" className="signal-kicker text-accent hover:underline">Open source <ExternalLink size={12} className="ml-1 inline" /></a></div></div>
+        <div><h3 className="font-display text-2xl leading-tight">{source.title}</h3><p className="mt-3 text-sm leading-relaxed text-muted-foreground">{source.summary}</p><div className="mt-4 flex items-center justify-between gap-3 border-t border-foreground/15 pt-3"><span className="signal-kicker text-muted-foreground">{source.publisher}</span><a href={source.href} target="_blank" rel="noopener noreferrer" className="signal-kicker text-accent hover:underline">{t("Open source", "स्रोत खोलें")} <ExternalLink size={12} className="ml-1 inline" /></a></div></div>
       </article>)}</div>
     </section>
-    <footer className="signal-site-footer"><div className="signal-container flex flex-wrap justify-between gap-4 py-7"><Link href="/" className="signal-kicker signal-link">Current edition</Link><Link href="/timeline" className="signal-kicker signal-link">Open the timeline <ArrowUpRight size={13} className="ml-1 inline" /></Link></div></footer>
+    <footer className="signal-site-footer"><div className="signal-container flex flex-wrap justify-between gap-4 py-7"><Link href="/" className="signal-kicker signal-link">{t("Front page", "पहला पन्ना")}</Link><Link href="/timeline" className="signal-kicker signal-link">{t("Open the timeline", "समयरेखा खोलें")} <ArrowUpRight size={13} className="ml-1 inline" /></Link></div></footer>
   </main>;
 }
 function ArchivePage() {
+  const t = useT();
+  const label = useLabel();
   const [query, setQuery] = useState('');
   const [topic, setTopic] = useState('');
   const [kind, setKind] = useState('');
@@ -1208,19 +1168,19 @@ function ArchivePage() {
   const [organization, setOrganization] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(true);
   const params = useMemo(() => ({ ...(query ? { q: query } : {}), ...(topic ? { topic: topic as Topic } : {}), ...(kind ? { kind: kind as StoryKind } : {}), ...(state ? { state } : {}), limit: 100 }), [kind, query, state, topic]);
-  const { data, isLoading, isError, refetch } = useGetArchive(params, { query: { queryKey: getGetArchiveQueryKey(params) } });
+  const { data, isLoading, isError, refetch } = useLocalizedArchive(params, { query: { queryKey: getGetArchiveQueryKey(params) } });
   useSeo({
-    title: 'The archive — The Signal 24',
-    description: 'Search published reporting, court and policy developments, historical documents, research notes and state context.',
+    title: t("The archive — The Signal 24", "अभिलेखागार — द सिग्नल 24"),
+    description: t("Search published reporting, court rulings, policy changes, historical documents and state records.", "प्रकाशित रिपोर्टिंग, अदालती फ़ैसले, नीतिगत बदलाव, ऐतिहासिक दस्तावेज़ और राज्यों के रिकॉर्ड खोजें।"),
     canonicalPath: '/archive',
     structuredData: siteGraph(
-      collectionPageNode('/archive', { name: 'The archive — The Signal 24', description: 'Search published reporting, court and policy developments, historical documents, research notes and state context.', publisher: organizationRef }, (data?.stories ?? []).filter((story) => story.indexable).map((story) => ({ url: storyPath(story), name: story.title }))),
+      collectionPageNode('/archive', { name: t("The archive — The Signal 24", "अभिलेखागार — द सिग्नल 24"), description: t("Search published reporting, court rulings, policy changes, historical documents and state records.", "प्रकाशित रिपोर्टिंग, अदालती फ़ैसले, नीतिगत बदलाव, ऐतिहासिक दस्तावेज़ और राज्यों के रिकॉर्ड खोजें।"), publisher: organizationRef }, (data?.stories ?? []).filter((story) => story.indexable).map((story) => ({ url: storyPath(story), name: story.title }))),
       breadcrumbNode('/archive', [['Archive', '/archive']]),
     ),
   });
   const clear = () => { setQuery(''); setTopic(''); setKind(''); setState(''); setYear(''); setOrganization(''); };
-  if (isLoading) return <div className="signal-page"><Header /><LoadingBlock label="Indexing records and sources…" /></div>;
-  if (isError) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message="The search index could not be reached." onRetry={() => void refetch()} /></div></div>;
+  if (isLoading) return <div className="signal-page"><Header /><LoadingBlock label={t("Indexing records and sources…", "रिकॉर्ड और स्रोत सूचीबद्ध हो रहे हैं…")} /></div>;
+  if (isError) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message={t("The search index could not be reached.", "खोज सूची तक पहुँच नहीं हो सकी।")} onRetry={() => void refetch()} /></div></div>;
   if (!data) return <div className="signal-page"><Header /><div className="py-20"><EmptyState /></div></div>;
   const years = Array.from(new Set(data.stories.map((story) => story.publishedOn?.slice(0, 4)).filter(Boolean))).sort().reverse() as string[];
   const organizations = Array.from(new Set(data.stories.map((story) => story.source).filter(Boolean))).sort();
@@ -1228,12 +1188,14 @@ function ArchivePage() {
     (!year || story.publishedOn?.startsWith(year)) &&
     (!organization || story.source === organization),
   );
-  return <main className="signal-page"><Header /><section className="signal-container pt-14 sm:pt-24"><div className="max-w-4xl"><p className="signal-kicker text-accent">The Signal 24 / archive</p><h1 className="mt-4 font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">A record you<br /><em className="font-normal text-accent">can return to.</em></h1><p className="mt-7 max-w-2xl text-lg leading-relaxed text-muted-foreground">Search reporting, court and policy developments, historical documents, research notes and state context. The archive is a work in progress, built to make difficult conversations easier to verify and remember.</p></div></section>
-    <section className="signal-container archive-grid mt-16 border-y border-foreground/20 py-6 sm:mt-24"><div className="flex items-center justify-between gap-4"><div className="flex items-center gap-3"><SlidersHorizontal size={16} className="text-accent" /><p className="signal-kicker">Filter the archive</p></div><button type="button" onClick={() => setFiltersOpen((value) => !value)} className="inline-flex items-center gap-2 signal-kicker text-muted-foreground md:hidden" data-testid="button-toggle-filters">{filtersOpen ? 'Hide' : 'Show'} filters <ChevronDown size={14} /></button></div><div className={`${filtersOpen ? 'grid' : 'hidden'} mt-5 gap-3 md:grid md:grid-cols-[1.4fr_1fr_1fr_1fr_1fr_1fr_auto]`}><label className="flex items-center gap-2 border border-foreground/20 bg-card px-3 py-2"><Search size={15} className="shrink-0 text-accent" /><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search title, source or place" className="w-full bg-transparent text-sm outline-none" data-testid="input-archive-search" /></label><SelectFilter label="Topic" value={topic} options={data.topics.length ? data.topics : TOPICS} onChange={setTopic} testId="select-archive-topic" /><SelectFilter label="Record type" value={kind} options={data.kinds.length ? data.kinds : KINDS} onChange={setKind} testId="select-archive-kind" /><SelectFilter label="State" value={state} options={data.states.length ? ['All states', ...data.states] : INDIA_STATES} onChange={(value) => setState(value === 'All states' ? '' : value)} testId="select-archive-state" /><SelectFilter label="Organization / source" value={organization} options={organizations} onChange={setOrganization} testId="select-archive-organization" allLabel="All sources" /><SelectFilter label="Published year" value={year} options={years} onChange={setYear} testId="select-archive-year" /><button type="button" onClick={clear} className="border border-foreground/20 px-4 py-2 signal-kicker text-muted-foreground hover:border-accent hover:text-accent" data-testid="button-clear-filters">Clear</button></div><div className="mt-5 flex items-center justify-between border-t border-foreground/15 pt-4"><p className="signal-kicker text-muted-foreground">{records.length} {records.length === 1 ? 'record' : 'records'} / source labels shown</p>{(query || topic || kind || state || year || organization) && <p className="signal-kicker text-accent">Filtered view</p>}</div></section>
-    <section className="signal-container py-12 sm:py-16">{records.length === 0 ? <EmptyState title="No record found here." text="Clear one of the filters and try again. The archive grows with each edition." /> : <div className="border-t border-foreground/20">{records.map((story) => <StoryCard key={story.id} story={story} />)}</div>}</section><footer className="signal-container flex justify-between gap-6 border-t border-foreground/20 py-8"><Link href="/" className="signal-kicker signal-link inline-flex items-center gap-2"><ArrowLeft size={13} /> Current edition</Link><p className="signal-kicker text-muted-foreground">Built for careful reading</p></footer>
+  return <main className="signal-page"><Header /><section className="signal-container pt-14 sm:pt-24"><div className="max-w-4xl"><p className="signal-kicker text-accent">{t("The Signal 24 / archive", "द सिग्नल 24 / अभिलेखागार")}</p><h1 className="mt-4 font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">{t("A record you", "एक रिकॉर्ड, जिस पर")}<br /><em className="font-normal text-accent">{t("can return to.", "आप बार-बार लौट सकें।")}</em></h1><p className="mt-7 max-w-2xl text-lg leading-relaxed text-muted-foreground">{t("Every published record in one place: court rulings, policy changes, historical documents and state records. Search it, filter it, and check every claim against its source.", "हर प्रकाशित रिकॉर्ड एक जगह: अदालती फ़ैसले, नीतिगत बदलाव, ऐतिहासिक दस्तावेज़ और राज्यों के रिकॉर्ड। खोजिए, छाँटिए, और हर दावे को उसके स्रोत से मिलाइए।")}</p></div></section>
+    <section className="signal-container archive-grid mt-16 border-y border-foreground/20 py-6 sm:mt-24"><div className="flex items-center justify-between gap-4"><div className="flex items-center gap-3"><SlidersHorizontal size={16} className="text-accent" /><p className="signal-kicker">{t("Filter the archive", "अभिलेखागार छाँटें")}</p></div><button type="button" onClick={() => setFiltersOpen((value) => !value)} className="inline-flex items-center gap-2 signal-kicker text-muted-foreground md:hidden" data-testid="button-toggle-filters">{filtersOpen ? 'Hide' : 'Show'} filters <ChevronDown size={14} /></button></div><div className={`${filtersOpen ? 'grid' : 'hidden'} mt-5 gap-3 md:grid md:grid-cols-[1.4fr_1fr_1fr_1fr_1fr_1fr_auto]`}><label className="flex items-center gap-2 border border-foreground/20 bg-card px-3 py-2"><Search size={15} className="shrink-0 text-accent" /><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("Search title, source or place", "शीर्षक, स्रोत या जगह खोजें")} className="w-full bg-transparent text-sm outline-none" data-testid="input-archive-search" /></label><SelectFilter label={t("Topic", "विषय")} value={topic} options={data.topics.length ? data.topics : TOPICS} onChange={setTopic} testId="select-archive-topic" /><SelectFilter label={t("Record type", "रिकॉर्ड का प्रकार")} value={kind} options={data.kinds.length ? data.kinds : KINDS} onChange={setKind} testId="select-archive-kind" /><SelectFilter label={t("State", "राज्य")} value={state} options={data.states.length ? ['All states', ...data.states] : INDIA_STATES} onChange={(value) => setState(value === 'All states' ? '' : value)} testId="select-archive-state" /><SelectFilter label="Organization / source" value={organization} options={organizations} onChange={setOrganization} testId="select-archive-organization" allLabel="All sources" /><SelectFilter label="Published year" value={year} options={years} onChange={setYear} testId="select-archive-year" /><button type="button" onClick={clear} className="border border-foreground/20 px-4 py-2 signal-kicker text-muted-foreground hover:border-accent hover:text-accent" data-testid="button-clear-filters">{t("Clear", "हटाएँ")}</button></div><div className="mt-5 flex items-center justify-between border-t border-foreground/15 pt-4"><p className="signal-kicker text-muted-foreground">{records.length} {records.length === 1 ? 'record' : 'records'} / source labels shown</p>{(query || topic || kind || state || year || organization) && <p className="signal-kicker text-accent">{t("Filtered view", "छाँटा हुआ दृश्य")}</p>}</div></section>
+    <section className="signal-container py-12 sm:py-16">{records.length === 0 ? <EmptyState title={t("No record found here.", "यहाँ कोई रिकॉर्ड नहीं मिला।")} text={t("Clear one of the filters and try again. The archive grows with each edition.", "कोई फ़िल्टर हटाकर फिर कोशिश करें। हर सत्यापित रिकॉर्ड के साथ अभिलेखागार बढ़ता है।")} /> : <div className="border-t border-foreground/20">{records.map((story) => <StoryCard key={story.id} story={story} />)}</div>}</section><footer className="signal-container flex justify-between gap-6 border-t border-foreground/20 py-8"><Link href="/" className="signal-kicker signal-link inline-flex items-center gap-2"><ArrowLeft size={13} /> {t("Front page", "पहला पन्ना")}</Link><p className="signal-kicker text-muted-foreground">{t("Read slowly. Check everything.", "ध्यान से पढ़ें। सब कुछ जाँचें।")}</p></footer>
   </main>;
 }
 function PolicySourceCard({ source }: { source: PolicySource }) {
+  const t = useT();
+  const label = useLabel();
   return <article className="border border-foreground/15 bg-card p-5 sm:p-6" data-testid={`card-policy-source-${source.id}`}>
     <div className="flex items-start justify-between gap-4">
       <span className={`signal-tag ${source.isPrimary ? 'signal-tag--blue' : 'signal-tag--amber'}`}>{source.isPrimary ? 'Primary source' : 'Supporting source'}</span>
@@ -1242,14 +1204,16 @@ function PolicySourceCard({ source }: { source: PolicySource }) {
     <h3 className="mt-4 font-display text-2xl leading-tight">{source.title}</h3>
     <p className="mt-3 text-sm text-muted-foreground">{source.publisher}</p>
     <dl className="mt-5 grid gap-2 border-t border-foreground/15 pt-4 text-xs">
-      <div className="flex justify-between gap-4"><dt className="signal-kicker text-muted-foreground">Published</dt><dd data-testid={`text-policy-source-published-${source.id}`}>{formatDate(source.publishedOn)}</dd></div>
-      <div className="flex justify-between gap-4"><dt className="signal-kicker text-muted-foreground">Retrieved</dt><dd data-testid={`text-policy-source-retrieved-${source.id}`}>{formatDate(source.retrievedOn)}</dd></div>
+      <div className="flex justify-between gap-4"><dt className="signal-kicker text-muted-foreground">{t("Published", "प्रकाशित")}</dt><dd data-testid={`text-policy-source-published-${source.id}`}>{formatDate(source.publishedOn)}</dd></div>
+      <div className="flex justify-between gap-4"><dt className="signal-kicker text-muted-foreground">{t("Retrieved", "प्राप्त किया")}</dt><dd data-testid={`text-policy-source-retrieved-${source.id}`}>{formatDate(source.retrievedOn)}</dd></div>
     </dl>
-    <a href={source.url} target="_blank" rel="noopener noreferrer" className="mt-5 inline-flex items-center gap-2 signal-kicker text-accent hover:underline" data-testid={`link-policy-source-${source.id}`}>Open source <ExternalLink size={13} /></a>
+    <a href={source.url} target="_blank" rel="noopener noreferrer" className="mt-5 inline-flex items-center gap-2 signal-kicker text-accent hover:underline" data-testid={`link-policy-source-${source.id}`}>{t("Open source", "स्रोत खोलें")} <ExternalLink size={13} /></a>
   </article>;
 }
 
 function PoliciesPage() {
+  const t = useT();
+  const label = useLabel();
   const [query, setQuery] = useState('');
   const [state, setState] = useState('');
   const [sector, setSector] = useState('');
@@ -1266,49 +1230,55 @@ function PoliciesPage() {
     ...(effectiveTo ? { effectiveTo } : {}),
     limit: 100,
   }), [effectiveFrom, effectiveTo, query, sector, state, status]);
-  const { data, isLoading, isError, refetch } = useGetPolicies(params, { query: { queryKey: getGetPoliciesQueryKey(params) } });
+  const { data: rawData, isLoading, isError, refetch } = useGetPolicies(params, { query: { queryKey: getGetPoliciesQueryKey(params) } });
+  const lang = useLang();
+  const data = useMemo(() => rawData ? { ...rawData, records: rawData.records.map((record) => localizePolicy(record, lang)) } : undefined, [rawData, lang]);
   useSeo({
-    title: 'Policy ledger — The Signal 24',
-    description: 'Search source-linked records of reservation policy changes, with frameworks, legal basis, court status and first-class sources.',
+    title: t("Policy ledger — The Signal 24", "नीति रजिस्टर — द सिग्नल 24"),
+    description: t("Search every recorded change in reservation policy: the old rule, the new rule, the legal basis, the court status and the primary sources.", "आरक्षण नीति के हर दर्ज बदलाव को खोजें: पुराना नियम, नया नियम, क़ानूनी आधार, अदालत में स्थिति और मूल स्रोत।"),
     canonicalPath: '/policies',
     structuredData: siteGraph(
-      collectionPageNode('/policies', { name: 'Policy ledger — The Signal 24', description: 'Source-linked records of reservation policy changes, with frameworks, legal basis, court status and first-class sources.', publisher: organizationRef }, (data?.records ?? []).map((record) => ({ url: record.canonicalPath, name: record.title }))),
+      collectionPageNode('/policies', { name: t("Policy ledger — The Signal 24", "नीति रजिस्टर — द सिग्नल 24"), description: t("Every recorded change in reservation policy, with the old rule, the new rule, the legal basis, the court status and the primary sources.", "आरक्षण नीति का हर दर्ज बदलाव: पुराना नियम, नया नियम, क़ानूनी आधार, अदालत में स्थिति और मूल स्रोत।"), publisher: organizationRef }, (data?.records ?? []).map((record) => ({ url: record.canonicalPath, name: record.title }))),
       breadcrumbNode('/policies', [['Policy ledger', '/policies']]),
     ),
   });
   const clear = () => { setQuery(''); setState(''); setSector(''); setStatus(''); setEffectiveFrom(''); setEffectiveTo(''); };
-  if (isLoading) return <div className="signal-page"><Header /><LoadingBlock label="Indexing policy records and sources…" /></div>;
-  if (isError) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message="The policy ledger could not be reached." onRetry={() => void refetch()} /></div></div>;
-  if (!data) return <div className="signal-page"><Header /><div className="py-20"><EmptyState title="The policy ledger is not available." /></div></div>;
+  if (isLoading) return <div className="signal-page"><Header /><LoadingBlock label={t("Indexing policy records and sources…", "नीति रिकॉर्ड और स्रोत सूचीबद्ध हो रहे हैं…")} /></div>;
+  if (isError) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message={t("The policy ledger could not be reached.", "नीति रजिस्टर तक पहुँच नहीं हो सकी।")} onRetry={() => void refetch()} /></div></div>;
+  if (!data) return <div className="signal-page"><Header /><div className="py-20"><EmptyState title={t("The policy ledger is not available.", "नीति रजिस्टर उपलब्ध नहीं है।")} /></div></div>;
   const activeFilters = Boolean(query || state || sector || status || effectiveFrom || effectiveTo);
   return <main className="signal-page"><Header />
     <section className="signal-container pt-14 sm:pt-24">
-      <div className="max-w-4xl"><p className="signal-kicker text-accent">The Signal 24 / policy ledger</p><h1 className="mt-4 font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">What changed,<br /><em className="font-normal text-accent">and when?</em></h1><p className="mt-7 max-w-2xl text-lg leading-relaxed text-muted-foreground">A permanent, source-linked record of reservation policy changes. Search by subject, state or sector, then follow the framework, authority and documents behind each entry.</p></div>
+      <div className="max-w-4xl"><p className="signal-kicker text-accent">{t("The Signal 24 / policy ledger", "द सिग्नल 24 / नीति रजिस्टर")}</p><h1 className="mt-4 font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">{t("What changed,", "क्या बदला,")}<br /><em className="font-normal text-accent">{t("and who decided?", "और किसने तय किया?")}</em></h1><p className="mt-7 max-w-2xl text-lg leading-relaxed text-muted-foreground">{t("A permanent record of every reservation policy change we track: what the rule was, what it became, who changed it, and whether it survived in court.", "हर उस आरक्षण नीति-बदलाव का स्थायी रिकॉर्ड जिस पर हम नज़र रखते हैं: नियम क्या था, क्या बना, किसने बदला, और अदालत में टिका या नहीं।")}</p></div>
     </section>
-    <section className="signal-container archive-grid mt-16 border-y border-foreground/20 py-6 sm:mt-24" aria-label="Filter policy ledger">
-      <div className="flex items-center justify-between gap-4"><div className="flex items-center gap-3"><SlidersHorizontal size={16} className="text-accent" /><p className="signal-kicker">Filter the ledger</p></div><button type="button" onClick={() => setFiltersOpen((value) => !value)} className="inline-flex items-center gap-2 signal-kicker text-muted-foreground md:hidden" data-testid="button-toggle-policy-filters">{filtersOpen ? 'Hide' : 'Show'} filters <ChevronDown size={14} /></button></div>
+    <section className="signal-container archive-grid mt-16 border-y border-foreground/20 py-6 sm:mt-24" aria-label={t("Filter policy ledger", "नीति रजिस्टर छाँटें")}>
+      <div className="flex items-center justify-between gap-4"><div className="flex items-center gap-3"><SlidersHorizontal size={16} className="text-accent" /><p className="signal-kicker">{t("Filter the ledger", "रजिस्टर छाँटें")}</p></div><button type="button" onClick={() => setFiltersOpen((value) => !value)} className="inline-flex items-center gap-2 signal-kicker text-muted-foreground md:hidden" data-testid="button-toggle-policy-filters">{filtersOpen ? 'Hide' : 'Show'} filters <ChevronDown size={14} /></button></div>
       <div className={`${filtersOpen ? 'grid' : 'hidden'} mt-5 gap-3 md:grid md:grid-cols-[1.7fr_1fr_1fr_1fr_1fr_1fr_auto]`}>
-        <label className="flex items-center gap-2 border border-foreground/20 bg-card px-3 py-2"><Search size={15} className="shrink-0 text-accent" /><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search title, authority or framework" className="w-full bg-transparent text-sm outline-none" data-testid="input-policy-search" /></label>
-        <SelectFilter label="State" value={state} options={data.states} onChange={setState} testId="select-policy-state" />
-        <SelectFilter label="Sector" value={sector} options={data.sectors} onChange={setSector} testId="select-policy-sector" />
-        <SelectFilter label="Status" value={status} options={data.statuses} onChange={setStatus} testId="select-policy-status" />
-        <label className="border border-foreground/20 bg-card px-3 py-2"><span className="signal-kicker block text-[9px] text-muted-foreground">Effective from</span><input type="date" value={effectiveFrom} onChange={(event) => setEffectiveFrom(event.target.value)} className="w-full bg-transparent pt-1 text-sm outline-none" data-testid="input-policy-effective-from" /></label>
-        <label className="border border-foreground/20 bg-card px-3 py-2"><span className="signal-kicker block text-[9px] text-muted-foreground">Effective to</span><input type="date" value={effectiveTo} onChange={(event) => setEffectiveTo(event.target.value)} className="w-full bg-transparent pt-1 text-sm outline-none" data-testid="input-policy-effective-to" /></label>
-        <button type="button" onClick={clear} className="border border-foreground/20 px-4 py-2 signal-kicker text-muted-foreground hover:border-accent hover:text-accent" data-testid="button-clear-policy-filters">Clear</button>
+        <label className="flex items-center gap-2 border border-foreground/20 bg-card px-3 py-2"><Search size={15} className="shrink-0 text-accent" /><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("Search title, authority or framework", "शीर्षक, प्राधिकारी या ढाँचा खोजें")} className="w-full bg-transparent text-sm outline-none" data-testid="input-policy-search" /></label>
+        <SelectFilter label={t("State", "राज्य")} value={state} options={data.states} onChange={setState} testId="select-policy-state" />
+        <SelectFilter label={t("Sector", "क्षेत्र")} value={sector} options={data.sectors} onChange={setSector} testId="select-policy-sector" />
+        <SelectFilter label={t("Status", "स्थिति")} value={status} options={data.statuses} onChange={setStatus} testId="select-policy-status" />
+        <label className="border border-foreground/20 bg-card px-3 py-2"><span className="signal-kicker block text-[9px] text-muted-foreground">{t("Effective from", "कब से लागू")}</span><input type="date" value={effectiveFrom} onChange={(event) => setEffectiveFrom(event.target.value)} className="w-full bg-transparent pt-1 text-sm outline-none" data-testid="input-policy-effective-from" /></label>
+        <label className="border border-foreground/20 bg-card px-3 py-2"><span className="signal-kicker block text-[9px] text-muted-foreground">{t("Effective to", "कब तक लागू")}</span><input type="date" value={effectiveTo} onChange={(event) => setEffectiveTo(event.target.value)} className="w-full bg-transparent pt-1 text-sm outline-none" data-testid="input-policy-effective-to" /></label>
+        <button type="button" onClick={clear} className="border border-foreground/20 px-4 py-2 signal-kicker text-muted-foreground hover:border-accent hover:text-accent" data-testid="button-clear-policy-filters">{t("Clear", "हटाएँ")}</button>
       </div>
-      <div className="mt-5 flex items-center justify-between border-t border-foreground/15 pt-4"><p className="signal-kicker text-muted-foreground" data-testid="text-policy-result-count">{data.records.length} {data.records.length === 1 ? 'record' : 'records'} / source-linked</p>{activeFilters && <p className="signal-kicker text-accent">Filtered view</p>}</div>
+      <div className="mt-5 flex items-center justify-between border-t border-foreground/15 pt-4"><p className="signal-kicker text-muted-foreground" data-testid="text-policy-result-count">{data.records.length} {data.records.length === 1 ? 'record' : 'records'} / source-linked</p>{activeFilters && <p className="signal-kicker text-accent">{t("Filtered view", "छाँटा हुआ दृश्य")}</p>}</div>
     </section>
     <section className="signal-container py-12 sm:py-16">
-      {data.records.length === 0 ? <EmptyState title="No policy record found here." text="Clear one of the filters and try again. New entries appear only when their source record is ready." /> : <div className="border-t border-foreground/20">{data.records.map((record) => <Link href={record.canonicalPath} key={record.id} className="group grid gap-5 border-b border-foreground/20 py-7 md:grid-cols-[.85fr_1.4fr_.8fr] md:gap-10" data-testid={`link-policy-record-${record.id}`}><div><p className="signal-kicker text-accent">{record.state ?? 'National'} / {record.sector}</p><p className="mt-2 signal-kicker text-muted-foreground">{record.status}</p></div><div><h2 className="font-display text-3xl leading-tight tracking-[-.025em] group-hover:text-accent sm:text-4xl">{record.title}</h2><p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">{record.summary}</p></div><div className="md:border-l md:border-foreground/15 md:pl-6"><p className="signal-kicker text-muted-foreground">Effective date</p><p className="mt-2 font-display text-xl" data-testid={`text-policy-effective-date-${record.id}`}>{formatDate(record.effectiveDate)}</p><p className="mt-4 signal-kicker text-accent">Authority</p><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{record.authority}</p></div></Link>)}</div>}
+      {data.records.length === 0 ? <EmptyState title={t("No policy record found here.", "यहाँ कोई नीति रिकॉर्ड नहीं मिला।")} text={t("Clear one of the filters and try again. New entries appear only when their source record is ready.", "कोई फ़िल्टर हटाकर फिर कोशिश करें। नई प्रविष्टियाँ तभी आती हैं जब उनका स्रोत रिकॉर्ड तैयार हो।")} /> : <div className="border-t border-foreground/20">{data.records.map((record) => <Link href={record.canonicalPath} key={record.id} className="group grid gap-5 border-b border-foreground/20 py-7 md:grid-cols-[.85fr_1.4fr_.8fr] md:gap-10" data-testid={`link-policy-record-${record.id}`}><div><p className="signal-kicker text-accent">{record.state ?? 'National'} / {record.sector}</p><p className="mt-2 signal-kicker text-muted-foreground">{record.status}</p></div><div><h2 className="font-display text-3xl leading-tight tracking-[-.025em] group-hover:text-accent sm:text-4xl">{record.title}</h2><p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">{record.summary}</p></div><div className="md:border-l md:border-foreground/15 md:pl-6"><p className="signal-kicker text-muted-foreground">{t("Effective date", "लागू होने की तिथि")}</p><p className="mt-2 font-display text-xl" data-testid={`text-policy-effective-date-${record.id}`}>{formatDate(record.effectiveDate)}</p><p className="mt-4 signal-kicker text-accent">{t("Authority", "प्राधिकारी")}</p><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{record.authority}</p></div></Link>)}</div>}
     </section>
-    <footer className="signal-container flex justify-between gap-6 border-t border-foreground/20 py-8"><Link href="/" className="signal-kicker signal-link inline-flex items-center gap-2" data-testid="link-policy-ledger-home"><ArrowLeft size={13} /> Current edition</Link><p className="signal-kicker text-muted-foreground">A durable record / not a feed</p></footer>
+    <footer className="signal-container flex justify-between gap-6 border-t border-foreground/20 py-8"><Link href="/" className="signal-kicker signal-link inline-flex items-center gap-2" data-testid="link-policy-ledger-home"><ArrowLeft size={13} /> {t("Front page", "पहला पन्ना")}</Link><p className="signal-kicker text-muted-foreground">{t("A permanent record / not a feed", "स्थायी रिकॉर्ड / फ़ीड नहीं")}</p></footer>
   </main>;
 }
 
 function PolicyDetail() {
+  const t = useT();
+  const label = useLabel();
   const params = useParams<{ slug?: string }>();
   const slug = params.slug ?? '';
-  const { data: record, isLoading, isError, refetch } = useGetPolicy(slug, { query: { enabled: Boolean(slug), queryKey: getGetPolicyQueryKey(slug) } });
+  const { data: rawRecord, isLoading, isError, refetch } = useGetPolicy(slug, { query: { enabled: Boolean(slug), queryKey: getGetPolicyQueryKey(slug) } });
+  const lang = useLang();
+  const record = useMemo(() => rawRecord ? localizePolicy(rawRecord, lang) : undefined, [rawRecord, lang]);
   const structuredData = useMemo(() => {
     if (!record) return null;
     const path = record.canonicalPath;
@@ -1348,48 +1318,53 @@ function PolicyDetail() {
     description: record?.summary ?? 'A source-linked policy record from The Signal 24.',
     canonicalPath: record?.canonicalPath,
     robots: record ? 'index, follow' : 'noindex, follow',
+    translated: record?.isTranslated ?? true,
     type: record ? 'article' : 'website',
     structuredData,
   });
-  if (!slug) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message="That policy address is not valid." /></div></div>;
-  if (isLoading) return <div className="signal-page"><Header /><LoadingBlock label="Opening the permanent policy record…" /></div>;
-  if (isError || !record) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message="This policy record may have moved or is not published yet." onRetry={() => void refetch()} /></div></div>;
+  if (!slug) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message={t("That policy address is not valid.", "यह नीति पता मान्य नहीं है।")} /></div></div>;
+  if (isLoading) return <div className="signal-page"><Header /><LoadingBlock label={t("Opening the permanent policy record…", "स्थायी नीति रिकॉर्ड खुल रहा है…")} /></div>;
+  if (isError || !record) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message={t("This policy record may have moved or is not published yet.", "यह नीति रिकॉर्ड शायद हट गया है या अभी प्रकाशित नहीं हुआ।")} onRetry={() => void refetch()} /></div></div>;
   return <main className="signal-page"><Header />
     <article className="signal-container py-12 sm:py-20">
-      <Link href="/policies" className="signal-kicker signal-link inline-flex items-center gap-2 text-muted-foreground" data-testid="link-back-policy-ledger"><ArrowLeft size={13} /> Back to the policy ledger</Link>
+      <Link href="/policies" className="signal-kicker signal-link inline-flex items-center gap-2 text-muted-foreground" data-testid="link-back-policy-ledger"><ArrowLeft size={13} /> {t("Back to the policy ledger", "नीति रजिस्टर पर लौटें")}</Link>
       <header className="mt-12 border-b border-foreground/20 pb-10">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 signal-kicker text-accent"><span>{record.state ?? 'National'}</span><span>{record.sector}</span><span className="text-muted-foreground">{record.status}</span></div>
         <h1 className="mt-5 max-w-5xl font-display text-5xl leading-[.94] tracking-[-.055em] sm:text-7xl lg:text-8xl" data-testid="heading-policy">{record.title}</h1>
         <p className="mt-7 max-w-3xl text-lg leading-relaxed text-muted-foreground sm:text-xl" data-testid="text-policy-summary">{record.summary}</p>
         <div className="mt-8 grid gap-4 border-l-2 border-accent pl-4 sm:grid-cols-3 sm:gap-8 sm:pl-5">
-          <div><p className="signal-kicker text-accent">Effective date</p><p className="mt-2 font-display text-2xl" data-testid="text-policy-detail-effective-date">{formatDate(record.effectiveDate)}</p></div>
-          <div><p className="signal-kicker text-accent">Published</p><p className="mt-2 font-display text-2xl">{formatDate(record.publishedOn)}</p></div>
-          <div><p className="signal-kicker text-accent">Permanent path</p><p className="mt-2 break-all font-mono-signal text-xs text-muted-foreground">{record.canonicalPath}</p></div>
+          <div><p className="signal-kicker text-accent">{t("Effective date", "लागू होने की तिथि")}</p><p className="mt-2 font-display text-2xl" data-testid="text-policy-detail-effective-date">{formatDate(record.effectiveDate)}</p></div>
+          <div><p className="signal-kicker text-accent">{t("Published", "प्रकाशित")}</p><p className="mt-2 font-display text-2xl">{formatDate(record.publishedOn)}</p></div>
+          <div><p className="signal-kicker text-accent">{t("Permanent link", "स्थायी लिंक")}</p><p className="mt-2 break-all font-mono-signal text-xs text-muted-foreground">{record.canonicalPath}</p></div>
         </div>
       </header>
       <section className="grid gap-8 border-b border-foreground/20 py-10 sm:py-14 lg:grid-cols-[.7fr_1.3fr] lg:gap-16">
-        <div><p className="signal-kicker text-accent">01 / The policy delta</p><h2 className="mt-3 font-display text-4xl leading-[.96]">The framework,<br /><em className="font-normal text-accent">before and after.</em></h2><p className="mt-5 text-sm leading-relaxed text-muted-foreground">The record keeps the earlier position visible so a change can be understood rather than merely announced.</p></div>
-        <div className="grid gap-6 sm:grid-cols-2"><div className="border-t-2 border-foreground/25 pt-4"><p className="signal-kicker text-muted-foreground">Previous framework</p><p className="mt-4 font-display text-2xl leading-tight" data-testid="text-policy-previous-framework">{record.previousFramework}</p></div><div className="border-t-2 border-accent pt-4"><p className="signal-kicker text-accent">New framework</p><p className="mt-4 font-display text-2xl leading-tight" data-testid="text-policy-new-framework">{record.newFramework}</p></div></div>
+        <div><p className="signal-kicker text-accent">{t("01 / What changed", "01 / क्या बदला")}</p><h2 className="mt-3 font-display text-4xl leading-[.96]">{t("The framework,", "ढाँचा,")}<br /><em className="font-normal text-accent">{t("before and after.", "पहले और बाद में।")}</em></h2><p className="mt-5 text-sm leading-relaxed text-muted-foreground">{t("The earlier rule stays on the record, so a change is explained, not just announced.", "पुराना नियम रिकॉर्ड पर बना रहता है, ताकि बदलाव सिर्फ़ घोषित न हो, समझाया भी जाए।")}</p></div>
+        <div className="grid gap-6 sm:grid-cols-2"><div className="border-t-2 border-foreground/25 pt-4"><p className="signal-kicker text-muted-foreground">{t("Previous framework", "पुराना ढाँचा")}</p><p className="mt-4 font-display text-2xl leading-tight" data-testid="text-policy-previous-framework">{record.previousFramework}</p></div><div className="border-t-2 border-accent pt-4"><p className="signal-kicker text-accent">{t("New framework", "नया ढाँचा")}</p><p className="mt-4 font-display text-2xl leading-tight" data-testid="text-policy-new-framework">{record.newFramework}</p></div></div>
       </section>
       <section className="grid gap-8 border-b border-foreground/20 py-10 sm:py-14 lg:grid-cols-3 lg:gap-8">
-        <div><p className="signal-kicker text-accent">Authority</p><p className="mt-3 text-base leading-relaxed" data-testid="text-policy-authority">{record.authority}</p></div>
-        <div><p className="signal-kicker text-accent">Legal basis</p><p className="mt-3 text-base leading-relaxed" data-testid="text-policy-legal-basis">{record.legalBasis}</p></div>
-        <div><p className="signal-kicker text-accent">Court status</p><p className="mt-3 text-base leading-relaxed" data-testid="text-policy-court-status">{record.courtStatus}</p></div>
+        <div><p className="signal-kicker text-accent">{t("Authority", "प्राधिकारी")}</p><p className="mt-3 text-base leading-relaxed" data-testid="text-policy-authority">{record.authority}</p></div>
+        <div><p className="signal-kicker text-accent">{t("Legal basis", "क़ानूनी आधार")}</p><p className="mt-3 text-base leading-relaxed" data-testid="text-policy-legal-basis">{record.legalBasis}</p></div>
+        <div><p className="signal-kicker text-accent">{t("Court status", "अदालत में स्थिति")}</p><p className="mt-3 text-base leading-relaxed" data-testid="text-policy-court-status">{record.courtStatus}</p></div>
       </section>
       <section className="pt-10 sm:pt-14">
-        <div className="flex flex-col justify-between gap-4 border-b border-foreground/20 pb-5 sm:flex-row sm:items-end"><div><p className="signal-kicker text-accent">02 / First-class sources</p><h2 className="mt-3 font-display text-4xl leading-none">Read the documents.</h2></div><p className="max-w-sm text-sm leading-relaxed text-muted-foreground">Publication and retrieval dates remain attached to every source so the record can be checked over time.</p></div>
-        {record.sources.length === 0 ? <div className="pt-8"><EmptyState title="No sources are attached to this record." text="This policy record is not ready to carry a source claim." /></div> : <div className="grid gap-4 py-8 md:grid-cols-2">{record.sources.map((source) => <PolicySourceCard key={source.id} source={source} />)}</div>}
+        <div className="flex flex-col justify-between gap-4 border-b border-foreground/20 pb-5 sm:flex-row sm:items-end"><div><p className="signal-kicker text-accent">{t("02 / Primary sources", "02 / मूल स्रोत")}</p><h2 className="mt-3 font-display text-4xl leading-none">{t("Read the documents.", "दस्तावेज़ पढ़िए।")}</h2></div><p className="max-w-sm text-sm leading-relaxed text-muted-foreground">{t("Publication and retrieval dates stay attached to every source, so the record can be rechecked at any time.", "हर स्रोत के साथ उसके प्रकाशन और प्राप्ति की तारीख़ जुड़ी रहती है, ताकि रिकॉर्ड कभी भी दोबारा जाँचा जा सके।")}</p></div>
+        {record.sources.length === 0 ? <div className="pt-8"><EmptyState title={t("No sources are attached to this record.", "इस रिकॉर्ड से कोई स्रोत नहीं जुड़ा है।")} text={t("This policy record is not ready to carry a source claim.", "यह नीति रिकॉर्ड अभी किसी स्रोत-आधारित दावे के लिए तैयार नहीं है।")} /></div> : <div className="grid gap-4 py-8 md:grid-cols-2">{record.sources.map((source) => <PolicySourceCard key={source.id} source={source} />)}</div>}
       </section>
-      <footer className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-foreground/20 pt-5"><p className="signal-kicker text-muted-foreground">End of policy record / {record.id}</p><Link href="/policies" className="inline-flex items-center gap-2 signal-kicker text-accent hover:underline" data-testid="link-policy-ledger-bottom">Return to the ledger <ArrowUpRight size={13} /></Link></footer>
+      <footer className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-foreground/20 pt-5"><p className="signal-kicker text-muted-foreground">End of policy record / {record.id}</p><Link href="/policies" className="inline-flex items-center gap-2 signal-kicker text-accent hover:underline" data-testid="link-policy-ledger-bottom">{t("Return to the ledger", "रजिस्टर पर लौटें")} <ArrowUpRight size={13} /></Link></footer>
     </article>
   </main>;
 }
 
 function SelectFilter({ label, value, options, onChange, testId, allLabel }: { label: string; value: string; options: string[]; onChange: (value: string) => void; testId: string; allLabel?: string }) {
-  return <label className="relative border border-foreground/20 bg-card px-3 py-2"><span className="signal-kicker block text-[9px] text-muted-foreground">{label}</span><select value={value} onChange={(event) => onChange(event.target.value)} className="w-full appearance-none bg-transparent pt-1 text-sm outline-none" data-testid={testId}><option value="">{allLabel ?? `All ${label.toLowerCase()}`}</option>{options.filter(Boolean).map((option) => <option key={option} value={option}>{option}</option>)}</select><ChevronDown size={14} className="pointer-events-none absolute right-3 bottom-3 text-muted-foreground" /></label>;
+  const t = useT();
+  const valueLabel = useLabel();
+  return <label className="relative border border-foreground/20 bg-card px-3 py-2"><span className="signal-kicker block text-[9px] text-muted-foreground">{label}</span><select value={value} onChange={(event) => onChange(event.target.value)} className="w-full appearance-none bg-transparent pt-1 text-sm outline-none" data-testid={testId}><option value="">{allLabel ?? t(`All ${label.toLowerCase()}`, 'सभी')}</option>{options.filter(Boolean).map((option) => <option key={option} value={option}>{valueLabel(option)}</option>)}</select><ChevronDown size={14} className="pointer-events-none absolute right-3 bottom-3 text-muted-foreground" /></label>;
 }
 
 function ReadingProgress() {
+  const t = useT();
+  const label = useLabel();
   const [progress, setProgress] = useState(0);
   useEffect(() => {
     const update = () => {
@@ -1408,6 +1383,8 @@ function ReadingProgress() {
 }
 
 function ShareStory({ story }: { story: Story }) {
+  const t = useT();
+  const label = useLabel();
   const [status, setStatus] = useState('');
   async function share() {
     const url = window.location.href;
@@ -1427,121 +1404,27 @@ function ShareStory({ story }: { story: Story }) {
       }
     }
   }
-  return <div className="share-row" aria-live="polite"><button type="button" className="share-button" onClick={() => void share()} data-testid={`button-share-story-${story.id}`}><Link2 size={13} /> Share record</button>{status && <span className="signal-kicker text-accent" data-testid={`status-share-story-${story.id}`}>{status}</span>}</div>;
+  return <div className="share-row" aria-live="polite"><button type="button" className="share-button" onClick={() => void share()} data-testid={`button-share-story-${story.id}`}><Link2 size={13} /> {t("Share record", "रिकॉर्ड साझा करें")}</button>{status && <span className="signal-kicker text-accent" data-testid={`status-share-story-${story.id}`}>{status}</span>}</div>;
 }
 
-/*
-// hint: Logic changed on both sides. Requires understanding intent of each change.
 function StoryDetail() {
+  const t = useT();
+  const lang = useLang();
+  const label = useLabel();
   const params = useParams<{ id?: string; family?: string; slug?: string }>();
   const slugId = Number(params.slug?.match(/-(\d+)$/)?.[1]);
   const storyId = Number(params.id ?? slugId);
-  const { data: story, isLoading, isError, refetch } = useGetStory(storyId, { query: { enabled: Number.isFinite(storyId), queryKey: getGetStoryQueryKey(storyId) } });
+  const { data: rawStory, isLoading, isError, refetch } = useGetStory(storyId, { query: { enabled: Number.isFinite(storyId), queryKey: getGetStoryQueryKey(storyId) } });
+  const story = useMemo(() => rawStory ? localizeStory(rawStory, lang) : undefined, [rawStory, lang]);
   const recordPath = story ? storyPath(story) : undefined;
-  const structuredData = useMemo(() => {
-    if (!story) return null;
-    const url = absoluteSiteUrl(recordPath ?? '/');
-    const recordSchema = story.indexable ? {
-      '@type': story.kind === 'Article' ? 'NewsArticle' : 'Article',
-      '@id': `${url}#record`,
-      headline: story.title,
-      description: story.dek,
-      mainEntityOfPage: url,
-      image: absoluteImageUrl(imageForStory(story)?.src ?? DEFAULT_SHARE_IMAGE),
-      publisher: { ...organizationSchema, url: absoluteSiteUrl('/') },
-    } : {
-      '@type': 'WebPage',
-      '@id': `${url}#record`,
-      name: story.title,
-      description: story.dek,
-    };
-    return {
-      '@context': 'https://schema.org',
-      '@graph': [
-        recordSchema,
-        {
-          '@type': 'BreadcrumbList',
-          itemListElement: [
-            { '@type': 'ListItem', position: 1, name: 'The Signal 24', item: absoluteSiteUrl('/') },
-            { '@type': 'ListItem', position: 2, name: 'Archive', item: absoluteSiteUrl('/archive') },
-            { '@type': 'ListItem', position: 3, name: story.title, item: url },
-          ],
-        },
-        { ...organizationSchema, url: absoluteSiteUrl('/') },
-      ],
-    };
-  }, [recordPath, story]);
-  useSeo({
-    title: story ? `${story.title} — The Signal 24` : 'Record — The Signal 24',
-    description: story?.dek ?? 'A source record from the Signal 24 reservation archive.',
-    canonicalPath: story?.indexable ? recordPath : undefined,
-    robots: story?.indexable ? 'index, follow' : 'noindex, follow',
-    type: story?.indexable ? 'article' : 'website',
-    image: story ? imageForStory(story)?.src : undefined,
-    structuredData,
-  });
-  if (!Number.isFinite(storyId)) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message="That record address is not valid." /></div></div>;
-  if (isLoading) return <div className="signal-page"><Header /><LoadingBlock label="Opening the source record…" /></div>;
-  if (isError || !story) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message="This record may have moved or is not published yet." onRetry={() => void refetch()} /></div></div>;
-  const storyVisual = imageForStory(story);
-  return <main className="signal-page">
-    <Header />
-    <ReadingProgress />
-    <article className="signal-container py-12 sm:py-20">
-      <Link href="/archive" className="signal-kicker signal-link inline-flex items-center gap-2 text-muted-foreground" data-testid="link-back-archive"><ArrowLeft size={13} /> Back to the archive</Link>
-      <div className="mt-12 grid gap-10 lg:grid-cols-[1fr_.7fr] lg:items-end">
-        <div>
-          <p className="signal-kicker text-accent">{story.topic} / {story.kind}</p>
-          <h1 className="mt-4 max-w-4xl font-display text-5xl leading-[.94] tracking-[-.055em] sm:text-7xl lg:text-8xl" data-testid="heading-story">{story.title}</h1>
-          <p className="mt-7 max-w-2xl text-lg leading-relaxed text-muted-foreground sm:text-xl">{story.dek}</p>
-          <div className="mt-7 flex flex-wrap gap-x-5 gap-y-2 signal-kicker text-muted-foreground">
-            <span>Record date / as supplied · {formatDate(story.recordDate)}</span>
-            <span>{story.read} min read</span>
-            {story.state && <span>{story.state}</span>}
-          </div>
-        </div>
-        <StoryArt story={story} />
-      </div>
-      <div id="record-evidence" className="mx-auto mt-12 article-reading-column"><SourceLine story={story} detail /></div>
-      <div className="signal-container"><ArticleEvidenceSection storyId={story.id} /></div>
-      {story.aiDisclosure && <div className="mx-auto mt-6 article-reading-column border-l-2 border-accent bg-accent/10 px-5 py-4"><p className="signal-kicker text-accent">AI-assisted drafting disclosure</p><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{story.aiDisclosure}</p></div>}
-      {story.correctionNote && <div className="mx-auto mt-6 article-reading-column border border-accent/40 bg-accent/5 px-5 py-4"><p className="signal-kicker text-accent">Correction note</p><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{story.correctionNote}</p></div>}
-      <div className="mx-auto mt-10 grid max-w-[910px] gap-10 lg:grid-cols-[720px_150px] lg:items-start">
-        <div id="record-body" className="story-body article-reading-column text-[1.08rem] leading-[1.85] text-foreground/85">
-          {story.body.split(/\n{2,}/).map((paragraph, index) => <p key={`${story.id}-${index}`} className={index === 0 ? 'first-letter:font-display first-letter:text-5xl first-letter:leading-[.8] first-letter:text-accent' : ''}>{paragraph}</p>)}
-        </div>
-        <aside className="article-rail hidden lg:block">
-          <p className="signal-kicker text-accent">On this record</p>
-          <a href="#record-body" className="mt-4 block signal-kicker text-muted-foreground hover:text-accent">Reading</a>
-          <a href="#record-evidence" className="mt-3 block signal-kicker text-muted-foreground hover:text-accent">Evidence</a>
-          <p className="mt-6 border-t border-foreground/15 pt-4 signal-kicker text-muted-foreground">Dates</p>
-          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">The date above is attached to this archive record. A source publication date appears separately only when supplied.</p>
-        </aside>
-      </div>
-      <div className="mx-auto mt-12 flex article-reading-column flex-wrap items-center justify-between gap-4 border-t border-foreground/20 pt-5">
-        <p className="signal-kicker text-muted-foreground">End of record / {story.source}</p>
-        <div className="flex flex-wrap items-center gap-4">
-          {story.sourceUrl && <a href={story.sourceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 signal-kicker text-accent" data-testid="link-open-source-bottom">View source <ExternalLink size={13} /></a>}
-          <Link href="/editorial-standards#corrections" className="signal-kicker text-muted-foreground hover:text-accent" data-testid="link-report-correction">Report a correction</Link>
-        </div>
-      </div>
-    </article>
-  </main>;
-}
-*/
-function StoryDetail() {
-  const params = useParams<{ id?: string; family?: string; slug?: string }>();
-  const slugId = Number(params.slug?.match(/-(\d+)$/)?.[1]);
-  const storyId = Number(params.id ?? slugId);
-  const { data: story, isLoading, isError, refetch } = useGetStory(storyId, { query: { enabled: Number.isFinite(storyId), queryKey: getGetStoryQueryKey(storyId) } });
-  const recordPath = story ? storyPath(story) : undefined;
+  const isOpinion = story?.kind === 'Opinion';
   const structuredData = useMemo(() => {
     if (!story) return null;
     const path = recordPath ?? '/';
     const visual = imageForStory(story);
     const image = visual ? imageObject(visual.src, visual.width, visual.height) : imageObject();
-    const page = webPageNode(path, { name: `${story.title} — The Signal 24`, description: story.dek, primaryImageOfPage: image });
-    const breadcrumb = breadcrumbNode(path, [['Archive', '/archive'], [story.title, path]]);
+    const page = webPageNode(path, { name: `${story.title} — The Signal 24`, description: story.dek, primaryImageOfPage: image, inLanguage: story.contentLang === 'hi' ? 'hi-IN' : SITE_LANGUAGE });
+    const breadcrumb = breadcrumbNode(path, [[lang === 'hi' ? 'अभिलेखागार' : 'Archive', '/archive'], [story.title, path]]);
     // Non-indexable records stay a plain WebPage with no article claims.
     if (!story.indexable) return siteGraph(page, breadcrumb);
     // articlePublishedAt is the full publication timestamp; publishedOn is the edition date.
@@ -1554,7 +1437,7 @@ function StoryDetail() {
     return siteGraph(
       page,
       {
-        '@type': story.kind === 'Article' ? 'NewsArticle' : 'Article',
+        '@type': isOpinion ? 'OpinionNewsArticle' : story.kind === 'Article' ? 'NewsArticle' : 'Article',
         '@id': `${path}#record`,
         headline: story.title,
         description: story.dek,
@@ -1562,15 +1445,15 @@ function StoryDetail() {
         mainEntityOfPage: { '@id': `${path}#webpage` },
         image: [image],
         ...(published ? { datePublished: published, dateModified: published } : {}),
-        author: editorialDeskRef,
+        author: isOpinion && story.byline ? { '@type': 'Organization', name: story.byline, parentOrganization: organizationRef } : editorialDeskRef,
         publisher: organizationRef,
         isPartOf: websiteRef,
-        inLanguage: SITE_LANGUAGE,
+        inLanguage: story.contentLang === 'hi' ? 'hi-IN' : SITE_LANGUAGE,
         isAccessibleForFree: true,
         articleSection: story.topic,
         genre: story.kind,
         keywords: [story.topic, story.kind, story.state].filter(Boolean).join(', '),
-        wordCount: story.body.split(/\s+/).filter(Boolean).length,
+        wordCount: plainText(story.body).split(/\s+/).filter(Boolean).length,
         ...(story.state ? { spatialCoverage: placeForState(story.state) } : {}),
         ...(story.sourceUrl ? { isBasedOn: story.sourceUrl } : {}),
         ...(sourceDocument ? { citation: sourceDocument } : {}),
@@ -1579,64 +1462,68 @@ function StoryDetail() {
       editorialDeskNode,
       breadcrumb,
     );
-  }, [recordPath, story]);
+  }, [isOpinion, lang, recordPath, story]);
   useSeo({
-    title: story ? `${story.title} — The Signal 24` : 'Record — The Signal 24',
-    description: story?.dek ?? 'A source record from the Signal 24 reservation archive.',
+    title: story ? `${story.title} — The Signal 24` : t('Record — The Signal 24', 'रिकॉर्ड — द सिग्नल 24'),
+    description: story?.dek ?? t('A source record from The Signal 24.', 'द सिग्नल 24 का एक स्रोत-आधारित रिकॉर्ड।'),
     canonicalPath: story?.indexable ? recordPath : undefined,
     robots: story?.indexable ? 'index, follow' : 'noindex, follow',
     type: story?.indexable ? 'article' : 'website',
     image: story ? imageForStory(story)?.src : undefined,
+    translated: story?.isTranslated ?? true,
     structuredData,
   });
-  if (!Number.isFinite(storyId)) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message="That record address is not valid." /></div></div>;
-  if (isLoading) return <div className="signal-page"><Header /><LoadingBlock label="Opening the source record…" /></div>;
-  if (isError || !story) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message="This record may have moved or is not published yet." onRetry={() => void refetch()} /></div></div>;
+  if (!Number.isFinite(storyId)) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message={t('That record address is not valid.', 'यह रिकॉर्ड पता मान्य नहीं है।')} /></div></div>;
+  if (isLoading) return <div className="signal-page"><Header /><LoadingBlock label={t('Opening the record…', 'रिकॉर्ड खुल रहा है…')} /></div>;
+  if (isError || !story) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message={t('This record may have moved or is not published yet.', 'यह रिकॉर्ड शायद हट गया है या अभी प्रकाशित नहीं हुआ।')} onRetry={() => void refetch()} /></div></div>;
   return <main className="signal-page">
     <Header />
     <ReadingProgress />
     <article className="signal-container py-12 sm:py-20">
-      <Link href="/archive" className="signal-kicker signal-link inline-flex items-center gap-2 text-muted-foreground" data-testid="link-back-archive"><ArrowLeft size={13} /> Back to the archive</Link>
+      <Link href={isOpinion ? '/opinion' : '/archive'} className="signal-kicker signal-link inline-flex items-center gap-2 text-muted-foreground" data-testid="link-back-archive"><ArrowLeft size={13} /> {isOpinion ? t('All opinion', 'सारी राय') : t('Back to the archive', 'अभिलेखागार पर लौटें')}</Link>
       <header className="mt-10 max-w-5xl border-b border-foreground/20 pb-8 sm:mt-14 sm:pb-10">
-        <p className="signal-kicker text-accent">{story.topic} / {story.kind}</p>
-        <h1 className="mt-4 font-display text-5xl leading-[.94] tracking-[-.055em] sm:text-7xl lg:text-8xl" data-testid="heading-story">{story.title}</h1>
-        <div className="mt-3"><span className={`signal-tag ${story.verificationStatus === 'verified' ? 'signal-tag--blue' : 'signal-tag--amber'}`}>Verification / {verificationLabel(story.verificationStatus)}</span></div>
-        <p className="mt-7 max-w-3xl text-lg leading-relaxed text-muted-foreground sm:text-xl">{story.dek}</p>
+        {isOpinion ? <div className="flex flex-wrap items-center gap-3"><span className="opinion-label">{label('Opinion')}</span><span className="signal-kicker text-muted-foreground">{t('A signed viewpoint, separate from our reporting', 'हस्ताक्षरित राय, हमारी रिपोर्टिंग से अलग')}</span></div> : <p className="signal-kicker text-accent">{label(story.topic)} / {label(story.kind)}</p>}
+        <h1 lang={story.contentLang} className="mt-4 font-display text-5xl leading-[.94] tracking-[-.055em] sm:text-7xl lg:text-8xl" data-testid="heading-story">{story.title}</h1>
+        {isOpinion && <p className="mt-5 signal-kicker text-foreground">{t('By', 'लेखक:')} {label(story.byline) || t('The Signal 24 editorial board', 'द सिग्नल 24 संपादकीय बोर्ड')}</p>}
+        <div className="mt-3"><span className={`signal-tag ${story.verificationStatus === 'verified' ? 'signal-tag--blue' : 'signal-tag--amber'}`}>{t('Verification', 'सत्यापन')} / {verificationLabel(story.verificationStatus)}</span></div>
+        <p lang={story.contentLang} className="mt-7 max-w-3xl text-lg leading-relaxed text-muted-foreground sm:text-xl">{story.dek}</p>
         <div className="mt-7 flex flex-wrap gap-2">
-          <span className="signal-tag">Record date / as supplied · {formatDate(story.recordDate)}</span>
-          {story.state && <span className="signal-tag">{story.state}</span>}
-          <span className="signal-tag">{story.read} min read</span>
+          <span className="signal-tag">{t('Record date', 'रिकॉर्ड तिथि')} · {formatDate(story.recordDate)}</span>
+          {story.state && <span className="signal-tag">{label(story.state)}</span>}
+          <span className="signal-tag">{t(`${story.read} min read`, `${story.read} मिनट`)}</span>
         </div>
         <div className="mt-6"><ShareStory story={story} /></div>
       </header>
+      {!story.isTranslated && <p className="translation-notice mx-auto mt-8 article-reading-column" role="note" data-testid="note-untranslated">हिंदी संस्करण अभी तैयार हो रहा है। नीचे मूल अंग्रेज़ी रिकॉर्ड है। <span className="text-muted-foreground">The Hindi edition of this record is being translated; the original English follows.</span></p>}
       <figure className="mt-8 m-0 overflow-hidden bg-muted sm:mt-10">
         <StoryArt story={story} className="aspect-[16/9] w-full" showCredit={false} />
         <figcaption className="visual-caption px-3 py-3 signal-kicker text-muted-foreground">{imageCaptionForStory(story)}</figcaption>
       </figure>
       <div id="record-evidence" className="mx-auto mt-8 article-reading-column"><SourceLine story={story} detail /></div>
       <div className="signal-container"><ArticleEvidenceSection storyId={story.id} /></div>
-      {story.aiDisclosure && <div className="signal-note mt-6 max-w-3xl px-5 py-4"><p className="signal-kicker text-accent">AI-assisted drafting disclosure</p><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{story.aiDisclosure}</p></div>}
-      {story.correctionNote && <div className="signal-callout mt-6 max-w-3xl px-5 py-4"><p className="signal-kicker text-accent">Correction note</p><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{story.correctionNote}</p></div>}
+      {story.aiDisclosure && <div className="signal-note mt-6 max-w-3xl px-5 py-4"><p className="signal-kicker text-accent">{t('AI-assisted drafting disclosure', 'एआई की मदद से मसौदा: सूचना')}</p><p className="mt-2 text-sm leading-relaxed text-muted-foreground" lang="en">{story.aiDisclosure}</p></div>}
+      {story.correctionNote && <div className="signal-callout mt-6 max-w-3xl px-5 py-4"><p className="signal-kicker text-accent">{t('Correction note', 'सुधार सूचना')}</p><p className="mt-2 text-sm leading-relaxed text-muted-foreground" lang="en">{story.correctionNote}</p></div>}
       <div className="mx-auto mt-10 grid max-w-[910px] gap-10 lg:grid-cols-[720px_150px] lg:items-start">
-        <div id="record-body" className="story-body article-reading-column text-[1.08rem] leading-[1.85] text-foreground/85" data-testid="text-story-body">
-          {story.body.split(/\n{2,}/).map((paragraph, index) => <p key={`${story.id}-${index}`} className={index === 0 ? 'first-letter:font-display first-letter:text-5xl first-letter:leading-[.8] first-letter:text-accent' : ''}>{paragraph}</p>)}
+        <div id="record-body" lang={story.contentLang} className="story-body article-reading-column text-[1.08rem] leading-[1.85] text-foreground/85" data-testid="text-story-body">
+          <RichBody body={story.body} dropCap={!isOpinion} />
         </div>
         <aside className="article-rail hidden lg:block">
-          <p className="signal-kicker text-accent">On this record</p>
-          <a href="#record-body" className="mt-4 block signal-kicker text-muted-foreground hover:text-accent">Reading</a>
-          <a href="#record-evidence" className="mt-3 block signal-kicker text-muted-foreground hover:text-accent">Evidence</a>
-          <p className="mt-6 border-t border-foreground/15 pt-4 signal-kicker text-muted-foreground">Dates</p>
-          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">The date above is attached to this archive record. A source publication date appears separately only when supplied.</p>
+          <p className="signal-kicker text-accent">{t('On this record', 'इस रिकॉर्ड में')}</p>
+          <a href="#record-body" className="mt-4 block signal-kicker text-muted-foreground hover:text-accent">{t('Reading', 'पढ़ना')}</a>
+          <a href="#record-evidence" className="mt-3 block signal-kicker text-muted-foreground hover:text-accent">{t('Evidence', 'सबूत')}</a>
+          <p className="mt-6 border-t border-foreground/15 pt-4 signal-kicker text-muted-foreground">{t('Dates', 'तारीख़ें')}</p>
+          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{t('The date above belongs to this record. The source’s own publication date is shown separately when known.', 'ऊपर की तारीख़ इस रिकॉर्ड की है। स्रोत की अपनी प्रकाशन तिथि पता होने पर अलग से दिखाई जाती है।')}</p>
         </aside>
       </div>
       <div className="mx-auto mt-12 flex article-reading-column flex-wrap items-center justify-between gap-4 border-t border-foreground/20 pt-5">
-        <p className="signal-kicker text-muted-foreground">End of record / {story.source}</p>
+        <p className="signal-kicker text-muted-foreground">{t('End of record', 'रिकॉर्ड समाप्त')} / <span lang="en">{story.source}</span></p>
         <div className="flex flex-wrap items-center gap-4">
-          {story.sourceUrl && <a href={story.sourceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 signal-kicker text-accent" data-testid="link-open-source-bottom">View source <ExternalLink size={13} /></a>}
-          <Link href="/editorial-standards#corrections" className="signal-kicker text-muted-foreground hover:text-accent" data-testid="link-report-correction">Report a correction</Link>
+          {story.sourceUrl && <a href={story.sourceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 signal-kicker text-accent" data-testid="link-open-source-bottom">{t('View source', 'स्रोत देखें')} <ExternalLink size={13} /></a>}
+          <Link href="/editorial-standards#corrections" className="signal-kicker text-muted-foreground hover:text-accent" data-testid="link-report-correction">{t('Report a correction', 'सुधार बताएँ')}</Link>
         </div>
       </div>
     </article>
+    <SiteFooter />
   </main>;
 }
 
@@ -1646,75 +1533,6 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 
 type StoryDraft = StoryInput & { id?: number };
 const emptyStory = (issueId: number): StoryDraft => ({ issueId, topic: 'Latest', kind: 'Article', state: '', source: '', sourceUrl: '', publishedOn: new Date().toISOString().slice(0, 10), eyebrow: '', title: '', dek: '', body: '', time: '6 min', read: 6, tone: 'Latest', number: null, sortOrder: 1 });
-
-function Editor() {
-  const queryClient = useQueryClient();
-  const { data, isLoading, isError, refetch } = useGetCurrentIssue();
-  const createIssueMutation = useCreateIssue();
-  const publishMutation = usePublishIssue();
-  const createStoryMutation = useCreateStory();
-  const updateStoryMutation = useUpdateStory();
-  const [workingIssue, setWorkingIssue] = useState<Issue | null>(null);
-  const [stories, setStories] = useState<Story[]>([]);
-  const [issueForm, setIssueForm] = useState<IssueInput>({ issueDate: new Date().toISOString().slice(0, 10), issueNumber: 1, title: '', intro: '' });
-  const [storyForm, setStoryForm] = useState<StoryDraft | null>(null);
-  const [notice, setNotice] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const hydrated = useRef(false);
-  useEffect(() => { if (data && !hydrated.current) { hydrated.current = true; setWorkingIssue(data.issue); setStories(data.stories); setIssueForm({ issueDate: data.issue.issueDate, issueNumber: data.issue.issueNumber, title: data.issue.title, intro: data.issue.intro }); } }, [data]);
-  useSeo({
-    title: 'Editorial desk — The Signal 24',
-    description: 'Private editorial workspace for preparing source-aware records for The Signal 24.',
-    robots: 'noindex, nofollow',
-  });
-  if (isLoading) return <div className="signal-page"><Header editor /><LoadingBlock label="Loading the editorial desk…" /></div>;
-  if (isError) return <div className="signal-page"><Header editor /><div className="py-20"><ErrorState message="The editorial workspace could not be loaded." onRetry={() => void refetch()} /></div></div>;
-  const updateIssue = (field: keyof IssueInput, value: string) => setIssueForm((current) => ({ ...current, [field]: field === 'issueNumber' ? Number(value) : value }));
-  function createIssue(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setNotice(null);
-    createIssueMutation.mutate({ data: issueForm }, { onSuccess: (issue) => { setWorkingIssue(issue); setStories([]); setNotice({ type: 'success', text: `Issue ${issue.issueNumber} created as a draft.` }); } , onError: () => setNotice({ type: 'error', text: 'The issue could not be created. Check the fields and try again.' }) });
-  }
-  function saveStory(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); if (!storyForm) return; setNotice(null);
-    const onSuccess = (saved: Story) => { setStories((current) => storyForm.id ? current.map((item) => item.id === saved.id ? saved : item) : [...current, saved]); setStoryForm(null); setNotice({ type: 'success', text: storyForm.id ? 'Record updated.' : 'Record added to the issue.' }); void queryClient.invalidateQueries({ queryKey: getGetCurrentIssueQueryKey() }); };
-    if (storyForm.id) updateStoryMutation.mutate({ storyId: storyForm.id, data: storyForm }, { onSuccess, onError: () => setNotice({ type: 'error', text: 'The record could not be updated.' }) });
-    else createStoryMutation.mutate({ data: storyForm }, { onSuccess, onError: () => setNotice({ type: 'error', text: 'The record could not be added.' }) });
-  }
-  function publish() {
-    if (!workingIssue) return;
-    publishMutation.mutate({ issueId: workingIssue.id }, { onSuccess: (issue) => { setWorkingIssue(issue); setNotice({ type: 'success', text: `Issue ${issue.issueNumber} is now published.` }); void queryClient.invalidateQueries({ queryKey: getGetCurrentIssueQueryKey() }); }, onError: () => setNotice({ type: 'error', text: 'Publishing did not complete.' }) });
-  }
-  function startDraft(update: LiveUpdate) {
-    if (!workingIssue) {
-      setNotice({ type: 'error', text: 'Create an issue before importing a monitoring lead.' });
-      return;
-    }
-    const today = new Date().toISOString().slice(0, 10);
-    setStoryForm({
-      ...emptyStory(workingIssue.id),
-      topic: update.topic,
-      source: update.source,
-      sourceUrl: update.sourceUrl,
-      publishedOn: today,
-      sourcePublishedOn: update.publishedAt?.slice(0, 10) ?? null,
-      sourceRetrievedOn: today,
-      eyebrow: 'Monitoring lead / requires review',
-      title: update.headline,
-      dek: update.summary,
-      body: `This is an editorial draft based on a monitored external source.\n\nThe desk must independently verify the source, establish what is known and unknown, and replace this note with reported context before publication.\n\nSource: ${update.sourceUrl}`,
-      workflowStatus: 'draft',
-      verificationStatus: 'source-linked',
-      verificationNotes: `Imported from the live source monitor on ${today}. Independent verification and editorial review are required.`,
-      revisionNote: 'Imported from live source monitor',
-    });
-    setNotice({ type: 'success', text: 'Monitoring lead loaded as a draft. Verify it before moving it to review.' });
-    window.setTimeout(() => document.querySelector('[data-testid="input-story-title"]')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 0);
-  }
-  const setStory = (field: keyof StoryInput, value: string) => setStoryForm((current) => current ? { ...current, [field]: ['read', 'sortOrder', 'number'].includes(field) ? (value === '' ? null : Number(value)) : value } : current);
-  return <main className="signal-page"><Header editor /><section className="signal-container pt-12 sm:pt-20"><div className="flex flex-col justify-between gap-7 border-b border-foreground/20 pb-8 sm:flex-row sm:items-end"><div><p className="signal-kicker text-accent">Private workspace / editorial desk</p><h1 className="mt-3 font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">Make the<br /><em className="font-normal text-accent">record.</em></h1><p className="mt-6 max-w-xl text-sm leading-relaxed text-muted-foreground">Create an issue, add source-aware records, and publish a considered edition. This desk keeps the expanded metadata visible because context is part of the work.</p></div><div className="flex items-center gap-2 signal-kicker text-muted-foreground"><Pencil size={14} className="text-accent" /> {workingIssue?.status ?? 'draft'} / {workingIssue ? `Issue ${workingIssue.issueNumber}` : 'No issue'}</div></div>{notice && <div className={`mt-6 flex items-center gap-3 border px-4 py-3 text-sm ${notice.type === 'success' ? 'border-secondary bg-secondary/15' : 'border-destructive bg-destructive/10 text-destructive'}`} role="status" data-testid="status-editor-notice"><Check size={16} /> {notice.text}</div>}</section>
-    <LiveDesk onSelect={startDraft} />
-    <section className="signal-container grid gap-8 py-10 lg:grid-cols-[.72fr_1.28fr] lg:gap-12"><div className="space-y-7"><div className="editor-panel border border-foreground/20 bg-card p-5 sm:p-7"><div className="flex items-start justify-between gap-4"><div><p className="signal-kicker text-accent">01 / Issue</p><h2 className="mt-2 font-display text-3xl">Edition details</h2></div>{workingIssue && <span className="signal-kicker text-muted-foreground">{workingIssue.status}</span>}</div><form onSubmit={createIssue} className="mt-6 grid gap-4"><Field label="Issue date"><input required type="date" value={issueForm.issueDate} onChange={(event) => updateIssue('issueDate', event.target.value)} className="editor-input" data-testid="input-issue-date" /></Field><Field label="Issue number"><input required type="number" min="1" value={issueForm.issueNumber} onChange={(event) => updateIssue('issueNumber', event.target.value)} className="editor-input" data-testid="input-issue-number" /></Field><Field label="Edition title"><input required value={issueForm.title} onChange={(event) => updateIssue('title', event.target.value)} className="editor-input" placeholder="A clear title for this edition" data-testid="input-issue-title" /></Field><Field label="Introduction"><textarea required value={issueForm.intro} onChange={(event) => updateIssue('intro', event.target.value)} className="editor-input min-h-28 resize-y" placeholder="What should a reader understand before they begin?" data-testid="input-issue-intro" /></Field><div className="flex flex-wrap gap-2"><button type="submit" disabled={createIssueMutation.isPending} className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-3 signal-kicker text-primary-foreground disabled:opacity-60" data-testid="button-create-issue">{createIssueMutation.isPending ? 'Creating…' : 'Create new issue'} <Plus size={14} /></button>{workingIssue && <button type="button" onClick={publish} disabled={publishMutation.isPending || workingIssue.status === 'published'} className="inline-flex items-center gap-2 rounded-full border border-accent px-4 py-3 signal-kicker text-accent disabled:opacity-40" data-testid="button-publish-issue">{publishMutation.isPending ? 'Publishing…' : workingIssue.status === 'published' ? 'Published' : 'Publish issue'} <Send size={14} /></button>}</div></form></div><div className="border-l-2 border-accent px-5 py-2"><p className="signal-kicker text-accent">Desk note</p><p className="mt-2 text-sm leading-relaxed text-muted-foreground">A source label is not decoration. It tells readers what kind of record they are reading, and what claims it can responsibly carry.</p></div></div>
-      <div className="editor-panel border border-foreground/20 bg-card p-5 sm:p-7"><div className="flex flex-col justify-between gap-4 border-b border-foreground/15 pb-5 sm:flex-row sm:items-end"><div><p className="signal-kicker text-accent">02 / Records</p><h2 className="mt-2 font-display text-3xl">Build the issue</h2></div><button type="button" disabled={!workingIssue} onClick={() => workingIssue && setStoryForm(emptyStory(workingIssue.id))} className="inline-flex items-center justify-center gap-2 rounded-full bg-accent px-4 py-3 signal-kicker text-accent-foreground disabled:cursor-not-allowed disabled:opacity-40" data-testid="button-add-record"><Plus size={14} /> Add record</button></div>{!workingIssue ? <div className="py-16"><EmptyState title="Create an issue first." text="The record form will appear here once an issue exists." /></div> : storyForm ? <form onSubmit={saveStory} className="mt-6 grid gap-4"><div className="flex items-center justify-between"><p className="font-display text-2xl">{storyForm.id ? 'Edit record' : 'New record'}</p><button type="button" onClick={() => setStoryForm(null)} className="text-muted-foreground hover:text-foreground" aria-label="Close record form" data-testid="button-close-record-form"><X size={18} /></button></div><div className="grid gap-4 sm:grid-cols-2"><Field label="Topic"><select value={storyForm.topic} onChange={(event) => setStory('topic', event.target.value)} className="editor-input" data-testid="select-story-topic">{TOPICS.map((item) => <option key={item}>{item}</option>)}</select></Field><Field label="Record type"><select value={storyForm.kind} onChange={(event) => setStory('kind', event.target.value)} className="editor-input" data-testid="select-story-kind">{KINDS.map((item) => <option key={item}>{item}</option>)}</select></Field><Field label="State / territory"><input value={storyForm.state ?? ''} onChange={(event) => setStory('state', event.target.value)} className="editor-input" placeholder="Leave blank if national" data-testid="input-story-state" /></Field><Field label="Published on"><input type="date" value={storyForm.publishedOn ?? ''} onChange={(event) => setStory('publishedOn', event.target.value)} className="editor-input" data-testid="input-story-date" /></Field><Field label="Source"><input required value={storyForm.source} onChange={(event) => setStory('source', event.target.value)} className="editor-input" placeholder="Court, publication, institution or archive" data-testid="input-story-source" /></Field><Field label="Source URL"><input type="url" value={storyForm.sourceUrl ?? ''} onChange={(event) => setStory('sourceUrl', event.target.value)} className="editor-input" placeholder="https://" data-testid="input-story-source-url" /></Field><Field label="Eyebrow"><input value={storyForm.eyebrow} onChange={(event) => setStory('eyebrow', event.target.value)} className="editor-input" placeholder="What kind of moment is this?" data-testid="input-story-eyebrow" /></Field><Field label="Visual tone"><input value={storyForm.tone} onChange={(event) => setStory('tone', event.target.value)} className="editor-input" placeholder="Latest, history, data…" data-testid="input-story-tone" /></Field><Field label="Reading time"><input value={storyForm.time} onChange={(event) => setStory('time', event.target.value)} className="editor-input" placeholder="8 min" data-testid="input-story-time" /></Field><Field label="Minutes"><input type="number" min="1" value={storyForm.read} onChange={(event) => setStory('read', event.target.value)} className="editor-input" data-testid="input-story-read" /></Field><Field label="Story number"><input type="number" value={storyForm.number ?? ''} onChange={(event) => setStory('number', event.target.value)} className="editor-input" data-testid="input-story-number" /></Field><Field label="Sort order"><input type="number" min="1" value={storyForm.sortOrder} onChange={(event) => setStory('sortOrder', event.target.value)} className="editor-input" data-testid="input-story-sort-order" /></Field></div><Field label="Title"><input required value={storyForm.title} onChange={(event) => setStory('title', event.target.value)} className="editor-input text-lg" data-testid="input-story-title" /></Field><Field label="Dek"><textarea required value={storyForm.dek} onChange={(event) => setStory('dek', event.target.value)} className="editor-input min-h-24 resize-y" data-testid="input-story-dek" /></Field><Field label="Body"><textarea required value={storyForm.body} onChange={(event) => setStory('body', event.target.value)} className="editor-input min-h-64 resize-y leading-relaxed" placeholder="Separate paragraphs with a blank line." data-testid="input-story-body" /></Field><div className="flex flex-wrap gap-2"><button type="submit" disabled={createStoryMutation.isPending || updateStoryMutation.isPending} className="rounded-full bg-primary px-5 py-3 signal-kicker text-primary-foreground disabled:opacity-60" data-testid="button-save-record">{createStoryMutation.isPending || updateStoryMutation.isPending ? 'Saving…' : storyForm.id ? 'Save changes' : 'Add to issue'}</button><button type="button" onClick={() => setStoryForm(null)} className="rounded-full border border-foreground/20 px-5 py-3 signal-kicker" data-testid="button-cancel-record">Cancel</button></div></form> : <div className="mt-6">{stories.length === 0 ? <EmptyState title="No records in this issue." text="Add the first source-aware record to begin shaping the edition." /> : <div className="divide-y divide-foreground/15">{stories.map((story) => <div key={story.id} className="flex items-start justify-between gap-4 py-4" data-testid={`row-editor-story-${story.id}`}><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><p className="signal-kicker text-accent">{story.topic} / {story.kind}</p><span className="rounded-full border border-foreground/20 px-2 py-1 signal-kicker text-[9px]">{story.workflowStatus}</span><span className="signal-kicker text-muted-foreground">{story.verificationStatus}</span></div><h3 className="mt-1 truncate font-display text-2xl">{story.title}</h3><p className="mt-1 truncate text-sm text-muted-foreground">{story.source} · {formatDate(story.publishedOn)}{story.reviewedAt ? ` · reviewed ${formatDate(story.reviewedAt)}` : ' · review pending'}</p></div><button type="button" onClick={() => setStoryForm({ ...story, workflowStatus: story.workflowStatus === 'published' ? 'draft' : story.workflowStatus, revisionNote: '' })} className="inline-flex shrink-0 items-center gap-2 signal-kicker text-muted-foreground hover:text-accent" data-testid={`button-edit-story-${story.id}`}><Pencil size={13} /> Edit</button></div>)}</div>}</div>}</div></section><DecisionImpactDeskPanel /><footer className="signal-container flex justify-between border-t border-foreground/20 py-8"><Link href="/" className="signal-kicker signal-link inline-flex items-center gap-2"><ArrowLeft size={13} /> Leave the desk</Link><span className="signal-kicker text-muted-foreground">Source first / always</span></footer></main>;
-}
 
 function localDateTimeValue(value?: string | null) {
   if (!value) return '';
@@ -1942,6 +1760,11 @@ function EditorialDesk() {
 
   const updateIssue = (field: keyof IssueInput, value: string) => setIssueForm((current) => ({ ...current, [field]: field === 'issueNumber' ? Number(value) : value }));
   const setStory = (field: keyof StoryInput, value: string) => setStoryForm((current) => current ? { ...current, [field]: ['read', 'sortOrder', 'number'].includes(field) ? (value === '' ? null : Number(value)) : value } : current);
+  const setHi = (field: 'title' | 'dek' | 'body', value: string) => setStoryForm((current) => {
+    if (!current) return current;
+    const next = { title: current.hi?.title ?? '', dek: current.hi?.dek ?? '', body: current.hi?.body ?? '', [field]: value };
+    return { ...current, hi: next.title || next.dek || next.body ? next : null };
+  });
 
   function createIssue(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -1979,7 +1802,7 @@ function EditorialDesk() {
 
   return <main className="signal-page"><Header editor /><section className="signal-container pt-12 sm:pt-20"><div className="flex flex-col justify-between gap-7 border-b border-foreground/20 pb-8 sm:flex-row sm:items-end"><div><p className="signal-kicker text-accent">Private workspace / editorial desk</p><h1 className="mt-3 font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">Make the<br /><em className="font-normal text-accent">record.</em></h1><p className="mt-6 max-w-xl text-sm leading-relaxed text-muted-foreground">Create an issue, add source-aware records, and move each record through draft, review, scheduled, published or archived states. Publication is blocked until review is recorded.</p></div><div className="flex items-center gap-2 signal-kicker text-muted-foreground"><Pencil size={14} className="text-accent" /> {workingIssue?.status ?? 'draft'} / {workingIssue ? `Issue ${workingIssue.issueNumber}` : 'No issue'}</div></div>{notice && <div className={`mt-6 flex items-center gap-3 border px-4 py-3 text-sm ${notice.type === 'success' ? 'border-secondary bg-secondary/15' : 'border-destructive bg-destructive/10 text-destructive'}`} role="status" data-testid="status-editor-notice"><Check size={16} /> {notice.text}</div>}</section>
     <section className="signal-container grid gap-8 py-10 lg:grid-cols-[.72fr_1.28fr] lg:gap-12"><div className="space-y-7"><div className="editor-panel border border-foreground/20 bg-card p-5 sm:p-7"><div className="flex items-start justify-between gap-4"><div><p className="signal-kicker text-accent">01 / Issue</p><h2 className="mt-2 font-display text-3xl">Edition details</h2></div>{workingIssue && <span className="signal-kicker text-muted-foreground">{workingIssue.status}</span>}</div><form onSubmit={createIssue} className="mt-6 grid gap-4"><Field label="Issue date"><input required type="date" value={issueForm.issueDate} onChange={(event) => updateIssue('issueDate', event.target.value)} className="editor-input" data-testid="input-issue-date" /></Field><Field label="Issue number"><input required type="number" min="1" value={issueForm.issueNumber} onChange={(event) => updateIssue('issueNumber', event.target.value)} className="editor-input" data-testid="input-issue-number" /></Field><Field label="Edition title"><input required value={issueForm.title} onChange={(event) => updateIssue('title', event.target.value)} className="editor-input" placeholder="A clear title for this edition" data-testid="input-issue-title" /></Field><Field label="Introduction"><textarea required value={issueForm.intro} onChange={(event) => updateIssue('intro', event.target.value)} className="editor-input min-h-28 resize-y" placeholder="What should a reader understand before they begin?" data-testid="input-issue-intro" /></Field><div className="flex flex-wrap gap-2"><button type="submit" disabled={createIssueMutation.isPending} className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-3 signal-kicker text-primary-foreground disabled:opacity-60" data-testid="button-create-issue">{createIssueMutation.isPending ? 'Creating…' : 'Create new issue'} <Plus size={14} /></button>{workingIssue && <button type="button" onClick={publish} disabled={publishMutation.isPending || workingIssue.status === 'published'} className="inline-flex items-center gap-2 rounded-full border border-accent px-4 py-3 signal-kicker text-accent disabled:opacity-40" data-testid="button-publish-issue">{publishMutation.isPending ? 'Publishing…' : workingIssue.status === 'published' ? 'Published' : 'Publish issue'} <Send size={14} /></button>}</div></form></div><div className="border-l-2 border-accent px-5 py-2"><p className="signal-kicker text-accent">Desk note</p><p className="mt-2 text-sm leading-relaxed text-muted-foreground">A source label is not decoration. It tells readers what kind of record they are reading, and what claims it can responsibly carry.</p></div></div>
-      <div className="editor-panel border border-foreground/20 bg-card p-5 sm:p-7"><div className="flex flex-col justify-between gap-4 border-b border-foreground/15 pb-5 sm:flex-row sm:items-end"><div><p className="signal-kicker text-accent">02 / Records</p><h2 className="mt-2 font-display text-3xl">Build the issue</h2></div><button type="button" disabled={!workingIssue} onClick={() => workingIssue && setStoryForm(emptyStory(workingIssue.id))} className="inline-flex items-center justify-center gap-2 rounded-full bg-accent px-4 py-3 signal-kicker text-accent-foreground disabled:cursor-not-allowed disabled:opacity-40" data-testid="button-add-record"><Plus size={14} /> Add record</button></div>{!workingIssue ? <div className="py-16"><EmptyState title="Create an issue first." text="The record form will appear here once an issue exists." /></div> : storyForm ? <form onSubmit={saveStory} className="mt-6 grid gap-4"><div className="flex items-center justify-between"><p className="font-display text-2xl">{storyForm.id ? 'Edit record' : 'New record'}</p><button type="button" onClick={() => setStoryForm(null)} className="text-muted-foreground hover:text-foreground" aria-label="Close record form" data-testid="button-close-record-form"><X size={18} /></button></div><div className="grid gap-4 sm:grid-cols-2"><Field label="Workflow state"><select value={storyForm.workflowStatus ?? 'draft'} onChange={(event) => setStory('workflowStatus', event.target.value)} className="editor-input" data-testid="select-story-workflow">{WORKFLOW_STATUSES.map((item) => <option key={item}>{item}</option>)}</select></Field><Field label="Verification state"><select value={storyForm.verificationStatus ?? 'unverified'} onChange={(event) => setStory('verificationStatus', event.target.value)} className="editor-input" data-testid="select-story-verification">{VERIFICATION_STATUSES.map((item) => <option key={item}>{item}</option>)}</select></Field><Field label="Topic"><select value={storyForm.topic} onChange={(event) => setStory('topic', event.target.value)} className="editor-input" data-testid="select-story-topic">{TOPICS.map((item) => <option key={item}>{item}</option>)}</select></Field><Field label="Record type"><select value={storyForm.kind} onChange={(event) => setStory('kind', event.target.value)} className="editor-input" data-testid="select-story-kind">{KINDS.map((item) => <option key={item}>{item}</option>)}</select></Field><Field label="State / territory"><input value={storyForm.state ?? ''} onChange={(event) => setStory('state', event.target.value)} className="editor-input" placeholder="Leave blank if national" data-testid="input-story-state" /></Field><Field label="Published on"><input type="date" value={storyForm.publishedOn ?? ''} onChange={(event) => setStory('publishedOn', event.target.value)} className="editor-input" data-testid="input-story-date" /></Field><Field label="Source"><input required value={storyForm.source} onChange={(event) => setStory('source', event.target.value)} className="editor-input" placeholder="Court, publication, institution or archive" data-testid="input-story-source" /></Field><Field label="Source URL"><input type="url" value={storyForm.sourceUrl ?? ''} onChange={(event) => setStory('sourceUrl', event.target.value)} className="editor-input" placeholder="https://" data-testid="input-story-source-url" /></Field><Field label="Source published on"><input type="date" value={storyForm.sourcePublishedOn ?? ''} onChange={(event) => setStory('sourcePublishedOn', event.target.value)} className="editor-input" data-testid="input-source-published-on" /></Field><Field label="Source retrieved on"><input type="date" value={storyForm.sourceRetrievedOn ?? ''} onChange={(event) => setStory('sourceRetrievedOn', event.target.value)} className="editor-input" data-testid="input-source-retrieved-on" /></Field><Field label="Scheduled for"><input type="datetime-local" value={localDateTimeValue(storyForm.scheduledFor)} onChange={(event) => setStory('scheduledFor', event.target.value ? new Date(event.target.value).toISOString() : '')} className="editor-input" data-testid="input-story-scheduled-for" /></Field><Field label="Eyebrow"><input value={storyForm.eyebrow} onChange={(event) => setStory('eyebrow', event.target.value)} className="editor-input" placeholder="What kind of moment is this?" data-testid="input-story-eyebrow" /></Field><Field label="Visual tone"><input value={storyForm.tone} onChange={(event) => setStory('tone', event.target.value)} className="editor-input" placeholder="Latest, history, data…" data-testid="input-story-tone" /></Field><Field label="Reading time"><input value={storyForm.time} onChange={(event) => setStory('time', event.target.value)} className="editor-input" placeholder="8 min" data-testid="input-story-time" /></Field><Field label="Minutes"><input type="number" min="1" value={storyForm.read} onChange={(event) => setStory('read', event.target.value)} className="editor-input" data-testid="input-story-read" /></Field><Field label="Story number"><input type="number" value={storyForm.number ?? ''} onChange={(event) => setStory('number', event.target.value)} className="editor-input" data-testid="input-story-number" /></Field><Field label="Sort order"><input type="number" min="1" value={storyForm.sortOrder} onChange={(event) => setStory('sortOrder', event.target.value)} className="editor-input" data-testid="input-story-sort-order" /></Field></div><Field label="Verification notes"><textarea value={storyForm.verificationNotes ?? ''} onChange={(event) => setStory('verificationNotes', event.target.value)} className="editor-input min-h-20 resize-y" placeholder="What was checked, against which source, and when?" data-testid="input-verification-notes" /></Field><Field label="AI-assisted drafting disclosure"><textarea value={storyForm.aiDisclosure ?? ''} onChange={(event) => setStory('aiDisclosure', event.target.value)} className="editor-input min-h-20 resize-y" placeholder="Leave blank when no AI assistance was used." data-testid="input-ai-disclosure" /></Field><Field label="Correction note"><textarea value={storyForm.correctionNote ?? ''} onChange={(event) => setStory('correctionNote', event.target.value)} className="editor-input min-h-20 resize-y" placeholder="Visible note for a correction or clarification." data-testid="input-correction-note" /></Field><Field label="Revision note"><input value={storyForm.revisionNote ?? ''} onChange={(event) => setStory('revisionNote', event.target.value)} className="editor-input" placeholder="What changed in this revision?" data-testid="input-revision-note" /></Field><Field label="Title"><input required value={storyForm.title} onChange={(event) => setStory('title', event.target.value)} className="editor-input text-lg" data-testid="input-story-title" /></Field><Field label="Dek"><textarea required value={storyForm.dek} onChange={(event) => setStory('dek', event.target.value)} className="editor-input min-h-24 resize-y" data-testid="input-story-dek" /></Field><Field label="Body"><textarea required value={storyForm.body} onChange={(event) => setStory('body', event.target.value)} className="editor-input min-h-64 resize-y leading-relaxed" placeholder="Separate paragraphs with a blank line." data-testid="input-story-body" /></Field><div className="flex flex-wrap gap-2"><button type="submit" disabled={createStoryMutation.isPending || updateStoryMutation.isPending} className="rounded-full bg-primary px-5 py-3 signal-kicker text-primary-foreground disabled:opacity-60" data-testid="button-save-record">{createStoryMutation.isPending || updateStoryMutation.isPending ? 'Saving…' : storyForm.id ? 'Save changes' : 'Add to issue'}</button><button type="button" onClick={() => setStoryForm(null)} className="rounded-full border border-foreground/20 px-5 py-3 signal-kicker" data-testid="button-cancel-record">Cancel</button></div><RevisionHistory storyId={storyForm.id} /></form> : <div className="mt-6">{stories.length === 0 ? <EmptyState title="No records in this issue." text="Add the first source-aware record to begin shaping the edition." /> : <div className="divide-y divide-foreground/15">{stories.map((story) => <div key={story.id} className="flex items-start justify-between gap-4 py-4" data-testid={`row-editor-story-${story.id}`}><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><p className="signal-kicker text-accent">{story.topic} / {story.kind}</p><span className="rounded-full border border-foreground/20 px-2 py-1 signal-kicker text-[9px]">{story.workflowStatus}</span><span className="signal-kicker text-muted-foreground">{story.verificationStatus}</span></div><h3 className="mt-1 truncate font-display text-2xl">{story.title}</h3><p className="mt-1 truncate text-sm text-muted-foreground">{story.source} · {formatDate(story.publishedOn)}{story.reviewedAt ? ` · reviewed ${formatDate(story.reviewedAt)}` : ' · review pending'}</p></div><button type="button" onClick={() => setStoryForm({ ...story, workflowStatus: story.workflowStatus === 'published' ? 'draft' : story.workflowStatus, revisionNote: '' })} className="inline-flex shrink-0 items-center gap-2 signal-kicker text-muted-foreground hover:text-accent" data-testid={`button-edit-story-${story.id}`}><Pencil size={13} /> Edit</button></div>)}</div>}</div>}</div></section><footer className="signal-container flex justify-between border-t border-foreground/20 py-8"><Link href="/" className="signal-kicker signal-link inline-flex items-center gap-2"><ArrowLeft size={13} /> Leave the desk</Link><span className="signal-kicker text-muted-foreground">Source first / always</span></footer></main>;
+      <div className="editor-panel border border-foreground/20 bg-card p-5 sm:p-7"><div className="flex flex-col justify-between gap-4 border-b border-foreground/15 pb-5 sm:flex-row sm:items-end"><div><p className="signal-kicker text-accent">02 / Records</p><h2 className="mt-2 font-display text-3xl">Build the issue</h2></div><button type="button" disabled={!workingIssue} onClick={() => workingIssue && setStoryForm(emptyStory(workingIssue.id))} className="inline-flex items-center justify-center gap-2 rounded-full bg-accent px-4 py-3 signal-kicker text-accent-foreground disabled:cursor-not-allowed disabled:opacity-40" data-testid="button-add-record"><Plus size={14} /> Add record</button></div>{!workingIssue ? <div className="py-16"><EmptyState title="Create an issue first." text="The record form will appear here once an issue exists." /></div> : storyForm ? <form onSubmit={saveStory} className="mt-6 grid gap-4"><div className="flex items-center justify-between"><p className="font-display text-2xl">{storyForm.id ? 'Edit record' : 'New record'}</p><button type="button" onClick={() => setStoryForm(null)} className="text-muted-foreground hover:text-foreground" aria-label="Close record form" data-testid="button-close-record-form"><X size={18} /></button></div><div className="grid gap-4 sm:grid-cols-2"><Field label="Workflow state"><select value={storyForm.workflowStatus ?? 'draft'} onChange={(event) => setStory('workflowStatus', event.target.value)} className="editor-input" data-testid="select-story-workflow">{WORKFLOW_STATUSES.map((item) => <option key={item}>{item}</option>)}</select></Field><Field label="Verification state"><select value={storyForm.verificationStatus ?? 'unverified'} onChange={(event) => setStory('verificationStatus', event.target.value)} className="editor-input" data-testid="select-story-verification">{VERIFICATION_STATUSES.map((item) => <option key={item}>{item}</option>)}</select></Field><Field label="Topic"><select value={storyForm.topic} onChange={(event) => setStory('topic', event.target.value)} className="editor-input" data-testid="select-story-topic">{TOPICS.map((item) => <option key={item}>{item}</option>)}</select></Field><Field label="Record type"><select value={storyForm.kind} onChange={(event) => setStory('kind', event.target.value)} className="editor-input" data-testid="select-story-kind">{KINDS.map((item) => <option key={item}>{item}</option>)}</select></Field><Field label="State / territory"><input value={storyForm.state ?? ''} onChange={(event) => setStory('state', event.target.value)} className="editor-input" placeholder="Leave blank if national" data-testid="input-story-state" /></Field><Field label="Published on"><input type="date" value={storyForm.publishedOn ?? ''} onChange={(event) => setStory('publishedOn', event.target.value)} className="editor-input" data-testid="input-story-date" /></Field><Field label="Source"><input required value={storyForm.source} onChange={(event) => setStory('source', event.target.value)} className="editor-input" placeholder="Court, publication, institution or archive" data-testid="input-story-source" /></Field><Field label="Source URL"><input type="url" value={storyForm.sourceUrl ?? ''} onChange={(event) => setStory('sourceUrl', event.target.value)} className="editor-input" placeholder="https://" data-testid="input-story-source-url" /></Field><Field label="Source published on"><input type="date" value={storyForm.sourcePublishedOn ?? ''} onChange={(event) => setStory('sourcePublishedOn', event.target.value)} className="editor-input" data-testid="input-source-published-on" /></Field><Field label="Source retrieved on"><input type="date" value={storyForm.sourceRetrievedOn ?? ''} onChange={(event) => setStory('sourceRetrievedOn', event.target.value)} className="editor-input" data-testid="input-source-retrieved-on" /></Field><Field label="Scheduled for"><input type="datetime-local" value={localDateTimeValue(storyForm.scheduledFor)} onChange={(event) => setStory('scheduledFor', event.target.value ? new Date(event.target.value).toISOString() : '')} className="editor-input" data-testid="input-story-scheduled-for" /></Field><Field label="Eyebrow"><input value={storyForm.eyebrow} onChange={(event) => setStory('eyebrow', event.target.value)} className="editor-input" placeholder="What kind of moment is this?" data-testid="input-story-eyebrow" /></Field><Field label="Visual tone"><input value={storyForm.tone} onChange={(event) => setStory('tone', event.target.value)} className="editor-input" placeholder="Latest, history, data…" data-testid="input-story-tone" /></Field><Field label="Reading time"><input value={storyForm.time} onChange={(event) => setStory('time', event.target.value)} className="editor-input" placeholder="8 min" data-testid="input-story-time" /></Field><Field label="Minutes"><input type="number" min="1" value={storyForm.read} onChange={(event) => setStory('read', event.target.value)} className="editor-input" data-testid="input-story-read" /></Field><Field label="Story number"><input type="number" value={storyForm.number ?? ''} onChange={(event) => setStory('number', event.target.value)} className="editor-input" data-testid="input-story-number" /></Field><Field label="Sort order"><input type="number" min="1" value={storyForm.sortOrder} onChange={(event) => setStory('sortOrder', event.target.value)} className="editor-input" data-testid="input-story-sort-order" /></Field></div><Field label="Verification notes"><textarea value={storyForm.verificationNotes ?? ''} onChange={(event) => setStory('verificationNotes', event.target.value)} className="editor-input min-h-20 resize-y" placeholder="What was checked, against which source, and when?" data-testid="input-verification-notes" /></Field><Field label="AI-assisted drafting disclosure"><textarea value={storyForm.aiDisclosure ?? ''} onChange={(event) => setStory('aiDisclosure', event.target.value)} className="editor-input min-h-20 resize-y" placeholder="Leave blank when no AI assistance was used." data-testid="input-ai-disclosure" /></Field><Field label="Correction note"><textarea value={storyForm.correctionNote ?? ''} onChange={(event) => setStory('correctionNote', event.target.value)} className="editor-input min-h-20 resize-y" placeholder="Visible note for a correction or clarification." data-testid="input-correction-note" /></Field><Field label="Revision note"><input value={storyForm.revisionNote ?? ''} onChange={(event) => setStory('revisionNote', event.target.value)} className="editor-input" placeholder="What changed in this revision?" data-testid="input-revision-note" /></Field><Field label="Title"><input required value={storyForm.title} onChange={(event) => setStory('title', event.target.value)} className="editor-input text-lg" data-testid="input-story-title" /></Field><Field label="Dek"><textarea required value={storyForm.dek} onChange={(event) => setStory('dek', event.target.value)} className="editor-input min-h-24 resize-y" data-testid="input-story-dek" /></Field><Field label="Body"><textarea required value={storyForm.body} onChange={(event) => setStory('body', event.target.value)} className="editor-input min-h-64 resize-y leading-relaxed" placeholder="Separate paragraphs with a blank line." data-testid="input-story-body" /></Field><Field label="Byline (required for Opinion)"><input value={storyForm.byline ?? ''} onChange={(event) => setStory('byline', event.target.value)} className="editor-input" placeholder="Named author, or The Signal 24 editorial board" data-testid="input-story-byline" /></Field><fieldset className="grid gap-4 border border-foreground/15 p-4" lang="hi"><legend className="signal-kicker px-1 text-accent">हिंदी संस्करण / Hindi edition</legend><p className="text-xs leading-relaxed text-muted-foreground" lang="en">Leave blank until a reviewed Hindi translation exists. Hindi pages show the English text, marked as untranslated, when these are empty.</p><Field label="शीर्षक / Hindi title"><input value={storyForm.hi?.title ?? ''} onChange={(event) => setHi('title', event.target.value)} className="editor-input text-lg" data-testid="input-story-hi-title" /></Field><Field label="सारांश / Hindi dek"><textarea value={storyForm.hi?.dek ?? ''} onChange={(event) => setHi('dek', event.target.value)} className="editor-input min-h-24 resize-y" data-testid="input-story-hi-dek" /></Field><Field label="मुख्य पाठ / Hindi body"><textarea value={storyForm.hi?.body ?? ''} onChange={(event) => setHi('body', event.target.value)} className="editor-input min-h-64 resize-y leading-relaxed" placeholder="अनुच्छेदों के बीच एक खाली पंक्ति छोड़ें।" data-testid="input-story-hi-body" /></Field></fieldset><div className="flex flex-wrap gap-2"><button type="submit" disabled={createStoryMutation.isPending || updateStoryMutation.isPending} className="rounded-full bg-primary px-5 py-3 signal-kicker text-primary-foreground disabled:opacity-60" data-testid="button-save-record">{createStoryMutation.isPending || updateStoryMutation.isPending ? 'Saving…' : storyForm.id ? 'Save changes' : 'Add to issue'}</button><button type="button" onClick={() => setStoryForm(null)} className="rounded-full border border-foreground/20 px-5 py-3 signal-kicker" data-testid="button-cancel-record">Cancel</button></div><RevisionHistory storyId={storyForm.id} /></form> : <div className="mt-6">{stories.length === 0 ? <EmptyState title="No records in this issue." text="Add the first source-aware record to begin shaping the edition." /> : <div className="divide-y divide-foreground/15">{stories.map((story) => <div key={story.id} className="flex items-start justify-between gap-4 py-4" data-testid={`row-editor-story-${story.id}`}><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><p className="signal-kicker text-accent">{story.topic} / {story.kind}</p><span className="rounded-full border border-foreground/20 px-2 py-1 signal-kicker text-[9px]">{story.workflowStatus}</span><span className="signal-kicker text-muted-foreground">{story.verificationStatus}</span></div><h3 className="mt-1 truncate font-display text-2xl">{story.title}</h3><p className="mt-1 truncate text-sm text-muted-foreground">{story.source} · {formatDate(story.publishedOn)}{story.reviewedAt ? ` · reviewed ${formatDate(story.reviewedAt)}` : ' · review pending'}</p></div><button type="button" onClick={() => setStoryForm({ ...story, workflowStatus: story.workflowStatus === 'published' ? 'draft' : story.workflowStatus, revisionNote: '' })} className="inline-flex shrink-0 items-center gap-2 signal-kicker text-muted-foreground hover:text-accent" data-testid={`button-edit-story-${story.id}`}><Pencil size={13} /> Edit</button></div>)}</div>}</div>}</div></section><footer className="signal-container flex justify-between border-t border-foreground/20 py-8"><Link href="/" className="signal-kicker signal-link inline-flex items-center gap-2"><ArrowLeft size={13} /> Leave the desk</Link><span className="signal-kicker text-muted-foreground">Source first / always</span></footer></main>;
 }
 
 function AboutPage() {
@@ -1995,24 +1818,28 @@ function MethodologyPage() {
 }
 
 function AuthorPage() {
+  const t = useT();
   const params = useParams<{ slug?: string }>();
   const path = '/authors/signal-24';
   const validAuthor = params.slug === 'signal-24';
+  const title = t('Editorial desk — The Signal 24', 'संपादकीय डेस्क — द सिग्नल 24');
+  const description = t('The desk that sources, checks and publishes every Signal 24 record, and answers for the mistakes.', 'वह डेस्क जो द सिग्नल 24 के हर रिकॉर्ड का स्रोत खोजती है, जाँचती है, प्रकाशित करती है, और ग़लतियों की ज़िम्मेदारी लेती है।');
   useSeo({
-    title: 'Editorial desk — The Signal 24',
-    description: 'Meet the editorial desk behind The Signal 24, a source-first publication and research archive on reservation in India.',
+    title,
+    description,
     canonicalPath: validAuthor ? path : undefined,
     robots: validAuthor ? 'index, follow' : 'noindex, follow',
     // The desk is a department of the publisher, not a person, so ProfilePage → Organization.
     structuredData: validAuthor ? siteGraph(
-      webPageNode(EDITORIAL_DESK_PATH, { name: 'Editorial desk — The Signal 24', description: 'Meet the editorial desk behind The Signal 24, a source-first publication and research archive on reservation in India.', mainEntity: editorialDeskRef }, 'ProfilePage'),
+      webPageNode(EDITORIAL_DESK_PATH, { name: title, description, mainEntity: editorialDeskRef }, 'ProfilePage'),
       { ...editorialDeskNode, description: 'The editorial desk responsible for sourcing, reviewing and presenting the Signal 24 archive.', publishingPrinciples: '/editorial-standards' },
-      breadcrumbNode(EDITORIAL_DESK_PATH, [['Editorial desk', EDITORIAL_DESK_PATH]]),
+      breadcrumbNode(EDITORIAL_DESK_PATH, [[t('Editorial desk', 'संपादकीय डेस्क'), EDITORIAL_DESK_PATH]]),
     ) : undefined,
   });
-  if (!validAuthor) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message="That author page does not exist." /></div></div>;
-  return <main className="signal-page"><Header /><section className="signal-container pt-14 sm:pt-24"><p className="signal-kicker text-accent">The Signal 24 / author</p><h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">The editorial<br /><em className="font-normal text-accent">desk.</em></h1><p className="mt-8 max-w-2xl text-lg leading-relaxed text-muted-foreground">The Signal 24 editorial desk keeps reporting, documents, analysis and opinion distinct, and names the source and date behind each published record.</p></section><section className="signal-container mt-16 border-y border-foreground/20 py-10 sm:mt-24 sm:py-14"><div className="grid gap-8 lg:grid-cols-[.7fr_1.3fr]"><div><p className="signal-kicker text-accent">Source first / always</p><h2 className="mt-3 font-display text-4xl leading-none">A byline with a responsibility.</h2></div><p className="max-w-2xl text-base leading-relaxed text-muted-foreground">The desk is a publication identity rather than a claim that every record has one author. Individual bylines, disclosures and corrections belong on the record when they are available.</p></div></section><footer className="signal-container flex justify-between gap-6 border-t border-foreground/20 py-8"><Link href="/archive" className="signal-kicker signal-link">Browse the archive</Link><Link href="/editorial-standards" className="signal-kicker signal-link">Editorial standards</Link></footer></main>;
+  if (!validAuthor) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message={t('That author page does not exist.', 'यह लेखक पेज मौजूद नहीं है।')} /></div></div>;
+  return <main className="signal-page"><Header /><section className="signal-container pt-14 sm:pt-24"><p className="signal-kicker text-accent">{t('The Signal 24 / editorial desk', 'द सिग्नल 24 / संपादकीय डेस्क')}</p><h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">{t(<>The desk<br /><em className="font-normal text-accent">that signs off.</em></>, <>वह डेस्क,<br /><em className="font-normal text-accent">जो ज़िम्मेदारी लेती है।</em></>)}</h1><p className="mt-8 max-w-2xl text-lg leading-relaxed text-muted-foreground">{description}</p></section><section className="signal-container mt-16 border-y border-foreground/20 py-10 sm:mt-24 sm:py-14"><div className="grid gap-8 lg:grid-cols-[.7fr_1.3fr]"><div><p className="signal-kicker text-accent">{t('A byline is a responsibility', 'नाम का मतलब ज़िम्मेदारी')}</p><h2 className="mt-3 font-display text-4xl leading-tight">{t('Who answers for each record.', 'हर रिकॉर्ड के लिए कौन जवाबदेह है।')}</h2></div><p className="max-w-2xl text-base leading-relaxed text-muted-foreground">{t('Records published under the desk’s name are checked by the desk, and the desk answers for them. Signed opinion pieces carry their author’s name. When we are wrong, the correction appears on the record with the date it was made.', 'डेस्क के नाम से छपे रिकॉर्ड डेस्क जाँचती है, और उनकी जवाबदेही उसी की है। हस्ताक्षरित राय पर उसके लेखक का नाम होता है। जब हम ग़लत होते हैं, तो सुधार उसी रिकॉर्ड पर तारीख़ के साथ दर्ज होता है।')}</p></div></section><SiteFooter /></main>;
 }
+
 
 const COMMUNITY_TOPICS = ['general', 'caste', 'policy', 'representation', 'migration', 'violence', 'work', 'education', 'culture'] as CommunityTopic[];
 const COMMUNITY_KINDS = ['thought', 'article', 'piece'] as CommunityPostKind[];
@@ -2112,6 +1939,7 @@ function CommunityPage() {
     title: 'Community noticeboard — The Signal 24',
     description: 'Public participant contributions about reservation, representation and related policy. Contributions are not The Signal 24 reporting.',
     canonicalPath: '/community',
+    translated: false,
     robots: 'noindex, follow',
   });
   const [topic, setTopic] = useState('');
@@ -2121,7 +1949,7 @@ function CommunityPage() {
   const params = useMemo<GetCommunityPostsParams>(() => ({ topic: topic ? topic as CommunityTopic : undefined, state: state || undefined, sort, limit: 50 }), [topic, state, sort]);
   const { data, isLoading, isError, refetch, isFetching } = useGetCommunityPosts(params, { query: { queryKey: getGetCommunityPostsQueryKey(params) } });
   const posts = data?.posts ?? [];
-  useSeo({ title: 'Community noticeboard — The Signal 24', description: 'A public discussion space for lived thoughts, articles, links and creative pieces from across India.', canonicalPath: '/community' });
+  useSeo({ title: 'Community noticeboard — The Signal 24', description: 'A public discussion space for lived thoughts, articles, links and creative pieces from across India.', canonicalPath: '/community', translated: false });
   return <main className="signal-page"><Header /><section className="signal-container pt-12 sm:pt-20">
     <div className="grid gap-8 border-b-2 border-primary pb-10 lg:grid-cols-[1fr_.58fr] lg:items-end">
       <div><p className="signal-kicker text-accent">The Signal 24 / community</p><h1 className="mt-4 max-w-4xl font-display text-6xl leading-[.88] tracking-[-.065em] sm:text-8xl">The national<br /><em className="font-normal text-accent">noticeboard.</em></h1><p className="mt-7 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">A separate public room for lived thoughts, articles, links and creative pieces. Read across disagreement, geography and experience.</p></div>
@@ -2204,12 +2032,6 @@ function EditorEvidenceAccessRoute() {
   return <EditorAccessRoute />;
 }
 
-/*
-// hint: Structural change (rename/retype). Check callers of this entity.
-function AppRoutes() {
-  return <Switch><Route path="/" component={Home} /><Route path="/sign-in/*?" component={SignInPage} /><Route path="/sign-up/*?" component={SignUpPage} /><Route path="/community" component={CommunityPage} /><Route path="/community/:id" component={CommunityDetailPage} /><Route path="/policies" component={PoliciesPage} /><Route path="/policies/:slug" component={PolicyDetail} /><Route path="/archive" component={ArchivePage} /><Route path="/events" component={EvidenceEventsRoute} /><Route path="/events/:id" component={EvidenceEventRoute} /><Route path="/sources/:id" component={EvidenceSourceRoute} /><Route path="/topics" component={TopicIndexPage} /><Route path="/topics/:slug" component={TopicPage} /><Route path="/timeline" component={TimelinePage} /><Route path="/search" component={EvidenceSearchRoute} /><Route path="/authors/:slug" component={AuthorPage} /><Route path="/data" component={DataIndexPage} /><Route path="/stories/:id" component={StoryDetail} /><Route path="/editor/evidence" component={EditorEvidenceAccessRoute} /><Route path="/editor" component={EditorAccessRoute} /><Route path="/about" component={AboutPage} /><Route path="/editorial-standards" component={StandardsPage} /><Route path="/methodology" component={MethodologyPage} /><Route path="/:family/:slug" component={StoryDetail} /><Route component={NotFound} /></Switch>;
-}
-*/
 function AppRoutes() {
   return <Switch>
     <Route path="/" component={Home} />
@@ -2231,6 +2053,7 @@ function AppRoutes() {
     <Route path="/timeline" component={TimelinePage} />
     <Route path="/authors/:slug" component={AuthorPage} />
     <Route path="/data" component={DataIndexPage} />
+    <Route path="/opinion" component={OpinionPage} />
     <Route path="/stories/:id" component={StoryDetail} />
     <Route path="/editor/evidence" component={EditorEvidenceAccessRoute} />
     <Route path="/editor" component={EditorAccessRoute} />
@@ -2276,9 +2099,12 @@ function ClerkProviderWithRouting() {
             }
           }}
         >
-          Skip to main content
+          {/^\/hi(\/|$)/.test(window.location.pathname.slice(basePath.length)) ? 'मुख्य सामग्री पर जाएँ' : 'Skip to main content'}
         </a>
-        <ErrorBoundary><AppRoutes /><Toaster /></ErrorBoundary>
+        <ErrorBoundary><Switch>
+          <Route path="/hi" nest><LangProvider lang="hi"><AppRoutes /></LangProvider></Route>
+          <Route><LangProvider lang="en"><AppRoutes /></LangProvider></Route>
+        </Switch><Toaster /></ErrorBoundary>
       </TooltipProvider>
     </QueryClientProvider>
   </ClerkProvider>;
@@ -2294,7 +2120,7 @@ function storyPath(story: Story) {
 }
 
 function slugify(value: string) {
-  return value.normalize('NFKD').replace(/[^\w\s-]/g, '').trim().toLowerCase().replace(/[\s_-]+/g, '-').replace(/^-+|-+$/g, '');
+  return (value ?? '').normalize('NFKD').replace(/[^\w\s-]/g, '').trim().toLowerCase().replace(/[\s_-]+/g, '-').replace(/^-+|-+$/g, '');
 }
 
 function recordFamilyForStory(story: Story) {
@@ -2307,9 +2133,11 @@ function recordFamilyForStory(story: Story) {
 }
 
 function DataIndexPage() {
+  const t = useT();
+  const label = useLabel();
   const path = '/data';
   const params = useMemo(() => ({ limit: 100 }), []);
-  const { data, isLoading, isError, refetch } = useGetArchive(params, {
+  const { data, isLoading, isError, refetch } = useLocalizedArchive(params, {
     query: { queryKey: getGetArchiveQueryKey(params) },
   });
   const records = data?.stories.filter((story) =>
@@ -2317,43 +2145,95 @@ function DataIndexPage() {
     story.verificationStatus === 'verified' &&
     Boolean(story.sourceUrl),
   ) ?? [];
+  const title = t('Data room — The Signal 24', 'आंकड़ा कक्ष — द सिग्नल 24');
   useSeo({
-    title: 'Data room — The Signal 24',
-    description: 'Browse source-linked and reviewed data records on reservation and representation in India.',
+    title,
+    description: t('Verified, source-linked data on reservation and representation in India, and an honest account of the data the state has not released.', 'भारत में आरक्षण और प्रतिनिधित्व पर सत्यापित, स्रोत-आधारित आंकड़े, और उन आंकड़ों का ईमानदार हिसाब जो सरकार ने जारी नहीं किए।'),
     canonicalPath: path,
     // Data records are articles/notes about data (typed NewsArticle/Article on their own
     // pages), so they are listed here rather than re-typed as Dataset.
     structuredData: siteGraph(
-      collectionPageNode(path, { name: 'Data room — The Signal 24', description: 'Published data records and methodology notes on reservation and representation in India.', publisher: organizationRef }, records.filter((story) => story.indexable).map((story) => ({ url: storyPath(story), name: story.title }))),
-      breadcrumbNode(path, [['Data', path]]),
+      collectionPageNode(path, { name: title, description: 'Published data records and methodology notes on reservation and representation in India.', publisher: organizationRef }, records.filter((story) => story.indexable).map((story) => ({ url: storyPath(story), name: story.title }))),
+      breadcrumbNode(path, [[t('Data', 'आंकड़े'), path]]),
     ),
   });
   return <main className="signal-page">
     <Header />
     <section className="signal-container pt-14 sm:pt-24">
-      <p className="signal-kicker text-accent">The Signal 24 / data room</p>
-      <h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">Numbers need<br /><em className="font-normal text-accent">a denominator.</em></h1>
-      <p className="mt-8 max-w-2xl text-lg leading-relaxed text-muted-foreground">Data records appear here only when their source and verification status are visible. A chart needs a defined value, unit, date, geography and denominator; none is inferred to fill a gap.</p>
+      <p className="signal-kicker text-accent">{t('The Signal 24 / data room', 'द सिग्नल 24 / आंकड़ा कक्ष')}</p>
+      <h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">{t(<>The data<br /><em className="font-normal text-accent">they won’t release.</em></>, <>वे आंकड़े,<br /><em className="font-normal text-accent">जो जारी नहीं होते।</em></>)}</h1>
+      <p className="mt-8 max-w-2xl text-lg leading-relaxed text-muted-foreground">{t('India argues about reservation without the numbers that could settle the argument. The 2011 caste data was collected and then declared unusable. The Rohini Commission’s data on how OBC benefits are shared has not been published. A number appears here only with its value, unit, year, geography, definition and source. We will not invent one to fill the silence.', 'भारत आरक्षण पर बहस उन आंकड़ों के बिना करता है जो इस बहस को सुलझा सकते थे। 2011 के जाति आंकड़े जुटाए गए और फिर बेकार घोषित कर दिए गए। ओबीसी लाभ के बँटवारे पर रोहिणी आयोग के आंकड़े प्रकाशित नहीं हुए। यहाँ कोई आंकड़ा तभी दिखेगा जब उसके साथ मान, इकाई, वर्ष, भूगोल, परिभाषा और स्रोत हो। इस चुप्पी को भरने के लिए हम कोई आंकड़ा गढ़ेंगे नहीं।')}</p>
+      <a href="#accountability-data" className="mt-7 inline-flex items-center gap-2 signal-kicker text-accent hover:underline">{t('See what is being withheld', 'देखिए क्या रोका गया है')} <ArrowDownRight size={13} /></a>
     </section>
     <section className="signal-container mt-16 border-y border-foreground/20 py-10 sm:mt-24 sm:py-14" aria-labelledby="data-room-records-title">
-      <p className="signal-kicker text-accent">Data room / source-linked records</p>
-      <h2 id="data-room-records-title" className="mt-3 font-display text-3xl leading-tight">Published datasets and notes</h2>
-      {isLoading ? <div className="mt-6" role="status" aria-live="polite">Loading published data records…</div> :
-        isError ? <div className="mt-6"><ErrorState message="Published data records could not be loaded." onRetry={() => void refetch()} /></div> :
+      <p className="signal-kicker text-accent">{t('Verified data records', 'सत्यापित आंकड़ा रिकॉर्ड')}</p>
+      <h2 id="data-room-records-title" className="mt-3 font-display text-3xl leading-tight">{t('Published datasets and notes', 'प्रकाशित डेटासेट और नोट्स')}</h2>
+      {isLoading ? <div className="mt-6" role="status" aria-live="polite">{t('Loading published data records…', 'प्रकाशित आंकड़ा रिकॉर्ड लोड हो रहे हैं…')}</div> :
+        isError ? <div className="mt-6"><ErrorState message={t('Published data records could not be loaded.', 'प्रकाशित आंकड़ा रिकॉर्ड लोड नहीं हो सके।')} onRetry={() => void refetch()} /></div> :
           records.length === 0 ? <>
-            <p className="mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground">No reviewed, source-linked dataset is published yet. The current archive contains no data record that meets this bar, so no chart or numeric comparison is shown.</p>
-            <Link href="/methodology" className="mt-7 inline-flex items-center gap-2 signal-kicker text-accent hover:underline">Read the methodology <ArrowUpRight size={13} /></Link>
+            <p className="mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground">{t('No verified, source-linked dataset is published yet, so no chart or comparison is shown.', 'अभी कोई सत्यापित, स्रोत-आधारित डेटासेट प्रकाशित नहीं हुआ है, इसलिए कोई चार्ट या तुलना नहीं दिखाई गई।')}</p>
+            <Link href="/methodology" className="mt-7 inline-flex items-center gap-2 signal-kicker text-accent hover:underline">{t('How we handle numbers', 'आंकड़ों को हम कैसे बरतते हैं')} <ArrowUpRight size={13} /></Link>
           </> :
             <div className="mt-7 border-t border-foreground/20">
               {records.map((story) => <article key={story.id} className="grid gap-5 border-b border-foreground/20 py-7 md:grid-cols-[.25fr_1fr_.62fr] md:gap-10" data-testid={`data-record-${story.id}`}>
-                <div><p className="signal-kicker text-accent">Record date / as supplied</p><time className="mt-2 block font-mono-signal text-xs" dateTime={story.publishedOn ?? undefined}>{formatDate(story.publishedOn)}</time><p className="mt-2 signal-kicker text-muted-foreground">{story.verificationStatus}</p></div>
-                <div><p className="signal-kicker text-muted-foreground">{story.kind} / {story.state || 'National'}</p><Link href={storyPath(story)} className="group mt-2 block"><h3 className="font-display text-3xl leading-tight group-hover:text-accent">{story.title}</h3></Link><p className="mt-3 text-sm leading-relaxed text-muted-foreground">{story.dek}</p></div>
+                <div><p className="signal-kicker text-accent">{t('Record date', 'रिकॉर्ड तिथि')}</p><time className="mt-2 block font-mono-signal text-xs" dateTime={story.publishedOn ?? undefined}>{formatDate(story.publishedOn)}</time><p className="mt-2 signal-kicker text-muted-foreground">{label(story.verificationStatus)}</p></div>
+                <div><p className="signal-kicker text-muted-foreground">{label(story.kind)} / {label(story.state || 'National')}</p><Link href={storyPath(story)} className="group mt-2 block"><h3 lang={story.contentLang} className="font-display text-3xl leading-tight group-hover:text-accent">{story.title}</h3></Link><p lang={story.contentLang} className="mt-3 text-sm leading-relaxed text-muted-foreground">{story.dek}</p></div>
                 <SourceLine story={story} detail />
               </article>)}
             </div>}
     </section>
+    <section id="accountability-data" className="signal-container mt-16 sm:mt-24">
+      <p className="signal-kicker text-accent">{t('Withheld or unpublished', 'रोके गए या अप्रकाशित')}</p>
+      <div className="mt-4 grid gap-px border border-foreground/20 bg-foreground/20 md:grid-cols-2">
+        {ACCOUNTABILITY_ITEMS.filter((item) => ['secc-2011', 'rohini-commission', 'census-2027-caste', 'ews-eight-lakh'].includes(item.id)).map((item) => <DataGapCard key={item.id} item={item} />)}
+      </div>
+    </section>
+    <SiteFooter />
   </main>;
 }
+
+function DataGapCard({ item }: { item: (typeof ACCOUNTABILITY_ITEMS)[number] }) {
+  const t = useT();
+  const lang = useLang();
+  return <article className="bg-card p-6">
+    <span className="signal-status-badge is-unverified">{item.status[lang]}</span>
+    <h3 className="mt-4 font-display text-2xl leading-tight">{item.question[lang]}</h3>
+    <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{item.record[lang]}</p>
+    <p className="mt-4 flex flex-wrap gap-x-4 gap-y-1">{item.sources.map((source) => <a key={source.url} href={source.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 signal-kicker text-accent hover:underline">{source.name} <ExternalLink size={11} /></a>)}<span className="signal-kicker text-muted-foreground">{t('Since', 'कब से')} {formatDate(item.since)}</span></p>
+  </article>;
+}
+
+function OpinionPage() {
+  const t = useT();
+  const label = useLabel();
+  const params = useMemo(() => ({ limit: 100 }), []);
+  const { data, isLoading, isError, refetch } = useLocalizedArchive(params, { query: { queryKey: getGetArchiveQueryKey(params) } });
+  const pieces = (data?.stories ?? []).filter((story) => story.kind === 'Opinion' && story.workflowStatus === 'published');
+  const title = t('Opinion — The Signal 24', 'राय — द सिग्नल 24');
+  const description = t('Signed opinion from The Signal 24: where the record leads us to take a position on how India’s governments and institutions handle reservation and representation.', 'द सिग्नल 24 की हस्ताक्षरित राय: जहाँ रिकॉर्ड हमें इस पर पक्ष लेने को मजबूर करता है कि भारत की सरकारें और संस्थाएँ आरक्षण और प्रतिनिधित्व को कैसे संभालती हैं।');
+  useSeo({
+    title,
+    description,
+    canonicalPath: '/opinion',
+    structuredData: siteGraph(
+      collectionPageNode('/opinion', { name: title, description, publisher: organizationRef }, pieces.filter((story) => story.indexable).map((story) => ({ url: storyPath(story), name: story.title }))),
+      breadcrumbNode('/opinion', [[t('Opinion', 'राय'), '/opinion']]),
+    ),
+  });
+  return <main className="signal-page">
+    <Header />
+    <section className="signal-container pt-14 sm:pt-24">
+      <span className="opinion-label">{label('Opinion')}</span>
+      <h1 className="mt-5 max-w-5xl font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">{t(<>Where the record<br /><em className="font-normal text-accent">demands a position.</em></>, <>जहाँ रिकॉर्ड<br /><em className="font-normal text-accent">पक्ष लेने को कहता है।</em></>)}</h1>
+      <p className="mt-8 max-w-2xl text-lg leading-relaxed text-muted-foreground">{t('Our reporting tells you what the documents say. Our opinion tells you what we think the state should do about it. Every piece is signed, labelled, and argued from the record. We criticise governments, agencies and decisions, never communities.', 'हमारी रिपोर्टिंग बताती है कि दस्तावेज़ क्या कहते हैं। हमारी राय बताती है कि हमारे हिसाब से सरकार को इस पर क्या करना चाहिए। हर लेख हस्ताक्षरित है, चिह्नित है, और रिकॉर्ड के आधार पर तर्क करता है। हम सरकारों, एजेंसियों और फ़ैसलों की आलोचना करते हैं, समुदायों की कभी नहीं।')}</p>
+    </section>
+    <section className="signal-container mt-16 border-t-2 border-foreground sm:mt-24">
+      {isLoading ? <LoadingBlock /> : isError ? <ErrorState onRetry={() => void refetch()} /> : pieces.length === 0 ? <div className="py-10"><EmptyState title={t('No opinion published yet.', 'अभी कोई राय प्रकाशित नहीं हुई।')} text={t('Opinion pieces appear here once the editorial board has signed them off.', 'संपादकीय बोर्ड की मंज़ूरी के बाद राय के लेख यहाँ दिखेंगे।')} /></div> : <div className="divide-y divide-foreground/15">{pieces.map((story) => <Link key={story.id} href={storyPath(story)} className="group grid gap-4 py-8 md:grid-cols-[.3fr_1fr] md:gap-10" data-testid={`link-opinion-${story.id}`}><div><p className="signal-kicker text-accent">{label(story.byline) || t('Editorial board', 'संपादकीय बोर्ड')}</p><p className="mt-2 signal-kicker text-muted-foreground">{formatDate(story.publishedOn)}</p></div><div><h2 lang={story.contentLang} className="font-display text-4xl leading-tight group-hover:text-accent">{story.title}</h2><p lang={story.contentLang} className="mt-3 max-w-2xl text-base leading-relaxed text-muted-foreground">{story.dek}</p></div></Link>)}</div>}
+    </section>
+    <SiteFooter />
+  </main>;
+}
+
 
 function ClerkQueryClientCacheInvalidator() {
   const { addListener } = useClerk();
