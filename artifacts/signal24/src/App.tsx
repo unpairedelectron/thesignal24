@@ -107,25 +107,10 @@ import {
 } from '@workspace/api-client-react';
 import type { CommunityPost, CommunityReply, CommunityPostInput, CommunityPostKind, CommunityTopic, DecisionImpactArea, DecisionImpactEvidenceType, DecisionImpactInput, DecisionImpactRecord, DecisionImpactRevision, DecisionImpactWorkflowStatus, GetCommunityPostsParams, GetCommunityPostsSort, GetPoliciesParams, Issue, IssueInput, LiveUpdate, PolicyRecord, PolicySource, Story, StoryInput, StoryKind, StoryWorkflowStatus, Topic, VerificationStatus } from '@workspace/api-client-react';
 import NotFound from '@/pages/not-found';
+import { absoluteImageUrl, absoluteSiteUrl, basePath, DEFAULT_SHARE_IMAGE, useSeo } from '@/lib/seo';
 
 const queryClient = new QueryClient();
 
-const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
-function absoluteSiteUrl(path = '/') {
-  const internalPath = path.startsWith('/') && !path.startsWith('//') ? path : `/${path}`;
-  return new URL(`${basePath}${internalPath}` || '/', window.location.origin).href;
-}
-
-function absoluteStructuredData(value: unknown): unknown {
-  if (typeof value === 'string') {
-    return value.startsWith('/') && !value.startsWith('//') ? absoluteSiteUrl(value) : value;
-  }
-  if (Array.isArray(value)) return value.map(absoluteStructuredData);
-  if (value && typeof value === 'object') {
-    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, absoluteStructuredData(item)]));
-  }
-  return value;
-}
 const TOPICS = ['Latest', 'Courts & Policy', 'States', 'History', 'Ground Reports', 'Data & Notes'] as Topic[];
 const KINDS = ['Article', 'Paper note', 'Archive', 'Explainer'] as StoryKind[];
 const WORKFLOW_STATUSES = ['draft', 'review', 'scheduled', 'published', 'archived'] as StoryWorkflowStatus[];
@@ -156,14 +141,6 @@ function formatDate(value?: string | null) {
   return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-type SeoConfig = {
-  title: string;
-  description: string;
-  canonicalPath?: string;
-  robots?: string;
-  type?: string;
-  structuredData?: unknown;
-};
 function BrandMark() {
   return <span className="signal-mark shrink-0" aria-label="The Signal 24 mark"><span className="sr-only">The Signal 24</span></span>;
 }
@@ -471,7 +448,7 @@ function LiveDesk({ onSelect }: { onSelect?: (update: LiveUpdate) => void }) {
         <h2 className="mt-3 max-w-3xl font-display text-5xl leading-[.92] tracking-[-.05em] sm:text-7xl">What is moving<br /><em className="font-normal text-accent">right now.</em></h2>
       </div>
       <div className="max-w-sm text-sm leading-relaxed text-muted-foreground">
-        <p>External feeds are monitored for leads. This is not published Signal Hub reporting: every item remains unreviewed until the editorial desk checks the source and builds a record.</p>
+        <p>External feeds are monitored for leads. This is not published The Signal 24 reporting: every item remains unreviewed until the editorial desk checks the source and builds a record.</p>
         <button type="button" onClick={() => void refetch()} className="mt-4 inline-flex items-center gap-2 signal-kicker text-accent disabled:opacity-50" disabled={isFetching} data-testid="button-refresh-live-desk"><RefreshCw size={13} className={isFetching ? 'animate-spin' : ''} /> {isFetching ? 'Refreshing' : 'Refresh feeds'}</button>
       </div>
     </div>
@@ -539,9 +516,9 @@ function TrustNote() {
 function InfoPage({ page }: { page: 'about' | 'standards' | 'methodology' }) {
   const content = {
     about: {
-      eyebrow: 'Signal Hub / about',
+      eyebrow: 'The Signal 24 / about',
       title: <>A permanent record<br /><em className="font-normal text-accent">for a difficult debate.</em></>,
-      intro: 'Signal Hub is India’s reservation and representation monitor: a public-interest newsroom and research archive for policy, courts, documents, data and the histories behind them.',
+      intro: 'The Signal 24 is India’s reservation and representation monitor: a public-interest newsroom and research archive for policy, courts, documents, data and the histories behind them.',
       sections: [
         ['What this is', 'A source-first place to follow reservation-related developments without reducing a national question to a daily outrage cycle. The archive is designed to help readers understand what happened, where it came from, what changed, and what remains uncertain.'],
         ['What this is not', 'It is not a party publication, a campaign platform, or a substitute for the original judgment, notification, report or dataset. It does not rank governments or communities.'],
@@ -549,7 +526,7 @@ function InfoPage({ page }: { page: 'about' | 'standards' | 'methodology' }) {
       ],
     },
     standards: {
-      eyebrow: 'Signal Hub / editorial standards',
+      eyebrow: 'The Signal 24 / editorial standards',
       title: <>Every claim has a source.<br /><em className="font-normal text-accent">Every number has a document.</em></>,
       intro: 'The subject demands a higher standard than speed alone. We distinguish reporting, documents, analysis and opinion so a reader can tell what kind of record they are reading.',
       sections: [
@@ -561,7 +538,7 @@ function InfoPage({ page }: { page: 'about' | 'standards' | 'methodology' }) {
       ],
     },
     methodology: {
-      eyebrow: 'Signal Hub / methodology',
+      eyebrow: 'The Signal 24 / methodology',
       title: <>A record is only useful<br /><em className="font-normal text-accent">when its frame is visible.</em></>,
       intro: 'The archive preserves source type, date, state, record type and verification context because numbers and claims change meaning when their definitions disappear.',
       sections: [
@@ -574,7 +551,7 @@ function InfoPage({ page }: { page: 'about' | 'standards' | 'methodology' }) {
   }[page];
 
   useSeo({
-    title: `${content.eyebrow.split(' / ')[1]} — Signal Hub`,
+    title: `${content.eyebrow.split(' / ')[1]} — The Signal 24`,
     description: content.intro,
     canonicalPath: `/${page === 'standards' ? 'editorial-standards' : page}`,
     structuredData: {
@@ -582,7 +559,7 @@ function InfoPage({ page }: { page: 'about' | 'standards' | 'methodology' }) {
       '@graph': [
         { '@type': 'WebPage', name: content.eyebrow, description: content.intro },
         organizationSchema,
-        { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'Signal Hub', item: '/' }, { '@type': 'ListItem', position: 2, name: content.eyebrow.split(' / ')[1], item: `/${page === 'standards' ? 'editorial-standards' : page}` }] },
+        { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'The Signal 24', item: '/' }, { '@type': 'ListItem', position: 2, name: content.eyebrow.split(' / ')[1], item: `/${page === 'standards' ? 'editorial-standards' : page}` }] },
       ],
     },
   });
@@ -800,7 +777,7 @@ function Home() {
   const archiveParams = useMemo(() => ({ limit: 100 }), []);
   const archiveQuery = useGetArchive(archiveParams, { query: { queryKey: getGetArchiveQueryKey(archiveParams) } });
   const decisionImpactQuery = useGetDecisionImpacts({ limit: 100 }, { query: { queryKey: getGetDecisionImpactsQueryKey({ limit: 100 }) } });
-  useSeo({ title: 'Signal Hub — India, on the record', description: 'A source-first Indian newsroom for reservation policy, courts, public institutions, education and regional impact.', canonicalPath: '/', structuredData: { '@context': 'https://schema.org', '@graph': [organizationSchema, { '@type': 'WebSite', name: 'Signal Hub', url: '/' }] } });
+  useSeo({ title: 'The Signal 24 — India, on the record', description: 'A source-first Indian newsroom for reservation policy, courts, public institutions, education and regional impact.', canonicalPath: '/', structuredData: { '@context': 'https://schema.org', '@graph': [organizationSchema, { '@type': 'WebSite', name: 'The Signal 24', url: '/' }] } });
   const stories = useMemo(
     () => [...(archiveQuery.data?.stories ?? issueQuery.data?.stories ?? [])]
       .filter((story) => story.workflowStatus === 'published')
@@ -819,7 +796,7 @@ function Home() {
   const measuredRecords = (decisionImpactQuery.data?.records ?? []).filter(isMeasuredDecisionImpact);
   return <main className="signal-page"><Header />
     <div className="signal-container mt-6 border-y border-foreground/20 py-3" aria-label="Latest published records"><div className="flex flex-wrap items-center gap-x-5 gap-y-2"><span className="signal-kicker text-accent">Latest / published records</span>{latestTickerStories.map((story) => <Link key={story.id} href={storyPath(story)} className="signal-kicker signal-link">{story.title}</Link>)}{stories.length === 0 && <span className="signal-kicker text-muted-foreground">No published records in the current archive</span>}</div>{latestTickerStories.length > 0 && <p className="mt-2 text-xs text-muted-foreground" data-testid="latest-record-status-summary">Status / {verificationSummary(latestTickerStories)}</p>}</div>
-    {featured ? <section className="signal-container visual-hero mt-7" data-testid={`card-home-hero-${featured.id}`}>{featuredImage ? <img src={featuredImage.src} alt={featuredImage.alt} width={featuredImage.width} height={featuredImage.height} className="absolute inset-0 h-full w-full object-cover" /> : <div className="story-art-placeholder absolute inset-0 flex items-center justify-center"><p className="signal-kicker text-accent">No relevant archive image available</p></div>}<div className="visual-hero-copy flex min-h-[440px] flex-col justify-end p-6 sm:min-h-[560px] sm:max-w-[72%] sm:p-12 lg:min-h-[680px] lg:max-w-[62%] lg:p-16"><p className="signal-kicker text-accent">{featured.topic} / {featured.kind}</p><Link href={storyPath(featured)} className="group mt-4 block"><h1 className="max-w-4xl font-display text-5xl leading-[.91] tracking-[-.055em] group-hover:text-accent sm:text-7xl lg:text-[6.8rem]" data-testid="heading-hero">{featured.title}</h1></Link><p className="mt-5 max-w-xl text-base leading-relaxed text-primary-foreground/75 sm:text-lg">{featured.dek}</p><div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 signal-kicker text-primary-foreground/70"><span>{formatDate(featured.publishedOn ?? featured.recordDate)}</span><span>{featured.read} min read</span><span>{verificationLabel(featured.verificationStatus)}</span></div><Link href={storyPath(featured)} className="mt-7 inline-flex w-fit items-center gap-2 signal-button bg-accent text-accent-foreground" data-testid="link-read-briefing">View investigation <ArrowUpRight size={14} /></Link></div>{featuredImage && <p className="hero-credit">{featuredImage.credit} · contextual, not evidence for this record</p>}</section> : <section className="signal-container mt-7 border-y-2 border-foreground py-0"><div className="grid min-h-[480px] items-stretch lg:grid-cols-[1fr_.72fr]"><div className="order-last flex flex-col justify-center py-16 lg:order-first lg:pr-12"><p className="signal-kicker text-accent">Front page / no source-linked lead</p><h1 className="mt-4 max-w-3xl font-display text-5xl leading-[.92] sm:text-7xl">The archive is waiting for its next sourced investigation.</h1><p className="mt-5 max-w-xl text-sm leading-relaxed text-muted-foreground">No published, source-linked record is available for the hero yet. The absence is part of the record.</p><Link href="/archive" className="mt-7 inline-flex w-fit items-center gap-2 signal-button">Browse the archive <ArrowUpRight size={14} /></Link></div><figure className="order-first relative m-0 min-h-[280px] overflow-hidden border-l border-foreground/15 lg:order-last"><img src={`${basePath}/images/supreme-court.jpg`} alt="Supreme Court of India building, contextual archive visual" width="1280" height="797" className="h-full w-full object-cover grayscale-[.2]" /><figcaption className="absolute inset-x-0 bottom-0 bg-primary/85 px-3 py-3 signal-kicker text-primary-foreground/75">Contextual archive visual / Wikimedia Commons · not evidence for a specific record</figcaption></figure></div></section>}
+    {featured ? <section className="signal-container visual-hero mt-7" data-testid={`card-home-hero-${featured.id}`}>{featuredImage ? <img src={featuredImage.src} alt={featuredImage.alt} width={featuredImage.width} height={featuredImage.height} fetchPriority="high" decoding="async" className="absolute inset-0 h-full w-full object-cover" /> : <div className="story-art-placeholder absolute inset-0 flex items-center justify-center"><p className="signal-kicker text-accent">No relevant archive image available</p></div>}<div className="visual-hero-copy flex min-h-[440px] flex-col justify-end p-6 sm:min-h-[560px] sm:max-w-[72%] sm:p-12 lg:min-h-[680px] lg:max-w-[62%] lg:p-16"><p className="signal-kicker text-accent">{featured.topic} / {featured.kind}</p><Link href={storyPath(featured)} className="group mt-4 block"><h1 className="max-w-4xl font-display text-5xl leading-[.91] tracking-[-.055em] group-hover:text-accent sm:text-7xl lg:text-[6.8rem]" data-testid="heading-hero">{featured.title}</h1></Link><p className="mt-5 max-w-xl text-base leading-relaxed text-primary-foreground/75 sm:text-lg">{featured.dek}</p><div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 signal-kicker text-primary-foreground/70"><span>{formatDate(featured.publishedOn ?? featured.recordDate)}</span><span>{featured.read} min read</span><span>{verificationLabel(featured.verificationStatus)}</span></div><Link href={storyPath(featured)} className="mt-7 inline-flex w-fit items-center gap-2 signal-button bg-accent text-accent-foreground" data-testid="link-read-briefing">View investigation <ArrowUpRight size={14} /></Link></div>{featuredImage && <p className="hero-credit">{featuredImage.credit} · contextual, not evidence for this record</p>}</section> : <section className="signal-container mt-7 border-y-2 border-foreground py-0"><div className="grid min-h-[480px] items-stretch lg:grid-cols-[1fr_.72fr]"><div className="order-last flex flex-col justify-center py-16 lg:order-first lg:pr-12"><p className="signal-kicker text-accent">Front page / no source-linked lead</p><h1 className="mt-4 max-w-3xl font-display text-5xl leading-[.92] sm:text-7xl">The archive is waiting for its next sourced investigation.</h1><p className="mt-5 max-w-xl text-sm leading-relaxed text-muted-foreground">No published, source-linked record is available for the hero yet. The absence is part of the record.</p><Link href="/archive" className="mt-7 inline-flex w-fit items-center gap-2 signal-button">Browse the archive <ArrowUpRight size={14} /></Link></div><figure className="order-first relative m-0 min-h-[280px] overflow-hidden border-l border-foreground/15 lg:order-last"><img src={`${basePath}/images/supreme-court.jpg`} alt="Supreme Court of India building, contextual archive visual" width="1280" height="797" className="h-full w-full object-cover grayscale-[.2]" /><figcaption className="absolute inset-x-0 bottom-0 bg-primary/85 px-3 py-3 signal-kicker text-primary-foreground/75">Contextual archive visual / Wikimedia Commons · not evidence for a specific record</figcaption></figure></div></section>}
     {visualStories.length > 0 && <section className="signal-container mt-16 sm:mt-24" id="visual-signals">
       <div className="flex items-end justify-between gap-4 border-b-2 border-foreground pb-4"><div><p className="signal-kicker text-accent">01 / Visual signals</p><h2 className="mt-2 font-display text-4xl sm:text-5xl">India, in the record.</h2></div><Link href="/archive" className="signal-kicker text-accent hover:underline">All stories <ArrowUpRight size={13} className="ml-1 inline" /></Link></div>
       <div className="mt-5 grid gap-5 md:grid-cols-3">{visualStories.map((story) => <article key={story.id} className="visual-signal-card group" data-testid={`card-visual-signal-${story.id}`}>
@@ -855,7 +832,7 @@ function Home() {
       </Link>)}</div> : <div className="mt-2"><EmptyState title="No dated published records yet." text="The visual timeline will appear when the published archive returns a usable record date." /></div>}
     </section>
     <section className="signal-container mt-20 sm:mt-28" id="archive-preview"><div className="flex items-end justify-between gap-4 border-b-2 border-foreground pb-4"><div><p className="signal-kicker text-accent">10 / Latest archive</p><h2 className="mt-2 font-display text-4xl sm:text-5xl">Keep the record close.</h2></div><Link href="/archive" className="signal-kicker text-accent hover:underline">Browse archive <ArrowUpRight size={13} className="ml-1 inline" /></Link></div><div className="mt-2">{stories.slice(0, 4).map((story) => <StoryCard key={story.id} story={story} compact />)}</div></section>
-    <LiveDesk /><DecisionEvidenceSection records={decisionImpactQuery.data?.records ?? []} isLoading={decisionImpactQuery.isLoading} isError={decisionImpactQuery.isError} /><NewsletterSignup /><footer className="signal-container flex flex-col justify-between gap-8 border-t border-foreground/20 py-10 sm:flex-row sm:items-end"><div><Link href="/" className="signal-link flex items-center gap-3"><BrandMark /><span className="font-display text-xl">The Signal <span className="text-accent">24</span></span></Link><p className="mt-3 max-w-xs text-xs leading-relaxed text-muted-foreground">A source-first public-interest newsroom for understanding India through the record.</p></div><div className="flex flex-wrap gap-x-5 gap-y-2 signal-kicker text-[9px] text-muted-foreground"><Link href="/archive" className="signal-link">Archive</Link><Link href="/events" className="signal-link">Evidence</Link><Link href="/data" className="signal-link">Data</Link><Link href="/about" className="signal-link">About</Link><span>© Signal Hub</span></div></footer>
+    <LiveDesk /><DecisionEvidenceSection records={decisionImpactQuery.data?.records ?? []} isLoading={decisionImpactQuery.isLoading} isError={decisionImpactQuery.isError} /><NewsletterSignup /><footer className="signal-container flex flex-col justify-between gap-8 border-t border-foreground/20 py-10 sm:flex-row sm:items-end"><div><Link href="/" className="signal-link flex items-center gap-3"><BrandMark /><span className="font-display text-xl">The Signal <span className="text-accent">24</span></span></Link><p className="mt-3 max-w-xs text-xs leading-relaxed text-muted-foreground">A source-first public-interest newsroom for understanding India through the record.</p></div><div className="flex flex-wrap gap-x-5 gap-y-2 signal-kicker text-[9px] text-muted-foreground"><Link href="/archive" className="signal-link">Archive</Link><Link href="/events" className="signal-link">Evidence</Link><Link href="/data" className="signal-link">Data</Link><Link href="/about" className="signal-link">About</Link><span>© The Signal 24</span></div></footer>
   </main>;
 }
 
@@ -872,8 +849,8 @@ function TopicIndexPage() {
     }));
   }, [data]);
   useSeo({
-    title: 'Topics — Signal Hub',
-    description: 'Browse Signal Hub archive records by topic, with each record’s evidence status and source visible.',
+    title: 'Topics — The Signal 24',
+    description: 'Browse The Signal 24 archive records by topic, with each record’s evidence status and source visible.',
     canonicalPath: '/topics',
   });
   return <main className="signal-page">
@@ -915,8 +892,8 @@ function TopicPage() {
   }, [records]);
   const otherTopics = useMemo(() => (data?.topics ?? []).filter((item) => item !== topic), [data, topic]);
   useSeo({
-    title: `${topic || 'Topic'} — Signal Hub`,
-    description: `Published Signal Hub records on ${topic || 'this topic'}, with evidence status and direct sources visible.`,
+    title: `${topic || 'Topic'} — The Signal 24`,
+    description: `Published records from The Signal 24 on ${topic || 'this topic'}, with evidence status and direct sources visible.`,
     canonicalPath: params.slug ? `/topics/${params.slug}` : undefined,
   });
   if (!topic) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message="That topic address is not valid." /></div></div>;
@@ -1220,10 +1197,10 @@ function ArchivePage() {
   const params = useMemo(() => ({ ...(query ? { q: query } : {}), ...(topic ? { topic: topic as Topic } : {}), ...(kind ? { kind: kind as StoryKind } : {}), ...(state ? { state } : {}), limit: 100 }), [kind, query, state, topic]);
   const { data, isLoading, isError, refetch } = useGetArchive(params, { query: { queryKey: getGetArchiveQueryKey(params) } });
   useSeo({
-    title: 'The archive — Signal Hub',
+    title: 'The archive — The Signal 24',
     description: 'Search published reporting, court and policy developments, historical documents, research notes and state context.',
     canonicalPath: '/archive',
-    structuredData: { '@context': 'https://schema.org', '@graph': [organizationSchema, { '@type': 'CollectionPage', name: 'Signal Hub archive', description: 'Published reservation reporting and research.' }, { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'Signal Hub', item: '/' }, { '@type': 'ListItem', position: 2, name: 'Archive', item: '/archive' }] }] },
+    structuredData: { '@context': 'https://schema.org', '@graph': [organizationSchema, { '@type': 'CollectionPage', name: 'The Signal 24 archive', description: 'Published reservation reporting and research.' }, { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'The Signal 24', item: '/' }, { '@type': 'ListItem', position: 2, name: 'Archive', item: '/archive' }] }] },
   });
   const clear = () => { setQuery(''); setTopic(''); setKind(''); setState(''); setYear(''); setOrganization(''); };
   if (isLoading) return <div className="signal-page"><Header /><LoadingBlock label="Indexing records and sources…" /></div>;
@@ -1275,15 +1252,15 @@ function PoliciesPage() {
   }), [effectiveFrom, effectiveTo, query, sector, state, status]);
   const { data, isLoading, isError, refetch } = useGetPolicies(params, { query: { queryKey: getGetPoliciesQueryKey(params) } });
   useSeo({
-    title: 'Policy ledger — Signal Hub',
+    title: 'Policy ledger — The Signal 24',
     description: 'Search source-linked records of reservation policy changes, with frameworks, legal basis, court status and first-class sources.',
     canonicalPath: '/policies',
     structuredData: {
       '@context': 'https://schema.org',
       '@graph': [
         organizationSchema,
-        { '@type': 'CollectionPage', name: 'Signal Hub policy ledger', description: 'Source-linked records of reservation policy changes.', url: '/policies' },
-        { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'Signal Hub', item: '/' }, { '@type': 'ListItem', position: 2, name: 'Policy ledger', item: '/policies' }] },
+        { '@type': 'CollectionPage', name: 'The Signal 24 policy ledger', description: 'Source-linked records of reservation policy changes.', url: '/policies' },
+        { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'The Signal 24', item: '/' }, { '@type': 'ListItem', position: 2, name: 'Policy ledger', item: '/policies' }] },
       ],
     },
   });
@@ -1294,7 +1271,7 @@ function PoliciesPage() {
   const activeFilters = Boolean(query || state || sector || status || effectiveFrom || effectiveTo);
   return <main className="signal-page"><Header />
     <section className="signal-container pt-14 sm:pt-24">
-      <div className="max-w-4xl"><p className="signal-kicker text-accent">Signal Hub / policy ledger</p><h1 className="mt-4 font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">What changed,<br /><em className="font-normal text-accent">and when?</em></h1><p className="mt-7 max-w-2xl text-lg leading-relaxed text-muted-foreground">A permanent, source-linked record of reservation policy changes. Search by subject, state or sector, then follow the framework, authority and documents behind each entry.</p></div>
+      <div className="max-w-4xl"><p className="signal-kicker text-accent">The Signal 24 / policy ledger</p><h1 className="mt-4 font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">What changed,<br /><em className="font-normal text-accent">and when?</em></h1><p className="mt-7 max-w-2xl text-lg leading-relaxed text-muted-foreground">A permanent, source-linked record of reservation policy changes. Search by subject, state or sector, then follow the framework, authority and documents behind each entry.</p></div>
     </section>
     <section className="signal-container archive-grid mt-16 border-y border-foreground/20 py-6 sm:mt-24" aria-label="Filter policy ledger">
       <div className="flex items-center justify-between gap-4"><div className="flex items-center gap-3"><SlidersHorizontal size={16} className="text-accent" /><p className="signal-kicker">Filter the ledger</p></div><button type="button" onClick={() => setFiltersOpen((value) => !value)} className="inline-flex items-center gap-2 signal-kicker text-muted-foreground md:hidden" data-testid="button-toggle-policy-filters">{filtersOpen ? 'Hide' : 'Show'} filters <ChevronDown size={14} /></button></div>
@@ -1326,15 +1303,15 @@ function PolicyDetail() {
     return {
       '@context': 'https://schema.org',
       '@graph': [
-        { '@type': 'Article', '@id': `${url}#policy`, headline: record.title, description: record.summary, datePublished: record.publishedOn, dateModified: record.publishedOn, mainEntityOfPage: url, author: { '@type': 'Organization', name: 'Signal Hub' }, publisher: { ...organizationSchema, url: absoluteSiteUrl('/') } },
-        { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'Signal Hub', item: absoluteSiteUrl('/') }, { '@type': 'ListItem', position: 2, name: 'Policy ledger', item: absoluteSiteUrl('/policies') }, { '@type': 'ListItem', position: 3, name: record.title, item: url }] },
+        { '@type': 'Article', '@id': `${url}#policy`, headline: record.title, description: record.summary, datePublished: record.publishedOn, dateModified: record.publishedOn, mainEntityOfPage: url, author: { '@type': 'Organization', name: 'The Signal 24' }, publisher: { ...organizationSchema, url: absoluteSiteUrl('/') } },
+        { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'The Signal 24', item: absoluteSiteUrl('/') }, { '@type': 'ListItem', position: 2, name: 'Policy ledger', item: absoluteSiteUrl('/policies') }, { '@type': 'ListItem', position: 3, name: record.title, item: url }] },
         organizationSchema,
       ],
     };
   }, [record]);
   useSeo({
-    title: record ? `${record.title} — Signal Hub` : 'Policy record — Signal Hub',
-    description: record?.summary ?? 'A source-linked policy record from Signal Hub.',
+    title: record ? `${record.title} — The Signal 24` : 'Policy record — The Signal 24',
+    description: record?.summary ?? 'A source-linked policy record from The Signal 24.',
     canonicalPath: record?.canonicalPath,
     robots: record ? 'index, follow' : 'noindex, follow',
     type: record ? 'article' : 'website',
@@ -1436,6 +1413,7 @@ function StoryDetail() {
       headline: story.title,
       description: story.dek,
       mainEntityOfPage: url,
+      image: absoluteImageUrl(imageForStory(story)?.src ?? DEFAULT_SHARE_IMAGE),
       publisher: { ...organizationSchema, url: absoluteSiteUrl('/') },
     } : {
       '@type': 'WebPage',
@@ -1450,7 +1428,7 @@ function StoryDetail() {
         {
           '@type': 'BreadcrumbList',
           itemListElement: [
-            { '@type': 'ListItem', position: 1, name: 'Signal Hub', item: absoluteSiteUrl('/') },
+            { '@type': 'ListItem', position: 1, name: 'The Signal 24', item: absoluteSiteUrl('/') },
             { '@type': 'ListItem', position: 2, name: 'Archive', item: absoluteSiteUrl('/archive') },
             { '@type': 'ListItem', position: 3, name: story.title, item: url },
           ],
@@ -1460,11 +1438,12 @@ function StoryDetail() {
     };
   }, [recordPath, story]);
   useSeo({
-    title: story ? `${story.title} — Signal Hub` : 'Record — Signal Hub',
-    description: story?.dek ?? 'A source record from the Signal Hub reservation archive.',
+    title: story ? `${story.title} — The Signal 24` : 'Record — The Signal 24',
+    description: story?.dek ?? 'A source record from the Signal 24 reservation archive.',
     canonicalPath: story?.indexable ? recordPath : undefined,
     robots: story?.indexable ? 'index, follow' : 'noindex, follow',
     type: story?.indexable ? 'article' : 'website',
+    image: story ? imageForStory(story)?.src : undefined,
     structuredData,
   });
   if (!Number.isFinite(storyId)) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message="That record address is not valid." /></div></div>;
@@ -1531,6 +1510,7 @@ function StoryDetail() {
       headline: story.title,
       description: story.dek,
       mainEntityOfPage: url,
+      image: absoluteImageUrl(imageForStory(story)?.src ?? DEFAULT_SHARE_IMAGE),
       publisher: { ...organizationSchema, url: absoluteSiteUrl('/') },
     } : {
       '@type': 'WebPage',
@@ -1545,7 +1525,7 @@ function StoryDetail() {
         {
           '@type': 'BreadcrumbList',
           itemListElement: [
-            { '@type': 'ListItem', position: 1, name: 'Signal Hub', item: absoluteSiteUrl('/') },
+            { '@type': 'ListItem', position: 1, name: 'The Signal 24', item: absoluteSiteUrl('/') },
             { '@type': 'ListItem', position: 2, name: 'Archive', item: absoluteSiteUrl('/archive') },
             { '@type': 'ListItem', position: 3, name: story.title, item: url },
           ],
@@ -1555,11 +1535,12 @@ function StoryDetail() {
     };
   }, [recordPath, story]);
   useSeo({
-    title: story ? `${story.title} — Signal Hub` : 'Record — Signal Hub',
-    description: story?.dek ?? 'A source record from the Signal Hub reservation archive.',
+    title: story ? `${story.title} — The Signal 24` : 'Record — The Signal 24',
+    description: story?.dek ?? 'A source record from the Signal 24 reservation archive.',
     canonicalPath: story?.indexable ? recordPath : undefined,
     robots: story?.indexable ? 'index, follow' : 'noindex, follow',
     type: story?.indexable ? 'article' : 'website',
+    image: story ? imageForStory(story)?.src : undefined,
     structuredData,
   });
   if (!Number.isFinite(storyId)) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message="That record address is not valid." /></div></div>;
@@ -1635,8 +1616,8 @@ function Editor() {
   const hydrated = useRef(false);
   useEffect(() => { if (data && !hydrated.current) { hydrated.current = true; setWorkingIssue(data.issue); setStories(data.stories); setIssueForm({ issueDate: data.issue.issueDate, issueNumber: data.issue.issueNumber, title: data.issue.title, intro: data.issue.intro }); } }, [data]);
   useSeo({
-    title: 'Editorial desk — Signal Hub',
-    description: 'Private editorial workspace for preparing source-aware Signal Hub records.',
+    title: 'Editorial desk — The Signal 24',
+    description: 'Private editorial workspace for preparing source-aware records for The Signal 24.',
     robots: 'noindex, nofollow',
   });
   if (isLoading) return <div className="signal-page"><Header editor /><LoadingBlock label="Loading the editorial desk…" /></div>;
@@ -1908,7 +1889,7 @@ function EditorialDesk() {
       setIssueForm({ issueDate: data.issue.issueDate, issueNumber: data.issue.issueNumber, title: data.issue.title, intro: data.issue.intro });
     }
   }, [data]);
-  useEffect(() => { document.title = 'Editorial desk — Signal Hub'; }, []);
+  useEffect(() => { document.title = 'Editorial desk — The Signal 24'; }, []);
 
   if (isLoading) return <div className="signal-page"><Header editor /><LoadingBlock label="Loading the editorial desk…" /></div>;
   if (isError) return <div className="signal-page"><Header editor /><div className="py-20"><ErrorState message="The editorial workspace could not be loaded." onRetry={() => void refetch()} /></div></div>;
@@ -1972,21 +1953,21 @@ function AuthorPage() {
   const path = '/authors/signal-24';
   const validAuthor = params.slug === 'signal-24';
   useSeo({
-    title: 'Signal Hub editorial desk — Signal Hub',
-    description: 'Meet the editorial desk behind Signal Hub, a source-first publication and research archive on reservation in India.',
+    title: 'Editorial desk — The Signal 24',
+    description: 'Meet the editorial desk behind The Signal 24, a source-first publication and research archive on reservation in India.',
     canonicalPath: validAuthor ? path : undefined,
     robots: validAuthor ? 'index, follow' : 'noindex, follow',
     structuredData: {
       '@context': 'https://schema.org',
       '@graph': [
-        { '@type': 'Person', name: 'Signal Hub editorial desk', description: 'The editorial desk responsible for sourcing, reviewing and presenting the Signal Hub archive.', url: path, worksFor: organizationSchema },
+        { '@type': 'Person', name: 'The Signal 24 editorial desk', description: 'The editorial desk responsible for sourcing, reviewing and presenting the Signal 24 archive.', url: path, worksFor: organizationSchema },
         organizationSchema,
-        { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'Signal Hub', item: '/' }, { '@type': 'ListItem', position: 2, name: 'Authors', item: path }] },
+        { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'The Signal 24', item: '/' }, { '@type': 'ListItem', position: 2, name: 'Authors', item: path }] },
       ],
     },
   });
   if (!validAuthor) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message="That author page does not exist." /></div></div>;
-  return <main className="signal-page"><Header /><section className="signal-container pt-14 sm:pt-24"><p className="signal-kicker text-accent">Signal Hub / author</p><h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">The editorial<br /><em className="font-normal text-accent">desk.</em></h1><p className="mt-8 max-w-2xl text-lg leading-relaxed text-muted-foreground">The Signal Hub editorial desk keeps reporting, documents, analysis and opinion distinct, and names the source and date behind each published record.</p></section><section className="signal-container mt-16 border-y border-foreground/20 py-10 sm:mt-24 sm:py-14"><div className="grid gap-8 lg:grid-cols-[.7fr_1.3fr]"><div><p className="signal-kicker text-accent">Source first / always</p><h2 className="mt-3 font-display text-4xl leading-none">A byline with a responsibility.</h2></div><p className="max-w-2xl text-base leading-relaxed text-muted-foreground">The desk is a publication identity rather than a claim that every record has one author. Individual bylines, disclosures and corrections belong on the record when they are available.</p></div></section><footer className="signal-container flex justify-between gap-6 border-t border-foreground/20 py-8"><Link href="/archive" className="signal-kicker signal-link">Browse the archive</Link><Link href="/editorial-standards" className="signal-kicker signal-link">Editorial standards</Link></footer></main>;
+  return <main className="signal-page"><Header /><section className="signal-container pt-14 sm:pt-24"><p className="signal-kicker text-accent">The Signal 24 / author</p><h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">The editorial<br /><em className="font-normal text-accent">desk.</em></h1><p className="mt-8 max-w-2xl text-lg leading-relaxed text-muted-foreground">The Signal 24 editorial desk keeps reporting, documents, analysis and opinion distinct, and names the source and date behind each published record.</p></section><section className="signal-container mt-16 border-y border-foreground/20 py-10 sm:mt-24 sm:py-14"><div className="grid gap-8 lg:grid-cols-[.7fr_1.3fr]"><div><p className="signal-kicker text-accent">Source first / always</p><h2 className="mt-3 font-display text-4xl leading-none">A byline with a responsibility.</h2></div><p className="max-w-2xl text-base leading-relaxed text-muted-foreground">The desk is a publication identity rather than a claim that every record has one author. Individual bylines, disclosures and corrections belong on the record when they are available.</p></div></section><footer className="signal-container flex justify-between gap-6 border-t border-foreground/20 py-8"><Link href="/archive" className="signal-kicker signal-link">Browse the archive</Link><Link href="/editorial-standards" className="signal-kicker signal-link">Editorial standards</Link></footer></main>;
 }
 
 const COMMUNITY_TOPICS = ['general', 'caste', 'policy', 'representation', 'migration', 'violence', 'work', 'education', 'culture'] as CommunityTopic[];
@@ -2063,7 +2044,7 @@ function CommunityComposer({ onClose }: { onClose: () => void }) {
   }
   return <section className="community-composer border-2 border-primary bg-card p-5 sm:p-8" aria-labelledby="community-composer-title">
     <div className="flex items-start justify-between gap-5">
-      <div><p className="signal-kicker text-accent">Share with the noticeboard</p><h2 id="community-composer-title" className="mt-2 font-display text-3xl leading-none sm:text-4xl">Put something in the room.</h2><p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">Use your name. Add context. Links are welcome. This is a public participant contribution, not an automatic Signal Hub report.</p></div>
+      <div><p className="signal-kicker text-accent">Share with the noticeboard</p><h2 id="community-composer-title" className="mt-2 font-display text-3xl leading-none sm:text-4xl">Put something in the room.</h2><p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">Use your name. Add context. Links are welcome. This is a public participant contribution, not an automatic The Signal 24 report.</p></div>
       <button type="button" onClick={onClose} className="grid h-9 w-9 shrink-0 place-items-center border border-foreground/20 text-muted-foreground hover:border-accent hover:text-accent" aria-label="Close share form" data-testid="button-close-community-composer"><X size={17} /></button>
     </div>
     <form onSubmit={submit} className="mt-7 grid gap-5">
@@ -2084,8 +2065,8 @@ function CommunityComposer({ onClose }: { onClose: () => void }) {
 
 function CommunityPage() {
   useSeo({
-    title: 'Community noticeboard — Signal Hub',
-    description: 'Public participant contributions about reservation, representation and related policy. Contributions are not Signal Hub reporting.',
+    title: 'Community noticeboard — The Signal 24',
+    description: 'Public participant contributions about reservation, representation and related policy. Contributions are not The Signal 24 reporting.',
     canonicalPath: '/community',
     robots: 'noindex, follow',
   });
@@ -2096,11 +2077,11 @@ function CommunityPage() {
   const params = useMemo<GetCommunityPostsParams>(() => ({ topic: topic ? topic as CommunityTopic : undefined, state: state || undefined, sort, limit: 50 }), [topic, state, sort]);
   const { data, isLoading, isError, refetch, isFetching } = useGetCommunityPosts(params, { query: { queryKey: getGetCommunityPostsQueryKey(params) } });
   const posts = data?.posts ?? [];
-  useSeo({ title: 'Community noticeboard — Signal Hub', description: 'A public discussion space for lived thoughts, articles, links and creative pieces from across India.', canonicalPath: '/community' });
+  useSeo({ title: 'Community noticeboard — The Signal 24', description: 'A public discussion space for lived thoughts, articles, links and creative pieces from across India.', canonicalPath: '/community' });
   return <main className="signal-page"><Header /><section className="signal-container pt-12 sm:pt-20">
     <div className="grid gap-8 border-b-2 border-primary pb-10 lg:grid-cols-[1fr_.58fr] lg:items-end">
-      <div><p className="signal-kicker text-accent">Signal Hub / community</p><h1 className="mt-4 max-w-4xl font-display text-6xl leading-[.88] tracking-[-.065em] sm:text-8xl">The national<br /><em className="font-normal text-accent">noticeboard.</em></h1><p className="mt-7 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">A separate public room for lived thoughts, articles, links and creative pieces. Read across disagreement, geography and experience.</p></div>
-      <div className="border-l-2 border-accent pl-5"><p className="signal-kicker text-accent">Important distinction</p><p className="mt-3 text-sm leading-relaxed">These are public participant contributions. They are not automatically Signal Hub reporting, and they do not carry the archive’s source verification.</p><button type="button" onClick={() => setComposerOpen((open) => !open)} className="mt-6 inline-flex items-center gap-2 rounded-full bg-accent px-5 py-3 signal-kicker text-accent-foreground" data-testid="button-open-community-composer">{composerOpen ? 'Close share form' : 'Share a thought'} <Plus size={14} /></button></div>
+      <div><p className="signal-kicker text-accent">The Signal 24 / community</p><h1 className="mt-4 max-w-4xl font-display text-6xl leading-[.88] tracking-[-.065em] sm:text-8xl">The national<br /><em className="font-normal text-accent">noticeboard.</em></h1><p className="mt-7 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">A separate public room for lived thoughts, articles, links and creative pieces. Read across disagreement, geography and experience.</p></div>
+      <div className="border-l-2 border-accent pl-5"><p className="signal-kicker text-accent">Important distinction</p><p className="mt-3 text-sm leading-relaxed">These are public participant contributions. They are not automatically The Signal 24 reporting, and they do not carry the archive’s source verification.</p><button type="button" onClick={() => setComposerOpen((open) => !open)} className="mt-6 inline-flex items-center gap-2 rounded-full bg-accent px-5 py-3 signal-kicker text-accent-foreground" data-testid="button-open-community-composer">{composerOpen ? 'Close share form' : 'Share a thought'} <Plus size={14} /></button></div>
     </div>
     {composerOpen && <div className="mt-8"><CommunityComposer onClose={() => setComposerOpen(false)} /></div>}
   </section>
@@ -2123,7 +2104,7 @@ function CommunityDetailPage() {
   const [authorName, setAuthorName] = useState('');
   const [replyBody, setReplyBody] = useState('');
   const [replyError, setReplyError] = useState(false);
-  useSeo({ title: data?.post ? `${data.post.title} — Community — Signal Hub` : 'Community post — Signal Hub', description: data?.post?.body.slice(0, 155) ?? 'A public participant contribution in the Signal Hub community.', robots: 'noindex, follow' });
+  useSeo({ title: data?.post ? `${data.post.title} — Community — The Signal 24` : 'Community post — The Signal 24', description: data?.post?.body.slice(0, 155) ?? 'A public participant contribution in the Signal 24 community.', robots: 'noindex, follow' });
   function like() {
     if (!data?.post) return;
     likeMutation.mutate({ postId }, { onSuccess: () => { void queryClient.invalidateQueries({ queryKey: getGetCommunityPostsQueryKey() }); void queryClient.invalidateQueries({ queryKey: getGetCommunityPostQueryKey(postId) }); } });
@@ -2142,7 +2123,7 @@ function CommunityDetailPage() {
   const post = data.post;
   return <main className="signal-page"><Header /><article className="signal-container py-12 sm:py-20">
     <Link href="/community" className="signal-kicker inline-flex items-center gap-2 text-muted-foreground hover:text-accent" data-testid="link-back-community"><ArrowLeft size={13} /> Back to community</Link>
-    <div className="mt-12 grid gap-10 lg:grid-cols-[1fr_.48fr]"><div><div className="flex flex-wrap items-center gap-2"><span className="signal-kicker text-accent">{post.kind}</span><span className="text-muted-foreground">/</span><span className="signal-kicker text-muted-foreground">{post.topic}</span>{post.state && <><span className="text-muted-foreground">/</span><span className="signal-kicker text-muted-foreground">{post.state}</span></>}</div><h1 className="mt-5 max-w-4xl font-display text-5xl leading-[.92] tracking-[-.055em] sm:text-7xl" data-testid="heading-community-post">{post.title}</h1><p className="mt-6 signal-kicker text-muted-foreground">Shared by {post.authorName} · {communityDate(post.createdAt)}</p></div><aside className="border-l-2 border-accent pl-5"><p className="signal-kicker text-accent">Community record</p><p className="mt-3 text-sm leading-relaxed text-muted-foreground">A public participant contribution. It is not automatically Signal Hub reporting or a verified archive record.</p><button type="button" onClick={like} disabled={likeMutation.isPending} className={`mt-6 inline-flex items-center gap-2 rounded-full border px-4 py-2 signal-kicker hover:border-accent hover:text-accent disabled:opacity-50 ${post.likedByViewer ? 'border-accent text-accent' : 'border-foreground/25'}`} data-testid="button-like-community-detail"><Heart size={14} fill={post.likedByViewer ? 'currentColor' : 'none'} /> {post.likedByViewer ? 'Liked' : 'Like'} · {post.likeCount}</button></aside></div>
+    <div className="mt-12 grid gap-10 lg:grid-cols-[1fr_.48fr]"><div><div className="flex flex-wrap items-center gap-2"><span className="signal-kicker text-accent">{post.kind}</span><span className="text-muted-foreground">/</span><span className="signal-kicker text-muted-foreground">{post.topic}</span>{post.state && <><span className="text-muted-foreground">/</span><span className="signal-kicker text-muted-foreground">{post.state}</span></>}</div><h1 className="mt-5 max-w-4xl font-display text-5xl leading-[.92] tracking-[-.055em] sm:text-7xl" data-testid="heading-community-post">{post.title}</h1><p className="mt-6 signal-kicker text-muted-foreground">Shared by {post.authorName} · {communityDate(post.createdAt)}</p></div><aside className="border-l-2 border-accent pl-5"><p className="signal-kicker text-accent">Community record</p><p className="mt-3 text-sm leading-relaxed text-muted-foreground">A public participant contribution. It is not automatically The Signal 24 reporting or a verified archive record.</p><button type="button" onClick={like} disabled={likeMutation.isPending} className={`mt-6 inline-flex items-center gap-2 rounded-full border px-4 py-2 signal-kicker hover:border-accent hover:text-accent disabled:opacity-50 ${post.likedByViewer ? 'border-accent text-accent' : 'border-foreground/25'}`} data-testid="button-like-community-detail"><Heart size={14} fill={post.likedByViewer ? 'currentColor' : 'none'} /> {post.likedByViewer ? 'Liked' : 'Like'} · {post.likeCount}</button></aside></div>
     <div className="story-body mt-12 max-w-3xl whitespace-pre-line text-[1.08rem] leading-[1.85] text-foreground/85" data-testid="text-community-detail-body">{post.body}</div>
     {post.linkUrl && <a href={post.linkUrl} target="_blank" rel="noopener noreferrer" className="mt-8 inline-flex items-center gap-2 border-b border-accent pb-1 signal-kicker text-accent hover:border-primary hover:text-primary" data-testid="link-community-external"><Link2 size={14} /> Open shared link <ExternalLink size={13} /></a>}
     <section className="mt-16 border-t-2 border-primary pt-8" aria-labelledby="community-replies-title"><div className="flex items-end justify-between gap-4"><div><p className="signal-kicker text-accent">Responses</p><h2 id="community-replies-title" className="mt-2 font-display text-4xl">The reply line.</h2></div><span className="signal-kicker text-muted-foreground">{data.replies.length} replies</span></div>
@@ -2153,7 +2134,7 @@ function CommunityDetailPage() {
 }
 
 function SignInPage() {
-  useSeo({ title: 'Editor sign in — Signal Hub', description: 'Sign in to access the private Signal Hub editorial desk.', robots: 'noindex, nofollow' });
+  useSeo({ title: 'Editor sign in — The Signal 24', description: 'Sign in to access the private editorial desk of The Signal 24.', robots: 'noindex, nofollow' });
   return <main className="signal-page"><section className="signal-container flex min-h-[100dvh] flex-col items-center justify-center gap-8 py-12">
     <Link href="/" className="signal-link font-display text-2xl">SIGNAL <span className="text-accent">HUB</span></Link>
     <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} forceRedirectUrl={`${basePath}/editor`} />
@@ -2264,55 +2245,6 @@ function App() {
 
 export default App;
 
-function useSeo({ title, description, canonicalPath, robots = 'index, follow', type = 'website', structuredData }: SeoConfig) {
-  const structuredDataText = JSON.stringify(absoluteStructuredData(structuredData ?? null));
-  useEffect(() => {
-    document.title = title;
-    const upsertMeta = (attribute: 'name' | 'property', key: string, content: string) => {
-      let element = document.head.querySelector<HTMLMetaElement>(`meta[${attribute}="${key}"]`);
-      if (!element) {
-        element = document.createElement('meta');
-        element.setAttribute(attribute, key);
-        element.dataset.signalSeo = 'true';
-        document.head.appendChild(element);
-      }
-      element.content = content;
-    };
-
-    upsertMeta('name', 'description', description);
-    upsertMeta('name', 'robots', robots);
-    upsertMeta('property', 'og:title', title);
-    upsertMeta('property', 'og:description', description);
-    upsertMeta('property', 'og:type', type);
-    const pathname = window.location.pathname;
-    const currentPath = basePath && (pathname === basePath || pathname.startsWith(`${basePath}/`))
-      ? pathname.slice(basePath.length) || '/'
-      : pathname;
-    upsertMeta('property', 'og:url', absoluteSiteUrl(canonicalPath ?? currentPath));
-    upsertMeta('property', 'og:site_name', 'Signal Hub');
-    upsertMeta('name', 'twitter:title', title);
-    upsertMeta('name', 'twitter:description', description);
-
-    document.head.querySelectorAll('link[rel="canonical"]').forEach((element) => element.remove());
-    if (canonicalPath && robots.startsWith('index')) {
-      const canonical = document.createElement('link');
-      canonical.rel = 'canonical';
-      canonical.href = absoluteSiteUrl(canonicalPath);
-      canonical.dataset.signalSeo = 'true';
-      document.head.appendChild(canonical);
-    }
-
-    document.head.querySelectorAll('script[data-signal-seo]').forEach((element) => element.remove());
-    if (structuredDataText !== 'null') {
-      const script = document.createElement('script');
-      script.type = 'application/ld+json';
-      script.dataset.signalSeo = 'true';
-      script.textContent = structuredDataText;
-      document.head.appendChild(script);
-    }
-  }, [canonicalPath, description, robots, structuredDataText, title, type]);
-}
-
 function storyPath(story: Story) {
   return story.canonicalPath || `/${recordFamilyForStory(story)}/${story.slug || `${slugify(story.title) || 'record'}-${story.id}`}`;
 }
@@ -2323,9 +2255,10 @@ function slugify(value: string) {
 
 const organizationSchema = {
   '@type': 'Organization',
-  name: 'Signal Hub',
+  name: 'The Signal 24',
   description: 'A source-first public-interest newsroom and research archive for reservation policy, court records, official documents and data in India.',
   url: absoluteSiteUrl('/'),
+  logo: absoluteSiteUrl('/logo.svg'),
 };
 
 function recordFamilyForStory(story: Story) {
@@ -2349,22 +2282,22 @@ function DataIndexPage() {
     Boolean(story.sourceUrl),
   ) ?? [];
   useSeo({
-    title: 'Data room — Signal Hub',
+    title: 'Data room — The Signal 24',
     description: 'Browse source-linked and reviewed data records on reservation and representation in India.',
     canonicalPath: path,
     structuredData: {
       '@context': 'https://schema.org',
       '@graph': [
-        { '@type': 'CollectionPage', name: 'Signal Hub data room', description: 'Published data records and methodology notes on reservation and representation in India.', url: path, mainEntity: records.map((story) => ({ '@type': 'Dataset', name: story.title, description: story.dek, url: story.canonicalPath || storyPath(story), creator: organizationSchema, isAccessibleForFree: true })) },
+        { '@type': 'CollectionPage', name: 'The Signal 24 data room', description: 'Published data records and methodology notes on reservation and representation in India.', url: path, mainEntity: records.map((story) => ({ '@type': 'Dataset', name: story.title, description: story.dek, url: story.canonicalPath || storyPath(story), creator: organizationSchema, isAccessibleForFree: true })) },
         organizationSchema,
-        { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'Signal Hub', item: '/' }, { '@type': 'ListItem', position: 2, name: 'Data', item: path }] },
+        { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'The Signal 24', item: '/' }, { '@type': 'ListItem', position: 2, name: 'Data', item: path }] },
       ],
     },
   });
   return <main className="signal-page">
     <Header />
     <section className="signal-container pt-14 sm:pt-24">
-      <p className="signal-kicker text-accent">Signal Hub / data room</p>
+      <p className="signal-kicker text-accent">The Signal 24 / data room</p>
       <h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">Numbers need<br /><em className="font-normal text-accent">a denominator.</em></h1>
       <p className="mt-8 max-w-2xl text-lg leading-relaxed text-muted-foreground">Data records appear here only when their source and verification status are visible. A chart needs a defined value, unit, date, geography and denominator; none is inferred to fill a gap.</p>
     </section>
@@ -2454,7 +2387,7 @@ const clerkAppearance = {
 };
 
 function SignUpPage() {
-  useSeo({ title: 'Editor account — Signal Hub', description: 'Create an account to request access to the private Signal Hub editorial desk.', robots: 'noindex, nofollow' });
+  useSeo({ title: 'Editor account — The Signal 24', description: 'Create an account to request access to the private editorial desk of The Signal 24.', robots: 'noindex, nofollow' });
   return <main className="signal-page"><section className="signal-container flex min-h-[100dvh] flex-col items-center justify-center gap-8 py-12">
     <Link href="/" className="signal-link font-display text-2xl">SIGNAL <span className="text-accent">HUB</span></Link>
     <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} forceRedirectUrl={`${basePath}/editor`} />
@@ -2475,10 +2408,10 @@ function EditorAccessRoute() {
     },
   });
   useSeo({
-    title: evidence ? 'Evidence graph — Signal Hub' : 'Editorial desk — Signal Hub',
+    title: evidence ? 'Evidence graph — The Signal 24' : 'Editorial desk — The Signal 24',
     description: evidence
       ? 'Private editorial workspace for maintaining explicit article, event, and source relationships.'
-      : 'Private editorial workspace for preparing source-aware Signal Hub records.',
+      : 'Private editorial workspace for preparing source-aware records for The Signal 24.',
     robots: 'noindex, nofollow',
   });
 

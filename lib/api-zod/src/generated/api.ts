@@ -1806,7 +1806,7 @@ export const UpdateEditorContentSourceResponse = zod.object({
 
 
 /**
- * Requires verified editor access. Items are unpublished leads, not Signal Hub reporting or evidence.
+ * Requires verified editor access. Items are unpublished leads, not The Signal 24 reporting or evidence.
  * @summary List external leads for editorial review
  */
 export const getEditorDiscoveryItemsResponseItemsItemSourcePublishedOnRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');

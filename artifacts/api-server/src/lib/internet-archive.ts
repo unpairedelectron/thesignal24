@@ -240,7 +240,7 @@ export function createInternetArchiveClient(
     const response = await fetchImpl(url, {
       headers: {
         Accept: "application/json",
-        "User-Agent": "Signal Hub editorial image review/1.0",
+        "User-Agent": "The Signal 24 editorial image review/1.0",
       },
       signal: AbortSignal.timeout(10_000),
     });

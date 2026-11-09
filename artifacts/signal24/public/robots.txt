@@ -3,4 +3,4 @@ Allow: /
 Disallow: /editor
 Disallow: /api/
 Allow: /api/sitemap.xml
-Sitemap: https://signal-hub.replit.app/sitemap.xml
+Sitemap: https://thesignal24.com/sitemap.xml

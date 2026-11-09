@@ -447,7 +447,7 @@ export function SourceDiscoveryDesk() {
           </h2>
         </div>
         <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
-          External leads are not Signal Hub reporting or evidence. This desk does
+          External leads are not The Signal 24 reporting or evidence. This desk does
           not fetch full articles, create evidence links, or publish automatically.
         </p>
       </div>

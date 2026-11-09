@@ -1122,7 +1122,7 @@ paths:
       operationId: getEditorDiscoveryItems
       tags: [editor, evidence]
       summary: List external leads for editorial review
-      description: Requires verified editor access. Items are unpublished leads, not Signal Hub reporting or evidence.
+      description: Requires verified editor access. Items are unpublished leads, not The Signal 24 reporting or evidence.
       responses:
         "200":
           description: Discovery queue

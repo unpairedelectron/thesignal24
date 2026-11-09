@@ -10,7 +10,7 @@ A source-first public-interest publication and research archive covering UGC equ
 - `pnpm run build` — typecheck and build all workspace packages.
 - `pnpm --dir lib/api-spec codegen` — regenerate API clients and Zod schemas from the OpenAPI contract.
 - `pnpm --filter @workspace/db run push` — apply schema changes to the development database only.
-- Required runtime configuration includes `DATABASE_URL` and `SESSION_SECRET`. Editor access also requires Clerk configuration and an `EDITOR_EMAILS` allowlist; provide values through Replit Secrets, not source files.
+- Required runtime configuration includes `DATABASE_URL` and `SESSION_SECRET`. The canonical public origin defaults to `https://thesignal24.com`; override it with `VITE_SITE_URL` (web build) and `SITE_URL` (API sitemap) only if the domain changes. Editor access also requires Clerk configuration and an `EDITOR_EMAILS` allowlist; provide values through Replit Secrets, not source files.
 
 ## Stack
 
@@ -36,7 +36,7 @@ A source-first public-interest publication and research archive covering UGC equ
 - Unreviewed external feed items are leads, not Signal 24 reporting; source-linked publication records remain a separate editorial workflow.
 - Public participant contributions are labeled separately from verified editorial records.
 - Production web and API requests share one origin; the browser calls `/api` rather than a hard-coded API host.
-- Canonical metadata is generated at runtime because a literal root canonical in the Vite HTML entry can break production builds.
+- Canonical metadata is generated at runtime because a literal root canonical in the Vite HTML entry can break production builds. Canonicals, `og:url`, share images and sitemap URLs always use the fixed site origin (`artifacts/signal24/src/lib/seo.ts`, `SITE_ORIGIN` in `artifacts/api-server/src/routes/publication.ts`), never the request host, so mirror hosts such as `*.replit.app` don't create duplicate content.
 
 ## Product
 

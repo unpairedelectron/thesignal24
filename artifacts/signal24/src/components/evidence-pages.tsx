@@ -11,6 +11,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { Link, useParams } from "wouter";
+import { useSeo } from "@/lib/seo";
 import {
   getGetEvidenceEventQueryKey,
   getGetEvidenceEventsQueryKey,
@@ -74,21 +75,6 @@ const DOCUMENT_TYPES: EvidenceDocumentType[] = [
   "other",
 ];
 const SOURCE_ROLES: EvidenceSourceRole[] = ["primary", "secondary"];
-
-function useEvidenceSeo(title: string, description: string) {
-  useEffect(() => {
-    document.title = title;
-    let meta = document.head.querySelector<HTMLMetaElement>(
-      'meta[name="description"]',
-    );
-    if (!meta) {
-      meta = document.createElement("meta");
-      meta.name = "description";
-      document.head.appendChild(meta);
-    }
-    meta.content = description;
-  }, [title, description]);
-}
 
 function displayDate(value: string | Date | null | undefined) {
   if (!value) return "Date not supplied";
@@ -223,10 +209,11 @@ function EventCard({
 }
 
 export function EvidenceEventsPage() {
-  useEvidenceSeo(
-    "Events and evidence — Signal Hub",
-    "Published events connected to Signal Hub articles and source documents.",
-  );
+  useSeo({
+    title: "Events and evidence — The Signal 24",
+    description: "Published events connected to The Signal 24 articles and source documents.",
+    canonicalPath: "/events",
+  });
   const query = useGetEvidenceEvents(undefined, {
     query: {
       queryKey: getGetEvidenceEventsQueryKey(),
@@ -238,7 +225,7 @@ export function EvidenceEventsPage() {
   return (
     <section className="signal-container py-12 sm:py-20">
       <Link href="/" className="signal-kicker text-muted-foreground hover:text-accent">
-        <ArrowLeft size={13} className="mr-2 inline" /> Signal Hub
+        <ArrowLeft size={13} className="mr-2 inline" /> The Signal 24
       </Link>
       <div className="mt-10 grid gap-8 border-b border-foreground/20 pb-8 lg:grid-cols-[1fr_.48fr] lg:items-end">
         <div>
@@ -277,10 +264,11 @@ export function EvidenceEventsPage() {
 }
 
 export function EvidenceSearchPage() {
-  useEvidenceSeo(
-    "Search the evidence — Signal Hub",
-    "Search published articles, events, and source documents as separate record types.",
-  );
+  useSeo({
+    title: "Search the evidence — The Signal 24",
+    description: "Search published articles, events, and source documents as separate record types.",
+    robots: "noindex, follow",
+  });
   const [term, setTerm] = useState(
     () => new URLSearchParams(window.location.search).get("q") ?? "",
   );
@@ -314,7 +302,7 @@ export function EvidenceSearchPage() {
   return (
     <section className="signal-container py-12 sm:py-20">
       <Link href="/" className="signal-kicker text-muted-foreground hover:text-accent">
-        <ArrowLeft size={13} className="mr-2 inline" /> Signal Hub
+        <ArrowLeft size={13} className="mr-2 inline" /> The Signal 24
       </Link>
       <div className="mt-10 max-w-4xl">
         <p className="signal-kicker text-accent">Search / Published evidence</p>
@@ -424,10 +412,12 @@ export function EvidenceEventDetailPage() {
     },
   });
   const event = query.data?.event;
-  useEvidenceSeo(
-    event ? `${event.event.title} — Signal Hub` : "Event — Signal Hub",
-    event?.event.summary ?? "A published event record with explicitly linked articles and source documents.",
-  );
+  useSeo({
+    title: event ? `${event.event.title} — The Signal 24` : "Event — The Signal 24",
+    description: event?.event.summary || "A published event record with explicitly linked articles and source documents.",
+    canonicalPath: event ? `/events/${eventId}` : undefined,
+    robots: event ? "index, follow" : "noindex, follow",
+  });
 
   if (!Number.isInteger(eventId) || eventId <= 0) {
     return <EvidencePageMessage title="Invalid event address" text="This event record address is not valid." />;
@@ -519,12 +509,14 @@ export function EvidenceSourceDetailPage() {
   });
   const data = query.data;
   const source = data?.sourceDocument;
-  useEvidenceSeo(
-    source ? `${source.title} — Signal Hub` : "Source document — Signal Hub",
-    source
+  useSeo({
+    title: source ? `${source.title} — The Signal 24` : "Source document — The Signal 24",
+    description: source
       ? `${source.publisher} source document record with publication metadata and explicit event/article links.`
       : "A source document record and its explicitly linked published events and articles.",
-  );
+    canonicalPath: source ? `/sources/${sourceId}` : undefined,
+    robots: source ? "index, follow" : "noindex, follow",
+  });
 
   if (!Number.isInteger(sourceId) || sourceId <= 0) {
     return <EvidencePageMessage title="Invalid source address" text="This source record address is not valid." />;

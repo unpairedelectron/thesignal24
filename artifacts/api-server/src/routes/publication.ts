@@ -3,6 +3,7 @@ import { and, asc, desc, eq, gte, inArray, like, lte, or } from "drizzle-orm";
 import {
   db,
   articleEventsTable,
+  articleSourcesTable,
   decisionImpactRecordsTable,
   decisionImpactRevisionsTable,
   eventSourcesTable,
@@ -10,6 +11,7 @@ import {
   issuesTable,
   policyRecordsTable,
   policySourcesTable,
+  sourceDocumentsTable,
   storiesTable,
   storyRevisionsTable,
 } from "@workspace/db";
@@ -345,14 +347,28 @@ function xmlEscape(value: string) {
     .replace(/'/g, "&apos;");
 }
 
-function requestOrigin(req: {
-  protocol: string;
-  get(name: string): string | undefined;
-}) {
-  const forwardedProtocol = req.get("x-forwarded-proto")?.split(",")[0]?.trim();
-  const protocol = forwardedProtocol || req.protocol || "https";
-  const host = req.get("host") || "signal24.example";
-  return `${protocol}://${host}`.replace(/\/$/, "");
+// Sitemap URLs always use the canonical public origin, never the request Host,
+// so mirror hosts (e.g. *.replit.app) cannot publish a sitemap of their own URLs.
+const SITE_ORIGIN = (process.env.SITE_URL || "https://thesignal24.com").replace(
+  /\/$/,
+  "",
+);
+
+type SitemapEntry = { path: string; lastmod?: Date | null };
+
+function latestDate(dates: Array<Date | null | undefined>) {
+  let latest: Date | null = null;
+  for (const date of dates) {
+    if (date && (!latest || date > latest)) latest = date;
+  }
+  return latest;
+}
+
+function sitemapUrl({ path, lastmod }: SitemapEntry) {
+  const lastmodTag = lastmod
+    ? `<lastmod>${lastmod.toISOString()}</lastmod>`
+    : "";
+  return `<url><loc>${xmlEscape(`${SITE_ORIGIN}${path}`)}</loc>${lastmodTag}</url>`;
 }
 
 router.get("/issues/current", async (_req, res, next) => {
@@ -468,56 +484,116 @@ router.get("/archive", async (req, res, next) => {
   }
 });
 
-router.get("/sitemap.xml", async (req, res, next) => {
+router.get("/sitemap.xml", async (_req, res, next) => {
   try {
-    const results = await db
-      .select({
-        story: storiesTable,
-        articlePublishedAt: issuesTable.publishedAt,
-      })
-      .from(storiesTable)
-      .innerJoin(issuesTable, eq(storiesTable.issueId, issuesTable.id))
-      .where(
-        and(
-          eq(issuesTable.status, "published"),
-          eq(storiesTable.workflowStatus, "published"),
-        ),
-      )
-      .orderBy(desc(storiesTable.updatedAt), asc(storiesTable.id));
-    const policyResults = await db
-      .select()
-      .from(policyRecordsTable)
-      .where(eq(policyRecordsTable.workflowStatus, "published"))
-      .orderBy(desc(policyRecordsTable.updatedAt), asc(policyRecordsTable.id));
-    const origin = requestOrigin(req);
-    const staticPaths = [
-      "/",
-      "/data",
-      "/archive",
-      "/policies",
-      "/about",
-      "/editorial-standards",
-      "/methodology",
-      "/authors/signal-24",
+    const [results, policyResults, eventResults, eventSourceResults, articleSourceResults] =
+      await Promise.all([
+        db
+          .select({ story: storiesTable })
+          .from(storiesTable)
+          .innerJoin(issuesTable, eq(storiesTable.issueId, issuesTable.id))
+          .where(
+            and(
+              eq(issuesTable.status, "published"),
+              eq(storiesTable.workflowStatus, "published"),
+            ),
+          )
+          .orderBy(desc(storiesTable.updatedAt), asc(storiesTable.id)),
+        db
+          .select()
+          .from(policyRecordsTable)
+          .where(eq(policyRecordsTable.workflowStatus, "published"))
+          .orderBy(desc(policyRecordsTable.updatedAt), asc(policyRecordsTable.id)),
+        db
+          .select()
+          .from(evidenceEventsTable)
+          .where(eq(evidenceEventsTable.workflowStatus, "published"))
+          .orderBy(desc(evidenceEventsTable.updatedAt), asc(evidenceEventsTable.id)),
+        // Source pages are only public when linked to published records.
+        db
+          .select({ source: sourceDocumentsTable })
+          .from(eventSourcesTable)
+          .innerJoin(
+            evidenceEventsTable,
+            eq(eventSourcesTable.eventId, evidenceEventsTable.id),
+          )
+          .innerJoin(
+            sourceDocumentsTable,
+            eq(eventSourcesTable.sourceDocumentId, sourceDocumentsTable.id),
+          )
+          .where(eq(evidenceEventsTable.workflowStatus, "published")),
+        db
+          .select({ source: sourceDocumentsTable })
+          .from(articleSourcesTable)
+          .innerJoin(storiesTable, eq(articleSourcesTable.articleId, storiesTable.id))
+          .innerJoin(issuesTable, eq(storiesTable.issueId, issuesTable.id))
+          .innerJoin(
+            sourceDocumentsTable,
+            eq(articleSourcesTable.sourceDocumentId, sourceDocumentsTable.id),
+          )
+          .where(
+            and(
+              eq(storiesTable.workflowStatus, "published"),
+              eq(issuesTable.status, "published"),
+            ),
+          ),
+      ]);
+
+    const indexableStories = results
+      .map(({ story }) => story)
+      .filter(isIndexableStory);
+    const storiesLastmod = latestDate(indexableStories.map((story) => story.updatedAt));
+    const policiesLastmod = latestDate(policyResults.map((policy) => policy.updatedAt));
+    const eventsLastmod = latestDate(eventResults.map((event) => event.updatedAt));
+
+    const topicLastmod = new Map<string, Date>();
+    for (const story of indexableStories) {
+      const current = topicLastmod.get(story.topic);
+      if (!current || story.updatedAt > current) topicLastmod.set(story.topic, story.updatedAt);
+    }
+
+    const sources = new Map<number, typeof sourceDocumentsTable.$inferSelect>();
+    for (const { source } of [...eventSourceResults, ...articleSourceResults]) {
+      sources.set(source.id, source);
+    }
+
+    const entries: SitemapEntry[] = [
+      { path: "/", lastmod: latestDate([storiesLastmod, policiesLastmod]) },
+      { path: "/archive", lastmod: storiesLastmod },
+      { path: "/policies", lastmod: policiesLastmod },
+      { path: "/topics", lastmod: storiesLastmod },
+      { path: "/topics/open-category-competition" },
+      { path: "/timeline", lastmod: latestDate([storiesLastmod, policiesLastmod]) },
+      { path: "/events", lastmod: eventsLastmod },
+      { path: "/data" },
+      { path: "/about" },
+      { path: "/editorial-standards" },
+      { path: "/methodology" },
+      { path: "/authors/signal-24" },
+      ...Array.from(topicLastmod, ([topic, lastmod]) => ({
+        path: `/topics/${encodeURIComponent(topic)}`,
+        lastmod,
+      })),
+      ...indexableStories.map((story) => ({
+        path: getCanonicalPath(story),
+        lastmod: story.updatedAt,
+      })),
+      ...policyResults.map((policy) => ({
+        path: `/policies/${policy.slug}`,
+        lastmod: policy.updatedAt,
+      })),
+      ...eventResults.map((event) => ({
+        path: `/events/${event.id}`,
+        lastmod: event.updatedAt,
+      })),
+      ...Array.from(sources.values(), (source) => ({
+        path: `/sources/${source.id}`,
+        lastmod: source.updatedAt,
+      })),
     ];
-    const urls = [
-      ...staticPaths.map(
-        (path) => `<url><loc>${xmlEscape(`${origin}${path}`)}</loc></url>`,
-      ),
-      ...results
-        .map(({ story }) => story)
-        .filter(isIndexableStory)
-        .map(
-          (story) =>
-            `<url><loc>${xmlEscape(`${origin}${getCanonicalPath(story)}`)}</loc><lastmod>${story.updatedAt.toISOString()}</lastmod></url>`,
-        ),
-      ...policyResults.map(
-        (policy) =>
-          `<url><loc>${xmlEscape(`${origin}/policies/${policy.slug}`)}</loc><lastmod>${policy.updatedAt.toISOString()}</lastmod></url>`,
-      ),
-    ].join("");
+
     res.type("application/xml").send(
-      `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls}</urlset>`,
+      `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${entries.map(sitemapUrl).join("")}</urlset>`,
     );
   } catch (error) {
     next(error);

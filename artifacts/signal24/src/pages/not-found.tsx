@@ -3,7 +3,7 @@ import { ArrowLeft, Radio } from 'lucide-react';
 
 export default function NotFound() {
   useEffect(() => {
-    document.title = 'Page not found — Signal Hub';
+    document.title = 'Page not found — The Signal 24';
     const updateMeta = (selector: string, attribute: 'name' | 'property', key: string, content: string) => {
       let meta = document.head.querySelector<HTMLMetaElement>(selector);
       if (!meta) {
@@ -13,10 +13,10 @@ export default function NotFound() {
       }
       meta.content = content;
     };
-    updateMeta('meta[name="description"]', 'name', 'description', 'The requested page could not be found on Signal Hub.');
+    updateMeta('meta[name="description"]', 'name', 'description', 'The requested page could not be found on The Signal 24.');
     updateMeta('meta[name="robots"]', 'name', 'robots', 'noindex, nofollow');
-    updateMeta('meta[property="og:title"]', 'property', 'og:title', 'Page not found — Signal Hub');
-    updateMeta('meta[property="og:description"]', 'property', 'og:description', 'The requested page could not be found on Signal Hub.');
+    updateMeta('meta[property="og:title"]', 'property', 'og:title', 'Page not found — The Signal 24');
+    updateMeta('meta[property="og:description"]', 'property', 'og:description', 'The requested page could not be found on The Signal 24.');
     document.head.querySelectorAll('link[rel="canonical"]').forEach((element) => element.remove());
   }, []);
 
