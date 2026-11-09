@@ -31,8 +31,8 @@ export default function NotFound() {
             <span className="grid h-10 w-10 place-items-center rounded-full border border-accent text-accent"><Radio size={17} /></span>
             <p className="signal-kicker text-accent">{t('Page not found', 'पेज नहीं मिला')}</p>
           </div>
-          <h1 className="mt-7 font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">{t(<>No record<br /><em className="font-normal text-accent">at this address.</em></>, <>इस पते पर<br /><em className="font-normal text-accent">कोई रिकॉर्ड नहीं।</em></>)}</h1>
-          <p className="mt-7 max-w-md text-sm leading-relaxed text-muted-foreground">{t('The link may be wrong, or the record may have moved. Nothing is deleted from the record without a note saying so.', 'लिंक ग़लत हो सकता है, या रिकॉर्ड हट गया हो सकता है। रिकॉर्ड से कुछ भी बिना सूचना के नहीं हटाया जाता।')}</p>
+          <h1 className="mt-7 font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">{t(<>This page went the way<br /><em className="font-normal text-accent">of the Rohini report.</em></>, <>यह पेज रोहिणी रिपोर्ट<br /><em className="font-normal text-accent">की राह चला गया।</em></>)}</h1>
+          <p className="mt-7 max-w-md text-sm leading-relaxed text-muted-foreground">{t('Unlike that report, we will at least tell you why: the link is wrong or the record has moved. Nothing disappears from this site without a note saying so.', 'उस रिपोर्ट के उलट, हम कम से कम वजह तो बताएँगे: लिंक ग़लत है या रिकॉर्ड कहीं और चला गया है। इस साइट से कुछ भी बिना सूचना के ग़ायब नहीं होता।')}</p>
           <a href={href('/')} className="mt-8 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-3 text-[.68rem] font-bold uppercase tracking-[.13em] text-primary-foreground">
             <ArrowLeft size={14} /> {t('Back to the front page', 'पहले पन्ने पर लौटें')}
           </a>

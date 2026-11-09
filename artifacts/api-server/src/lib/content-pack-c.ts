@@ -12,7 +12,7 @@ export const CONTENT_PACK_C: ContentPackStory[] = [
     sourcePublishedOn: "2021-09-23",
     eyebrow: "Counting caste",
     title: "Collected, then called unusable: the caste data India paid for and never saw",
-    dek: "The last full caste count in a census was in 1931. The 2011 caste data was gathered and then buried. Census 2027 promises a count, and the notification that launched it did not mention caste.",
+    dek: "The last full caste count in a census was in 1931. The 2011 caste data was gathered and then buried. Census 2027 promises a count, and the notification that launched it forgot to mention caste. Easy mistake.",
     read: 7,
     tone: "Data",
     body: `India decides who gets reserved seats, how large each quota is, and whether a group is backward, without a current national count of caste. That is a choice successive governments have made, not an accident.
@@ -43,7 +43,7 @@ A census that counts caste and then delays the tables would repeat 2011 under a 
     hi: {
       eyebrow: "जाति की गिनती",
       title: "पहले जुटाए, फिर बेकार बताए: वे जाति आंकड़े जिनका पैसा भारत ने चुकाया और जो कभी दिखे नहीं",
-      dek: "जनगणना में आख़िरी पूरी जाति गिनती 1931 में हुई थी। 2011 के जाति आंकड़े जुटाए गए और फिर दबा दिए गए। जनगणना 2027 गिनती का वादा करती है, और जिस अधिसूचना से इसकी शुरुआत हुई उसमें जाति का ज़िक्र तक नहीं था।",
+      dek: "जनगणना में आख़िरी पूरी जाति गिनती 1931 में हुई थी। 2011 के जाति आंकड़े जुटाए गए और फिर दबा दिए गए। जनगणना 2027 गिनती का वादा करती है, और जिस अधिसूचना से इसकी शुरुआत हुई वह जाति का ज़िक्र करना ही भूल गई। आसान-सी भूल।",
       body: `भारत तय करता है कि आरक्षित सीटें किसे मिलें, हर कोटा कितना बड़ा हो, और कौन-सा समूह पिछड़ा है, और यह सब जाति की किसी मौजूदा राष्ट्रीय गिनती के बिना होता है। यह एक के बाद एक आई सरकारों का फ़ैसला है, कोई संयोग नहीं।
 
 ::: रिकॉर्ड
@@ -83,7 +83,7 @@ A census that counts caste and then delays the tables would repeat 2011 under a 
     sourcePublishedOn: "2022-01-02",
     eyebrow: "The ₹8 lakh line",
     title: "One number, two very different tests: how ₹8 lakh came to decide both OBC and EWS eligibility",
-    dek: "The OBC creamy-layer limit has been ₹8 lakh since 2017. The EWS limit has been ₹8 lakh since 2019. They measure different things, and neither has been revised.",
+    dek: "The OBC creamy-layer limit has been ₹8 lakh since 2017. The EWS limit has been ₹8 lakh since 2019. They measure different things, and neither has been revised. Inflation did not get the memo.",
     read: 6,
     tone: "Data",
     body: `The figure of ₹8 lakh a year now decides eligibility for two separate reservation systems. The coincidence has been convenient for governments and confusing for applicants.
@@ -106,7 +106,7 @@ The creamy-layer limit was meant to be reviewed periodically. In August 2025, Pa
     hi: {
       eyebrow: "₹8 लाख की रेखा",
       title: "एक आंकड़ा, दो बिल्कुल अलग कसौटियाँ: ₹8 लाख कैसे ओबीसी और ईडब्ल्यूएस दोनों की पात्रता तय करने लगा",
-      dek: "ओबीसी क्रीमी लेयर की सीमा 2017 से ₹8 लाख है। ईडब्ल्यूएस की सीमा 2019 से ₹8 लाख है। दोनों अलग चीज़ें मापती हैं, और किसी में भी संशोधन नहीं हुआ।",
+      dek: "ओबीसी क्रीमी लेयर की सीमा 2017 से ₹8 लाख है। ईडब्ल्यूएस की सीमा 2019 से ₹8 लाख है। दोनों अलग चीज़ें मापती हैं, और किसी में भी संशोधन नहीं हुआ। महँगाई को शायद यह सूचना नहीं मिली।",
       body: `₹8 लाख सालाना का आंकड़ा अब आरक्षण की दो अलग व्यवस्थाओं में पात्रता तय करता है। यह संयोग सरकारों के लिए सुविधाजनक रहा है और आवेदकों के लिए उलझन भरा।
 
 ::: दो सीमाएँ, एक ही आंकड़ा
@@ -138,7 +138,7 @@ The creamy-layer limit was meant to be reviewed periodically. In August 2025, Pa
     sourcePublishedOn: "2023-10-20",
     eyebrow: "Two commissions",
     title: "Mandal waited a decade to be implemented. Rohini’s report has not even been published",
-    dek: "India’s two most important commissions on backward classes share a history: governments that received their findings and then sat on them.",
+    dek: "India’s two most important commissions on backward classes share a history: governments that received their findings and then sat on them. Comfortably.",
     read: 6,
     tone: "History",
     body: `Two commissions shaped how India thinks about Other Backward Classes. Both reported to governments that preferred not to act on them, at least not quickly.
@@ -165,7 +165,7 @@ The Rohini Commission was created to answer whether a handful of communities tak
     hi: {
       eyebrow: "दो आयोग",
       title: "मंडल को लागू होने में दस साल लगे। रोहिणी की रिपोर्ट तो प्रकाशित तक नहीं हुई",
-      dek: "पिछड़े वर्गों पर भारत के दो सबसे अहम आयोगों का इतिहास एक जैसा है: सरकारें जिन्होंने निष्कर्ष लिए और फिर उन पर बैठ गईं।",
+      dek: "पिछड़े वर्गों पर भारत के दो सबसे अहम आयोगों का इतिहास एक जैसा है: सरकारें जिन्होंने निष्कर्ष लिए और फिर उन पर आराम से बैठ गईं।",
       body: `दो आयोगों ने तय किया कि भारत अन्य पिछड़े वर्गों के बारे में कैसे सोचता है। दोनों ने ऐसी सरकारों को रिपोर्ट दी जिन्होंने उन पर अमल न करना बेहतर समझा, कम से कम जल्दी तो नहीं।
 
 ::: मंडल

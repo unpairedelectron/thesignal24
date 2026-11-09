@@ -16,7 +16,7 @@ export const CONTENT_PACK_A: ContentPackStory[] = [
     sourcePublishedOn: null,
     eyebrow: "Start here",
     title: "Reservation in India: what the law allows, what the courts capped, and what the state won’t publish",
-    dek: "Seventy-five years of constitutional amendments and court rulings have built the system. The data that would show whether it works is still being withheld.",
+    dek: "Seventy-five years of constitutional amendments and court rulings have built the system. The data that would show whether it works is still being withheld, presumably for its own protection.",
     read: 7,
     tone: "Latest",
     body: `Reservation is the most argued-over policy in Indian public life, and one of the least measured. This is the record in one place: what the Constitution permits, where the Supreme Court has drawn lines, and where governments have chosen not to tell the public what they know.
@@ -47,7 +47,7 @@ Every record on The Signal 24 shows its source, its date and its verification st
     hi: {
       eyebrow: "यहाँ से शुरू करें",
       title: "भारत में आरक्षण: क़ानून क्या इजाज़त देता है, अदालतों ने क्या सीमा बाँधी, और सरकार क्या नहीं बताती",
-      dek: "पचहत्तर साल के संविधान संशोधनों और अदालती फ़ैसलों ने यह व्यवस्था बनाई है। यह व्यवस्था काम कर रही है या नहीं, यह बताने वाले आंकड़े आज भी रोके हुए हैं।",
+      dek: "पचहत्तर साल के संविधान संशोधनों और अदालती फ़ैसलों ने यह व्यवस्था बनाई है। यह व्यवस्था काम कर रही है या नहीं, यह बताने वाले आंकड़े आज भी रोके हुए हैं, शायद उन्हीं की हिफ़ाज़त के लिए।",
       body: `आरक्षण भारत के सार्वजनिक जीवन की सबसे ज़्यादा बहस वाली नीति है, और सबसे कम मापी गई भी। यह रिकॉर्ड एक जगह है: संविधान क्या इजाज़त देता है, सुप्रीम कोर्ट ने कहाँ रेखाएँ खींचीं, और सरकारों ने कहाँ वह जानकारी जनता से छिपाए रखी जो उनके पास है।
 
 ::: मुख्य तथ्य
@@ -87,7 +87,7 @@ Every record on The Signal 24 shows its source, its date and its verification st
     sourcePublishedOn: null,
     eyebrow: "The text",
     title: "What the Constitution actually says about reservation, article by article",
-    dek: "Most of the reservation framework was not in the original 1950 text. It was added amendment by amendment, usually within months of a court ruling the government did not like.",
+    dek: "Most of the reservation framework was not in the original 1950 text. It was added amendment by amendment, usually within months of a court ruling the government did not like. Drafting first, reading later.",
     read: 6,
     tone: "Courts",
     body: `Political speeches treat reservation as a single promise. The constitutional text is a stack of separate provisions, most added after 1950, each with its own conditions.
@@ -117,7 +117,7 @@ The Constitution does not fix any percentage for SC, ST or OBC reservation in jo
     hi: {
       eyebrow: "मूल पाठ",
       title: "आरक्षण पर संविधान असल में क्या कहता है, अनुच्छेद-दर-अनुच्छेद",
-      dek: "आरक्षण का ज़्यादातर ढाँचा 1950 के मूल पाठ में नहीं था। इसे एक-एक संशोधन से जोड़ा गया, अक्सर किसी ऐसे अदालती फ़ैसले के कुछ ही महीनों बाद जो सरकार को पसंद नहीं आया।",
+      dek: "आरक्षण का ज़्यादातर ढाँचा 1950 के मूल पाठ में नहीं था। इसे एक-एक संशोधन से जोड़ा गया, अक्सर किसी ऐसे अदालती फ़ैसले के कुछ ही महीनों बाद जो सरकार को पसंद नहीं आया। पहले लिखो, पढ़ो बाद में।",
       body: `राजनीतिक भाषण आरक्षण को एक ही वादे की तरह पेश करते हैं। संविधान का पाठ अलग-अलग प्रावधानों का ढेर है, जिनमें से ज़्यादातर 1950 के बाद जोड़े गए, और हर एक की अपनी शर्तें हैं।
 
 ::: प्रावधान
@@ -227,7 +227,7 @@ Each of these arrangements was justified by a claim about representation, and ea
     sourcePublishedOn: "1992-11-16",
     eyebrow: "The judgment that set the ceiling",
     title: "Indra Sawhney, 1992: the 50% ceiling, the creamy layer, and a promise on promotions that Parliament reversed",
-    dek: "A nine-judge bench upheld the OBC quota but attached conditions. Governments have spent three decades amending around them.",
+    dek: "A nine-judge bench upheld the OBC quota but attached conditions. Governments have spent three decades amending around them, with impressive stamina.",
     read: 6,
     tone: "Courts",
     body: `On 16 November 1992, a nine-judge bench of the Supreme Court decided the challenge to the Mandal reservations. The majority judgment is still the most cited reservation ruling in the country.
@@ -257,7 +257,7 @@ Indra Sawhney asked governments to justify departures from the rule with evidenc
     hi: {
       eyebrow: "जिस फ़ैसले ने सीमा तय की",
       title: "इंद्रा साहनी, 1992: 50% की सीमा, क्रीमी लेयर, और पदोन्नति पर एक रोक जिसे संसद ने पलट दिया",
-      dek: "नौ जजों की पीठ ने ओबीसी आरक्षण को बरक़रार रखा, लेकिन शर्तों के साथ। सरकारें तीन दशक से उन शर्तों के इर्द-गिर्द संशोधन करती रही हैं।",
+      dek: "नौ जजों की पीठ ने ओबीसी आरक्षण को बरक़रार रखा, लेकिन शर्तों के साथ। सरकारें तीन दशक से उन शर्तों के इर्द-गिर्द संशोधन करती रही हैं, और थकने का नाम नहीं लेतीं।",
       body: `16 नवंबर 1992 को सुप्रीम कोर्ट की नौ जजों की पीठ ने मंडल आरक्षण को दी गई चुनौती पर फ़ैसला सुनाया। बहुमत का यह फ़ैसला आज भी देश में आरक्षण पर सबसे ज़्यादा उद्धृत किया जाने वाला फ़ैसला है।
 
 ::: अदालत ने क्या कहा

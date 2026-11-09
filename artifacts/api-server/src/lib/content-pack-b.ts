@@ -12,7 +12,7 @@ export const CONTENT_PACK_B: ContentPackStory[] = [
     sourcePublishedOn: "2022-01-31",
     eyebrow: "Reservation in promotion",
     title: "Sixteen years of the same court order: count the cadre before you reserve the promotion",
-    dek: "Since 2006 the Supreme Court has told governments that reservation in promotions needs quantifiable data on representation. In 2022 it had to spell out, again, that the count must be done cadre by cadre.",
+    dek: "Since 2006 the Supreme Court has told governments that reservation in promotions needs quantifiable data on representation. In 2022 it had to spell out, again, that the count must be done cadre by cadre. Some lessons need a third judgment.",
     read: 6,
     tone: "Courts",
     body: `Reservation in promotions for Scheduled Castes and Scheduled Tribes is constitutional. Whether a particular government is entitled to apply it depends on one thing: whether it has done the counting the courts have demanded for almost two decades.
@@ -40,7 +40,7 @@ If the answers are not public, the promotion policy is resting on an assumption,
     hi: {
       eyebrow: "पदोन्नति में आरक्षण",
       title: "सोलह साल से एक ही अदालती आदेश: पदोन्नति में आरक्षण से पहले हर कैडर की गिनती कीजिए",
-      dek: "2006 से सुप्रीम कोर्ट सरकारों से कह रहा है कि पदोन्नति में आरक्षण के लिए प्रतिनिधित्व के ठोस आंकड़े चाहिए। 2022 में उसे फिर से साफ़ करना पड़ा कि यह गिनती हर कैडर के हिसाब से होनी चाहिए।",
+      dek: "2006 से सुप्रीम कोर्ट सरकारों से कह रहा है कि पदोन्नति में आरक्षण के लिए प्रतिनिधित्व के ठोस आंकड़े चाहिए। 2022 में उसे फिर से साफ़ करना पड़ा कि यह गिनती हर कैडर के हिसाब से होनी चाहिए। कुछ सबक़ के लिए तीसरा फ़ैसला चाहिए होता है।",
       body: `अनुसूचित जातियों और अनुसूचित जनजातियों के लिए पदोन्नति में आरक्षण संवैधानिक है। कोई सरकार इसे लागू करने की हक़दार है या नहीं, यह एक ही बात पर टिका है: क्या उसने वह गिनती की है जो अदालतें लगभग दो दशक से माँग रही हैं।
 
 ::: फ़ैसले
@@ -77,7 +77,7 @@ If the answers are not public, the promotion policy is resting on an assumption,
     sourcePublishedOn: "2024-07-29",
     eyebrow: "Laws written to be struck down",
     title: "Tamil Nadu, Maharashtra, Bihar: three states, three quota laws, one ceiling they all knew about",
-    dek: "States keep passing reservation laws that breach the 50% limit, in election seasons, without the evidence the Supreme Court has said they need. Then the courts strike them down.",
+    dek: "States keep passing reservation laws that breach the 50% limit, in election seasons, without the evidence the Supreme Court has said they need. Then the courts strike them down, and the cycle resets in time for the next election.",
     read: 7,
     tone: "States",
     body: `Every state sets its own reservation levels for its own jobs and colleges. Every state also knows the rule the Supreme Court set in 1992: no more than 50%, except in extraordinary situations backed by evidence. What happens next depends on whether a government treats that rule as a legal standard or a political obstacle.
@@ -101,7 +101,7 @@ Publish the full data behind any proposal to cross 50%, before the vote. Have it
     hi: {
       eyebrow: "रद्द होने के लिए लिखे गए क़ानून",
       title: "तमिलनाडु, महाराष्ट्र, बिहार: तीन राज्य, आरक्षण के तीन क़ानून, एक सीमा जिसकी सबको ख़बर थी",
-      dek: "राज्य चुनावी मौसम में ऐसे आरक्षण क़ानून पास करते रहते हैं जो 50% की सीमा तोड़ते हैं, वह सबूत दिए बिना जो सुप्रीम कोर्ट माँगता है। फिर अदालतें उन्हें रद्द कर देती हैं।",
+      dek: "राज्य चुनावी मौसम में ऐसे आरक्षण क़ानून पास करते रहते हैं जो 50% की सीमा तोड़ते हैं, वह सबूत दिए बिना जो सुप्रीम कोर्ट माँगता है। फिर अदालतें उन्हें रद्द कर देती हैं, और अगले चुनाव तक यह चक्र फिर शुरू हो जाता है।",
       body: `हर राज्य अपनी नौकरियों और कॉलेजों के लिए आरक्षण का स्तर ख़ुद तय करता है। हर राज्य को यह नियम भी पता है जो सुप्रीम कोर्ट ने 1992 में तय किया: 50% से ज़्यादा नहीं, सिवाय सबूतों से समर्थित असाधारण हालात के। आगे क्या होता है, यह इस पर निर्भर है कि कोई सरकार इस नियम को क़ानूनी मानक मानती है या राजनीतिक रुकावट।
 
 ::: तीन रिकॉर्ड
@@ -134,7 +134,7 @@ Publish the full data behind any proposal to cross 50%, before the vote. Have it
     sourcePublishedOn: "2024-08-01",
     eyebrow: "Sub-classification",
     title: "The court allowed states to divide the SC quota. Within nine days, the Union Cabinet ruled out the creamy layer",
-    dek: "A seven-judge bench said sub-classification is constitutional, and four judges said states should exclude a creamy layer. The Centre answered the second point at a press briefing, not in Parliament.",
+    dek: "A seven-judge bench said sub-classification is constitutional, and four judges said states should exclude a creamy layer. The Centre answered the second point at a press briefing. Parliament was presumably busy.",
     read: 6,
     tone: "Courts",
     body: `On 1 August 2024, a seven-judge Constitution Bench decided State of Punjab v. Davinder Singh. By 6:1 it held that states may sub-classify Scheduled Castes and Scheduled Tribes, giving a share of the reserved seats to the groups within those categories that have benefited least. It overruled the 2004 decision in E.V. Chinnaiah, which had said the SC list could not be divided.
@@ -158,7 +158,7 @@ Sub-classification is now in states’ hands. Each state that uses it will need 
     hi: {
       eyebrow: "उप-वर्गीकरण",
       title: "अदालत ने राज्यों को एससी कोटा बाँटने की इजाज़त दी। नौ दिन के भीतर केंद्रीय कैबिनेट ने क्रीमी लेयर को ख़ारिज कर दिया",
-      dek: "सात जजों की पीठ ने कहा कि उप-वर्गीकरण संवैधानिक है, और चार जजों ने कहा कि राज्यों को क्रीमी लेयर बाहर करनी चाहिए। केंद्र ने दूसरी बात का जवाब संसद में नहीं, एक प्रेस ब्रीफ़िंग में दिया।",
+      dek: "सात जजों की पीठ ने कहा कि उप-वर्गीकरण संवैधानिक है, और चार जजों ने कहा कि राज्यों को क्रीमी लेयर बाहर करनी चाहिए। केंद्र ने दूसरी बात का जवाब एक प्रेस ब्रीफ़िंग में दिया। संसद शायद व्यस्त थी।",
       body: `1 अगस्त 2024 को सात जजों की संविधान पीठ ने ‘पंजाब राज्य बनाम दविंदर सिंह’ मामले में फ़ैसला दिया। 6:1 के बहुमत से अदालत ने कहा कि राज्य अनुसूचित जातियों और अनुसूचित जनजातियों का उप-वर्गीकरण कर सकते हैं, यानी इन श्रेणियों के भीतर जिन समूहों को सबसे कम फ़ायदा मिला है, उन्हें आरक्षित सीटों का एक हिस्सा दे सकते हैं। अदालत ने 2004 के ई.वी. चिन्नैया फ़ैसले को पलट दिया, जिसमें कहा गया था कि एससी सूची को बाँटा नहीं जा सकता।
 
 ::: फ़ैसला

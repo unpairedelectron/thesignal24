@@ -4,7 +4,7 @@ Full text of the About, Editorial standards and Methodology pages, in English an
 
 ## About
 
-The Signal 24 is a public-interest newsroom that holds governments, courts, commissions and agencies to their own records on reservation and representation in India. We read the judgments, notifications and reports so you do not have to take anyone’s word for it, including ours.
+The Signal 24 is a public-interest newsroom that holds India’s governments, courts, commissions and agencies to their own records on reservation and representation. We read the judgments, notifications and reports that officials assume nobody will read, so you don’t have to take anyone’s word for it. Including ours.
 
 ### Who we answer to
 
@@ -12,11 +12,11 @@ Readers. Not a party, a government, a caste organisation or an advertiser. Every
 
 ### What we go after
 
-Promises with deadlines. Reports that were commissioned and then buried. Data collected with public money and then withheld. Laws passed in an election season and struck down in court. The gap between what the state says on a stage and what it files on paper.
+Promises with deadlines that quietly expire. Reports commissioned with fanfare and buried without any. Data collected with public money and then withheld for the public’s own good, apparently. Laws passed in election season and struck down in the off-season. The gap between what the state says at a press conference and what it files in court.
 
 ### What we refuse to do
 
-We do not target communities, rank castes or trade in outrage. Our scrutiny is aimed at institutions and office-holders: the people with power over a policy, not the people living under it.
+We do not target communities, rank castes or trade in outrage. There is more than enough to say about the people in charge without punching down at the people living under their decisions. Our sarcasm has a fixed address: institutions and office-holders.
 
 ### English and Hindi
 
@@ -24,7 +24,7 @@ The Signal 24 publishes in English and Hindi. When a record’s Hindi edition is
 
 ## परिचय
 
-द सिग्नल 24 एक जनहित न्यूज़रूम है, जो भारत में आरक्षण और प्रतिनिधित्व के सवाल पर सरकारों, अदालतों, आयोगों और एजेंसियों को उनके अपने दस्तावेज़ों पर परखता है। हम फ़ैसले, अधिसूचनाएँ और रिपोर्टें पढ़ते हैं, ताकि आपको किसी की बात पर आँख मूँदकर भरोसा न करना पड़े, हमारी बात पर भी नहीं।
+द सिग्नल 24 एक जनहित न्यूज़रूम है, जो आरक्षण और प्रतिनिधित्व के सवाल पर भारत की सरकारों, अदालतों, आयोगों और एजेंसियों को उनके अपने दस्तावेज़ों पर परखता है। हम वे फ़ैसले, अधिसूचनाएँ और रिपोर्टें पढ़ते हैं जिनके बारे में अफ़सर मानकर चलते हैं कि कोई नहीं पढ़ेगा, ताकि आपको किसी की बात पर आँख मूँदकर भरोसा न करना पड़े। हमारी बात पर भी नहीं।
 
 ### हम किसके प्रति जवाबदेह हैं
 
@@ -32,11 +32,11 @@ The Signal 24 publishes in English and Hindi. When a record’s Hindi edition is
 
 ### हम किसका पीछा करते हैं
 
-समय-सीमा वाले वादों का। उन रिपोर्टों का, जो बनवाई गईं और फिर दबा दी गईं। जनता के पैसे से जुटाए गए और फिर रोके गए आंकड़ों का। चुनावी मौसम में पास हुए और अदालत में रद्द हुए क़ानूनों का। उस फ़ासले का, जो सरकार के मंच के भाषण और उसके दफ़्तरी काग़ज़ के बीच है।
+ऐसे वादे जिनकी समय-सीमा चुपचाप ख़त्म हो जाती है। धूमधाम से बनवाई गईं और बिना किसी शोर के दफ़नाई गईं रिपोर्टें। जनता के पैसे से जुटाए गए और फिर, लगता है, जनता की भलाई के लिए ही रोके गए आंकड़े। चुनावी मौसम में पास हुए और उसके बाद अदालत में रद्द हुए क़ानून। प्रेस कॉन्फ़्रेंस में कही गई बात और अदालत में दाख़िल काग़ज़ के बीच का फ़ासला।
 
 ### हम क्या नहीं करेंगे
 
-हम किसी समुदाय को निशाना नहीं बनाते, जातियों की रैंकिंग नहीं करते और ग़ुस्से का कारोबार नहीं करते। हमारी पड़ताल संस्थाओं और पदाधिकारियों पर है: उन पर जिनके हाथ में नीति की ताक़त है, उन पर नहीं जो उस नीति के तले जीते हैं।
+हम किसी समुदाय को निशाना नहीं बनाते, जातियों की रैंकिंग नहीं करते और ग़ुस्से का कारोबार नहीं करते। सत्ता में बैठे लोगों के बारे में कहने को इतना कुछ है कि उनके फ़ैसलों के तले जी रहे लोगों पर वार करने की ज़रूरत ही नहीं। हमारे व्यंग्य का पता तय है: संस्थाएँ और पदाधिकारी।
 
 ### अंग्रेज़ी और हिंदी
 
@@ -44,7 +44,7 @@ The Signal 24 publishes in English and Hindi. When a record’s Hindi edition is
 
 ## Editorial standards
 
-Being tough on the state is only worth something if we are right. These are the rules we hold ourselves to before we hold anyone else to theirs.
+Sarcasm is cheap. Being right is not. These are the rules we follow before we mock anyone else for breaking theirs.
 
 ### Reporting
 
@@ -66,13 +66,17 @@ What the evidence supports, with the method shown. If the data cannot carry a co
 
 Opinion is labelled, carries a named author or the editorial board, and is never mixed into reporting. Our opinion pieces criticise institutions and decisions, not communities.
 
+### Tone
+
+Yes, we are sarcastic. The sarcasm is aimed at power: governments, ministries, commissions, agencies and the decisions they make. Never at caste, religion, region or any community, and never at private citizens. Every jibe sits on a sourced fact; if the fact falls, the joke goes with it.
+
 ### Corrections and AI
 
 Mistakes are corrected in public: the record says what changed and when. AI tools may help with translation, organisation or first drafts; nothing is published until an editor has checked it against the source.
 
 ## संपादकीय मानक
 
-सरकार पर सख़्ती तभी मायने रखती है, जब हम सही हों। किसी और को उसके नियमों पर परखने से पहले, हम ख़ुद को इन नियमों पर परखते हैं।
+व्यंग्य सस्ता है। सही होना नहीं। किसी और के नियम तोड़ने पर तंज़ कसने से पहले, हम इन नियमों का पालन करते हैं।
 
 ### रिपोर्टिंग
 
@@ -94,13 +98,17 @@ Mistakes are corrected in public: the record says what changed and when. AI tool
 
 राय पर साफ़ लेबल होता है, उसके साथ लेखक या संपादकीय बोर्ड का नाम होता है, और उसे रिपोर्टिंग में नहीं मिलाया जाता। हमारी राय संस्थाओं और फ़ैसलों की आलोचना करती है, समुदायों की नहीं।
 
+### लहजा
+
+हाँ, हम व्यंग्य करते हैं। यह व्यंग्य सत्ता पर है: सरकारें, मंत्रालय, आयोग, एजेंसियाँ और उनके फ़ैसले। जाति, धर्म, क्षेत्र या किसी समुदाय पर कभी नहीं, और आम नागरिकों पर कभी नहीं। हर तंज़ किसी स्रोत-आधारित तथ्य पर टिका है; तथ्य गिरा, तो तंज़ भी जाएगा।
+
 ### सुधार और एआई
 
 ग़लतियाँ सार्वजनिक रूप से सुधारी जाती हैं: रिकॉर्ड बताता है कि क्या बदला और कब। अनुवाद, व्यवस्था या पहले मसौदे में एआई की मदद ली जा सकती है; लेकिन कोई भी चीज़ तब तक प्रकाशित नहीं होती, जब तक संपादक उसे स्रोत से मिलाकर जाँच न ले।
 
 ## Methodology
 
-Numbers and claims change meaning when their definitions disappear. Every record keeps its source type, date, jurisdiction and verification status attached.
+Numbers change meaning when their definitions disappear, which is usually why the definitions disappear. Every record here keeps its source type, date, jurisdiction and verification status attached.
 
 ### Source hierarchy
 
@@ -124,7 +132,7 @@ Hindi pages are translations of the same record, not separate stories. Where a H
 
 ## कार्यप्रणाली
 
-परिभाषा हट जाए, तो आंकड़ों और दावों का अर्थ बदल जाता है। इसलिए हर रिकॉर्ड के साथ उसके स्रोत का प्रकार, तारीख़, क्षेत्राधिकार और सत्यापन की स्थिति जुड़ी रहती है।
+परिभाषा हटते ही आंकड़ों का अर्थ बदल जाता है, और अक्सर इसीलिए परिभाषाएँ हटाई जाती हैं। यहाँ हर रिकॉर्ड के साथ उसके स्रोत का प्रकार, तारीख़, क्षेत्राधिकार और सत्यापन स्थिति जुड़ी रहती है।
 
 ### स्रोतों का क्रम
 
