@@ -3,6 +3,7 @@ import { and, asc, desc, eq, gte, inArray, like, lte, or } from "drizzle-orm";
 import {
   db,
   articleEventsTable,
+  articleSourcesTable,
   decisionImpactRecordsTable,
   decisionImpactRevisionsTable,
   eventSourcesTable,
@@ -10,6 +11,7 @@ import {
   issuesTable,
   policyRecordsTable,
   policySourcesTable,
+  sourceDocumentsTable,
   storiesTable,
   storyRevisionsTable,
 } from "@workspace/db";
@@ -46,7 +48,7 @@ const topicList = [
 ] as const;
 const topicValues = new Set(topicList);
 type Topic = (typeof topicList)[number];
-const kindList = ["Article", "Paper note", "Archive", "Explainer"] as const;
+const kindList = ["Article", "Paper note", "Archive", "Explainer", "Opinion"] as const;
 const kindValues = new Set(kindList);
 type StoryKind = (typeof kindList)[number];
 const recordFamilyList = [
@@ -213,6 +215,8 @@ function serializeStory(
     scheduledFor: story.scheduledFor?.toISOString() ?? null,
     aiDisclosure: story.aiDisclosure,
     correctionNote: story.correctionNote,
+    byline: story.byline,
+    hi: story.hi ?? null,
   };
 }
 
@@ -345,14 +349,47 @@ function xmlEscape(value: string) {
     .replace(/'/g, "&apos;");
 }
 
-function requestOrigin(req: {
-  protocol: string;
-  get(name: string): string | undefined;
-}) {
-  const forwardedProtocol = req.get("x-forwarded-proto")?.split(",")[0]?.trim();
-  const protocol = forwardedProtocol || req.protocol || "https";
-  const host = req.get("host") || "signal24.example";
-  return `${protocol}://${host}`.replace(/\/$/, "");
+// Sitemap URLs always use the canonical public origin, never the request Host,
+// so mirror hosts (e.g. *.replit.app) cannot publish a sitemap of their own URLs.
+const SITE_ORIGIN = (process.env.SITE_URL || "https://thesignal24.com").replace(
+  /\/$/,
+  "",
+);
+
+/** `hi: true` when the page exists as a reviewed Hindi edition at /hi{path}. */
+type SitemapEntry = { path: string; lastmod?: Date | null; hi?: boolean };
+
+function hindiPath(path: string) {
+  return path === "/" ? "/hi" : `/hi${path}`;
+}
+
+function latestDate(dates: Array<Date | null | undefined>) {
+  let latest: Date | null = null;
+  for (const date of dates) {
+    if (date && (!latest || date > latest)) latest = date;
+  }
+  return latest;
+}
+
+function sitemapUrl({ path, lastmod, hi }: SitemapEntry) {
+  const lastmodTag = lastmod
+    ? `<lastmod>${lastmod.toISOString()}</lastmod>`
+    : "";
+  const english = `${SITE_ORIGIN}${path}`;
+  if (!hi) return `<url><loc>${xmlEscape(english)}</loc>${lastmodTag}</url>`;
+  const hindi = `${SITE_ORIGIN}${hindiPath(path)}`;
+  const alternates = [
+    `<xhtml:link rel="alternate" hreflang="en-IN" href="${xmlEscape(english)}"/>`,
+    `<xhtml:link rel="alternate" hreflang="hi-IN" href="${xmlEscape(hindi)}"/>`,
+    `<xhtml:link rel="alternate" hreflang="x-default" href="${xmlEscape(english)}"/>`,
+  ].join("");
+  return [english, hindi]
+    .map((loc) => `<url><loc>${xmlEscape(loc)}</loc>${lastmodTag}${alternates}</url>`)
+    .join("");
+}
+
+function hasStoryTranslation(story: typeof storiesTable.$inferSelect) {
+  return Boolean(story.hi?.title && story.hi.dek && story.hi.body);
 }
 
 router.get("/issues/current", async (_req, res, next) => {
@@ -468,56 +505,125 @@ router.get("/archive", async (req, res, next) => {
   }
 });
 
-router.get("/sitemap.xml", async (req, res, next) => {
+router.get("/sitemap.xml", async (_req, res, next) => {
   try {
-    const results = await db
-      .select({
-        story: storiesTable,
-        articlePublishedAt: issuesTable.publishedAt,
-      })
-      .from(storiesTable)
-      .innerJoin(issuesTable, eq(storiesTable.issueId, issuesTable.id))
-      .where(
-        and(
-          eq(issuesTable.status, "published"),
-          eq(storiesTable.workflowStatus, "published"),
-        ),
-      )
-      .orderBy(desc(storiesTable.updatedAt), asc(storiesTable.id));
-    const policyResults = await db
-      .select()
-      .from(policyRecordsTable)
-      .where(eq(policyRecordsTable.workflowStatus, "published"))
-      .orderBy(desc(policyRecordsTable.updatedAt), asc(policyRecordsTable.id));
-    const origin = requestOrigin(req);
-    const staticPaths = [
-      "/",
-      "/data",
-      "/archive",
-      "/policies",
-      "/about",
-      "/editorial-standards",
-      "/methodology",
-      "/authors/signal-24",
+    const [results, policyResults, eventResults, eventSourceResults, articleSourceResults] =
+      await Promise.all([
+        db
+          .select({ story: storiesTable })
+          .from(storiesTable)
+          .innerJoin(issuesTable, eq(storiesTable.issueId, issuesTable.id))
+          .where(
+            and(
+              eq(issuesTable.status, "published"),
+              eq(storiesTable.workflowStatus, "published"),
+            ),
+          )
+          .orderBy(desc(storiesTable.updatedAt), asc(storiesTable.id)),
+        db
+          .select()
+          .from(policyRecordsTable)
+          .where(eq(policyRecordsTable.workflowStatus, "published"))
+          .orderBy(desc(policyRecordsTable.updatedAt), asc(policyRecordsTable.id)),
+        db
+          .select()
+          .from(evidenceEventsTable)
+          .where(eq(evidenceEventsTable.workflowStatus, "published"))
+          .orderBy(desc(evidenceEventsTable.updatedAt), asc(evidenceEventsTable.id)),
+        // Source pages are only public when linked to published records.
+        db
+          .select({ source: sourceDocumentsTable })
+          .from(eventSourcesTable)
+          .innerJoin(
+            evidenceEventsTable,
+            eq(eventSourcesTable.eventId, evidenceEventsTable.id),
+          )
+          .innerJoin(
+            sourceDocumentsTable,
+            eq(eventSourcesTable.sourceDocumentId, sourceDocumentsTable.id),
+          )
+          .where(eq(evidenceEventsTable.workflowStatus, "published")),
+        db
+          .select({ source: sourceDocumentsTable })
+          .from(articleSourcesTable)
+          .innerJoin(storiesTable, eq(articleSourcesTable.articleId, storiesTable.id))
+          .innerJoin(issuesTable, eq(storiesTable.issueId, issuesTable.id))
+          .innerJoin(
+            sourceDocumentsTable,
+            eq(articleSourcesTable.sourceDocumentId, sourceDocumentsTable.id),
+          )
+          .where(
+            and(
+              eq(storiesTable.workflowStatus, "published"),
+              eq(issuesTable.status, "published"),
+            ),
+          ),
+      ]);
+
+    const indexableStories = results
+      .map(({ story }) => story)
+      .filter(isIndexableStory);
+    const storiesLastmod = latestDate(indexableStories.map((story) => story.updatedAt));
+    const policiesLastmod = latestDate(policyResults.map((policy) => policy.updatedAt));
+    const eventsLastmod = latestDate(eventResults.map((event) => event.updatedAt));
+
+    const topicLastmod = new Map<string, Date>();
+    for (const story of indexableStories) {
+      const current = topicLastmod.get(story.topic);
+      if (!current || story.updatedAt > current) topicLastmod.set(story.topic, story.updatedAt);
+    }
+
+    const sources = new Map<number, typeof sourceDocumentsTable.$inferSelect>();
+    for (const { source } of [...eventSourceResults, ...articleSourceResults]) {
+      sources.set(source.id, source);
+    }
+
+    const opinionLastmod = latestDate(
+      indexableStories.filter((story) => story.kind === "Opinion").map((story) => story.updatedAt),
+    );
+    // Site pages are fully bilingual. Records get a Hindi URL only once they carry a Hindi edition;
+    // event and source pages show English database text and stay English-only.
+    const entries: SitemapEntry[] = [
+      { path: "/", lastmod: latestDate([storiesLastmod, policiesLastmod]), hi: true },
+      { path: "/archive", lastmod: storiesLastmod, hi: true },
+      { path: "/policies", lastmod: policiesLastmod, hi: true },
+      { path: "/opinion", lastmod: opinionLastmod, hi: true },
+      { path: "/topics", lastmod: storiesLastmod, hi: true },
+      { path: "/topics/open-category-competition", hi: true },
+      { path: "/timeline", lastmod: latestDate([storiesLastmod, policiesLastmod]), hi: true },
+      { path: "/events", lastmod: eventsLastmod, hi: true },
+      { path: "/data", hi: true },
+      { path: "/about", hi: true },
+      { path: "/editorial-standards", hi: true },
+      { path: "/methodology", hi: true },
+      { path: "/authors/signal-24", hi: true },
+      ...Array.from(topicLastmod, ([topic, lastmod]) => ({
+        path: `/topics/${encodeURIComponent(topic)}`,
+        lastmod,
+        hi: true,
+      })),
+      ...indexableStories.map((story) => ({
+        path: getCanonicalPath(story),
+        lastmod: story.updatedAt,
+        hi: hasStoryTranslation(story),
+      })),
+      ...policyResults.map((policy) => ({
+        path: `/policies/${policy.slug}`,
+        lastmod: policy.updatedAt,
+        hi: Boolean(policy.hi?.title && policy.hi.summary),
+      })),
+      ...eventResults.map((event) => ({
+        path: `/events/${event.id}`,
+        lastmod: event.updatedAt,
+      })),
+      ...Array.from(sources.values(), (source) => ({
+        path: `/sources/${source.id}`,
+        lastmod: source.updatedAt,
+      })),
     ];
-    const urls = [
-      ...staticPaths.map(
-        (path) => `<url><loc>${xmlEscape(`${origin}${path}`)}</loc></url>`,
-      ),
-      ...results
-        .map(({ story }) => story)
-        .filter(isIndexableStory)
-        .map(
-          (story) =>
-            `<url><loc>${xmlEscape(`${origin}${getCanonicalPath(story)}`)}</loc><lastmod>${story.updatedAt.toISOString()}</lastmod></url>`,
-        ),
-      ...policyResults.map(
-        (policy) =>
-          `<url><loc>${xmlEscape(`${origin}/policies/${policy.slug}`)}</loc><lastmod>${policy.updatedAt.toISOString()}</lastmod></url>`,
-      ),
-    ].join("");
+
     res.type("application/xml").send(
-      `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls}</urlset>`,
+      `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">${entries.map(sitemapUrl).join("")}</urlset>`,
     );
   } catch (error) {
     next(error);
@@ -728,6 +834,8 @@ router.post("/stories", requireEditor, async (req, res, next) => {
         scheduledFor: input.scheduledFor ? new Date(input.scheduledFor) : null,
         aiDisclosure: input.aiDisclosure ?? null,
         correctionNote: input.correctionNote ?? null,
+        byline: input.byline ?? null,
+        hi: input.hi ?? null,
       })
       .returning();
     await recordRevision(story, input.revisionNote ?? "Created record");
@@ -839,6 +947,8 @@ router.put("/stories/:storyId", requireEditor, async (req, res, next) => {
           input.correctionNote === undefined
             ? existing.correctionNote
             : input.correctionNote,
+        byline: input.byline === undefined ? existing.byline : input.byline,
+        hi: input.hi === undefined ? existing.hi : input.hi,
         updatedAt: new Date(),
       })
       .where(eq(storiesTable.id, storyId))
@@ -871,6 +981,7 @@ function serializePolicy(
     effectiveDate: policy.effectiveDate,
     publishedOn: policy.publishedOn,
     sources: sources.map(serializePolicySource),
+    hi: policy.hi ?? null,
   };
 }
 

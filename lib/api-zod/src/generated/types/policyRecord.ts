@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { PolicySource } from './policySource';
+import type { PolicyTranslation } from './policyTranslation';
 
 export interface PolicyRecord {
   id: number;
@@ -26,4 +27,5 @@ export interface PolicyRecord {
   effectiveDate: Date | null;
   publishedOn: Date;
   sources: PolicySource[];
+  hi: PolicyTranslation | null;
 }

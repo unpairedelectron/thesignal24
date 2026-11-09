@@ -176,7 +176,7 @@ export function FocusSourceDesk() {
             Rules, rulings<br /><em className="font-normal text-accent">and open competition.</em>
           </h2>
           <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
-            A focused reading list on the UGC equity regulations, state quota disputes, eligibility rules and the open-category question. These are external sources supplied or checked for this desk—not Signal Hub reporting. Each item still needs editorial review before its claims are adopted.
+            A focused reading list on the UGC equity regulations, state quota disputes, eligibility rules and the open-category question. These are external sources supplied or checked for this desk—not The Signal 24 reporting. Each item still needs editorial review before its claims are adopted.
           </p>
         </div>
       </div>

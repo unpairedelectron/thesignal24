@@ -58,7 +58,7 @@ const documentTypes = new Set([
 ]);
 const sourceRoles = new Set(["primary", "secondary"]);
 const verificationStatuses = new Set(["unverified", "source-linked", "verified"]);
-const storyKinds = new Set(["Article", "Paper note", "Archive", "Explainer"]);
+const storyKinds = new Set(["Article", "Paper note", "Archive", "Explainer", "Opinion"]);
 const storyStatuses = new Set(["draft", "review", "scheduled", "published", "archived"]);
 
 type EventRow = typeof evidenceEventsTable.$inferSelect;

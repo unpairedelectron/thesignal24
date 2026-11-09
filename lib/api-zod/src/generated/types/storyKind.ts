@@ -14,4 +14,5 @@ export const StoryKind = {
   Paper_note: 'Paper note',
   Archive: 'Archive',
   Explainer: 'Explainer',
+  Opinion: 'Opinion',
 } as const;

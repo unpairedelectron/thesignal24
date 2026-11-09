@@ -11,6 +11,9 @@ import {
   Trash2,
 } from "lucide-react";
 import { Link, useParams } from "wouter";
+import { useSeo } from "@/lib/seo";
+import { useT } from "@/lib/i18n";
+import { breadcrumbNode, collectionPageNode, externalDocument, organizationRef, siteGraph, webPageNode } from "@/lib/structured-data";
 import {
   getGetEvidenceEventQueryKey,
   getGetEvidenceEventsQueryKey,
@@ -40,9 +43,12 @@ import {
 import { SourceDiscoveryDesk } from "./content-desk";
 import type {
   EvidenceDocumentType,
+  EvidenceEventDetail,
   EvidenceEventWorkflowStatus,
   EvidenceSourceRole,
   EvidenceSourceStatus,
+  SourceDocument,
+  SourceDocumentResponse,
   Topic,
 } from "@workspace/api-client-react";
 
@@ -75,21 +81,6 @@ const DOCUMENT_TYPES: EvidenceDocumentType[] = [
 ];
 const SOURCE_ROLES: EvidenceSourceRole[] = ["primary", "secondary"];
 
-function useEvidenceSeo(title: string, description: string) {
-  useEffect(() => {
-    document.title = title;
-    let meta = document.head.querySelector<HTMLMetaElement>(
-      'meta[name="description"]',
-    );
-    if (!meta) {
-      meta = document.createElement("meta");
-      meta.name = "description";
-      document.head.appendChild(meta);
-    }
-    meta.content = description;
-  }, [title, description]);
-}
-
 function displayDate(value: string | Date | null | undefined) {
   if (!value) return "Date not supplied";
   const date = value instanceof Date ? value : new Date(value);
@@ -120,6 +111,7 @@ function sourceRoleLabel(role: string) {
 }
 
 function ErrorNote({ text }: { text: string }) {
+  const t = useT();
   return <p className="text-sm text-destructive" role="alert">{text}</p>;
 }
 
@@ -138,6 +130,7 @@ function SourceLinkCard({
   };
   role?: string;
 }) {
+  const t = useT();
   return (
     <article className="border border-foreground/15 bg-card p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -165,19 +158,15 @@ function SourceLinkCard({
           target="_blank"
           rel="noopener noreferrer"
           className="mt-4 inline-flex items-center gap-1 signal-kicker text-accent hover:underline"
-        >
-          Open source document <ExternalLink size={12} />
+        >{t("Open source document", "स्रोत दस्तावेज़ खोलें")}<ExternalLink size={12} />
         </a>
       ) : (
-        <p className="mt-4 signal-kicker text-muted-foreground">
-          SOURCE LINK UNAVAILABLE
-        </p>
+        <p className="mt-4 signal-kicker text-muted-foreground">{t("SOURCE LINK UNAVAILABLE", "स्रोत लिंक उपलब्ध नहीं")}</p>
       )}
       <Link
         href={`/sources/${source.id}`}
         className="mt-3 inline-flex items-center gap-1 signal-kicker text-muted-foreground hover:text-accent"
-      >
-        View source record <ArrowUpRight size={12} />
+      >{t("View source record", "स्रोत रिकॉर्ड देखें")}<ArrowUpRight size={12} />
       </Link>
     </article>
   );
@@ -223,10 +212,7 @@ function EventCard({
 }
 
 export function EvidenceEventsPage() {
-  useEvidenceSeo(
-    "Events and evidence — Signal Hub",
-    "Published events connected to Signal Hub articles and source documents.",
-  );
+  const t = useT();
   const query = useGetEvidenceEvents(undefined, {
     query: {
       queryKey: getGetEvidenceEventsQueryKey(),
@@ -234,30 +220,36 @@ export function EvidenceEventsPage() {
       refetchOnWindowFocus: true,
     },
   });
+  useSeo({
+    title: t("Events and evidence — The Signal 24", "घटनाएँ और सबूत — द सिग्नल 24"),
+    description: t("Published events connected to The Signal 24 articles and source documents.", "द सिग्नल 24 की रिपोर्टों और स्रोत दस्तावेज़ों से जुड़ी प्रकाशित घटनाएँ।"),
+    canonicalPath: "/events",
+    structuredData: siteGraph(
+      collectionPageNode(
+        "/events",
+        { name: "Events and evidence — The Signal 24", description: t("Published events connected to The Signal 24 articles and source documents.", "द सिग्नल 24 की रिपोर्टों और स्रोत दस्तावेज़ों से जुड़ी प्रकाशित घटनाएँ।"), publisher: organizationRef },
+        (query.data?.events ?? []).map((item) => ({ url: `/events/${item.event.id}`, name: item.event.title })),
+      ),
+      breadcrumbNode("/events", [["Events", "/events"]]),
+    ),
+  });
 
   return (
     <section className="signal-container py-12 sm:py-20">
       <Link href="/" className="signal-kicker text-muted-foreground hover:text-accent">
-        <ArrowLeft size={13} className="mr-2 inline" /> Signal Hub
+        <ArrowLeft size={13} className="mr-2 inline" /> The Signal 24
       </Link>
       <div className="mt-10 grid gap-8 border-b border-foreground/20 pb-8 lg:grid-cols-[1fr_.48fr] lg:items-end">
         <div>
-          <p className="signal-kicker text-accent">Evidence / Events</p>
-          <h1 className="mt-3 max-w-3xl font-display text-5xl leading-[.94] tracking-[-.05em] sm:text-7xl">
-            Follow the record through an event.
-          </h1>
+          <p className="signal-kicker text-accent">{t("Evidence / Events", "सबूत / घटनाएँ")}</p>
+          <h1 className="mt-3 max-w-3xl font-display text-5xl leading-[.94] tracking-[-.05em] sm:text-7xl">{t("Follow the record through an event.", "किसी घटना के ज़रिए रिकॉर्ड का पीछा कीजिए।")}</h1>
         </div>
-        <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
-          Each event below is an editorial record with explicitly linked articles
-          and source documents. No relationship is inferred from article text.
-        </p>
+        <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">{t("Each event below is an editorial record with explicitly linked articles and source documents. No relationship is inferred from article text.", "नीचे हर घटना एक संपादकीय रिकॉर्ड है, जिससे रिपोर्ट और स्रोत दस्तावेज़ स्पष्ट रूप से जोड़े गए हैं। रिपोर्ट के पाठ से कोई संबंध अनुमान से नहीं जोड़ा जाता।")}</p>
       </div>
       {query.isLoading ? (
-        <p className="py-10 text-sm text-muted-foreground">Loading published events…</p>
+        <p className="py-10 text-sm text-muted-foreground">{t("Loading published events…", "प्रकाशित घटनाएँ लोड हो रही हैं…")}</p>
       ) : query.isError ? (
-        <p className="py-10 text-sm text-destructive" role="alert">
-          Published events could not be loaded. Refresh to try again.
-        </p>
+        <p className="py-10 text-sm text-destructive" role="alert">{t("Published events could not be loaded. Refresh to try again.", "प्रकाशित घटनाएँ लोड नहीं हो सकीं। फिर से कोशिश करने के लिए पेज रीफ़्रेश करें।")}</p>
       ) : query.data?.events.length ? (
         <div className="mt-4 divide-y divide-foreground/15">
           {query.data.events.map((event) => (
@@ -266,10 +258,8 @@ export function EvidenceEventsPage() {
         </div>
       ) : (
         <div className="mt-10 border border-dashed border-foreground/25 p-6">
-          <p className="font-display text-2xl">No published event records yet.</p>
-          <p className="mt-2 text-sm text-muted-foreground">
-            This page will show only events created and published by the editorial desk.
-          </p>
+          <p className="font-display text-2xl">{t("No published event records yet.", "अभी कोई प्रकाशित घटना रिकॉर्ड नहीं।")}</p>
+          <p className="mt-2 text-sm text-muted-foreground">{t("This page will show only events created and published by the editorial desk.", "यह पेज सिर्फ़ संपादकीय डेस्क की बनाई और प्रकाशित घटनाएँ दिखाएगा।")}</p>
         </div>
       )}
     </section>
@@ -277,10 +267,12 @@ export function EvidenceEventsPage() {
 }
 
 export function EvidenceSearchPage() {
-  useEvidenceSeo(
-    "Search the evidence — Signal Hub",
-    "Search published articles, events, and source documents as separate record types.",
-  );
+  const t = useT();
+  useSeo({
+    title: t("Search the evidence — The Signal 24", "सबूत खोजें — द सिग्नल 24"),
+    description: t("Search published articles, events, and source documents as separate record types.", "प्रकाशित रिपोर्ट, घटनाएँ और स्रोत दस्तावेज़ अलग-अलग प्रकार के रिकॉर्ड के रूप में खोजें।"),
+    robots: "noindex, follow",
+  });
   const [term, setTerm] = useState(
     () => new URLSearchParams(window.location.search).get("q") ?? "",
   );
@@ -314,36 +306,29 @@ export function EvidenceSearchPage() {
   return (
     <section className="signal-container py-12 sm:py-20">
       <Link href="/" className="signal-kicker text-muted-foreground hover:text-accent">
-        <ArrowLeft size={13} className="mr-2 inline" /> Signal Hub
+        <ArrowLeft size={13} className="mr-2 inline" /> The Signal 24
       </Link>
       <div className="mt-10 max-w-4xl">
-        <p className="signal-kicker text-accent">Search / Published evidence</p>
-        <h1 className="mt-3 font-display text-5xl leading-[.94] tracking-[-.05em] sm:text-7xl">
-          Search the record.
-        </h1>
-        <p className="mt-5 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-          Articles, events, and source documents remain clearly identified as
-          different kinds of records.
-        </p>
+        <p className="signal-kicker text-accent">{t("Search / Published evidence", "खोज / प्रकाशित सबूत")}</p>
+        <h1 className="mt-3 font-display text-5xl leading-[.94] tracking-[-.05em] sm:text-7xl">{t("Search the record.", "रिकॉर्ड खोजिए।")}</h1>
+        <p className="mt-5 max-w-2xl text-sm leading-relaxed text-muted-foreground">{t("Articles, events, and source documents remain clearly identified as different kinds of records.", "रिपोर्ट, घटनाएँ और स्रोत दस्तावेज़ अलग-अलग प्रकार के रिकॉर्ड के रूप में साफ़ पहचाने जाते हैं।")}</p>
       </div>
       <form onSubmit={submit} className="mt-8 flex max-w-3xl gap-3 border-b border-foreground/30 pb-3">
         <Search size={18} className="mt-2 text-accent" />
         <input
-          aria-label="Search articles, events, and source documents"
+          aria-label={t("Search articles, events, and source documents", "रिपोर्ट, घटनाएँ और स्रोत दस्तावेज़ खोजें")}
           value={term}
           onChange={(event) => setTerm(event.target.value)}
-          placeholder="Search by title, topic, publisher or text"
+          placeholder={t("Search by title, topic, publisher or text", "शीर्षक, विषय, प्रकाशक या पाठ से खोजें")}
           className="min-w-0 flex-1 bg-transparent py-2 text-sm outline-none"
         />
         <button
           type="submit"
           className="rounded-full bg-primary px-4 py-2 signal-kicker text-primary-foreground"
-        >
-          Search
-        </button>
+        >{t("Search", "खोजें")}</button>
       </form>
       {normalized && (
-        <div className="mt-6 flex flex-wrap gap-2" aria-label="Filter result type">
+        <div className="mt-6 flex flex-wrap gap-2" aria-label={t("Filter result type", "नतीजे का प्रकार चुनें")}>
           {["all", "article", "event", "source"].map((kind) => (
             <button
               key={kind}
@@ -362,15 +347,11 @@ export function EvidenceSearchPage() {
         </div>
       )}
       {!normalized ? (
-        <p className="mt-10 border border-dashed border-foreground/25 p-6 text-sm text-muted-foreground">
-          Enter a search term to find published articles, events, and source documents.
-        </p>
+        <p className="mt-10 border border-dashed border-foreground/25 p-6 text-sm text-muted-foreground">{t("Enter a search term to find published articles, events, and source documents.", "प्रकाशित रिपोर्ट, घटनाएँ और स्रोत दस्तावेज़ खोजने के लिए कोई शब्द लिखें।")}</p>
       ) : query.isLoading ? (
-        <p className="mt-10 text-sm text-muted-foreground">Searching published records…</p>
+        <p className="mt-10 text-sm text-muted-foreground">{t("Searching published records…", "प्रकाशित रिकॉर्ड खोजे जा रहे हैं…")}</p>
       ) : query.isError ? (
-        <p className="mt-10 text-sm text-destructive" role="alert">
-          Search is unavailable. Please try again.
-        </p>
+        <p className="mt-10 text-sm text-destructive" role="alert">{t("Search is unavailable. Please try again.", "खोज अभी उपलब्ध नहीं है। कृपया फिर कोशिश करें।")}</p>
       ) : results.length ? (
         <div className="mt-8 grid gap-3">
           {results.map((result) => (
@@ -395,11 +376,10 @@ export function EvidenceSearchPage() {
               </div>
               {result.resultType === "source" && (
                 result.sourceUrl ? (
-                  <a href={result.sourceUrl} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex items-center gap-1 signal-kicker text-accent hover:underline">
-                    Open source <ExternalLink size={12} />
+                  <a href={result.sourceUrl} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex items-center gap-1 signal-kicker text-accent hover:underline">{t("Open source", "स्रोत खोलें")}<ExternalLink size={12} />
                   </a>
                 ) : (
-                  <p className="mt-4 signal-kicker text-muted-foreground">SOURCE LINK UNAVAILABLE</p>
+                  <p className="mt-4 signal-kicker text-muted-foreground">{t("SOURCE LINK UNAVAILABLE", "स्रोत लिंक उपलब्ध नहीं")}</p>
                 )
               )}
             </article>
@@ -414,7 +394,63 @@ export function EvidenceSearchPage() {
   );
 }
 
+function sourceDocumentNode(source: SourceDocument) {
+  return externalDocument({
+    title: source.title,
+    url: source.sourceUrl,
+    publisher: source.publisher,
+    datePublished: source.publicationDate,
+    genre: humanize(source.documentType),
+  });
+}
+
+// An event record is an editorial summary of a dated historical or news event. schema.org
+// Event (and Google's event rich result) is for attendable happenings with a location and
+// start time, so the page is a WebPage whose temporalCoverage is the event date.
+function eventStructuredData(eventId: number, detail: EvidenceEventDetail) {
+  const path = `/events/${eventId}`;
+  const sources = [...detail.primarySources, ...detail.secondarySources];
+  const primaryUrls = detail.primarySources.map((source) => source.sourceUrl).filter(Boolean);
+  return siteGraph(
+    webPageNode(path, {
+      name: `${detail.event.title} — The Signal 24`,
+      headline: detail.event.title,
+      description: detail.event.summary,
+      about: { "@type": "Thing", name: detail.event.topic },
+      publisher: organizationRef,
+      ...(detail.event.recordDate ? { temporalCoverage: detail.event.recordDate } : {}),
+      ...(detail.articles.length ? { mentions: detail.articles.map((article) => ({ "@type": "Article", "@id": `${article.canonicalPath}#record`, url: article.canonicalPath, headline: article.title })) } : {}),
+      ...(primaryUrls.length ? { isBasedOn: primaryUrls } : {}),
+      ...(sources.length ? { citation: sources.map(sourceDocumentNode) } : {}),
+    }),
+    breadcrumbNode(path, [["Events", "/events"], [detail.event.title, path]]),
+  );
+}
+
+// A source page is our record about an external document, so the WebPage's main entity is a
+// CreativeWork whose url is the original document and whose publisher is its issuer.
+function sourceStructuredData(sourceId: number, data: SourceDocumentResponse) {
+  const path = `/sources/${sourceId}`;
+  const source = data.sourceDocument;
+  const links = [
+    ...data.citedByArticles.map((item) => item.article.canonicalPath),
+    ...data.supportingEvents.map((item) => `/events/${item.event.id}`),
+  ];
+  return siteGraph(
+    webPageNode(path, {
+      name: `${source.title} — The Signal 24`,
+      description: `${source.publisher} source document record with publication metadata and explicit event/article links.`,
+      publisher: organizationRef,
+      mainEntity: { "@id": `${path}#document` },
+      ...(links.length ? { significantLink: links } : {}),
+    }),
+    { ...sourceDocumentNode(source), "@id": `${path}#document` },
+    breadcrumbNode(path, [[source.title, path]]),
+  );
+}
+
 export function EvidenceEventDetailPage() {
+  const t = useT();
   const { id = "" } = useParams<{ id: string }>();
   const eventId = Number(id);
   const query = useGetEvidenceEvent(eventId, {
@@ -424,24 +460,27 @@ export function EvidenceEventDetailPage() {
     },
   });
   const event = query.data?.event;
-  useEvidenceSeo(
-    event ? `${event.event.title} — Signal Hub` : "Event — Signal Hub",
-    event?.event.summary ?? "A published event record with explicitly linked articles and source documents.",
-  );
+  useSeo({
+    title: event ? `${event.event.title} — The Signal 24` : "Event — The Signal 24",
+    description: event?.event.summary || "A published event record with explicitly linked articles and source documents.",
+    canonicalPath: event ? `/events/${eventId}` : undefined,
+    translated: false,
+    robots: event ? "index, follow" : "noindex, follow",
+    structuredData: event ? eventStructuredData(eventId, event) : undefined,
+  });
 
   if (!Number.isInteger(eventId) || eventId <= 0) {
-    return <EvidencePageMessage title="Invalid event address" text="This event record address is not valid." />;
+    return <EvidencePageMessage title={t("Invalid event address", "घटना का पता मान्य नहीं")} text={t("This event record address is not valid.", "इस घटना रिकॉर्ड का पता मान्य नहीं है।")} />;
   }
-  if (query.isLoading) return <EvidencePageMessage title="Opening event record" text="Loading published evidence…" />;
+  if (query.isLoading) return <EvidencePageMessage title={t("Opening event record", "घटना रिकॉर्ड खुल रहा है")} text={t("Loading published evidence…", "प्रकाशित सबूत लोड हो रहे हैं…")} />;
   if (query.isError || !event) {
-    return <EvidencePageMessage title="Event not found" text="This event may not be published or may have moved." />;
+    return <EvidencePageMessage title={t("Event not found", "घटना नहीं मिली")} text={t("This event may not be published or may have moved.", "यह घटना शायद प्रकाशित नहीं हुई या हट गई है।")} />;
   }
 
   return (
     <section className="signal-container py-12 sm:py-20">
       <Link href="/events" className="signal-kicker text-muted-foreground hover:text-accent">
-        <ArrowLeft size={13} className="mr-2 inline" /> All events
-      </Link>
+        <ArrowLeft size={13} className="mr-2 inline" />{t("All events", "सभी घटनाएँ")}</Link>
       <div className="mt-10 grid gap-8 border-b border-foreground/20 pb-8 lg:grid-cols-[1fr_.48fr] lg:items-end">
         <div>
           <p className="signal-kicker text-accent">{event.event.topic} / Published event</p>
@@ -450,7 +489,7 @@ export function EvidenceEventDetailPage() {
           </h1>
         </div>
         <div className="border-l-2 border-accent pl-5">
-          <p className="signal-kicker text-muted-foreground">Event date</p>
+          <p className="signal-kicker text-muted-foreground">{t("Event date", "घटना की तारीख़")}</p>
           <p className="mt-2 font-display text-2xl">{displayDate(event.event.recordDate)}</p>
           <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{event.event.summary}</p>
         </div>
@@ -473,9 +512,7 @@ export function EvidenceEventDetailPage() {
               ))}
             </div>
           ) : (
-            <p className="mt-4 border border-dashed border-foreground/25 p-5 text-sm text-muted-foreground">
-              No published articles are explicitly linked to this event.
-            </p>
+            <p className="mt-4 border border-dashed border-foreground/25 p-5 text-sm text-muted-foreground">{t("No published articles are explicitly linked to this event.", "इस घटना से कोई प्रकाशित रिपोर्ट स्पष्ट रूप से नहीं जुड़ी है।")}</p>
           )}
         </section>
         <section>
@@ -494,21 +531,18 @@ export function EvidenceEventDetailPage() {
                 <SourceLinkCard key={`${role}-${source.id}`} source={source} role={role} />
               ))
             ) : (
-              <p className="border border-dashed border-foreground/25 p-5 text-sm text-muted-foreground">
-                No source documents are explicitly linked to this event.
-              </p>
+              <p className="border border-dashed border-foreground/25 p-5 text-sm text-muted-foreground">{t("No source documents are explicitly linked to this event.", "इस घटना से कोई स्रोत दस्तावेज़ स्पष्ट रूप से नहीं जुड़ा है।")}</p>
             )}
           </div>
         </section>
       </div>
-      <p className="mt-12 border-t border-foreground/15 pt-5 signal-kicker text-muted-foreground">
-        Article and source relationships are editorially maintained. Unlinked records are not implied.
-      </p>
+      <p className="mt-12 border-t border-foreground/15 pt-5 signal-kicker text-muted-foreground">{t("Article and source relationships are editorially maintained. Unlinked records are not implied.", "रिपोर्ट और स्रोत के संबंध संपादकीय रूप से जोड़े जाते हैं। जो रिकॉर्ड नहीं जुड़े, उनका संबंध माना नहीं जाता।")}</p>
     </section>
   );
 }
 
 export function EvidenceSourceDetailPage() {
+  const t = useT();
   const { id = "" } = useParams<{ id: string }>();
   const sourceId = Number(id);
   const query = useGetSourceDocument(sourceId, {
@@ -519,26 +553,29 @@ export function EvidenceSourceDetailPage() {
   });
   const data = query.data;
   const source = data?.sourceDocument;
-  useEvidenceSeo(
-    source ? `${source.title} — Signal Hub` : "Source document — Signal Hub",
-    source
+  useSeo({
+    title: source ? `${source.title} — The Signal 24` : "Source document — The Signal 24",
+    description: source
       ? `${source.publisher} source document record with publication metadata and explicit event/article links.`
       : "A source document record and its explicitly linked published events and articles.",
-  );
+    canonicalPath: source ? `/sources/${sourceId}` : undefined,
+    translated: false,
+    robots: source ? "index, follow" : "noindex, follow",
+    structuredData: data && source ? sourceStructuredData(sourceId, data) : undefined,
+  });
 
   if (!Number.isInteger(sourceId) || sourceId <= 0) {
-    return <EvidencePageMessage title="Invalid source address" text="This source record address is not valid." />;
+    return <EvidencePageMessage title={t("Invalid source address", "स्रोत का पता मान्य नहीं")} text={t("This source record address is not valid.", "इस स्रोत रिकॉर्ड का पता मान्य नहीं है।")} />;
   }
-  if (query.isLoading) return <EvidencePageMessage title="Opening source record" text="Loading published evidence…" />;
+  if (query.isLoading) return <EvidencePageMessage title={t("Opening source record", "स्रोत रिकॉर्ड खुल रहा है")} text={t("Loading published evidence…", "प्रकाशित सबूत लोड हो रहे हैं…")} />;
   if (query.isError || !data || !source) {
-    return <EvidencePageMessage title="Source document not found" text="This source may not have a published article or event relationship, or may have moved." />;
+    return <EvidencePageMessage title={t("Source document not found", "स्रोत दस्तावेज़ नहीं मिला")} text={t("This source may not have a published article or event relationship, or may have moved.", "इस स्रोत से शायद कोई प्रकाशित रिपोर्ट या घटना नहीं जुड़ी, या यह हट गया है।")} />;
   }
 
   return (
     <section className="signal-container py-12 sm:py-20">
       <Link href="/events" className="signal-kicker text-muted-foreground hover:text-accent">
-        <ArrowLeft size={13} className="mr-2 inline" /> Published events
-      </Link>
+        <ArrowLeft size={13} className="mr-2 inline" />{t("Published events", "प्रकाशित घटनाएँ")}</Link>
       <div className="mt-10 grid gap-8 border-b border-foreground/20 pb-8 lg:grid-cols-[1fr_.48fr] lg:items-end">
         <div>
           <p className="signal-kicker text-accent">Source document / {humanize(source.documentType)}</p>
@@ -550,14 +587,13 @@ export function EvidenceSourceDetailPage() {
           </p>
         </div>
         <div className="border-l-2 border-accent pl-5">
-          <p className="signal-kicker text-muted-foreground">Publication date</p>
+          <p className="signal-kicker text-muted-foreground">{t("Publication date", "प्रकाशन तिथि")}</p>
           <p className="mt-2 font-display text-2xl">{displayDate(source.publicationDate)}</p>
           {source.sourceUrl ? (
-            <a href={source.sourceUrl} target="_blank" rel="noopener noreferrer" className="mt-5 inline-flex items-center gap-1 signal-kicker text-accent hover:underline">
-              Open original document <ExternalLink size={12} />
+            <a href={source.sourceUrl} target="_blank" rel="noopener noreferrer" className="mt-5 inline-flex items-center gap-1 signal-kicker text-accent hover:underline">{t("Open original document", "मूल दस्तावेज़ खोलें")}<ExternalLink size={12} />
             </a>
           ) : (
-            <p className="mt-5 signal-kicker text-muted-foreground">SOURCE LINK UNAVAILABLE</p>
+            <p className="mt-5 signal-kicker text-muted-foreground">{t("SOURCE LINK UNAVAILABLE", "स्रोत लिंक उपलब्ध नहीं")}</p>
           )}
         </div>
       </div>
@@ -576,7 +612,7 @@ export function EvidenceSourceDetailPage() {
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{event.summary}</p>
               </article>
             )) : (
-              <p className="py-5 text-sm text-muted-foreground">No published events are explicitly linked to this source.</p>
+              <p className="py-5 text-sm text-muted-foreground">{t("No published events are explicitly linked to this source.", "इस स्रोत से कोई प्रकाशित घटना स्पष्ट रूप से नहीं जुड़ी है।")}</p>
             )}
           </div>
         </section>
@@ -597,7 +633,7 @@ export function EvidenceSourceDetailPage() {
                 </p>
               </article>
             )) : (
-              <p className="py-5 text-sm text-muted-foreground">No published articles are linked through this event.</p>
+              <p className="py-5 text-sm text-muted-foreground">{t("No published articles are linked through this event.", "इस घटना के ज़रिए कोई प्रकाशित रिपोर्ट नहीं जुड़ी है।")}</p>
             )}
           </div>
         </section>
@@ -607,6 +643,7 @@ export function EvidenceSourceDetailPage() {
 }
 
 export function ArticleEvidenceSection({ storyId }: { storyId: number }) {
+  const t = useT();
   const query = useGetStoryEvidence(storyId, {
     query: {
       queryKey: getGetStoryEvidenceQueryKey(storyId),
@@ -617,8 +654,8 @@ export function ArticleEvidenceSection({ storyId }: { storyId: number }) {
   if (query.isError) {
     return (
       <section className="mt-12 border-t border-foreground/20 pt-8" aria-labelledby="article-evidence-title">
-        <p id="article-evidence-title" className="signal-kicker text-accent">Article / Evidence links</p>
-        <p className="mt-3 text-sm text-muted-foreground">Evidence links are temporarily unavailable.</p>
+        <p id="article-evidence-title" className="signal-kicker text-accent">{t("Article / Evidence links", "रिपोर्ट / सबूत के लिंक")}</p>
+        <p className="mt-3 text-sm text-muted-foreground">{t("Evidence links are temporarily unavailable.", "सबूत के लिंक अभी उपलब्ध नहीं हैं।")}</p>
       </section>
     );
   }
@@ -629,11 +666,10 @@ export function ArticleEvidenceSection({ storyId }: { storyId: number }) {
     <section className="mt-12 border-t border-foreground/20 pt-8" aria-labelledby="article-evidence-title">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="signal-kicker text-accent">Evidence / Explicit relationships</p>
-          <h2 id="article-evidence-title" className="mt-2 font-display text-3xl">Events and source documents</h2>
+          <p className="signal-kicker text-accent">{t("Evidence / Explicit relationships", "सबूत / स्पष्ट संबंध")}</p>
+          <h2 id="article-evidence-title" className="mt-2 font-display text-3xl">{t("Events and source documents", "घटनाएँ और स्रोत दस्तावेज़")}</h2>
         </div>
-        <Link href="/events" className="signal-kicker text-muted-foreground hover:text-accent">
-          Browse events <ArrowUpRight size={12} className="ml-1 inline" />
+        <Link href="/events" className="signal-kicker text-muted-foreground hover:text-accent">{t("Browse events", "घटनाएँ देखें")}<ArrowUpRight size={12} className="ml-1 inline" />
         </Link>
       </div>
       {events.length ? (
@@ -653,9 +689,7 @@ export function ArticleEvidenceSection({ storyId }: { storyId: number }) {
           ))}
         </div>
       ) : !directSources.length ? (
-        <p className="mt-5 border border-dashed border-foreground/25 p-5 text-sm leading-relaxed text-muted-foreground">
-          No event or source documents are explicitly linked to this article yet.
-        </p>
+        <p className="mt-5 border border-dashed border-foreground/25 p-5 text-sm leading-relaxed text-muted-foreground">{t("No event or source documents are explicitly linked to this article yet.", "इस रिपोर्ट से अभी कोई घटना या स्रोत दस्तावेज़ स्पष्ट रूप से नहीं जुड़ा है।")}</p>
       ) : null}
       {directSources.length > 0 && (
         <div className="mt-8 border-t border-foreground/15 pt-6">
@@ -669,19 +703,17 @@ export function ArticleEvidenceSection({ storyId }: { storyId: number }) {
           </div>
         </div>
       )}
-      <p className="mt-5 signal-kicker text-muted-foreground">
-        These links are editorially maintained; they are not inferred from article text.
-      </p>
+      <p className="mt-5 signal-kicker text-muted-foreground">{t("These links are editorially maintained; they are not inferred from article text.", "ये लिंक संपादकीय रूप से जोड़े जाते हैं; रिपोर्ट के पाठ से अनुमान लगाकर नहीं।")}</p>
     </section>
   );
 }
 
 function EvidencePageMessage({ title, text }: { title: string; text: string }) {
+  const t = useT();
   return (
     <section className="signal-container py-20">
       <Link href="/events" className="signal-kicker text-muted-foreground hover:text-accent">
-        <ArrowLeft size={13} className="mr-2 inline" /> Evidence records
-      </Link>
+        <ArrowLeft size={13} className="mr-2 inline" />{t("Evidence records", "सबूत रिकॉर्ड")}</Link>
       <h1 className="mt-8 font-display text-4xl">{title}</h1>
       <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">{text}</p>
     </section>

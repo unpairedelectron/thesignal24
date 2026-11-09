@@ -29,6 +29,7 @@ export const StoryKind = {
   Paper_note: 'Paper note',
   Archive: 'Archive',
   Explainer: 'Explainer',
+  Opinion: 'Opinion',
 } as const;
 
 export type StoryWorkflowStatus = typeof StoryWorkflowStatus[keyof typeof StoryWorkflowStatus];
@@ -156,6 +157,30 @@ export interface IssueInput {
   intro: string;
 }
 
+/**
+ * Hindi edition of a record. Only fields that have been translated and reviewed are present.
+ */
+export interface StoryTranslation {
+  eyebrow?: string;
+  title: string;
+  dek: string;
+  body: string;
+}
+
+/**
+ * Hindi edition of a policy ledger record.
+ */
+export interface PolicyTranslation {
+  title: string;
+  summary: string;
+  sector?: string;
+  authority?: string;
+  previousFramework?: string;
+  newFramework?: string;
+  legalBasis?: string;
+  courtStatus?: string;
+}
+
 export type StoryRecordFamily = typeof StoryRecordFamily[keyof typeof StoryRecordFamily];
 
 
@@ -219,6 +244,12 @@ export interface Story {
   aiDisclosure: string | null;
   /** @nullable */
   correctionNote: string | null;
+  /**
+     * Named author or desk for opinion and signed pieces.
+     * @nullable
+     */
+  byline: string | null;
+  hi: StoryTranslation | null;
 }
 
 export interface StoryInput {
@@ -256,6 +287,9 @@ export interface StoryInput {
   correctionNote?: string | null;
   /** @nullable */
   revisionNote?: string | null;
+  /** @nullable */
+  byline?: string | null;
+  hi?: StoryTranslation | null;
 }
 
 export type StoryRevisionSnapshot = { [key: string]: unknown };
@@ -553,6 +587,7 @@ export interface PolicyRecord {
   effectiveDate: string | null;
   publishedOn: string;
   sources: PolicySource[];
+  hi: PolicyTranslation | null;
 }
 
 export interface PolicyListResult {
@@ -1398,3 +1433,4 @@ includeUnpublished?: boolean;
  */
 limit?: number;
 };
+

@@ -3986,7 +3986,7 @@ export const getGetEditorDiscoveryItemsUrl = () => {
 }
 
 /**
- * Requires verified editor access. Items are unpublished leads, not Signal Hub reporting or evidence.
+ * Requires verified editor access. Items are unpublished leads, not The Signal 24 reporting or evidence.
  * @summary List external leads for editorial review
  */
 export const getEditorDiscoveryItems = async ( options?: Parameters<typeof customFetch>[1]): Promise<EditorDiscoveryItemsResponse> => {

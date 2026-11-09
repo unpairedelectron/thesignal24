@@ -11,6 +11,14 @@ import {
 } from "drizzle-orm/pg-core";
 import { z } from "zod/v4";
 
+/** Hindi edition of a story. Present only when a translation has been written. */
+export type StoryTranslation = {
+  eyebrow?: string;
+  title: string;
+  dek: string;
+  body: string;
+};
+
 export const issuesTable = pgTable(
   "publication_issues",
   {
@@ -62,6 +70,8 @@ export const storiesTable = pgTable("publication_stories", {
   scheduledFor: timestamp("scheduled_for", { withTimezone: true }),
   aiDisclosure: text("ai_disclosure"),
   correctionNote: text("correction_note"),
+  byline: text("byline"),
+  hi: jsonb("hi").$type<StoryTranslation>(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

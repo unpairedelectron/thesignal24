@@ -1,7 +1,7 @@
 import type { EditorImageCandidateSearchResult } from "@workspace/api-zod";
 
 const COMMONS_API_URL = "https://commons.wikimedia.org/w/api.php";
-const COMMONS_USER_AGENT = "Signal Hub editorial image review/1.0";
+const COMMONS_USER_AGENT = "The Signal 24 editorial image review/1.0";
 const MAX_RESULTS = 8;
 
 type JsonRecord = Record<string, unknown>;
