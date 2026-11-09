@@ -773,3 +773,27 @@ h1.font-display:lang(hi) { line-height: 1.28 !important; }
 
 /* Small chips (tags, status badges, share) are 9-10px mono in English; Devanagari needs more size */
 .signal-tag:lang(hi), .signal-status-badge:lang(hi), .share-button:lang(hi), .hero-credit:lang(hi) { font-family: 'Noto Sans Devanagari', sans-serif; font-size: 11.5px; line-height: 1.5; text-transform: none; }
+
+/* ==========================================================================
+   Editorial illustrations (public/illustrations, our own artwork)
+   ========================================================================== */
+.story-art.is-illustration { background: #f3efe8; }
+.story-art.is-illustration img { filter: none; object-fit: contain; }
+/* Illustrated hero: copy on an ink panel, art on the right, no darkening gradient over the drawing */
+.visual-hero--illustration { display: grid; background: hsl(var(--primary)); }
+.visual-hero--illustration::after { display: none; }
+.visual-hero--illustration > img { position: relative !important; inset: auto !important; order: -1; aspect-ratio: 16 / 9; height: auto !important; filter: none; }
+.visual-hero--illustration .visual-hero-copy { max-width: none !important; min-height: 0 !important; }
+@media (min-width: 1024px) {
+  .visual-hero--illustration { grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); align-items: stretch; }
+  .visual-hero--illustration > img { order: 2; aspect-ratio: auto; height: 100% !important; object-fit: contain; background: #f3efe8; border-left: 2px solid hsl(var(--primary)); }
+  .visual-hero--illustration .visual-hero-copy { min-height: 620px !important; }
+}
+.visual-hero--illustration .hero-credit { position: absolute; right: 18px; bottom: 18px; color: hsl(var(--foreground) / .7); }
+@media (max-width: 1023px) { .visual-hero--illustration .hero-credit { position: static; padding: 0 24px 18px; color: hsl(var(--primary-foreground) / .7); } }
+/* Small illustration beside each Accountability Watch question */
+.accountability-art { aspect-ratio: 16 / 9; width: 100%; max-width: 320px; border: 2px solid hsl(var(--foreground)); background: #f3efe8; object-fit: cover; }
+.visual-hero--illustration h1 { font-size: clamp(2.4rem, 4.4vw, 4.6rem) !important; line-height: .98 !important; }
+.visual-hero--illustration h1:lang(hi) { line-height: 1.3 !important; }
+.page-art { margin-top: 3rem; border: 2px solid hsl(var(--foreground)); background: #f3efe8; box-shadow: 12px 12px 0 hsl(var(--foreground)); }
+.page-art img { display: block; width: 100%; height: auto; }
