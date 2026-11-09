@@ -77,6 +77,424 @@ function deferred<T = void>() {
   });
   return { promise, resolve: (value?: T) => resolve(value as T) };
 }
+
+const routeFixtureEditorId = "content-desk-route-fixture-editor";
+const routeFixtureCommonsResult: EditorImageCandidateSearchResult = {
+  source: "Wikimedia Commons",
+  fileTitle: "File:Route fixture image.jpg",
+  imageUrl: "https://upload.wikimedia.org/wikipedia/commons/0/00/fixture.jpg",
+  thumbnailUrl:
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/0/00/fixture.jpg/640px-fixture.jpg",
+  filePageUrl:
+    "https://commons.wikimedia.org/wiki/File:Route_fixture_image.jpg",
+  license: "CC BY-SA 4.0",
+  licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+  creator: "Fixture Photographer",
+  credit: "Photo by Fixture Photographer",
+  copyright: "Fixture source copyright statement",
+  usageRights: "CC BY-SA 4.0; attribution required.",
+  catalogReference: "",
+  artworkDate: "",
+  provenance: "",
+};
+
+async function withContentDeskRouteFixture(
+  run: (fixture: {
+    tx: any;
+    baseUrl: string;
+    issue: { id: number };
+    createSourceAndLead: (suffix: string) => Promise<{
+      source: Record<string, any>;
+      lead: Record<string, any>;
+    }>;
+  }) => Promise<void>,
+) {
+  await assert.rejects(
+    db.transaction(async (tx) => {
+      const editorGuard: RequestHandler = (req, _res, next) => {
+        req.editorIdentity = {
+          id: routeFixtureEditorId,
+          displayName: "Content Desk Route Fixture Editor",
+        };
+        next();
+      };
+      const commonsClient: WikimediaCommonsClient = {
+        searchImages: async () => [routeFixtureCommonsResult],
+        getFileByTitle: async (title) =>
+          title === routeFixtureCommonsResult.fileTitle
+            ? routeFixtureCommonsResult
+            : null,
+      };
+      const archiveClient = {
+        searchImages: async () => ({ results: [], nextPage: null }),
+        getImageByItemUrl: async () => null,
+      };
+      const museumClient: ArtInstituteClient = {
+        searchImages: async () => ({ results: [], nextPage: null }),
+        getImageByArtworkPageUrl: async () => null,
+      };
+      const databaseForRouter = new Proxy(tx as unknown as typeof db, {
+        get(target, property) {
+          if (property === "transaction") {
+            return (...args: any[]) => {
+              const [callback, ...transactionOptions] = args;
+              return Reflect.apply(target.transaction, target, [
+                (transaction: any, ...callbackArgs: any[]) =>
+                  callback(transaction, ...callbackArgs),
+                ...transactionOptions,
+              ]);
+            };
+          }
+          const value = Reflect.get(target, property, target);
+          return typeof value === "function" ? value.bind(target) : value;
+        },
+      });
+      const app = express();
+      app.use(express.json());
+      app.use(
+        createContentDeskRouter(
+          databaseForRouter,
+          editorGuard,
+          commonsClient,
+          archiveClient,
+          museumClient,
+        ),
+      );
+      app.use(
+        (
+          error: Error,
+          _req: express.Request,
+          res: express.Response,
+          _next: express.NextFunction,
+        ) => {
+          res.status(500).json({ message: error.message });
+        },
+      );
+      const { server, baseUrl } = await listen(app);
+      const [issue] = await tx
+        .insert(issuesTable)
+        .values({
+          issueDate: "2026-10-26",
+          issueNumber: 9300,
+          status: "published",
+          title: "Content desk route fixture issue",
+          intro: "A transactional fixture for focused route tests.",
+        })
+        .returning();
+
+      try {
+        const createSourceAndLead = async (suffix: string) => {
+          const sourceResponse = await requestJson(
+            baseUrl,
+            "/editor/content-sources",
+            "POST",
+            {
+              sourceName: `Route Fixture Source ${suffix}`,
+              sourceType: "government",
+              authorityLevel: "primary",
+              domain: `fixture-${suffix}.test`,
+              rssUrl: null,
+              sitemapUrl: null,
+              searchUrl: `https://fixture-${suffix}.test/search`,
+              language: "English",
+              state: null,
+              enabled: true,
+            },
+          );
+          assert.equal(
+            sourceResponse.response.status,
+            201,
+            JSON.stringify(sourceResponse.body),
+          );
+          const leadResponse = await requestJson(
+            baseUrl,
+            "/editor/discovery-items",
+            "POST",
+            {
+              sourceId: sourceResponse.body.id,
+              originalUrl: `https://fixture-${suffix}.test/records/1`,
+              title: `Route fixture lead ${suffix}`,
+              publisher: `Route Fixture Source ${suffix}`,
+              sourcePublishedOn: "2026-10-20",
+              author: null,
+              summary: "A short neutral source note for route testing.",
+              language: "English",
+              state: "National",
+              topic: "Government Orders",
+            },
+          );
+          assert.equal(
+            leadResponse.response.status,
+            201,
+            JSON.stringify(leadResponse.body),
+          );
+          return { source: sourceResponse.body, lead: leadResponse.body };
+        };
+
+        await run({ tx, baseUrl, issue, createSourceAndLead });
+      } finally {
+        await close(server);
+      }
+
+      throw rollbackMarker;
+    }),
+    (error) => error === rollbackMarker,
+  );
+}
+
+test("content sources and discovery leads validate editor submissions", async () => {
+  await withContentDeskRouteFixture(async ({ baseUrl }) => {
+    const sourceInput = {
+      sourceName: "Focused Route Source",
+      sourceType: "government",
+      authorityLevel: "primary",
+      domain: "focused-route-source.test",
+      rssUrl: null,
+      sitemapUrl: null,
+      searchUrl: "https://focused-route-source.test/search",
+      language: "English",
+      state: null,
+      enabled: true,
+    };
+    const source = await requestJson(
+      baseUrl,
+      "/editor/content-sources",
+      "POST",
+      sourceInput,
+    );
+    assert.equal(source.response.status, 201, JSON.stringify(source.body));
+    assert.equal(source.body.crawlFrequency, "manual");
+    assert.equal(source.body.lastCheckedAt, null);
+
+    const duplicateSource = await requestJson(
+      baseUrl,
+      "/editor/content-sources",
+      "POST",
+      sourceInput,
+    );
+    assert.equal(duplicateSource.response.status, 409);
+
+    const invalidLead = await requestJson(
+      baseUrl,
+      "/editor/discovery-items",
+      "POST",
+      {
+        sourceId: source.body.id,
+        originalUrl: "https://unapproved-source.test/record",
+        title: "A proposed discovery lead",
+        summary: "A short neutral source note.",
+        language: "English",
+      },
+    );
+    assert.equal(invalidLead.response.status, 400);
+
+    const leadInput = {
+      sourceId: source.body.id,
+      originalUrl: "https://focused-route-source.test/records/1?utm_source=desk",
+      title: "A proposed discovery lead",
+      summary: "A short neutral source note.",
+      language: "English",
+    };
+    const lead = await requestJson(
+      baseUrl,
+      "/editor/discovery-items",
+      "POST",
+      leadInput,
+    );
+    assert.equal(lead.response.status, 201, JSON.stringify(lead.body));
+    const duplicateLead = await requestJson(
+      baseUrl,
+      "/editor/discovery-items",
+      "POST",
+      { ...leadInput, originalUrl: "https://focused-route-source.test/records/1" },
+    );
+    assert.equal(duplicateLead.response.status, 409);
+    assert.equal(duplicateLead.body.duplicateItemId, lead.body.id);
+  });
+});
+
+test("image search saves a provider candidate with pending rights review", async () => {
+  await withContentDeskRouteFixture(async ({ baseUrl, createSourceAndLead }) => {
+    const { lead } = await createSourceAndLead("image");
+    const invalidSearch = await requestJson(
+      baseUrl,
+      "/editor/image-search",
+      "POST",
+      { query: "  " },
+    );
+    assert.equal(invalidSearch.response.status, 400);
+
+    const search = await requestJson(
+      baseUrl,
+      "/editor/image-search",
+      "POST",
+      { query: "institution records" },
+    );
+    assert.equal(search.response.status, 200);
+    assert.equal(search.body.results[0].fileTitle, routeFixtureCommonsResult.fileTitle);
+
+    const saved = await requestJson(
+      baseUrl,
+      `/editor/discovery-items/${lead.id}/image-candidates`,
+      "POST",
+      { fileTitle: routeFixtureCommonsResult.fileTitle },
+    );
+    assert.equal(saved.response.status, 201, JSON.stringify(saved.body));
+    assert.equal(saved.body.source, "Wikimedia Commons");
+    assert.equal(saved.body.rightsStatus, "pending");
+    assert.equal(saved.body.sourceAvailabilityStatus, "available");
+    assert.equal(saved.body.reviewedAt, null);
+
+    const duplicate = await requestJson(
+      baseUrl,
+      `/editor/discovery-items/${lead.id}/image-candidates`,
+      "POST",
+      { fileTitle: routeFixtureCommonsResult.fileTitle },
+    );
+    assert.equal(duplicate.response.status, 409);
+  });
+});
+
+test("image rights edits require review and record the reviewing editor", async () => {
+  await withContentDeskRouteFixture(async ({ baseUrl, createSourceAndLead }) => {
+    const { lead } = await createSourceAndLead("rights");
+    const created = await requestJson(
+      baseUrl,
+      `/editor/discovery-items/${lead.id}/image-candidates`,
+      "POST",
+      { fileTitle: routeFixtureCommonsResult.fileTitle },
+    );
+    assert.equal(created.response.status, 201, JSON.stringify(created.body));
+
+    const metadata = await requestJson(
+      baseUrl,
+      `/editor/image-candidates/${created.body.id}`,
+      "PATCH",
+      {
+        license: routeFixtureCommonsResult.license,
+        licenseUrl: routeFixtureCommonsResult.licenseUrl,
+        creator: routeFixtureCommonsResult.creator,
+        credit: routeFixtureCommonsResult.credit,
+        copyright: routeFixtureCommonsResult.copyright,
+        usageRights: routeFixtureCommonsResult.usageRights,
+        altText: "A public building viewed from its courtyard.",
+        caption: "The building, photographed from the courtyard.",
+      },
+    );
+    assert.equal(metadata.response.status, 200);
+    assert.equal(metadata.body.rightsStatus, "pending");
+
+    const reviewed = await requestJson(
+      baseUrl,
+      `/editor/image-candidates/${created.body.id}/rights`,
+      "PATCH",
+      {
+        rightsStatus: "approved",
+        reviewNotes: "Checked the source record and attribution terms.",
+      },
+    );
+    assert.equal(reviewed.response.status, 200, JSON.stringify(reviewed.body));
+    assert.equal(reviewed.body.rightsStatus, "approved");
+    assert.equal(reviewed.body.reviewedBy, routeFixtureEditorId);
+    assert.ok(reviewed.body.reviewedAt);
+  });
+});
+
+test("archived image candidates leave the active list and remain in the archive", async () => {
+  await withContentDeskRouteFixture(async ({ baseUrl, createSourceAndLead }) => {
+    const { lead } = await createSourceAndLead("archive");
+    const created = await requestJson(
+      baseUrl,
+      `/editor/discovery-items/${lead.id}/image-candidates`,
+      "POST",
+      { fileTitle: routeFixtureCommonsResult.fileTitle },
+    );
+    assert.equal(created.response.status, 201, JSON.stringify(created.body));
+
+    const archived = await requestJson(
+      baseUrl,
+      `/editor/image-candidates/${created.body.id}`,
+      "DELETE",
+    );
+    assert.equal(archived.response.status, 200, JSON.stringify(archived.body));
+    assert.equal(archived.body.removedBy, routeFixtureEditorId);
+    assert.ok(archived.body.removedAt);
+
+    const active = await requestJson(
+      baseUrl,
+      `/editor/discovery-items/${lead.id}/image-candidates`,
+      "GET",
+    );
+    assert.equal(active.response.status, 200);
+    assert.equal(
+      active.body.candidates.some(
+        (candidate: { id: number }) => candidate.id === created.body.id,
+      ),
+      false,
+    );
+    const archive = await requestJson(
+      baseUrl,
+      "/editor/image-candidates/archive",
+      "GET",
+    );
+    assert.ok(
+      archive.body.candidates.some(
+        (candidate: { id: number; removedBy: string }) =>
+          candidate.id === created.body.id &&
+          candidate.removedBy === routeFixtureEditorId,
+      ),
+    );
+  });
+});
+
+test("discovery leads require review before promotion and cannot be promoted twice", async () => {
+  await withContentDeskRouteFixture(async ({
+    baseUrl,
+    issue,
+    createSourceAndLead,
+  }) => {
+    const { lead } = await createSourceAndLead("promotion");
+    const promotionInput = {
+      issueId: issue.id,
+      topic: "Courts & Policy",
+      title: "An original editorial headline",
+      dek: "An original editorial standfirst.",
+      body: "An original body with context beyond the source lead.",
+    };
+    const blockedPromotion = await requestJson(
+      baseUrl,
+      `/editor/discovery-items/${lead.id}/promote`,
+      "POST",
+      promotionInput,
+    );
+    assert.equal(blockedPromotion.response.status, 409);
+
+    const review = await requestJson(
+      baseUrl,
+      `/editor/discovery-items/${lead.id}`,
+      "PATCH",
+      { status: "review", reviewNotes: "Check the issuing department." },
+    );
+    assert.equal(review.response.status, 200);
+
+    const promoted = await requestJson(
+      baseUrl,
+      `/editor/discovery-items/${lead.id}/promote`,
+      "POST",
+      promotionInput,
+    );
+    assert.equal(promoted.response.status, 200, JSON.stringify(promoted.body));
+    assert.ok(promoted.body.promotedStoryId);
+
+    const duplicatePromotion = await requestJson(
+      baseUrl,
+      `/editor/discovery-items/${lead.id}/promote`,
+      "POST",
+      promotionInput,
+    );
+    assert.equal(duplicatePromotion.response.status, 409);
+  });
+});
 test("Wikimedia Commons adapter searches files and maps rights metadata", async () => {
   const requests: URL[] = [];
   const client = createWikimediaCommonsClient(async (input) => {
@@ -529,7 +947,7 @@ test("image search is rejected by the editor guard before calling Commons", asyn
   }
 });
 
-test("editor source registry and manual discovery queue validate and retain review state", async () => {
+test("end-to-end content desk flows preserve provider, rights, promotion, and archive invariants", async () => {
   await assert.rejects(
     db.transaction(async (tx) => {
       const editorGuard: RequestHandler = (req, _res, next) => {
