@@ -156,7 +156,7 @@ function Header({ editor = false }: { editor?: boolean }) {
       <div className="bg-primary py-2.5 text-primary-foreground">
         <div className="signal-container flex items-center justify-between gap-4">
            <p className="signal-kicker flex items-center gap-2 text-[9px]"><span className="h-1.5 w-1.5 rounded-full bg-accent" /> Follow the evidence</p>
-           <p className="hidden signal-kicker opacity-60 sm:block">SIGNAL HUB / public-interest newsroom</p>
+           <p className="hidden signal-kicker opacity-60 sm:block">THE SIGNAL 24 / public-interest newsroom</p>
         </div>
       </div>
       <header className="signal-container relative z-30 flex items-center justify-between border-b border-foreground/20 py-5" onKeyDown={(event) => {
@@ -167,7 +167,7 @@ function Header({ editor = false }: { editor?: boolean }) {
       }}>
         <Link href="/" onClick={close} className="signal-link flex items-center gap-3" data-testid="link-brand">
           <BrandMark />
-          <span className="font-display text-[1.4rem] font-semibold leading-none tracking-[-.045em]">SIGNAL <span className="text-accent">HUB</span></span>
+          <span className="font-display text-[1.4rem] font-semibold leading-none tracking-[-.045em]">THE SIGNAL <span className="text-accent">24</span></span>
         </Link>
         <nav className="hidden items-center gap-7 md:flex" aria-label="Main navigation">
           {editor ? (
@@ -856,7 +856,7 @@ function TopicIndexPage() {
   return <main className="signal-page">
     <Header />
     <section className="signal-container pt-14 sm:pt-24">
-      <p className="signal-kicker text-accent">SIGNAL HUB / topics</p>
+      <p className="signal-kicker text-accent">THE SIGNAL 24 / topics</p>
       <h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">Follow a subject<br /><em className="font-normal text-accent">through the record.</em></h1>
       <p className="mt-7 max-w-2xl text-lg leading-relaxed text-muted-foreground">Topic pages group published archive records. Each record keeps its own source, date and verification status; a topic label is not evidence of a connection.</p>
     </section>
@@ -901,7 +901,7 @@ function TopicPage() {
     <Header />
     <section className="signal-container pt-14 sm:pt-24">
       <Link href="/topics" className="signal-kicker signal-link inline-flex items-center gap-2 text-muted-foreground"><ArrowLeft size={13} /> All topics</Link>
-      <p className="mt-12 signal-kicker text-accent">SIGNAL HUB / topic investigation</p>
+      <p className="mt-12 signal-kicker text-accent">THE SIGNAL 24 / topic investigation</p>
       <h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">{topic}</h1>
       <p className="mt-7 max-w-2xl text-lg leading-relaxed text-muted-foreground">A topic view assembled from the published archive. Dates, direct sources and missing relationships remain explicit.</p>
     </section>
@@ -2136,7 +2136,7 @@ function CommunityDetailPage() {
 function SignInPage() {
   useSeo({ title: 'Editor sign in — The Signal 24', description: 'Sign in to access the private editorial desk of The Signal 24.', robots: 'noindex, nofollow' });
   return <main className="signal-page"><section className="signal-container flex min-h-[100dvh] flex-col items-center justify-center gap-8 py-12">
-    <Link href="/" className="signal-link font-display text-2xl">SIGNAL <span className="text-accent">HUB</span></Link>
+    <Link href="/" className="signal-link font-display text-2xl">THE SIGNAL <span className="text-accent">24</span></Link>
     <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} forceRedirectUrl={`${basePath}/editor`} />
   </section></main>;
 }
@@ -2389,7 +2389,7 @@ const clerkAppearance = {
 function SignUpPage() {
   useSeo({ title: 'Editor account — The Signal 24', description: 'Create an account to request access to the private editorial desk of The Signal 24.', robots: 'noindex, nofollow' });
   return <main className="signal-page"><section className="signal-container flex min-h-[100dvh] flex-col items-center justify-center gap-8 py-12">
-    <Link href="/" className="signal-link font-display text-2xl">SIGNAL <span className="text-accent">HUB</span></Link>
+    <Link href="/" className="signal-link font-display text-2xl">THE SIGNAL <span className="text-accent">24</span></Link>
     <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} forceRedirectUrl={`${basePath}/editor`} />
   </section></main>;
 }
