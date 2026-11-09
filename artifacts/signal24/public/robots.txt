@@ -1,6 +1,114 @@
+# robots.txt for https://thesignal24.com — The Signal 24
+#
+# Public reporting, records, sources and policy pages are open to search engines
+# and AI answer engines so readers can find and cite the original record.
+# The private editorial desk (/editor) and the JSON API (/api/) are not for
+# crawling, except the API-generated sitemap.
+#
+# Crawlers obey only the most specific group that names them, so every named
+# group below repeats the same rules as the default group.
+
+# --- Default: all crawlers (Googlebot, Bingbot, Applebot, DuckDuckBot, etc.) ---
 User-agent: *
 Allow: /
+Allow: /api/sitemap.xml
 Disallow: /editor
 Disallow: /api/
+
+# --- AI search / answer engines (index pages so answers can cite and link them) ---
+User-agent: OAI-SearchBot
+Allow: /
 Allow: /api/sitemap.xml
+Disallow: /editor
+Disallow: /api/
+
+User-agent: Claude-SearchBot
+Allow: /
+Allow: /api/sitemap.xml
+Disallow: /editor
+Disallow: /api/
+
+User-agent: PerplexityBot
+Allow: /
+Allow: /api/sitemap.xml
+Disallow: /editor
+Disallow: /api/
+
+User-agent: DuckAssistBot
+Allow: /
+Allow: /api/sitemap.xml
+Disallow: /editor
+Disallow: /api/
+
+# --- AI user-initiated fetches (a reader asked an assistant to open a page) ---
+User-agent: ChatGPT-User
+Allow: /
+Allow: /api/sitemap.xml
+Disallow: /editor
+Disallow: /api/
+
+User-agent: Claude-User
+Allow: /
+Allow: /api/sitemap.xml
+Disallow: /editor
+Disallow: /api/
+
+User-agent: Perplexity-User
+Allow: /
+Allow: /api/sitemap.xml
+Disallow: /editor
+Disallow: /api/
+
+User-agent: MistralAI-User
+Allow: /
+Allow: /api/sitemap.xml
+Disallow: /editor
+Disallow: /api/
+
+# --- AI model training crawlers and opt-out tokens ---
+# Allowed by default. This is a publisher policy choice: to opt out of model
+# training while staying visible in AI search, change "Allow: /" to
+# "Disallow: /" in the groups below only.
+User-agent: GPTBot
+Allow: /
+Allow: /api/sitemap.xml
+Disallow: /editor
+Disallow: /api/
+
+User-agent: ClaudeBot
+Allow: /
+Allow: /api/sitemap.xml
+Disallow: /editor
+Disallow: /api/
+
+User-agent: Google-Extended
+Allow: /
+Allow: /api/sitemap.xml
+Disallow: /editor
+Disallow: /api/
+
+User-agent: Applebot-Extended
+Allow: /
+Allow: /api/sitemap.xml
+Disallow: /editor
+Disallow: /api/
+
+User-agent: CCBot
+Allow: /
+Allow: /api/sitemap.xml
+Disallow: /editor
+Disallow: /api/
+
+User-agent: Meta-ExternalAgent
+Allow: /
+Allow: /api/sitemap.xml
+Disallow: /editor
+Disallow: /api/
+
+User-agent: Amazonbot
+Allow: /
+Allow: /api/sitemap.xml
+Disallow: /editor
+Disallow: /api/
+
 Sitemap: https://thesignal24.com/sitemap.xml

@@ -1,0 +1,43 @@
+# The Signal 24
+
+> The Signal 24 is India's reservation and representation monitor: a source-first public-interest newsroom and research archive for policy, courts, documents, data and the histories behind them. It covers UGC equity rules, open-category competition, EWS eligibility and state reservation disputes, and keeps reporting, documents, analysis and opinion visibly distinct.
+
+Canonical site: https://thesignal24.com
+
+How to read and cite this site:
+
+- Every published record names its source and date. Cite the Signal 24 record and, where the claim rests on a judgment, notification, report or dataset, the original source it links to.
+- Unreviewed items from external feeds (shown as "external leads" or on the live desk) are not Signal 24 reporting. They remain unreviewed until the editorial desk checks the source and builds a record.
+- Public participant contributions on the community noticeboard are labelled separately and are not Signal 24 reporting.
+- A demand, a litigant's argument, an interim order and a final judgment are different kinds of records. Records may be marked current, historical, proposed, challenged, stayed, struck down or unavailable.
+- Some records are marked as starter records or source-link-pending records. They must not be mistaken for live verified reporting.
+- The Signal 24 is not a party publication, a campaign platform, or a substitute for the original judgment, notification, report or dataset. It does not rank governments or communities.
+
+## Start here
+
+- [Current edition](https://thesignal24.com/): A source-first Indian newsroom for reservation policy, courts, public institutions, education and regional impact.
+- [Archive](https://thesignal24.com/archive): Search published reporting, court and policy developments, historical documents, research notes and state context.
+- [Policy ledger](https://thesignal24.com/policies): Source-linked records of reservation policy changes, with frameworks, legal basis, court status and first-class sources.
+- [Source timeline](https://thesignal24.com/timeline): A dated index of published policy records, verified Signal 24 records, and separately labelled external leads.
+
+## Topics
+
+- [Topics](https://thesignal24.com/topics): Browse archive records by topic, with each record's evidence status and source visible.
+- [Open-category competition](https://thesignal24.com/topics/open-category-competition): Source-linked context on open-category competition, UGC equity rules, EWS eligibility, and the distinction between reported claims and legal outcomes.
+
+## Evidence and data
+
+- [Events and evidence](https://thesignal24.com/events): Published events connected to Signal 24 articles and source documents.
+- [Data room](https://thesignal24.com/data): Source-linked and reviewed data records on reservation and representation in India.
+
+## About and standards
+
+- [About](https://thesignal24.com/about): What The Signal 24 is, what it is not, and how the record grows.
+- [Editorial standards](https://thesignal24.com/editorial-standards): How the publication distinguishes reporting, documents, analysis and opinion, and how corrections and AI assistance are handled.
+- [Methodology](https://thesignal24.com/methodology): Source hierarchy, data integrity rules, archive status labels and starter-content disclosure.
+- [Editorial desk](https://thesignal24.com/authors/signal-24): The publication identity responsible for sourcing, reviewing and presenting the archive.
+
+## Optional
+
+- [Sitemap](https://thesignal24.com/sitemap.xml): Index of all public URLs, including individual records, policy records, events and source documents.
+- [Search the evidence](https://thesignal24.com/evidence/search): Search published articles, events and source documents as separate record types.

@@ -1,0 +1,88 @@
+# The Signal 24 — full reference text
+
+> The Signal 24 is India's reservation and representation monitor: a public-interest newsroom and research archive for policy, courts, documents, data and the histories behind them. Canonical site: https://thesignal24.com. This file reproduces the text of the About, Editorial standards and Methodology pages. Individual records are listed in the sitemap: https://thesignal24.com/sitemap.xml
+
+## About — A permanent record for a difficult debate
+
+Source: https://thesignal24.com/about
+
+The Signal 24 is India's reservation and representation monitor: a public-interest newsroom and research archive for policy, courts, documents, data and the histories behind them.
+
+### What this is
+
+A source-first place to follow reservation-related developments without reducing a national question to a daily outrage cycle. The archive is designed to help readers understand what happened, where it came from, what changed, and what remains uncertain.
+
+### What this is not
+
+It is not a party publication, a campaign platform, or a substitute for the original judgment, notification, report or dataset. It does not rank governments or communities.
+
+### A growing record
+
+The first release establishes the publication shell, archive, source labels and editorial desk. Live ingestion, document storage, state pages and data tools will be added only when they can meet the same sourcing standard.
+
+## Editorial standards — Every claim has a source. Every number has a document.
+
+Source: https://thesignal24.com/editorial-standards
+
+The subject demands a higher standard than speed alone. We distinguish reporting, documents, analysis and opinion so a reader can tell what kind of record they are reading.
+
+### Reporting
+
+What happened, attributed to a source and dated. We do not present an allegation as an established fact or infer motives without reliable documentation.
+
+### Documents
+
+What an original source says. Court orders, government notifications, commission reports and statutory text should be linked or identified wherever possible.
+
+### Analysis
+
+What the available evidence suggests. Analysis must show its method, preserve uncertainty and avoid turning a partial record into a universal claim.
+
+### Opinion
+
+A clearly labelled viewpoint with an identified author and relevant disclosure. Opinion must never be presented as neutral reporting.
+
+### Corrections and AI
+
+If we get a fact wrong, the record should say what changed and when. AI may assist with organization, summarization or metadata, but publication requires editorial review against source material.
+
+## Methodology — A record is only useful when its frame is visible.
+
+Source: https://thesignal24.com/methodology
+
+The archive preserves source type, date, state, record type and verification context because numbers and claims change meaning when their definitions disappear.
+
+### Source hierarchy
+
+Primary government documents, court records, constitutional and statutory text, official statistical releases, parliamentary records, commission reports, academic research and reputable news organizations each play different roles. We name the role rather than hiding it behind a score.
+
+### Data integrity
+
+For an important number, the eventual data room should show value, unit, year, geography, definition, source, source date, collection method and last verified date. Population share, reservation allocation, representation and selection rates must remain distinct.
+
+### Archive status
+
+Records should be marked as current, historical, proposed, challenged, stayed, struck down or unavailable where those distinctions matter. A missing source is a limitation to disclose, not a gap to fill with invention.
+
+### Starter content
+
+Some records in this first release are clearly marked starter records or source-link-pending records. They demonstrate the structure of the publication and must not be mistaken for live verified reporting.
+
+## Open-category competition — topic file
+
+Source: https://thesignal24.com/topics/open-category-competition
+
+Open seats are generally available to eligible candidates across categories; they are not a reserved pool for any one caste group. Rules, selection lists and court orders must be read in their own context.
+
+A demand, a litigant's argument, an interim order and a final judgment are different kinds of records. This page keeps external coverage apart from verified Signal 24 publications and does not infer an open-seat share from a quota headline.
+
+## Editorial desk
+
+Source: https://thesignal24.com/authors/signal-24
+
+The Signal 24 editorial desk keeps reporting, documents, analysis and opinion distinct, and names the source and date behind each published record. The desk is a publication identity rather than a claim that every record has one author. Individual bylines, disclosures and corrections belong on the record when they are available.
+
+## Labels used across the site
+
+- External leads: items from monitored external feeds. This is not published Signal 24 reporting: every item remains unreviewed until the editorial desk checks the source and builds a record.
+- Community noticeboard: public participant contributions. Contributions are not Signal 24 reporting.
