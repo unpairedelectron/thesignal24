@@ -8,6 +8,10 @@ export const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
 // use this host, so mirror hosts (e.g. *.replit.app) never self-canonicalize.
 export const SITE_ORIGIN = (import.meta.env.VITE_SITE_URL || 'https://thesignal24.com').replace(/\/$/, '');
 
+// Publication language/region: English as used in India. Keep in sync with <html lang> in index.html.
+export const SITE_LANGUAGE = 'en-IN';
+export const SITE_OG_LOCALE = 'en_IN';
+
 export const DEFAULT_SHARE_IMAGE = '/images/og-default.jpg';
 
 export function absoluteSiteUrl(path = '/') {
@@ -40,10 +44,12 @@ export type SeoConfig = {
   robots?: string;
   type?: string;
   image?: string;
+  /** Open Graph locale (e.g. 'hi_IN' for a future Hindi page). Defaults to SITE_OG_LOCALE. */
+  locale?: string;
   structuredData?: unknown;
 };
 
-export function useSeo({ title, description, canonicalPath, robots = 'index, follow', type = 'website', image, structuredData }: SeoConfig) {
+export function useSeo({ title, description, canonicalPath, robots = 'index, follow', type = 'website', image, locale = SITE_OG_LOCALE, structuredData }: SeoConfig) {
   const structuredDataText = JSON.stringify(absoluteStructuredData(structuredData ?? null));
   useEffect(() => {
     document.title = title;
@@ -69,6 +75,7 @@ export function useSeo({ title, description, canonicalPath, robots = 'index, fol
       : pathname;
     upsertMeta('property', 'og:url', absoluteSiteUrl(canonicalPath ?? currentPath));
     upsertMeta('property', 'og:site_name', SITE_NAME);
+    upsertMeta('property', 'og:locale', locale);
     const shareImage = absoluteImageUrl(image);
     upsertMeta('property', 'og:image', shareImage);
     upsertMeta('name', 'twitter:card', 'summary_large_image');
@@ -100,5 +107,5 @@ export function useSeo({ title, description, canonicalPath, robots = 'index, fol
       script.textContent = structuredDataText;
       document.head.appendChild(script);
     }
-  }, [canonicalPath, description, image, robots, structuredDataText, title, type]);
+  }, [canonicalPath, description, image, locale, robots, structuredDataText, title, type]);
 }
