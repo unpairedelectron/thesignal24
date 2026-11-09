@@ -107,7 +107,8 @@ import {
 } from '@workspace/api-client-react';
 import type { CommunityPost, CommunityReply, CommunityPostInput, CommunityPostKind, CommunityTopic, DecisionImpactArea, DecisionImpactEvidenceType, DecisionImpactInput, DecisionImpactRecord, DecisionImpactRevision, DecisionImpactWorkflowStatus, GetCommunityPostsParams, GetCommunityPostsSort, GetPoliciesParams, Issue, IssueInput, LiveUpdate, PolicyRecord, PolicySource, Story, StoryInput, StoryKind, StoryWorkflowStatus, Topic, VerificationStatus } from '@workspace/api-client-react';
 import NotFound from '@/pages/not-found';
-import { absoluteImageUrl, absoluteSiteUrl, basePath, DEFAULT_SHARE_IMAGE, useSeo } from '@/lib/seo';
+import { absoluteSiteUrl, basePath, SITE_LANGUAGE, useSeo } from '@/lib/seo';
+import { breadcrumbNode, collectionPageNode, EDITORIAL_DESK_PATH, editorialDeskNode, editorialDeskRef, externalDocument, imageObject, organizationRef, placeForState, siteGraph, webPageNode, websiteRef } from '@/lib/structured-data';
 
 const queryClient = new QueryClient();
 
@@ -554,14 +555,10 @@ function InfoPage({ page }: { page: 'about' | 'standards' | 'methodology' }) {
     title: `${content.eyebrow.split(' / ')[1]} — The Signal 24`,
     description: content.intro,
     canonicalPath: `/${page === 'standards' ? 'editorial-standards' : page}`,
-    structuredData: {
-      '@context': 'https://schema.org',
-      '@graph': [
-        { '@type': 'WebPage', name: content.eyebrow, description: content.intro },
-        organizationSchema,
-        { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'The Signal 24', item: '/' }, { '@type': 'ListItem', position: 2, name: content.eyebrow.split(' / ')[1], item: `/${page === 'standards' ? 'editorial-standards' : page}` }] },
-      ],
-    },
+    structuredData: siteGraph(
+      webPageNode(`/${page === 'standards' ? 'editorial-standards' : page}`, { name: `${content.eyebrow.split(' / ')[1]} — The Signal 24`, description: content.intro, about: organizationRef, publisher: organizationRef }, page === 'about' ? 'AboutPage' : 'WebPage'),
+      breadcrumbNode(`/${page === 'standards' ? 'editorial-standards' : page}`, [[content.eyebrow.split(' / ')[1], `/${page === 'standards' ? 'editorial-standards' : page}`]]),
+    ),
   });
   return <main className="signal-page"><Header /><section className="signal-container pt-14 sm:pt-24"><p className="signal-kicker text-accent">{content.eyebrow}</p><h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">{content.title}</h1><p className="mt-8 max-w-2xl text-lg leading-relaxed text-muted-foreground">{content.intro}</p></section><section className="signal-container mt-16 border-t border-foreground/20 sm:mt-24"><div className="grid divide-y divide-foreground/15 lg:grid-cols-2 lg:divide-x lg:divide-y-0">{content.sections.map(([title, text], index) => <article key={title} className={`py-8 lg:px-8 ${index % 2 === 0 ? 'lg:pl-0' : 'lg:pr-0'}`}><p className="signal-kicker text-accent">0{index + 1}</p><h2 className="mt-3 font-display text-3xl leading-tight">{title}</h2><p className="mt-4 max-w-xl text-sm leading-[1.8] text-muted-foreground">{text}</p></article>)}</div></section><footer className="signal-container flex flex-wrap justify-between gap-6 border-t border-foreground/20 py-8"><Link href="/" className="signal-kicker signal-link inline-flex items-center gap-2"><ArrowLeft size={13} /> Current edition</Link><div className="flex gap-5 signal-kicker text-muted-foreground"><Link href="/about" className="signal-link">About</Link><Link href="/editorial-standards" className="signal-link">Standards</Link><Link href="/methodology" className="signal-link">Methodology</Link></div></footer></main>;
 }
@@ -777,7 +774,7 @@ function Home() {
   const archiveParams = useMemo(() => ({ limit: 100 }), []);
   const archiveQuery = useGetArchive(archiveParams, { query: { queryKey: getGetArchiveQueryKey(archiveParams) } });
   const decisionImpactQuery = useGetDecisionImpacts({ limit: 100 }, { query: { queryKey: getGetDecisionImpactsQueryKey({ limit: 100 }) } });
-  useSeo({ title: 'The Signal 24 — India, on the record', description: 'A source-first Indian newsroom for reservation policy, courts, public institutions, education and regional impact.', canonicalPath: '/', structuredData: { '@context': 'https://schema.org', '@graph': [organizationSchema, { '@type': 'WebSite', name: 'The Signal 24', url: '/' }] } });
+  useSeo({ title: 'The Signal 24 — India, on the record', description: 'A source-first Indian newsroom for reservation policy, courts, public institutions, education and regional impact.', canonicalPath: '/', structuredData: siteGraph(webPageNode('/', { name: 'The Signal 24 — India, on the record', description: 'A source-first Indian newsroom for reservation policy, courts, public institutions, education and regional impact.', about: organizationRef, publisher: organizationRef, breadcrumb: undefined })) });
   const stories = useMemo(
     () => [...(archiveQuery.data?.stories ?? issueQuery.data?.stories ?? [])]
       .filter((story) => story.workflowStatus === 'published')
@@ -852,6 +849,10 @@ function TopicIndexPage() {
     title: 'Topics — The Signal 24',
     description: 'Browse The Signal 24 archive records by topic, with each record’s evidence status and source visible.',
     canonicalPath: '/topics',
+    structuredData: siteGraph(
+      collectionPageNode('/topics', { name: 'Topics — The Signal 24', description: 'Browse The Signal 24 archive records by topic, with each record’s evidence status and source visible.', publisher: organizationRef }, topics.map(({ topic }) => ({ url: `/topics/${encodeURIComponent(topic)}`, name: topic }))),
+      breadcrumbNode('/topics', [['Topics', '/topics']]),
+    ),
   });
   return <main className="signal-page">
     <Header />
@@ -895,6 +896,10 @@ function TopicPage() {
     title: `${topic || 'Topic'} — The Signal 24`,
     description: `Published records from The Signal 24 on ${topic || 'this topic'}, with evidence status and direct sources visible.`,
     canonicalPath: params.slug ? `/topics/${params.slug}` : undefined,
+    structuredData: topic ? siteGraph(
+      collectionPageNode(`/topics/${encodeURIComponent(topic)}`, { name: `${topic} — The Signal 24`, description: `Published records from The Signal 24 on ${topic}, with evidence status and direct sources visible.`, about: { '@type': 'Thing', name: topic }, publisher: organizationRef }, records.filter((story) => story.indexable).map((story) => ({ url: storyPath(story), name: story.title }))),
+      breadcrumbNode(`/topics/${encodeURIComponent(topic)}`, [['Topics', '/topics'], [topic, `/topics/${encodeURIComponent(topic)}`]]),
+    ) : undefined,
   });
   if (!topic) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message="That topic address is not valid." /></div></div>;
   return <main className="signal-page">
@@ -963,11 +968,6 @@ function TimelinePage() {
   const policyQuery = useGetPolicies(policyParams, {
     query: { queryKey: getGetPoliciesQueryKey(policyParams) },
   });
-  useSeo({
-    title: 'Source timeline — The Signal 24',
-    description: 'A dated index of published policy records, verified Signal 24 records, and separately labelled external leads.',
-    canonicalPath: '/timeline',
-  });
   const entries = useMemo(() => {
     const policyEntries = (policyQuery.data?.records ?? []).filter((record) => record.sources.length > 0).map((record) => ({
       id: `policy-${record.id}`,
@@ -1011,6 +1011,15 @@ function TimelinePage() {
       .filter((entry) => entry.date && !Number.isNaN(Date.parse(entry.date)))
       .sort((a, b) => b.date.localeCompare(a.date));
   }, [archiveQuery.data, policyQuery.data]);
+  useSeo({
+    title: 'Source timeline — The Signal 24',
+    description: 'A dated index of published policy records, verified Signal 24 records, and separately labelled external leads.',
+    canonicalPath: '/timeline',
+    structuredData: siteGraph(
+      collectionPageNode('/timeline', { name: 'Source timeline — The Signal 24', description: 'A dated index of published policy records, verified Signal 24 records, and separately labelled external leads.', publisher: organizationRef }, entries.filter((entry) => entry.kind !== 'lead' && entry.href.startsWith('/')).map((entry) => ({ url: entry.href, name: entry.title }))),
+      breadcrumbNode('/timeline', [['Timeline', '/timeline']]),
+    ),
+  });
   const hasError = archiveQuery.isError || policyQuery.isError;
   const loading = archiveQuery.isLoading || policyQuery.isLoading;
   return <main className="signal-page"><Header />
@@ -1149,6 +1158,10 @@ function OpenCategoryTopicPage() {
     title: 'Open-category competition — The Signal 24',
     description: 'Source-linked context on open-category competition, UGC equity rules, EWS eligibility, and the distinction between reported claims and legal outcomes.',
     canonicalPath: '/topics/open-category-competition',
+    structuredData: siteGraph(
+      collectionPageNode('/topics/open-category-competition', { name: 'Open-category competition — The Signal 24', description: 'Source-linked context on open-category competition, UGC equity rules, EWS eligibility, and the distinction between reported claims and legal outcomes.', about: { '@type': 'Thing', name: 'Open-category competition' }, publisher: organizationRef }, stories.filter((story) => story.indexable).map((story) => ({ url: storyPath(story), name: story.title }))),
+      breadcrumbNode('/topics/open-category-competition', [['Topics', '/topics'], ['Open-category competition', '/topics/open-category-competition']]),
+    ),
   });
   if (slug !== 'open-category-competition') return <NotFound />;
   return <main className="signal-page"><Header />
@@ -1200,7 +1213,10 @@ function ArchivePage() {
     title: 'The archive — The Signal 24',
     description: 'Search published reporting, court and policy developments, historical documents, research notes and state context.',
     canonicalPath: '/archive',
-    structuredData: { '@context': 'https://schema.org', '@graph': [organizationSchema, { '@type': 'CollectionPage', name: 'The Signal 24 archive', description: 'Published reservation reporting and research.' }, { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'The Signal 24', item: '/' }, { '@type': 'ListItem', position: 2, name: 'Archive', item: '/archive' }] }] },
+    structuredData: siteGraph(
+      collectionPageNode('/archive', { name: 'The archive — The Signal 24', description: 'Search published reporting, court and policy developments, historical documents, research notes and state context.', publisher: organizationRef }, (data?.stories ?? []).filter((story) => story.indexable).map((story) => ({ url: storyPath(story), name: story.title }))),
+      breadcrumbNode('/archive', [['Archive', '/archive']]),
+    ),
   });
   const clear = () => { setQuery(''); setTopic(''); setKind(''); setState(''); setYear(''); setOrganization(''); };
   if (isLoading) return <div className="signal-page"><Header /><LoadingBlock label="Indexing records and sources…" /></div>;
@@ -1255,14 +1271,10 @@ function PoliciesPage() {
     title: 'Policy ledger — The Signal 24',
     description: 'Search source-linked records of reservation policy changes, with frameworks, legal basis, court status and first-class sources.',
     canonicalPath: '/policies',
-    structuredData: {
-      '@context': 'https://schema.org',
-      '@graph': [
-        organizationSchema,
-        { '@type': 'CollectionPage', name: 'The Signal 24 policy ledger', description: 'Source-linked records of reservation policy changes.', url: '/policies' },
-        { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'The Signal 24', item: '/' }, { '@type': 'ListItem', position: 2, name: 'Policy ledger', item: '/policies' }] },
-      ],
-    },
+    structuredData: siteGraph(
+      collectionPageNode('/policies', { name: 'Policy ledger — The Signal 24', description: 'Source-linked records of reservation policy changes, with frameworks, legal basis, court status and first-class sources.', publisher: organizationRef }, (data?.records ?? []).map((record) => ({ url: record.canonicalPath, name: record.title }))),
+      breadcrumbNode('/policies', [['Policy ledger', '/policies']]),
+    ),
   });
   const clear = () => { setQuery(''); setState(''); setSector(''); setStatus(''); setEffectiveFrom(''); setEffectiveTo(''); };
   if (isLoading) return <div className="signal-page"><Header /><LoadingBlock label="Indexing policy records and sources…" /></div>;
@@ -1299,15 +1311,37 @@ function PolicyDetail() {
   const { data: record, isLoading, isError, refetch } = useGetPolicy(slug, { query: { enabled: Boolean(slug), queryKey: getGetPolicyQueryKey(slug) } });
   const structuredData = useMemo(() => {
     if (!record) return null;
-    const url = absoluteSiteUrl(record.canonicalPath);
-    return {
-      '@context': 'https://schema.org',
-      '@graph': [
-        { '@type': 'Article', '@id': `${url}#policy`, headline: record.title, description: record.summary, datePublished: record.publishedOn, dateModified: record.publishedOn, mainEntityOfPage: url, author: { '@type': 'Organization', name: 'The Signal 24' }, publisher: { ...organizationSchema, url: absoluteSiteUrl('/') } },
-        { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'The Signal 24', item: absoluteSiteUrl('/') }, { '@type': 'ListItem', position: 2, name: 'Policy ledger', item: absoluteSiteUrl('/policies') }, { '@type': 'ListItem', position: 3, name: record.title, item: url }] },
-        organizationSchema,
-      ],
-    };
+    const path = record.canonicalPath;
+    const primarySources = record.sources.filter((source) => source.isPrimary);
+    return siteGraph(
+      webPageNode(path, { name: `${record.title} — The Signal 24`, description: record.summary, primaryImageOfPage: imageObject() }),
+      {
+        // A source-linked explainer about a policy change, not the legal instrument itself,
+        // so Article + about/spatialCoverage rather than Legislation.
+        '@type': 'Article',
+        '@id': `${path}#policy`,
+        headline: record.title,
+        description: record.summary,
+        url: path,
+        mainEntityOfPage: { '@id': `${path}#webpage` },
+        image: [imageObject()],
+        datePublished: record.publishedOn,
+        dateModified: record.publishedOn,
+        author: editorialDeskRef,
+        publisher: organizationRef,
+        isPartOf: websiteRef,
+        inLanguage: SITE_LANGUAGE,
+        isAccessibleForFree: true,
+        articleSection: 'Policy ledger',
+        keywords: [record.sector, record.status, record.state ?? 'National', record.authority].filter(Boolean).join(', '),
+        about: { '@type': 'Thing', name: `${record.sector} reservation policy` },
+        spatialCoverage: placeForState(record.state),
+        ...(primarySources.length ? { isBasedOn: primarySources.map((source) => source.url) } : {}),
+        ...(record.sources.length ? { citation: record.sources.map((source) => externalDocument({ title: source.title, url: source.url, publisher: source.publisher, datePublished: source.publishedOn, genre: source.sourceType })) } : {}),
+      },
+      editorialDeskNode,
+      breadcrumbNode(path, [['Policy ledger', '/policies'], [record.title, path]]),
+    );
   }, [record]);
   useSeo({
     title: record ? `${record.title} — The Signal 24` : 'Policy record — The Signal 24',
@@ -1503,36 +1537,48 @@ function StoryDetail() {
   const recordPath = story ? storyPath(story) : undefined;
   const structuredData = useMemo(() => {
     if (!story) return null;
-    const url = absoluteSiteUrl(recordPath ?? '/');
-    const recordSchema = story.indexable ? {
-      '@type': story.kind === 'Article' ? 'NewsArticle' : 'Article',
-      '@id': `${url}#record`,
-      headline: story.title,
-      description: story.dek,
-      mainEntityOfPage: url,
-      image: absoluteImageUrl(imageForStory(story)?.src ?? DEFAULT_SHARE_IMAGE),
-      publisher: { ...organizationSchema, url: absoluteSiteUrl('/') },
-    } : {
-      '@type': 'WebPage',
-      '@id': `${url}#record`,
-      name: story.title,
-      description: story.dek,
-    };
-    return {
-      '@context': 'https://schema.org',
-      '@graph': [
-        recordSchema,
-        {
-          '@type': 'BreadcrumbList',
-          itemListElement: [
-            { '@type': 'ListItem', position: 1, name: 'The Signal 24', item: absoluteSiteUrl('/') },
-            { '@type': 'ListItem', position: 2, name: 'Archive', item: absoluteSiteUrl('/archive') },
-            { '@type': 'ListItem', position: 3, name: story.title, item: url },
-          ],
-        },
-        { ...organizationSchema, url: absoluteSiteUrl('/') },
-      ],
-    };
+    const path = recordPath ?? '/';
+    const visual = imageForStory(story);
+    const image = visual ? imageObject(visual.src, visual.width, visual.height) : imageObject();
+    const page = webPageNode(path, { name: `${story.title} — The Signal 24`, description: story.dek, primaryImageOfPage: image });
+    const breadcrumb = breadcrumbNode(path, [['Archive', '/archive'], [story.title, path]]);
+    // Non-indexable records stay a plain WebPage with no article claims.
+    if (!story.indexable) return siteGraph(page, breadcrumb);
+    // articlePublishedAt is the full publication timestamp; publishedOn is the edition date.
+    // The API exposes no content-modified timestamp (reviewedAt/lastVerifiedAt are source
+    // checks, not edits), so dateModified mirrors datePublished.
+    const published = story.articlePublishedAt ?? story.publishedOn ?? undefined;
+    const sourceDocument = story.sourceUrl || story.source
+      ? externalDocument({ title: story.source || story.sourceUrl || 'Source', url: story.sourceUrl, publisher: story.source, datePublished: story.sourcePublishedOn })
+      : null;
+    return siteGraph(
+      page,
+      {
+        '@type': story.kind === 'Article' ? 'NewsArticle' : 'Article',
+        '@id': `${path}#record`,
+        headline: story.title,
+        description: story.dek,
+        url: path,
+        mainEntityOfPage: { '@id': `${path}#webpage` },
+        image: [image],
+        ...(published ? { datePublished: published, dateModified: published } : {}),
+        author: editorialDeskRef,
+        publisher: organizationRef,
+        isPartOf: websiteRef,
+        inLanguage: SITE_LANGUAGE,
+        isAccessibleForFree: true,
+        articleSection: story.topic,
+        genre: story.kind,
+        keywords: [story.topic, story.kind, story.state].filter(Boolean).join(', '),
+        wordCount: story.body.split(/\s+/).filter(Boolean).length,
+        ...(story.state ? { spatialCoverage: placeForState(story.state) } : {}),
+        ...(story.sourceUrl ? { isBasedOn: story.sourceUrl } : {}),
+        ...(sourceDocument ? { citation: sourceDocument } : {}),
+        ...(story.correctionNote ? { correction: { '@type': 'CorrectionComment', text: story.correctionNote } } : {}),
+      },
+      editorialDeskNode,
+      breadcrumb,
+    );
   }, [recordPath, story]);
   useSeo({
     title: story ? `${story.title} — The Signal 24` : 'Record — The Signal 24',
@@ -1957,14 +2003,12 @@ function AuthorPage() {
     description: 'Meet the editorial desk behind The Signal 24, a source-first publication and research archive on reservation in India.',
     canonicalPath: validAuthor ? path : undefined,
     robots: validAuthor ? 'index, follow' : 'noindex, follow',
-    structuredData: {
-      '@context': 'https://schema.org',
-      '@graph': [
-        { '@type': 'Person', name: 'The Signal 24 editorial desk', description: 'The editorial desk responsible for sourcing, reviewing and presenting the Signal 24 archive.', url: path, worksFor: organizationSchema },
-        organizationSchema,
-        { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'The Signal 24', item: '/' }, { '@type': 'ListItem', position: 2, name: 'Authors', item: path }] },
-      ],
-    },
+    // The desk is a department of the publisher, not a person, so ProfilePage → Organization.
+    structuredData: validAuthor ? siteGraph(
+      webPageNode(EDITORIAL_DESK_PATH, { name: 'Editorial desk — The Signal 24', description: 'Meet the editorial desk behind The Signal 24, a source-first publication and research archive on reservation in India.', mainEntity: editorialDeskRef }, 'ProfilePage'),
+      { ...editorialDeskNode, description: 'The editorial desk responsible for sourcing, reviewing and presenting the Signal 24 archive.', publishingPrinciples: '/editorial-standards' },
+      breadcrumbNode(EDITORIAL_DESK_PATH, [['Editorial desk', EDITORIAL_DESK_PATH]]),
+    ) : undefined,
   });
   if (!validAuthor) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message="That author page does not exist." /></div></div>;
   return <main className="signal-page"><Header /><section className="signal-container pt-14 sm:pt-24"><p className="signal-kicker text-accent">The Signal 24 / author</p><h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">The editorial<br /><em className="font-normal text-accent">desk.</em></h1><p className="mt-8 max-w-2xl text-lg leading-relaxed text-muted-foreground">The Signal 24 editorial desk keeps reporting, documents, analysis and opinion distinct, and names the source and date behind each published record.</p></section><section className="signal-container mt-16 border-y border-foreground/20 py-10 sm:mt-24 sm:py-14"><div className="grid gap-8 lg:grid-cols-[.7fr_1.3fr]"><div><p className="signal-kicker text-accent">Source first / always</p><h2 className="mt-3 font-display text-4xl leading-none">A byline with a responsibility.</h2></div><p className="max-w-2xl text-base leading-relaxed text-muted-foreground">The desk is a publication identity rather than a claim that every record has one author. Individual bylines, disclosures and corrections belong on the record when they are available.</p></div></section><footer className="signal-container flex justify-between gap-6 border-t border-foreground/20 py-8"><Link href="/archive" className="signal-kicker signal-link">Browse the archive</Link><Link href="/editorial-standards" className="signal-kicker signal-link">Editorial standards</Link></footer></main>;
@@ -2253,14 +2297,6 @@ function slugify(value: string) {
   return value.normalize('NFKD').replace(/[^\w\s-]/g, '').trim().toLowerCase().replace(/[\s_-]+/g, '-').replace(/^-+|-+$/g, '');
 }
 
-const organizationSchema = {
-  '@type': 'Organization',
-  name: 'The Signal 24',
-  description: 'A source-first public-interest newsroom and research archive for reservation policy, court records, official documents and data in India.',
-  url: absoluteSiteUrl('/'),
-  logo: absoluteSiteUrl('/logo.svg'),
-};
-
 function recordFamilyForStory(story: Story) {
   if (story.recordFamily) return story.recordFamily;
   if (story.topic === 'States') return 'states';
@@ -2285,14 +2321,12 @@ function DataIndexPage() {
     title: 'Data room — The Signal 24',
     description: 'Browse source-linked and reviewed data records on reservation and representation in India.',
     canonicalPath: path,
-    structuredData: {
-      '@context': 'https://schema.org',
-      '@graph': [
-        { '@type': 'CollectionPage', name: 'The Signal 24 data room', description: 'Published data records and methodology notes on reservation and representation in India.', url: path, mainEntity: records.map((story) => ({ '@type': 'Dataset', name: story.title, description: story.dek, url: story.canonicalPath || storyPath(story), creator: organizationSchema, isAccessibleForFree: true })) },
-        organizationSchema,
-        { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'The Signal 24', item: '/' }, { '@type': 'ListItem', position: 2, name: 'Data', item: path }] },
-      ],
-    },
+    // Data records are articles/notes about data (typed NewsArticle/Article on their own
+    // pages), so they are listed here rather than re-typed as Dataset.
+    structuredData: siteGraph(
+      collectionPageNode(path, { name: 'Data room — The Signal 24', description: 'Published data records and methodology notes on reservation and representation in India.', publisher: organizationRef }, records.filter((story) => story.indexable).map((story) => ({ url: storyPath(story), name: story.title }))),
+      breadcrumbNode(path, [['Data', path]]),
+    ),
   });
   return <main className="signal-page">
     <Header />

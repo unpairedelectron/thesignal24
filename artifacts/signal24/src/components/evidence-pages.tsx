@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { Link, useParams } from "wouter";
 import { useSeo } from "@/lib/seo";
+import { breadcrumbNode, collectionPageNode, externalDocument, organizationRef, siteGraph, webPageNode } from "@/lib/structured-data";
 import {
   getGetEvidenceEventQueryKey,
   getGetEvidenceEventsQueryKey,
@@ -41,9 +42,12 @@ import {
 import { SourceDiscoveryDesk } from "./content-desk";
 import type {
   EvidenceDocumentType,
+  EvidenceEventDetail,
   EvidenceEventWorkflowStatus,
   EvidenceSourceRole,
   EvidenceSourceStatus,
+  SourceDocument,
+  SourceDocumentResponse,
   Topic,
 } from "@workspace/api-client-react";
 
@@ -209,17 +213,25 @@ function EventCard({
 }
 
 export function EvidenceEventsPage() {
-  useSeo({
-    title: "Events and evidence — The Signal 24",
-    description: "Published events connected to The Signal 24 articles and source documents.",
-    canonicalPath: "/events",
-  });
   const query = useGetEvidenceEvents(undefined, {
     query: {
       queryKey: getGetEvidenceEventsQueryKey(),
       staleTime: 60_000,
       refetchOnWindowFocus: true,
     },
+  });
+  useSeo({
+    title: "Events and evidence — The Signal 24",
+    description: "Published events connected to The Signal 24 articles and source documents.",
+    canonicalPath: "/events",
+    structuredData: siteGraph(
+      collectionPageNode(
+        "/events",
+        { name: "Events and evidence — The Signal 24", description: "Published events connected to The Signal 24 articles and source documents.", publisher: organizationRef },
+        (query.data?.events ?? []).map((item) => ({ url: `/events/${item.event.id}`, name: item.event.title })),
+      ),
+      breadcrumbNode("/events", [["Events", "/events"]]),
+    ),
   });
 
   return (
@@ -402,6 +414,61 @@ export function EvidenceSearchPage() {
   );
 }
 
+function sourceDocumentNode(source: SourceDocument) {
+  return externalDocument({
+    title: source.title,
+    url: source.sourceUrl,
+    publisher: source.publisher,
+    datePublished: source.publicationDate,
+    genre: humanize(source.documentType),
+  });
+}
+
+// An event record is an editorial summary of a dated historical or news event. schema.org
+// Event (and Google's event rich result) is for attendable happenings with a location and
+// start time, so the page is a WebPage whose temporalCoverage is the event date.
+function eventStructuredData(eventId: number, detail: EvidenceEventDetail) {
+  const path = `/events/${eventId}`;
+  const sources = [...detail.primarySources, ...detail.secondarySources];
+  const primaryUrls = detail.primarySources.map((source) => source.sourceUrl).filter(Boolean);
+  return siteGraph(
+    webPageNode(path, {
+      name: `${detail.event.title} — The Signal 24`,
+      headline: detail.event.title,
+      description: detail.event.summary,
+      about: { "@type": "Thing", name: detail.event.topic },
+      publisher: organizationRef,
+      ...(detail.event.recordDate ? { temporalCoverage: detail.event.recordDate } : {}),
+      ...(detail.articles.length ? { mentions: detail.articles.map((article) => ({ "@type": "Article", "@id": `${article.canonicalPath}#record`, url: article.canonicalPath, headline: article.title })) } : {}),
+      ...(primaryUrls.length ? { isBasedOn: primaryUrls } : {}),
+      ...(sources.length ? { citation: sources.map(sourceDocumentNode) } : {}),
+    }),
+    breadcrumbNode(path, [["Events", "/events"], [detail.event.title, path]]),
+  );
+}
+
+// A source page is our record about an external document, so the WebPage's main entity is a
+// CreativeWork whose url is the original document and whose publisher is its issuer.
+function sourceStructuredData(sourceId: number, data: SourceDocumentResponse) {
+  const path = `/sources/${sourceId}`;
+  const source = data.sourceDocument;
+  const links = [
+    ...data.citedByArticles.map((item) => item.article.canonicalPath),
+    ...data.supportingEvents.map((item) => `/events/${item.event.id}`),
+  ];
+  return siteGraph(
+    webPageNode(path, {
+      name: `${source.title} — The Signal 24`,
+      description: `${source.publisher} source document record with publication metadata and explicit event/article links.`,
+      publisher: organizationRef,
+      mainEntity: { "@id": `${path}#document` },
+      ...(links.length ? { significantLink: links } : {}),
+    }),
+    { ...sourceDocumentNode(source), "@id": `${path}#document` },
+    breadcrumbNode(path, [[source.title, path]]),
+  );
+}
+
 export function EvidenceEventDetailPage() {
   const { id = "" } = useParams<{ id: string }>();
   const eventId = Number(id);
@@ -417,6 +484,7 @@ export function EvidenceEventDetailPage() {
     description: event?.event.summary || "A published event record with explicitly linked articles and source documents.",
     canonicalPath: event ? `/events/${eventId}` : undefined,
     robots: event ? "index, follow" : "noindex, follow",
+    structuredData: event ? eventStructuredData(eventId, event) : undefined,
   });
 
   if (!Number.isInteger(eventId) || eventId <= 0) {
@@ -516,6 +584,7 @@ export function EvidenceSourceDetailPage() {
       : "A source document record and its explicitly linked published events and articles.",
     canonicalPath: source ? `/sources/${sourceId}` : undefined,
     robots: source ? "index, follow" : "noindex, follow",
+    structuredData: data && source ? sourceStructuredData(sourceId, data) : undefined,
   });
 
   if (!Number.isInteger(sourceId) || sourceId <= 0) {
