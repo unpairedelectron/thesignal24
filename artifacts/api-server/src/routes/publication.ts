@@ -505,6 +505,14 @@ router.get("/archive", async (req, res, next) => {
   }
 });
 
+/**
+ * Static web pages the API cannot discover from the database. Mirrors the ids in
+ * artifacts/signal24/src/lib/answers.ts and the profiled states in lib/states.ts;
+ * update both together. State pages without a profile are noindex and stay out.
+ */
+const SITEMAP_ANSWER_IDS = ["get-a-caste-certificate", "how-to-file-an-rti", "rti-no-reply", "what-rti-can-refuse", "who-decides-reservation", "creamy-layer", "ews-eligibility", "fifty-percent-ceiling", "reservation-in-promotions", "stay-vs-struck-down", "file-a-pil", "read-a-judgment", "how-a-bill-becomes-law", "ordinance", "find-the-gazette", "ask-your-mp", "caste-census-when", "find-government-data", "complain-about-a-government-service", "report-caste-discrimination"];
+const SITEMAP_STATE_SLUGS = ["andhra-pradesh", "bihar", "maharashtra", "punjab", "tamil-nadu"];
+
 router.get("/sitemap.xml", async (_req, res, next) => {
   try {
     const [results, policyResults, eventResults, eventSourceResults, articleSourceResults] =
@@ -597,6 +605,11 @@ router.get("/sitemap.xml", async (_req, res, next) => {
       { path: "/editorial-standards", hi: true },
       { path: "/methodology", hi: true },
       { path: "/authors/signal-24", hi: true },
+      { path: "/answers", hi: true },
+      ...SITEMAP_ANSWER_IDS.map((id) => ({ path: `/answers/${id}`, hi: true })),
+      { path: "/states", lastmod: storiesLastmod, hi: true },
+      ...SITEMAP_STATE_SLUGS.map((slug) => ({ path: `/state/${slug}`, lastmod: storiesLastmod, hi: true })),
+      { path: "/community", hi: true },
       ...Array.from(topicLastmod, ([topic, lastmod]) => ({
         path: `/topics/${encodeURIComponent(topic)}`,
         lastmod,

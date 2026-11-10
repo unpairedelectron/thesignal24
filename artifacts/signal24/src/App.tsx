@@ -1003,9 +1003,7 @@ function TimelinePage() {
   const label = useLabel();
   const archiveParams = useMemo(() => ({ limit: 100 }), []);
   const policyParams = useMemo<GetPoliciesParams>(() => ({ limit: 100 }), []);
-  const archiveQuery = useLocalizedArchive(archiveParams, {
-    query: { queryKey: getGetArchiveQueryKey(archiveParams) },
-  });
+  const eventsQuery = useGetEvidenceEvents(archiveParams, { query: { queryKey: getGetEvidenceEventsQueryKey(archiveParams), staleTime: 60_000 } });
   const policyQuery = useGetPolicies(policyParams, {
     query: { queryKey: getGetPoliciesQueryKey(policyParams) },
   });
@@ -1022,19 +1020,20 @@ function TimelinePage() {
       source: record.authority,
       href: record.canonicalPath,
     }));
-    const storyEntries = (archiveQuery.data?.stories ?? [])
-      .filter((story) => story.workflowStatus === 'published' && Boolean(story.publishedOn ?? story.recordDate))
-      .map((story) => ({
-        id: `story-${story.id}`,
-        date: story.publishedOn ?? story.recordDate!,
-        dateLabel: story.publishedOn ? 'Signal 24 publication date' : t("Record date / as supplied", "रिकॉर्ड तिथि / जैसी दी गई"),
+    // Evidence events carry the real dates (1951 onwards); records are reachable from each event.
+    const eventEntries = (eventsQuery.data?.events ?? [])
+      .filter((item) => Boolean(item.event.recordDate))
+      .map((item) => ({
+        id: `event-${item.event.id}`,
+        date: item.event.recordDate!,
+        dateLabel: t('Date of the event', 'घटना की तारीख़'),
         kind: 'record' as const,
-        visual: imageForStory(story),
-        label: `${label(story.kind)} / ${verificationLabel(story.verificationStatus)}`,
-        title: story.title,
-        summary: story.dek,
-        source: `${story.source} · ${story.sourceUrl ? 'Direct source available' : 'Direct source unavailable'} · ${story.sourceCount ?? 0} sources · ${story.eventCount ?? 0} events`,
-        href: storyPath(story),
+        visual: imageForText(`${item.event.title} ${item.event.summary}`) ?? illustration(TOPIC_ILLUSTRATION[item.event.topic] ?? 'magnifier-hero'),
+        label: `${label(item.event.topic)} / ${t('Evidence event', 'सबूत घटना')}`,
+        title: item.event.title,
+        summary: item.event.summary,
+        source: [...item.primarySources, ...item.secondarySources].map((source) => source.publisher).slice(0, 2).join(' · ') + ` · ${t(`${item.articleCount} linked records`, `${item.articleCount} जुड़े रिकॉर्ड`)}`,
+        href: `/events/${item.event.id}`,
       }));
     const leadEntries = FOCUS_SOURCES.map((source, index) => ({
       id: `lead-${index}`,
@@ -1048,10 +1047,10 @@ function TimelinePage() {
       source: `${source.publisher} · ${source.place}`,
       href: source.href,
     }));
-    return [...policyEntries, ...storyEntries, ...leadEntries]
+    return [...policyEntries, ...eventEntries, ...leadEntries]
       .filter((entry) => entry.date && !Number.isNaN(Date.parse(entry.date)))
       .sort((a, b) => b.date.localeCompare(a.date));
-  }, [archiveQuery.data, policyQuery.data]);
+  }, [eventsQuery.data, policyQuery.data, label, t]);
   useSeo({
     title: t("Timeline — The Signal 24", "समयरेखा — द सिग्नल 24"),
     description: t("A dated index of policy changes, court rulings and Signal 24 records, with outside leads labelled separately.", "नीतिगत बदलावों, अदालती फ़ैसलों और द सिग्नल 24 के रिकॉर्ड की तारीख़वार सूची, बाहरी सुराग अलग से चिह्नित।"),
@@ -1061,20 +1060,23 @@ function TimelinePage() {
       breadcrumbNode('/timeline', [['Timeline', '/timeline']]),
     ),
   });
-  const hasError = archiveQuery.isError || policyQuery.isError;
-  const loading = archiveQuery.isLoading || policyQuery.isLoading;
+  const hasError = eventsQuery.isError || policyQuery.isError;
+  const loading = eventsQuery.isLoading || policyQuery.isLoading;
+  const decades = [...new Set(entries.map((entry) => `${entry.date.slice(0, 3)}0`))].sort();
   return <main className="signal-page"><Header />
     <section className="signal-container pt-14 sm:pt-24">
       <p className="signal-kicker text-accent">{t("The Signal 24 / timeline", "द सिग्नल 24 / समयरेखा")}</p>
-      <h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.88] tracking-[-.06em] sm:text-8xl">{t("Dates with", "तारीख़ें,")}<br /><em className="font-normal text-accent">{t("their record type.", "रिकॉर्ड के प्रकार के साथ।")}</em></h1>
+      <h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.88] tracking-[-.06em] sm:text-8xl">{t("Seventy-five years,", "पचहत्तर साल,")}<br /><em className="font-normal text-accent">{t("in the order it happened.", "उसी क्रम में जैसे हुआ।")}</em></h1>
       <p className="mt-7 max-w-2xl text-lg leading-relaxed text-muted-foreground">{t("An index of dated records, not a complete history. Governments prefer announcements to dates; we prefer dates. Effective dates, publication dates and outside leads are labelled separately, and a headline is never treated as a court finding.", "तारीख़वार रिकॉर्ड की सूची, पूरा इतिहास नहीं। सरकारों को घोषणाएँ पसंद हैं, हमें तारीख़ें। लागू होने की तिथि, प्रकाशन तिथि और बाहरी सुराग अलग-अलग चिह्नित हैं, और किसी सुर्ख़ी को कभी अदालत का निष्कर्ष नहीं माना जाता।")}</p>
     </section>
     <section className="signal-container mt-12 pb-12 sm:mt-16 sm:pb-16">
       {hasError && <p className="signal-note mb-5 p-4 text-sm text-muted-foreground" role="status">{t("Some source lists did not load. The dates below come only from the lists that did.", "कुछ स्रोत सूचियाँ लोड नहीं हुईं। नीचे की तारीख़ें सिर्फ़ उन्हीं सूचियों से हैं जो लोड हुईं।")}</p>}
       {loading ? <LoadingBlock label={t("Assembling dated source entries…", "तारीख़वार प्रविष्टियाँ तैयार हो रही हैं…")} /> :
         !entries.length ? <EmptyState title={t("No dated entries are available.", "कोई तारीख़वार प्रविष्टि उपलब्ध नहीं।")} text={t("The timeline only uses dates attached to published records or attributed external sources.", "समयरेखा सिर्फ़ प्रकाशित रिकॉर्ड या नामित बाहरी स्रोतों से जुड़ी तारीख़ों का इस्तेमाल करती है।")} /> :
+          <>
+          <nav className="timeline-decades" aria-label={t('Jump to a decade', 'दशक पर जाएँ')}>{decades.map((decade) => <a key={decade} href={`#decade-${decade}`}>{decade}s</a>)}</nav>
           <div className="border-t-2 border-foreground">
-            {entries.map((entry) => <article key={entry.id} className="timeline-visual-entry" data-testid={`timeline-entry-${entry.id}`}>
+            {entries.map((entry, index) => <article key={entry.id} id={index === entries.findIndex((item) => item.date.slice(0, 3) === entry.date.slice(0, 3)) ? `decade-${entry.date.slice(0, 3)}0` : undefined} className="timeline-visual-entry" data-testid={`timeline-entry-${entry.id}`}>
               <time className="font-display text-2xl leading-tight" dateTime={entry.date}>{formatDate(entry.date)}<span className="mt-2 block signal-kicker text-muted-foreground">{entry.dateLabel}</span></time>
               <span className="timeline-dot hidden md:block" />
               <div className="timeline-visual-thumb">{entry.visual ? <img src={entry.visual.src} alt={entry.visual.alt} width={entry.visual.width} height={entry.visual.height} loading="lazy" /> : <div className="story-art-placeholder flex h-full min-h-[140px] items-center justify-center p-5 text-center"><p className="signal-kicker text-accent">{t("No relevant archive image available", "कोई प्रासंगिक अभिलेख चित्र उपलब्ध नहीं")}</p></div>}</div>
@@ -1086,7 +1088,8 @@ function TimelinePage() {
                 <p className="mt-3 signal-kicker text-accent">{entry.kind === 'lead' ? 'External lead / verify source' : 'View evidence →'}</p>
               </div>
             </article>)}
-          </div>}
+          </div>
+          </>}
       <p className="mt-5 signal-kicker text-muted-foreground">{t("Outside leads are not Signal 24 reporting. Check the court’s own order before relying on any reported update.", "बाहरी सुराग द सिग्नल 24 की रिपोर्टिंग नहीं हैं। किसी ख़बर पर भरोसा करने से पहले अदालत का अपना आदेश देखें।")}</p>
     </section>
   </main>;

@@ -153,6 +153,25 @@ export const ANSWERS: Answer[] = [
     related: ['creamy-layer'],
   },
   {
+    id: 'get-a-caste-certificate',
+    category: 'reservation',
+    question: { en: 'How do I get a caste certificate?', hi: 'जाति प्रमाणपत्र कैसे बनवाएँ?' },
+    short: {
+      en: 'Caste certificates are issued by your state’s revenue authorities, usually a Tehsildar, Sub-Divisional Magistrate or other designated officer, and most states now take applications through their online public-service portals. You typically need proof of residence and proof of your family’s caste, such as a parent’s certificate or school records. For central jobs and institutions, OBC candidates need the certificate in the central format, which also covers non-creamy-layer status.',
+      hi: 'जाति प्रमाणपत्र आपके राज्य के राजस्व अधिकारी जारी करते हैं, आम तौर पर तहसीलदार, उप-मंडल मजिस्ट्रेट या कोई और नामित अधिकारी, और ज़्यादातर राज्य अब अपने ऑनलाइन जन-सेवा पोर्टलों से आवेदन लेते हैं। आम तौर पर निवास का सबूत और परिवार की जाति का सबूत चाहिए, जैसे माता-पिता का प्रमाणपत्र या स्कूल रिकॉर्ड। केंद्र की नौकरियों और संस्थानों के लिए ओबीसी उम्मीदवारों को केंद्रीय प्रारूप में प्रमाणपत्र चाहिए, जिसमें नॉन-क्रीमी लेयर स्थिति भी शामिल होती है।',
+    },
+    truth: {
+      en: 'The rules are the state’s; the delays are the applicant’s problem. Verification can take weeks, and a certificate in the wrong format or from the wrong year is a common reason applications are rejected. Apply long before any deadline.',
+      hi: 'नियम राज्य के हैं; देरी उम्मीदवार की समस्या बन जाती है। सत्यापन में हफ़्ते लग सकते हैं, और ग़लत प्रारूप या ग़लत साल का प्रमाणपत्र आवेदन ख़ारिज होने का आम कारण है। किसी भी समय-सीमा से बहुत पहले आवेदन कीजिए।',
+    },
+    steps: {
+      en: ['Find your state’s online service portal or visit the Tehsil office.', 'Gather proof of residence and of your family’s caste (a parent’s certificate is the strongest).', 'Ask which format you need: state or central. They are not interchangeable.', 'Keep the application number; if it stalls past the state’s service guarantee period, escalate in writing.'],
+      hi: ['अपने राज्य का ऑनलाइन सेवा पोर्टल ढूँढ़िए या तहसील कार्यालय जाइए।', 'निवास और परिवार की जाति का सबूत जुटाइए (माता-पिता का प्रमाणपत्र सबसे मज़बूत है)।', 'पूछिए कि कौन-सा प्रारूप चाहिए: राज्य या केंद्रीय। दोनों एक-दूसरे की जगह नहीं चलते।', 'आवेदन संख्या सँभालिए; अगर राज्य की सेवा गारंटी अवधि से ज़्यादा अटके, तो लिखित में ऊपर शिकायत कीजिए।'],
+    },
+    sources: [DOPT, { name: 'National Commission for Backward Classes', url: 'https://ncbc.nic.in/' }],
+    related: ['creamy-layer', 'ews-eligibility'],
+  },
+  {
     id: 'fifty-percent-ceiling',
     category: 'reservation',
     question: { en: 'Can reservation go above 50%?', hi: 'क्या आरक्षण 50% से ऊपर जा सकता है?' },
