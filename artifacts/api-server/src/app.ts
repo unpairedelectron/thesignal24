@@ -33,6 +33,12 @@ app.use(
     },
   }),
 );
+// The API artifact is mounted at /api, and the deployment platform probes that
+// base path during startup. Keep this health response public and ahead of Clerk
+// so readiness checks do not receive an editor-auth response.
+app.get("/", (_req, res) => {
+  res.json({ status: "ok" });
+});
 app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
 // The web app and API are published under the same origin. Do not reflect
 // arbitrary origins; same-origin browser requests do not require CORS headers.
