@@ -2,6 +2,7 @@ import app from "./app";
 import { logger } from "./lib/logger";
 import { ensureSeedData } from "./lib/seed";
 import { ensureContentPack } from "./lib/content-pack";
+import { ensureEvidencePack } from "./lib/evidence-pack";
 
 const rawPort = process.env["PORT"];
 
@@ -28,6 +29,7 @@ server.on("error", (error) => {
 
 ensureSeedData()
   .then(() => ensureContentPack())
+  .then(() => ensureEvidencePack())
   .then(() => {
     logger.info("Publication data initialized");
   })
