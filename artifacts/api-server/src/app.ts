@@ -33,6 +33,12 @@ app.use(
     },
   }),
 );
+// Deployment healthchecks probe /api and /api/healthz. Answer them before any
+// auth middleware: a missing or misconfigured Clerk key must not take the
+// whole API (and therefore every publish) down with a 500.
+app.get(["/api", "/api/healthz"], (_req, res) => {
+  res.json({ status: "ok" });
+});
 app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
 // The web app and API are published under the same origin. Do not reflect
 // arbitrary origins; same-origin browser requests do not require CORS headers.
