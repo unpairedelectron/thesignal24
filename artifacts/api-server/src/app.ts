@@ -33,15 +33,12 @@ app.use(
     },
   }),
 );
-// The deployment platform probes the API artifact's /api base path during
-// startup. Keep both the artifact path and its stripped form public and ahead
-// of Clerk so readiness checks do not receive an editor-auth response.
-const healthResponse = (_req: express.Request, res: express.Response) => {
+// Deployment healthchecks probe /api and /api/healthz. Answer them before any
+// auth middleware: a missing or misconfigured Clerk key must not take the
+// whole API (and therefore every publish) down with a 500.
+app.get(["/api", "/api/healthz"], (_req, res) => {
   res.json({ status: "ok" });
-};
-app.get("/", healthResponse);
-app.get("/api", healthResponse);
-app.get("/api/", healthResponse);
+});
 app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
 // The web app and API are published under the same origin. Do not reflect
 // arbitrary origins; same-origin browser requests do not require CORS headers.
