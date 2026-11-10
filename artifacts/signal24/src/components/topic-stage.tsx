@@ -71,14 +71,14 @@ export function TopicHero({ kicker, back, headline, accent, standfirst, stats, i
       </div>
       <div className="topic-exhibit-scene">
         <motion.div className="topic-exhibit" style={reduce ? undefined : { rotateX, rotateY }} initial={reduce ? false : { opacity: 0, rotateY: -35, z: -200 }} animate={{ opacity: 1, rotateY: 0, z: 0 }} transition={{ delay: 0.25, duration: 1.2, ease: EASE }}>
-          {exhibits.slice(0, 2).map((exhibit, index) => <div key={exhibit.title} className="topic-exhibit-paper" style={{ ['--depth' as string]: index + 1 }}>
+          {exhibits.slice(0, 2).map((exhibit, index) => <div key={exhibit.title} className="topic-exhibit-paper" aria-hidden="true" style={{ ['--depth' as string]: index + 1 }}>
             <span className="topic-exhibit-meta">{exhibit.meta}</span>
             <span lang={exhibit.lang} className="topic-exhibit-title">{exhibit.title}</span>
           </div>)}
           <figure className="topic-exhibit-frame">
             <img src={`${basePath}/illustrations/${illustration}.svg`} alt={illustrationAlt} width={1600} height={900} decoding="async" fetchPriority="high" />
           </figure>
-          <span className="topic-exhibit-stamp">{exhibits.length ? t('On the record', 'रिकॉर्ड पर') : t('Awaiting records', 'रिकॉर्ड की प्रतीक्षा')}</span>
+          <span className="topic-exhibit-stamp" aria-hidden="true">{exhibits.length ? t('On the record', 'रिकॉर्ड पर') : t('Awaiting records', 'रिकॉर्ड की प्रतीक्षा')}</span>
         </motion.div>
         <div className="stage-pedestal" aria-hidden="true" />
       </div>

@@ -48,10 +48,11 @@ function FigureCard({ figure, index }: { figure: KeyFigure; index: number }) {
 /** The numbers the reservation debate turns on, each with its frame attached. */
 export function KeyFigures({ limit, ids }: { limit?: number; ids?: string[] }) {
   const t = useT();
+  const lang = useLang();
   const selected = ids ? ids.map((id) => KEY_FIGURES.find((figure) => figure.id === id)).filter((figure): figure is KeyFigure => Boolean(figure)) : KEY_FIGURES;
   const figures = limit ? selected.slice(0, limit) : selected;
   return <div>
     <div className="figure-grid">{figures.map((figure, index) => <FigureCard key={figure.id} figure={figure} index={index} />)}</div>
-    <p className="mt-4 signal-kicker text-muted-foreground">{t('Every figure: value, unit, year, geography, definition, source. Last checked', 'हर आंकड़ा: मान, इकाई, वर्ष, भूगोल, परिभाषा, स्रोत। आख़िरी जाँच')} {new Date(`${KEY_FIGURES_CHECKED_ON}T12:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+    <p className="mt-4 signal-kicker text-muted-foreground">{t('Every figure: value, unit, year, geography, definition, source. Last checked', 'हर आंकड़ा: मान, इकाई, वर्ष, भूगोल, परिभाषा, स्रोत। आख़िरी जाँच')} {new Date(`${KEY_FIGURES_CHECKED_ON}T12:00:00`).toLocaleDateString(lang === 'hi' ? 'hi-IN' : 'en-IN', { day: 'numeric', month: 'short', year: 'numeric', numberingSystem: 'latn' } as Intl.DateTimeFormatOptions)}</p>
   </div>;
 }

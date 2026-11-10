@@ -78,14 +78,14 @@ export function CeilingChart() {
       <li><span className="ceiling-swatch is-struck-down" /> {statusText('struck-down')}</li>
       <li><span className="ceiling-swatch is-line" /> {t('50% ceiling, Indra Sawhney (1992)', '50% सीमा, इंद्रा साहनी (1992)')}</li>
     </ul>
-    {view === 'chart' ? <div className="ceiling-plot" role="img" aria-label={CEILING_ROWS.map((row) => `${row.label[lang]} ${row.value}% (${statusText(row.status)})`).join('; ')}>
+    {view === 'chart' ? <div className="ceiling-plot" role="group" aria-labelledby="ceiling-chart-title">
       <div className="ceiling-line" style={{ left: `${(50 / max) * 100}%` }}><span>50%</span></div>
-      {CEILING_ROWS.map((row, index) => <div key={row.id} className={`ceiling-row ${hover && hover !== row.id ? 'is-dim' : ''}`} onPointerEnter={() => setHover(row.id)} onPointerLeave={() => setHover(null)}>
-        <div className="ceiling-row-label"><span className="ceiling-row-name">{row.label[lang]}</span><span className="ceiling-row-year">{row.year}</span></div>
-        <div className="ceiling-track">
+      {CEILING_ROWS.map((row, index) => <div key={row.id} className={`ceiling-row ${hover && hover !== row.id ? 'is-dim' : ''}`} tabIndex={0} role="group" aria-label={`${row.label[lang]}, ${row.year}: ${row.value}%, ${statusText(row.status)}. ${row.note[lang]}`} onPointerEnter={() => setHover(row.id)} onPointerLeave={() => setHover(null)} onFocus={() => setHover(row.id)} onBlur={() => setHover(null)}>
+        <div className="ceiling-row-label" aria-hidden="true"><span className="ceiling-row-name">{row.label[lang]}</span><span className="ceiling-row-year">{row.year}</span></div>
+        <div className="ceiling-track" aria-hidden="true">
           <motion.span className={`ceiling-bar is-${row.status}`} initial={reduce ? false : { width: 0 }} whileInView={{ width: `${(row.value / max) * 100}%` }} style={reduce ? { width: `${(row.value / max) * 100}%` } : undefined} viewport={{ once: true }} transition={{ delay: index * 0.12, duration: 1, ease: EASE }} />
           <span className="ceiling-value">{row.value}% <em>{statusText(row.status)}</em></span>
-          {hover === row.id && <span className="ceiling-tip" role="tooltip">{row.note[lang]}</span>}
+          {hover === row.id && <span className="ceiling-tip" aria-hidden="true">{row.note[lang]}</span>}
         </div>
       </div>)}
       <div className="ceiling-axis" aria-hidden="true">{[0, 20, 40, 60, 80].map((tick) => <span key={tick} style={{ left: `${(tick / max) * 100}%` }}>{tick}%</span>)}</div>

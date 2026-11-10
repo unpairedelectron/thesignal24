@@ -744,7 +744,7 @@
 .stage-live-dot { width: .5rem; height: .5rem; border-radius: 999px; background: hsl(var(--stage-rust)); box-shadow: 0 0 0 0 hsl(var(--stage-rust) / .7); animation: stage-pulse 2.2s infinite; }
 @keyframes stage-pulse { 0% { box-shadow: 0 0 0 0 hsl(var(--stage-rust) / .7); } 70% { box-shadow: 0 0 0 .7rem hsl(var(--stage-rust) / 0); } 100% { box-shadow: 0 0 0 0 hsl(var(--stage-rust) / 0); } }
 .stage-title { margin-top: 1.1rem; font-family: 'Fraunces', 'Noto Serif Devanagari', Georgia, serif; font-weight: 600; font-size: clamp(3.4rem, 10vw, 8.4rem); line-height: .86; letter-spacing: -.055em; perspective: 40rem; text-wrap: balance; }
-.stage-word-mask { display: inline-block; overflow: hidden; padding: 0 .02em .1em; margin: 0 .2em -.1em 0; vertical-align: top; }
+.stage-word-mask { display: inline-block; overflow: hidden; padding: 0 .12em .1em .02em; margin: 0 .02em -.1em 0; vertical-align: top; }
 .stage-word { display: inline-block; transform-origin: 50% 100%; will-change: transform; }
 .stage-word.is-accent { font-style: italic; font-weight: 500; color: hsl(var(--stage-rust)); text-shadow: 0 0 2.5rem hsl(var(--stage-rust) / .35); }
 .stage-dek { margin-top: 1.6rem; max-width: 34rem; font-size: 1.02rem; line-height: 1.75; color: hsl(var(--stage-paper) / .72); }
@@ -783,11 +783,11 @@
 .stage-clock { flex: 1; display: grid; grid-template-columns: auto 1fr; column-gap: .8rem; align-items: baseline; padding: 1.1rem 1.2rem; background: hsl(24 22% 8% / .92); transition: background .25s; }
 .stage-clock:hover { background: hsl(8 40% 14%); }
 .stage-clock-value { font-family: 'Fraunces', Georgia, serif; font-weight: 600; font-size: clamp(2.2rem, 4vw, 3rem); line-height: 1; letter-spacing: -.04em; color: hsl(var(--stage-paper)); font-variant-numeric: tabular-nums; }
-.stage-clock-unit { font-family: var(--app-font-mono); font-size: .62rem; letter-spacing: .14em; text-transform: uppercase; color: hsl(var(--stage-rust)); }
+.stage-clock-unit { font-family: var(--app-font-mono); font-size: .62rem; letter-spacing: .14em; text-transform: uppercase; color: hsl(8 78% 68%); }
 .stage-clock-label { grid-column: 1 / -1; margin-top: .5rem; font-size: .8rem; line-height: 1.45; color: hsl(var(--stage-paper) / .62); }
-.stage-marquee { position: relative; z-index: 2; margin-top: 2.2rem; overflow: hidden; border-top: 1px solid hsl(var(--stage-paper) / .14); background: hsl(var(--stage-rust)); color: hsl(var(--stage-paper)); }
+.stage-marquee { position: relative; z-index: 2; margin-top: 2.2rem; overflow: hidden; border-top: 1px solid hsl(var(--stage-paper) / .14); background: hsl(8 62% 32%); color: hsl(var(--stage-paper)); }
 .stage-marquee-track { display: flex; width: max-content; gap: 3rem; padding: .7rem 0; white-space: nowrap; font-size: .82rem; animation: stage-marquee 80s linear infinite; }
-.stage-marquee-track b { margin-right: .5rem; font-family: var(--app-font-mono); font-size: .6rem; letter-spacing: .14em; text-transform: uppercase; font-weight: 500; opacity: .75; }
+.stage-marquee-track b { margin-right: .5rem; font-family: var(--app-font-mono); font-size: .6rem; letter-spacing: .14em; text-transform: uppercase; font-weight: 600; color: hsl(var(--stage-paper)); padding: .15rem .4rem; border: 1px solid hsl(var(--stage-paper) / .5); }
 .stage-marquee:hover .stage-marquee-track { animation-play-state: paused; }
 @keyframes stage-marquee { to { transform: translateX(-50%); } }
 
@@ -870,7 +870,7 @@
   transform: translateZ(calc(var(--depth) * -3.5rem)) translate(calc(var(--depth) * 2.4rem), calc(var(--depth) * -2.2rem)) rotate(calc(var(--depth) * 3deg)); right: -.5rem; top: -1rem; }
 .topic-exhibit-meta { display: block; font-family: var(--app-font-mono); font-size: .54rem; letter-spacing: .12em; text-transform: uppercase; color: hsl(var(--stage-rust)); }
 .topic-exhibit-title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: .35rem; font-family: 'Fraunces', 'Noto Serif Devanagari', Georgia, serif; font-weight: 600; font-size: .95rem; line-height: 1.2; }
-.topic-exhibit-stamp { position: absolute; left: -.6rem; bottom: -1.2rem; padding: .45rem .7rem; border: 3px solid hsl(var(--stage-rust)); color: hsl(var(--stage-rust)); background: hsl(42 44% 95% / .92); font-family: var(--app-font-mono); font-weight: 600; font-size: .7rem; letter-spacing: .18em; text-transform: uppercase; transform: translateZ(4.5rem) rotate(-8deg); }
+.topic-exhibit-stamp { position: absolute; left: -.6rem; bottom: -1.2rem; padding: .45rem .7rem; border: 3px solid hsl(8 66% 36%); color: hsl(8 66% 36%); background: hsl(42 44% 96%); font-family: var(--app-font-mono); font-weight: 600; font-size: .7rem; letter-spacing: .18em; text-transform: uppercase; transform: translateZ(4.5rem) rotate(-8deg); }
 @media (max-width: 1023px) { .topic-exhibit-scene { height: 18rem; margin-top: 1rem; } }
 @media (max-width: 640px) { .topic-stage-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .topic-stage { padding: 3.5rem 0 3rem; } .topic-exhibit-scene { height: 13rem; } .topic-exhibit-paper { display: none; } }
 
@@ -1025,6 +1025,10 @@
 @media (max-width: 640px) { .ceiling-table th:last-child, .ceiling-table td:last-child { display: none; } }
 .demand-status:lang(hi), .demand-days > span:last-child:lang(hi), .demand-hint:lang(hi), .demand-sources a:lang(hi), .ceiling-chart-toggle button:lang(hi), .ceiling-value em:lang(hi), .ceiling-table th:lang(hi), .data-gap-days small:lang(hi) { font-family: 'Noto Sans Devanagari', var(--app-font-mono); text-transform: none; font-size: .74rem; }
 .demand-question:lang(hi), .demand-ask:lang(hi) { font-family: 'Noto Serif Devanagari', serif; line-height: 1.45; }
+
+/* Accent text on the front page's dark panels (lead story, opinion, in depth) needs a lighter step to stay legible. */
+html:not(.dark) :is(.visual-hero-copy, .bg-primary) .text-accent { color: hsl(8 78% 68%); }
+html:not(.dark) :is(.visual-hero-copy, .bg-primary) .signal-status-badge { color: hsl(var(--primary-foreground)); border-color: hsl(var(--primary-foreground) / .45); }
 
 /* ==========================================================================
    Devanagari typography (Hindi edition)
