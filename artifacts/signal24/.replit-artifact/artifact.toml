@@ -20,6 +20,26 @@ serve = "static"
 publicDir = "artifacts/signal24/dist/public"
 
 [[services.production.rewrites]]
+from = "/hi"
+to = "/hi/index.html"
+
+[[services.production.rewrites]]
+from = "/states"
+to = "/states/index.html"
+
+[[services.production.rewrites]]
+from = "/hi/states"
+to = "/hi/states/index.html"
+
+[[services.production.rewrites]]
+from = "/state/*"
+to = "/state/*/index.html"
+
+[[services.production.rewrites]]
+from = "/hi/state/*"
+to = "/hi/state/*/index.html"
+
+[[services.production.rewrites]]
 from = "/*"
 to = "/index.html"
 
