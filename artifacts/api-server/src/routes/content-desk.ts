@@ -400,7 +400,10 @@ export function createContentDeskRouter(
   museumClient: ArtInstituteClient = artInstituteClient,
 ): IRouter {
   const router: IRouter = Router();
-  router.use(editorGuard);
+  // Every route here lives under /editor. Scope the guard to that prefix: this router
+  // is mounted before the community and newsletter routers, and an unscoped guard
+  // blocked those public endpoints for every visitor.
+  router.use("/editor", editorGuard);
 
   async function currentSourceImage(
     candidate: ContentImageCandidate,
