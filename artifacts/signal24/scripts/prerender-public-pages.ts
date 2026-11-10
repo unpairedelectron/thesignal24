@@ -16,6 +16,22 @@ function escapeJsonLd(value: unknown) {
   return JSON.stringify(value).replaceAll('<', '\\u003c').replaceAll('>', '\\u003e').replaceAll('&', '\\u0026');
 }
 
+function renderArticleBody(markdown: string) {
+  const inline = (value: string) => escapeHtml(value)
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>');
+  const blocks = markdown.split(/\n{2,}/).map((block) => block.trim()).filter(Boolean);
+  return blocks.map((block) => {
+    if (block.startsWith('## ')) return `<h2>${inline(block.slice(3))}</h2>`;
+    if (block.startsWith(':::')) return '';
+    const lines = block.split('\n');
+    if (lines.every((line) => line.startsWith('- '))) {
+      return `<ul>${lines.map((line) => `<li>${inline(line.slice(2))}</li>`).join('')}</ul>`;
+    }
+    return `<p>${lines.map(inline).join('<br />')}</p>`;
+  }).join('\n');
+}
+
 function htmlDocument({
   path: routePath,
   lang,
@@ -23,6 +39,7 @@ function htmlDocument({
   description,
   content,
   structuredData,
+  translated = true,
 }: {
   path: string;
   lang: 'en' | 'hi';
@@ -30,6 +47,7 @@ function htmlDocument({
   description: string;
   content: string;
   structuredData: Record<string, unknown>;
+  translated?: boolean;
 }) {
   const canonical = `${origin}${routePath}`;
   const htmlLang = lang === 'hi' ? 'hi-IN' : 'en-IN';
@@ -46,7 +64,7 @@ function htmlDocument({
     .replace(/<meta property="og:url" content="[^"]*"\s*\/>/, `<meta property="og:url" content="${escapeHtml(canonical)}" />`)
     .replace(/<meta name="twitter:title" content="[^"]*"\s*\/>/, `<meta name="twitter:title" content="${escapeHtml(title)}" />`)
     .replace(/<meta name="twitter:description" content="[^"]*"\s*\/>/, `<meta name="twitter:description" content="${escapeHtml(description)}" />`)
-    .replace('</head>', `  <link rel="canonical" href="${escapeHtml(canonical)}" />\n  <link rel="alternate" hreflang="en-IN" href="${escapeHtml(`${origin}${enPath}`)}" />\n  <link rel="alternate" hreflang="hi-IN" href="${escapeHtml(`${origin}${hiPath}`)}" />\n  <link rel="alternate" hreflang="x-default" href="${escapeHtml(`${origin}${enPath}`)}" />\n  <script type="application/ld+json">${escapeJsonLd(structuredData)}</script>\n  </head>`)
+    .replace('</head>', `  <link rel="canonical" href="${escapeHtml(canonical)}" />\n${translated ? `  <link rel="alternate" hreflang="en-IN" href="${escapeHtml(`${origin}${enPath}`)}" />\n  <link rel="alternate" hreflang="hi-IN" href="${escapeHtml(`${origin}${hiPath}`)}" />\n  <link rel="alternate" hreflang="x-default" href="${escapeHtml(`${origin}${enPath}`)}" />\n` : ''}  <script type="application/ld+json">${escapeJsonLd(structuredData)}</script>\n  </head>`)
     .replace('<div id="root"></div>', `<div id="root">${content}</div>`);
   return document;
 }
@@ -157,4 +175,117 @@ for (const lang of ['en', 'hi'] as const) {
 }
 
 await Promise.all(jobs);
-console.log(`Prerendered ${jobs.length} bilingual public pages (home, states index, and ${REGIONS.length} state profiles).`);
+const apiBase = (process.env.PRERENDER_API_URL || 'http://127.0.0.1:8080/api').replace(/\/$/, '');
+const archiveResponse = await fetch(`${apiBase}/archive?limit=100`);
+if (!archiveResponse.ok) {
+  throw new Error(`Story prerender requires a reachable public archive API; ${archiveResponse.status} from ${apiBase}/archive.`);
+}
+const archive = await archiveResponse.json() as { stories?: Array<{
+  canonicalPath: string;
+  title: string;
+  dek: string;
+  body: string;
+  source: string;
+  sourceUrl: string;
+  publishedOn: string;
+  articlePublishedAt: string | null;
+  workflowStatus: string;
+  indexable: boolean;
+  verificationStatus: string;
+  hi?: { title?: string; dek?: string; body?: string; eyebrow?: string } | null;
+}> };
+const stories = (archive.stories ?? []).filter((story) => story.workflowStatus === 'published' && story.indexable && story.canonicalPath.startsWith('/'));
+for (const story of stories) {
+  const editions = [
+    { lang: 'en' as const, path: story.canonicalPath, title: story.title, description: story.dek, body: story.body },
+    ...(story.hi?.title && story.hi.dek && story.hi.body
+      ? [{ lang: 'hi' as const, path: `/hi${story.canonicalPath}`, title: story.hi.title, description: story.hi.dek, body: story.hi.body }]
+      : []),
+  ];
+  for (const edition of editions) {
+    const publicationDate = story.articlePublishedAt ?? story.publishedOn;
+    const imageUrl = `${origin}/images/og-default.jpg`;
+    const articleContent = `<main lang="${edition.lang}" style="max-width:60rem;margin:0 auto;padding:2rem 1rem;font-family:Georgia,serif;line-height:1.75;color:#202b35"><article><header><p>${edition.lang === 'hi' ? 'द सिग्नल 24 / स्रोत-आधारित रिकॉर्ड' : 'The Signal 24 / source-linked record'}</p><h1>${escapeHtml(edition.title)}</h1><p>${escapeHtml(edition.description)}</p><p>${escapeHtml(publicationDate)} · ${escapeHtml(story.verificationStatus)}</p></header><div>${renderArticleBody(edition.body)}</div><p><a href="${escapeHtml(story.sourceUrl)}" rel="noopener noreferrer">${edition.lang === 'hi' ? 'मूल स्रोत खोलें' : 'Open the original source'}: ${escapeHtml(story.source)}</a></p></article></main>`;
+    jobs.push(writeRoute(edition.path, htmlDocument({
+      path: edition.path,
+      lang: edition.lang,
+      title: `${edition.title} — ${edition.lang === 'hi' ? 'द सिग्नल 24' : 'The Signal 24'}`,
+      description: edition.description,
+      content: articleContent,
+      translated: editions.length > 1,
+      structuredData: {
+        '@context': 'https://schema.org',
+        '@type': 'NewsArticle',
+        headline: edition.title,
+        description: edition.description,
+        url: `${origin}${edition.path}`,
+        image: imageUrl,
+        datePublished: publicationDate,
+        dateModified: publicationDate,
+        inLanguage: edition.lang === 'hi' ? 'hi-IN' : 'en-IN',
+        isAccessibleForFree: true,
+        citation: story.sourceUrl,
+        publisher: { '@type': 'Organization', name: 'The Signal 24', url: origin },
+      },
+    })));
+  }
+}
+const policyResponse = await fetch(`${apiBase}/policies?limit=100`);
+if (!policyResponse.ok) {
+  throw new Error(`Story prerender requires policy records too; ${policyResponse.status} from ${apiBase}/policies.`);
+}
+const policyPayload = await policyResponse.json() as { records?: Array<{
+  canonicalPath: string;
+  title: string;
+  summary: string;
+  authority: string;
+  previousFramework: string;
+  newFramework: string;
+  legalBasis: string;
+  courtStatus: string;
+  effectiveDate: string | null;
+  publishedOn: string;
+  hi?: {
+    title?: string;
+    summary?: string;
+    authority?: string;
+    previousFramework?: string;
+    newFramework?: string;
+    legalBasis?: string;
+    courtStatus?: string;
+  } | null;
+  sources?: Array<{ title?: string; url?: string }>;
+}> };
+for (const record of policyPayload.records ?? []) {
+  const editions = [
+    { lang: 'en' as const, path: record.canonicalPath, title: record.title, summary: record.summary, authority: record.authority, previous: record.previousFramework, next: record.newFramework, basis: record.legalBasis, status: record.courtStatus },
+    ...(record.hi?.title && record.hi.summary
+      ? [{ lang: 'hi' as const, path: `/hi${record.canonicalPath}`, title: record.hi.title, summary: record.hi.summary, authority: record.hi.authority ?? record.authority, previous: record.hi.previousFramework ?? record.previousFramework, next: record.hi.newFramework ?? record.newFramework, basis: record.hi.legalBasis ?? record.legalBasis, status: record.hi.courtStatus ?? record.courtStatus }]
+      : []),
+  ];
+  for (const edition of editions) {
+    const sources = (record.sources ?? []).filter((source) => source.url?.startsWith('https://')).map((source) => `<li><a href="${escapeHtml(source.url!)}" rel="noopener noreferrer">${escapeHtml(source.title ?? source.url!)}</a></li>`).join('');
+    const title = `${edition.title} — ${edition.lang === 'hi' ? 'द सिग्नल 24' : 'The Signal 24'}`;
+    const content = `<main lang="${edition.lang}" style="max-width:60rem;margin:0 auto;padding:2rem 1rem;font-family:Georgia,serif;line-height:1.75;color:#202b35"><article><header><p>${edition.lang === 'hi' ? 'नीति रजिस्टर / स्रोत-आधारित रिकॉर्ड' : 'Policy ledger / source-linked record'}</p><h1>${escapeHtml(edition.title)}</h1><p>${escapeHtml(edition.summary)}</p></header><h2>${edition.lang === 'hi' ? 'प्राधिकारी' : 'Authority'}</h2><p>${escapeHtml(edition.authority)}</p><h2>${edition.lang === 'hi' ? 'पहले का ढाँचा' : 'Previous framework'}</h2><p>${escapeHtml(edition.previous)}</p><h2>${edition.lang === 'hi' ? 'नया ढाँचा' : 'New framework'}</h2><p>${escapeHtml(edition.next)}</p><h2>${edition.lang === 'hi' ? 'क़ानूनी आधार और अदालत की स्थिति' : 'Legal basis and court status'}</h2><p>${escapeHtml(edition.basis)}</p><p>${escapeHtml(edition.status)}</p><h2>${edition.lang === 'hi' ? 'स्रोत' : 'Sources'}</h2><ul>${sources}</ul></article></main>`;
+    jobs.push(writeRoute(edition.path, htmlDocument({
+      path: edition.path,
+      lang: edition.lang,
+      title,
+      description: edition.summary,
+      content,
+      translated: editions.length > 1,
+      structuredData: {
+        '@context': 'https://schema.org',
+        '@type': 'WebPage',
+        name: title,
+        description: edition.summary,
+        url: `${origin}${edition.path}`,
+        inLanguage: edition.lang === 'hi' ? 'hi-IN' : 'en-IN',
+        datePublished: record.publishedOn,
+        dateModified: record.publishedOn,
+      },
+    })));
+  }
+}
+await Promise.all(jobs);
+console.log(`Prerendered ${jobs.length} pages, including ${stories.length} published stories and ${policyPayload.records?.length ?? 0} policy records.`);

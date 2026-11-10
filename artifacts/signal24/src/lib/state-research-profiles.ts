@@ -84,11 +84,11 @@ export const ADDITIONAL_STATE_PROFILES: Record<string, StateProfile> = {
   ),
   Jharkhand: researchedProfile(
     ['77% bill status unverified', '77% विधेयक की स्थिति अपुष्ट'], 'history',
-    ['The last confirmed procedural record located is from 2023; no 2026 update confirming enactment or resolution was found.', 'मिला आख़िरी पुष्ट प्रक्रियात्मक रिकॉर्ड 2023 का है; 2026 में लागू होने या समाधान की पुष्टि नहीं मिली।'],
+    ['The Assembly passed the 77% bill, the Governor returned it, and its later legal status remains unverified; no assent or Gazette entry was located.', 'विधानसभा ने 77% विधेयक पारित किया, राज्यपाल ने उसे लौटाया, और उसकी बाद की क़ानूनी स्थिति अपुष्ट है; मंज़ूरी या राजपत्र प्रविष्टि नहीं मिली।'],
     '2023-04',
-    ['The Governor returned the bill proposing 77% state-job reservation for reconsideration. Its later passage, enactment or Ninth Schedule status was not verified.', 'राज्य नौकरियों में 77% आरक्षण का प्रस्ताव करने वाला विधेयक राज्यपाल ने पुनर्विचार के लिए लौटाया था। बाद में पारित, लागू या नौवीं अनुसूची में शामिल होना सत्यापित नहीं हुआ।'],
-    { label: 'The Indian Express', url: 'https://indianexpress.com/article/india/jharkhand-gov-sends-back-bill-to-raise-quota-in-state-govt-jobs-seeks-review-8565835' },
-    ['What is the bill’s status in the Assembly and Gazette now?', 'विधेयक की विधानसभा और राजपत्र में अब क्या स्थिति है?'],
+    ['The 77% reservation bill passed by the Assembly was returned by the Governor for reconsideration. A 2026 legal survey records the bill history, but an operative law or later assent was not established.', 'विधानसभा से पारित 77% आरक्षण विधेयक राज्यपाल ने पुनर्विचार के लिए लौटाया था। 2026 के क़ानूनी सर्वे में विधेयक का इतिहास दर्ज है, लेकिन लागू क़ानून या बाद की मंज़ूरी पुष्ट नहीं हुई।'],
+    { label: 'NALSAR Annual Survey of State Laws 2023: Jharkhand', url: 'https://nalsar.ac.in/wp-content/uploads/2026/05/ASSL-2023-Jharkhand.pdf' },
+    ['Has the state published a later Governor, Assembly or Gazette record?', 'क्या राज्य ने बाद का राज्यपाल, विधानसभा या राजपत्र रिकॉर्ड प्रकाशित किया?'],
   ),
   Karnataka: researchedProfile(
     ['Caste survey implementation disputed', 'जाति सर्वेक्षण लागू करने पर विवाद'], 'challenged',
@@ -123,12 +123,12 @@ export const ADDITIONAL_STATE_PROFILES: Record<string, StateProfile> = {
     ['How will the amended rules affect the next local elections?', 'संशोधित नियम अगले स्थानीय चुनावों को कैसे प्रभावित करेंगे?'],
   ),
   Meghalaya: researchedProfile(
-    ['Reservation review report pending', 'आरक्षण समीक्षा रिपोर्ट लंबित'], 'challenged',
-    ['The proposed 80% ST split was reported as a review recommendation, not an enacted policy; its Assembly disposition was not verified.', 'प्रस्तावित 80% ST बँटवारे को समीक्षा सिफ़ारिश बताया गया, लागू नीति नहीं; विधानसभा में इसकी स्थिति सत्यापित नहीं हुई।'],
-    '2026-02-17',
-    ['The Chief Minister said Cabinet had approved tabling a reservation-policy report proposing 40% each for Khasi and Garo groups. Adoption or a later order was not confirmed.', 'मुख्यमंत्री ने कहा कि मंत्रिमंडल ने खासी और गारो समूहों के लिए 40%-40% का प्रस्ताव रखने वाली आरक्षण-नीति रिपोर्ट सदन में रखने की मंज़ूरी दी। इसे अपनाने या बाद के आदेश की पुष्टि नहीं हुई।'],
-    { label: 'India Today NE', url: 'https://www.indiatodayne.in/meghalaya/story/meghalaya-to-table-state-reservation-policy-report-in-assembly-on-february-18-1347312-2026-02-17' },
-    ['Was the report tabled, debated or followed by a government order?', 'क्या रिपोर्ट सदन में रखी गई, उस पर चर्चा हुई या सरकारी आदेश आया?'],
+    ['Review report tabled; current policy retained', 'समीक्षा रिपोर्ट सदन में; मौजूदा नीति बरक़रार'], 'protected',
+    ['The expert report was tabled in February 2026 and recommended retaining the 1972 policy; a later policy change was not verified.', 'विशेषज्ञ रिपोर्ट फ़रवरी 2026 में सदन में रखी गई और 1972 की नीति बरक़रार रखने की सिफ़ारिश की; बाद का नीतिगत बदलाव सत्यापित नहीं हुआ।'],
+    '2026-02-18',
+    ['The Assembly record confirms discussion of the State Reservation Policy report after it was tabled. The report recommended retaining the existing arrangement rather than adopting the reported 40:40 proposal as a new rule.', 'विधानसभा रिकॉर्ड पुष्टि करता है कि राज्य आरक्षण नीति रिपोर्ट सदन में रखे जाने के बाद उस पर चर्चा हुई। रिपोर्ट ने कथित 40:40 प्रस्ताव को नया नियम बनाने के बजाय मौजूदा व्यवस्था बरक़रार रखने की सिफ़ारिश की।'],
+    { label: 'Meghalaya Legislative Assembly, Budget Session proceedings', url: 'https://cms.neva.gov.in/NeVA/ML/FileStructures//Notices/7f4cf646-7cf9-4ddb-a32d-2d55035d685f.pdf' },
+    ['Did the government issue an order after the Assembly discussion?', 'विधानसभा चर्चा के बाद क्या सरकार ने कोई आदेश जारी किया?'],
   ),
   Mizoram: researchedProfile(
     ['State-quota admissions underway', 'राज्य कोटे के दाख़िले जारी'], 'protected',
@@ -232,7 +232,7 @@ export const ADDITIONAL_STATE_PROFILES: Record<string, StateProfile> = {
     '2026-01-09',
     ['The Gazette listed 11 Dadra and Nagar Haveli vacancies: 7 ST women, 2 women and 2 unreserved; a Diu vacancy was also notified.', 'राजपत्र में दादरा और नगर हवेली की 11 रिक्तियाँ दी गईं: 7 ST महिलाएँ, 2 महिलाएँ और 2 अनारक्षित; दीव की एक रिक्ति भी अधिसूचित हुई।'],
     { label: 'UT Official Gazette', url: 'https://cdnbbsr.s3waas.gov.in/s371e09b16e21f7b6919bbfc43f6a5b2f0/uploads/2026/01/202601121352694865.pdf' },
-    ['What was the result of the scheduled by-election?', 'निर्धारित उपचुनाव का परिणाम क्या रहा?'],
+    ['Locate the Election Commission result for the January 2026 casual-vacancy by-elections; no result was found in this review.', 'जनवरी 2026 की आकस्मिक रिक्ति उपचुनावों का निर्वाचन आयोग परिणाम खोजें; इस समीक्षा में परिणाम नहीं मिला।'],
   ),
   Delhi: researchedProfile(
     ['OBC reservation dispute in court', 'OBC आरक्षण विवाद अदालत में'], 'challenged',
