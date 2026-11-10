@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { ArrowLeft, Radio } from 'lucide-react';
 import { useT, useLocalHref } from '@/lib/i18n';
+import { basePath } from '@/lib/seo';
 
 export default function NotFound() {
   const t = useT();
@@ -32,6 +33,7 @@ export default function NotFound() {
             <p className="signal-kicker text-accent">{t('Page not found', 'पेज नहीं मिला')}</p>
           </div>
           <h1 className="mt-7 font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">{t(<>This page went the way<br /><em className="font-normal text-accent">of the Rohini report.</em></>, <>यह पेज रोहिणी रिपोर्ट<br /><em className="font-normal text-accent">की राह चला गया।</em></>)}</h1>
+          <img src={`${basePath}/illustrations/sealed-report.svg`} alt={t('Illustration: a report locked in a filing cabinet drawer, stamped withheld', 'चित्रण: फ़ाइल कैबिनेट की दराज़ में ताले में बंद रिपोर्ट, जिस पर “रोकी गई” की मुहर है')} width="1600" height="900" className="mt-8 w-full border-2 border-foreground" />
           <p className="mt-7 max-w-md text-sm leading-relaxed text-muted-foreground">{t('Unlike that report, we will at least tell you why: the link is wrong or the record has moved. Nothing disappears from this site without a note saying so.', 'उस रिपोर्ट के उलट, हम कम से कम वजह तो बताएँगे: लिंक ग़लत है या रिकॉर्ड कहीं और चला गया है। इस साइट से कुछ भी बिना सूचना के ग़ायब नहीं होता।')}</p>
           <a href={href('/')} className="mt-8 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-3 text-[.68rem] font-bold uppercase tracking-[.13em] text-primary-foreground">
             <ArrowLeft size={14} /> {t('Back to the front page', 'पहले पन्ने पर लौटें')}

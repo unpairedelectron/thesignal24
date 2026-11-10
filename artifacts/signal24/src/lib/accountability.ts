@@ -6,6 +6,8 @@
  */
 export type AccountabilityItem = {
   id: string;
+  /** File name in public/illustrations (our own artwork). */
+  illustration: string;
   status: { en: string; hi: string };
   since: string;
   question: { en: string; hi: string };
@@ -19,6 +21,7 @@ export const ACCOUNTABILITY_CHECKED_ON = '2026-11-09';
 export const ACCOUNTABILITY_ITEMS: AccountabilityItem[] = [
   {
     id: 'rohini-commission',
+    illustration: 'sealed-report',
     status: { en: 'In a drawer since 2023', hi: '2023 से दराज़ में' },
     since: '2023-07-31',
     question: {
@@ -40,6 +43,7 @@ export const ACCOUNTABILITY_ITEMS: AccountabilityItem[] = [
   },
   {
     id: 'secc-2011',
+    illustration: 'chair-on-files',
     status: { en: 'Collected, then “unusable”', hi: 'जुटाए, फिर “बेकार”' },
     since: '2021-12-15',
     question: {
@@ -61,6 +65,7 @@ export const ACCOUNTABILITY_ITEMS: AccountabilityItem[] = [
   },
   {
     id: 'census-2027-caste',
+    illustration: 'census-clipboard',
     status: { en: 'Promised loudly, notified quietly', hi: 'वादा ज़ोर से, अधिसूचना चुपके से' },
     since: '2025-06-16',
     question: {
@@ -82,6 +87,7 @@ export const ACCOUNTABILITY_ITEMS: AccountabilityItem[] = [
   },
   {
     id: 'creamy-layer-ceiling',
+    illustration: 'frozen-meter',
     status: { en: 'Untouched since 2017', hi: '2017 से अछूती' },
     since: '2017-09-13',
     question: {
@@ -102,6 +108,7 @@ export const ACCOUNTABILITY_ITEMS: AccountabilityItem[] = [
   },
   {
     id: 'ews-eight-lakh',
+    illustration: 'magnifier-hero',
     status: { en: 'Number? What number?', hi: 'गिनती? कौन-सी गिनती?' },
     since: '2021-12-31',
     question: {
