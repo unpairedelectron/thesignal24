@@ -1,8 +1,9 @@
-import { desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import {
   db,
   issuesTable,
   policyRecordsTable,
+  policySourcesTable,
   storiesTable,
   storyRevisionsTable,
   type PolicyTranslation,
@@ -10,10 +11,14 @@ import {
 import { CONTENT_PACK_A } from "./content-pack-a";
 import { CONTENT_PACK_B } from "./content-pack-b";
 import { CONTENT_PACK_C } from "./content-pack-c";
+import { CONTENT_PACK_D } from "./content-pack-d";
 import { CONTENT_PACK_OPINION } from "./content-pack-opinion";
 import type { ContentPackStory } from "./content-pack-types";
+import { POLICY_LEDGER_PACK } from "./policy-ledger-pack";
 
+/** Newest reporting first: array position becomes the story's sort order. */
 export const CONTENT_PACK: ContentPackStory[] = [
+  ...CONTENT_PACK_D,
   ...CONTENT_PACK_A,
   ...CONTENT_PACK_B,
   ...CONTENT_PACK_C,
@@ -23,7 +28,25 @@ export const CONTENT_PACK: ContentPackStory[] = [
 const CONTENT_PACK_ISSUE_TITLE = "The accountability record";
 
 const AI_DISCLOSURE =
-  "Drafted with AI assistance from the cited public sources, and translated into Hindi with AI assistance. An editor must verify every claim against its source, and a Hindi-speaking editor must review the translation, before publication.";
+  "Drafted with AI assistance from the cited public sources and translated into Hindi with AI assistance. Labelled source-linked: every claim is tied to a linked document, but this record has not yet been verified line by line by an editor. Corrections are logged in public.";
+
+/**
+ * Placeholder records from the original seed. They carry no source and say so in their
+ * own text; once the sourced pack is live they are archived (not deleted), and only if
+ * no editor has attached a source to them.
+ */
+const STARTER_TITLES = [
+  "The reservation question is bigger than a headline",
+  "What the Constitution actually says about equality",
+  "The older history of representation in public institutions",
+  "Indra Sawhney made the ceiling part of the conversation",
+  "Promotion policy brought evidence to the foreground",
+  "Why every state story needs its own timeline",
+  "The state map is where policy becomes personal",
+  "The paperwork behind a public promise",
+  "A number needs a denominator",
+  "How a commission changed the vocabulary",
+];
 
 /** Hindi edition of the existing 103rd Amendment policy ledger record. */
 const EWS_POLICY_HINDI: PolicyTranslation = {
@@ -46,75 +69,190 @@ function addDays(date: string, days: number) {
 }
 
 /**
- * Inserts the bilingual content pack for editorial review. Idempotent: records whose
- * title already exists are skipped, nothing already in the database is overwritten,
- * and nothing is published. Editors review, verify and publish from the desk.
+ * Publishes the bilingual, source-linked content pack. Idempotent and conservative:
+ * - records whose title already exists are not re-inserted or overwritten;
+ * - a pack record still in "review" is published only if no editor has revised it;
+ * - starter placeholders are archived only while they still have no source.
  */
 export async function ensureContentPack() {
   await ensurePolicyTranslations();
+  await ensurePolicyLedgerPack();
 
   const titles = CONTENT_PACK.map((story) => story.title);
+  const sortOrderByTitle = new Map(titles.map((title, index) => [title, index + 1]));
   const existing = await db
-    .select({ title: storiesTable.title })
+    .select({ id: storiesTable.id, title: storiesTable.title, workflowStatus: storiesTable.workflowStatus })
     .from(storiesTable)
     .where(inArray(storiesTable.title, titles));
   const existingTitles = new Set(existing.map((story) => story.title));
   const pending = CONTENT_PACK.filter((story) => !existingTitles.has(story.title));
-  if (pending.length === 0) return;
 
   const issueId = await ensureContentPackIssue();
   const today = new Date().toISOString().slice(0, 10);
-  const reviewedAt = new Date();
-  const inserted = await db
-    .insert(storiesTable)
-    .values(
-      pending.map((story, index) => ({
-        issueId,
-        topic: story.topic,
-        kind: story.kind,
-        state: story.state,
-        source: story.source,
-        sourceUrl: story.sourceUrl,
-        publishedOn: today,
-        eyebrow: story.eyebrow,
-        title: story.title,
-        dek: story.dek,
-        body: story.body,
-        time: `${story.read} min`,
-        read: story.read,
-        tone: story.tone,
-        number: null,
-        sortOrder: index + 1,
-        workflowStatus: "review",
-        verificationStatus: "source-linked",
-        verificationNotes: story.verificationNotes,
-        sourcePublishedOn: story.sourcePublishedOn,
-        sourceRetrievedOn: today,
-        lastVerifiedAt: null,
-        reviewedAt,
-        scheduledFor: null,
-        aiDisclosure: AI_DISCLOSURE,
-        correctionNote: null,
-        byline: story.byline ?? null,
-        hi: story.hi,
-      })),
-    )
-    .returning();
+  const now = new Date();
 
-  await db.insert(storyRevisionsTable).values(
-    inserted.map((story) => ({
+  if (pending.length > 0) {
+    const inserted = await db
+      .insert(storiesTable)
+      .values(
+        pending.map((story) => ({
+          issueId,
+          topic: story.topic,
+          kind: story.kind,
+          state: story.state,
+          source: story.source,
+          sourceUrl: story.sourceUrl,
+          publishedOn: today,
+          eyebrow: story.eyebrow,
+          title: story.title,
+          dek: story.dek,
+          body: story.body,
+          time: `${story.read} min`,
+          read: story.read,
+          tone: story.tone,
+          number: null,
+          sortOrder: sortOrderByTitle.get(story.title) ?? 999,
+          workflowStatus: "published",
+          verificationStatus: "source-linked",
+          verificationNotes: story.verificationNotes,
+          sourcePublishedOn: story.sourcePublishedOn,
+          sourceRetrievedOn: today,
+          lastVerifiedAt: null,
+          reviewedAt: now,
+          scheduledFor: null,
+          aiDisclosure: AI_DISCLOSURE,
+          correctionNote: null,
+          byline: story.byline ?? "The Signal 24 editorial desk",
+          hi: story.hi,
+        })),
+      )
+      .returning();
+
+    await db.insert(storyRevisionsTable).values(
+      inserted.map((story) => ({
+        storyId: story.id,
+        revisionNumber: 1,
+        changeNote: "Published from the source-linked content pack",
+        snapshot: {
+          title: story.title,
+          workflowStatus: story.workflowStatus,
+          verificationStatus: story.verificationStatus,
+          source: story.source,
+          sourceUrl: story.sourceUrl,
+        },
+      })),
+    );
+  }
+
+  await publishUntouchedReviewRecords(
+    existing.filter((story) => story.workflowStatus === "review"),
+    sortOrderByTitle,
+    today,
+  );
+  await retireStarterPlaceholders();
+}
+
+/** Promote pack records left in review by the previous release, unless an editor has revised them. */
+async function publishUntouchedReviewRecords(
+  candidates: Array<{ id: number; title: string }>,
+  sortOrderByTitle: Map<string, number>,
+  today: string,
+) {
+  if (candidates.length === 0) return;
+  const revisionCounts = await db
+    .select({ storyId: storyRevisionsTable.storyId, count: sql<number>`count(*)::int` })
+    .from(storyRevisionsTable)
+    .where(inArray(storyRevisionsTable.storyId, candidates.map((story) => story.id)))
+    .groupBy(storyRevisionsTable.storyId);
+  const countById = new Map(revisionCounts.map((row) => [row.storyId, row.count]));
+  for (const story of candidates) {
+    const revisions = countById.get(story.id) ?? 0;
+    if (revisions > 1) continue;
+    const [updated] = await db
+      .update(storiesTable)
+      .set({
+        workflowStatus: "published",
+        publishedOn: today,
+        sortOrder: sortOrderByTitle.get(story.title) ?? 999,
+        aiDisclosure: AI_DISCLOSURE,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(storiesTable.id, story.id), eq(storiesTable.workflowStatus, "review")))
+      .returning();
+    if (!updated) continue;
+    await db.insert(storyRevisionsTable).values({
+      storyId: updated.id,
+      revisionNumber: revisions + 1,
+      changeNote: "Published from the source-linked content pack",
+      snapshot: {
+        title: updated.title,
+        workflowStatus: updated.workflowStatus,
+        verificationStatus: updated.verificationStatus,
+        source: updated.source,
+        sourceUrl: updated.sourceUrl,
+      },
+    });
+  }
+}
+
+async function retireStarterPlaceholders() {
+  const starters = await db
+    .select()
+    .from(storiesTable)
+    .where(
+      and(
+        inArray(storiesTable.title, STARTER_TITLES),
+        eq(storiesTable.workflowStatus, "published"),
+        eq(storiesTable.verificationStatus, "unverified"),
+        isNull(storiesTable.sourceUrl),
+      ),
+    );
+  for (const story of starters) {
+    const [latest] = await db
+      .select({ revisionNumber: storyRevisionsTable.revisionNumber })
+      .from(storyRevisionsTable)
+      .where(eq(storyRevisionsTable.storyId, story.id))
+      .orderBy(desc(storyRevisionsTable.revisionNumber))
+      .limit(1);
+    await db
+      .update(storiesTable)
+      .set({ workflowStatus: "archived", updatedAt: new Date() })
+      .where(eq(storiesTable.id, story.id));
+    await db.insert(storyRevisionsTable).values({
       storyId: story.id,
-      revisionNumber: 1,
-      changeNote: "Content pack draft added for editorial review",
+      revisionNumber: (latest?.revisionNumber ?? 0) + 1,
+      changeNote: "Archived: unsourced starter placeholder, superseded by source-linked reporting",
       snapshot: {
         title: story.title,
-        workflowStatus: story.workflowStatus,
+        workflowStatus: "archived",
         verificationStatus: story.verificationStatus,
         source: story.source,
         sourceUrl: story.sourceUrl,
       },
-    })),
-  );
+    });
+  }
+}
+
+/** Insert ledger records by slug; never overwrite one that already exists. */
+async function ensurePolicyLedgerPack() {
+  const slugs = POLICY_LEDGER_PACK.map((record) => record.slug);
+  const existing = await db
+    .select({ slug: policyRecordsTable.slug })
+    .from(policyRecordsTable)
+    .where(inArray(policyRecordsTable.slug, slugs));
+  const existingSlugs = new Set(existing.map((row) => row.slug));
+  const today = new Date().toISOString().slice(0, 10);
+  for (const record of POLICY_LEDGER_PACK) {
+    if (existingSlugs.has(record.slug)) continue;
+    const { sources, ...fields } = record;
+    const [policy] = await db
+      .insert(policyRecordsTable)
+      .values({ ...fields, publishedOn: today, workflowStatus: "published" })
+      .returning({ id: policyRecordsTable.id });
+    await db.insert(policySourcesTable).values(
+      sources.map((source) => ({ ...source, policyRecordId: policy.id, retrievedOn: today })),
+    );
+  }
 }
 
 async function ensureContentPackIssue() {
@@ -123,7 +261,18 @@ async function ensureContentPackIssue() {
     .from(issuesTable)
     .where(eq(issuesTable.title, CONTENT_PACK_ISSUE_TITLE))
     .limit(1);
-  if (existingIssue) return existingIssue.id;
+  if (existingIssue) {
+    await db
+      .update(issuesTable)
+      .set({
+        status: "published",
+        publishedAt: new Date(),
+        intro:
+          "Sourced, bilingual reporting on what India's governments, courts and commissions have done on reservation, and what they have withheld.",
+      })
+      .where(and(eq(issuesTable.id, existingIssue.id), eq(issuesTable.status, "draft")));
+    return existingIssue.id;
+  }
 
   const [latest] = await db
     .select({ issueDate: issuesTable.issueDate, issueNumber: issuesTable.issueNumber })
@@ -143,11 +292,11 @@ async function ensureContentPackIssue() {
     .values({
       issueDate,
       issueNumber: (highest?.issueNumber ?? 100) + 1,
-      status: "draft",
+      status: "published",
       title: CONTENT_PACK_ISSUE_TITLE,
       intro:
-        "Sourced, bilingual explainers on what India's governments, courts and commissions have done on reservation, and what they have withheld. For editorial review before publication.",
-      publishedAt: null,
+        "Sourced, bilingual reporting on what India's governments, courts and commissions have done on reservation, and what they have withheld.",
+      publishedAt: new Date(),
     })
     .returning();
   return issue.id;
