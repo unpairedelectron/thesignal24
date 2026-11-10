@@ -10,6 +10,7 @@ export type CommunityPostKind = typeof CommunityPostKind[keyof typeof CommunityP
 
 
 export const CommunityPostKind = {
+  question: 'question',
   thought: 'thought',
   article: 'article',
   piece: 'piece',

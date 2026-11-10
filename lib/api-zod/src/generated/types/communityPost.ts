@@ -12,5 +12,13 @@ export type CommunityPost = CommunityPostInput & {
   likeCount: number;
   replyCount: number;
   likedByViewer: boolean;
+  ownedByViewer: boolean;
   createdAt: Date;
-};
+} & Required<Pick<CommunityPostInput & {
+  id: number;
+  likeCount: number;
+  replyCount: number;
+  likedByViewer: boolean;
+  ownedByViewer: boolean;
+  createdAt: Date;
+}, 'authorName'>>;

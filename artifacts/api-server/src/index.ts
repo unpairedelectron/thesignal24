@@ -3,6 +3,7 @@ import { logger } from "./lib/logger";
 import { ensureSeedData } from "./lib/seed";
 import { ensureContentPack } from "./lib/content-pack";
 import { ensureEvidencePack } from "./lib/evidence-pack";
+import { ensureCommunitySchema } from "./lib/community-schema";
 
 const rawPort = process.env["PORT"];
 
@@ -27,7 +28,8 @@ server.on("error", (error) => {
   process.exit(1);
 });
 
-ensureSeedData()
+ensureCommunitySchema()
+  .then(() => ensureSeedData())
   .then(() => ensureContentPack())
   .then(() => ensureEvidencePack())
   .then(() => {

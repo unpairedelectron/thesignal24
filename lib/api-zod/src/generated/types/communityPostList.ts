@@ -12,4 +12,6 @@ export interface CommunityPostList {
   posts: CommunityPost[];
   topics: CommunityTopic[];
   states: string[];
+  /** The anonymous handle this browser posts under unless a name is given. */
+  viewerHandle: string;
 }

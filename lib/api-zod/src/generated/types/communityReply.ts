@@ -10,5 +10,15 @@ import type { CommunityReplyInput } from './communityReplyInput';
 export type CommunityReply = CommunityReplyInput & {
   id: number;
   postId: number;
+  helpfulCount: number;
+  helpfulByViewer: boolean;
+  ownedByViewer: boolean;
   createdAt: Date;
-};
+} & Required<Pick<CommunityReplyInput & {
+  id: number;
+  postId: number;
+  helpfulCount: number;
+  helpfulByViewer: boolean;
+  ownedByViewer: boolean;
+  createdAt: Date;
+}, 'authorName'>>;
