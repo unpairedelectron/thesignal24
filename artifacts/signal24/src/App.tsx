@@ -1658,7 +1658,7 @@ function StoryDetail() {
       </div>
       <section id="record-evidence" className="signal-container article-evidence">
         <ArticleEvidenceSection storyId={story.id} />
-        {story.aiDisclosure && <div className="signal-note mt-8 max-w-3xl px-5 py-4"><p className="signal-kicker text-accent">{t('How this record was made', 'यह रिकॉर्ड कैसे बना')}</p><p className="mt-2 text-sm leading-relaxed text-muted-foreground" lang="en">{story.aiDisclosure}</p></div>}
+        {story.aiDisclosure && <div className="signal-note mt-8 max-w-3xl px-5 py-4"><p className="signal-kicker text-accent">{t('How this record was made', 'यह रिकॉर्ड कैसे बना')}</p><p className="mt-2 text-sm leading-relaxed text-foreground/80" lang="en">{story.aiDisclosure}</p></div>}
       </section>
       <section className="signal-container article-next" aria-labelledby="keep-reading-title">
         <div className="article-next-grid">
