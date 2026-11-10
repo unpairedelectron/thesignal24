@@ -2,6 +2,7 @@ import app from "./app";
 import { logger } from "./lib/logger";
 import { ensureSeedData } from "./lib/seed";
 import { ensureContentPack } from "./lib/content-pack";
+import { ensureEvidencePack } from "./lib/evidence-pack";
 
 const rawPort = process.env["PORT"];
 
@@ -19,6 +20,7 @@ if (Number.isNaN(port) || port <= 0) {
 
 ensureSeedData()
   .then(() => ensureContentPack())
+  .then(() => ensureEvidencePack())
   .then(() => {
     app.listen(port, (err) => {
       if (err) {
