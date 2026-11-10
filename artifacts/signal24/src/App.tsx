@@ -36,14 +36,6 @@ import {
 import { Link, Route, Router as WouterRouter, Switch, useLocation, useParams, useSearch } from 'wouter';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { FOCUS_SOURCES } from '@/components/focus-source-desk';
-import {
-  ArticleEvidenceSection,
-  EditorEvidenceDesk,
-  EvidenceEventDetailPage,
-  EvidenceEventsPage,
-  EvidenceSearchPage,
-  EvidenceSourceDetailPage,
-} from '@/components/evidence-pages';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import {
@@ -112,15 +104,13 @@ import { LangProvider, LanguageSwitch, localizePolicy, localizeStory, useLabel, 
 import { ACCOUNTABILITY_CHECKED_ON, ACCOUNTABILITY_ITEMS } from '@/lib/accountability';
 import { RichBody, outlineOf, plainText } from '@/components/rich-body';
 import { GlobalFooter, Header } from '@/components/site-chrome';
-import { HomeStatesSection, StateProfilePage, StatesPage } from '@/components/states-pages';
 import { HomeStage } from '@/components/home-stage';
 import { AnswersTeaser, CommunityTeaser, DeskStrip, LedgerTrio, SectionHead, TimelineStrip } from '@/components/home-sections';
 import { KeyFigures } from '@/components/key-figures';
-import { CeilingChart, DemandBoard } from '@/components/opinion-data';
 import { CountUp } from '@/components/home-stage';
 import { KEY_FIGURES, daysSince, type Bilingual } from '@/lib/key-figures';
 import { motion, useReducedMotion } from 'framer-motion';
-import { EvidenceSpine, TopicCabinet, TopicHero, type CabinetDrawer } from '@/components/topic-stage';
+import type { CabinetDrawer } from '@/components/topic-stage';
 import { TOPIC_BRIEFS, TOPIC_BRIEFS_CHECKED_ON, topicBrief, type TopicBrief, type TopicKey } from '@/lib/topic-briefs';
 import { breadcrumbNode, collectionPageNode, EDITORIAL_DESK_PATH, editorialDeskNode, editorialDeskRef, externalDocument, imageObject, organizationRef, placeForState, siteGraph, webPageNode, websiteRef } from '@/lib/structured-data';
 
@@ -129,6 +119,20 @@ const AnswersPage = lazy(() => import('@/components/answers-pages').then((module
 const AnswerDetailPage = lazy(() => import('@/components/answers-pages').then((module) => ({ default: module.AnswerDetailPage })));
 const CommunityPage = lazy(() => import('@/components/community-pages').then((module) => ({ default: module.CommunityPage })));
 const CommunityDetailPage = lazy(() => import('@/components/community-pages').then((module) => ({ default: module.CommunityDetailPage })));
+const ArticleEvidenceSection = lazy(() => import('@/components/evidence-pages').then((module) => ({ default: module.ArticleEvidenceSection })));
+const EditorEvidenceDesk = lazy(() => import('@/components/evidence-pages').then((module) => ({ default: module.EditorEvidenceDesk })));
+const EvidenceEventDetailPage = lazy(() => import('@/components/evidence-pages').then((module) => ({ default: module.EvidenceEventDetailPage })));
+const EvidenceEventsPage = lazy(() => import('@/components/evidence-pages').then((module) => ({ default: module.EvidenceEventsPage })));
+const EvidenceSearchPage = lazy(() => import('@/components/evidence-pages').then((module) => ({ default: module.EvidenceSearchPage })));
+const EvidenceSourceDetailPage = lazy(() => import('@/components/evidence-pages').then((module) => ({ default: module.EvidenceSourceDetailPage })));
+const HomeStatesSection = lazy(() => import('@/components/states-pages').then((module) => ({ default: module.HomeStatesSection })));
+const StateProfilePage = lazy(() => import('@/components/states-pages').then((module) => ({ default: module.StateProfilePage })));
+const StatesPage = lazy(() => import('@/components/states-pages').then((module) => ({ default: module.StatesPage })));
+const CeilingChart = lazy(() => import('@/components/opinion-data').then((module) => ({ default: module.CeilingChart })));
+const DemandBoard = lazy(() => import('@/components/opinion-data').then((module) => ({ default: module.DemandBoard })));
+const EvidenceSpine = lazy(() => import('@/components/topic-stage').then((module) => ({ default: module.EvidenceSpine })));
+const TopicCabinet = lazy(() => import('@/components/topic-stage').then((module) => ({ default: module.TopicCabinet })));
+const TopicHero = lazy(() => import('@/components/topic-stage').then((module) => ({ default: module.TopicHero })));
 
 const TOPICS = ['Latest', 'Courts & Policy', 'States', 'History', 'Ground Reports', 'Data & Notes'] as Topic[];
 const KINDS = ['Article', 'Paper note', 'Archive', 'Explainer', 'Opinion'] as StoryKind[];

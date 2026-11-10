@@ -24,3 +24,11 @@ test('every region has a cited, dated fact and an editorial review target', () =
     assert.ok(fact.review!.nextCheck.en && fact.review!.nextCheck.hi, `Missing bilingual next-check target for ${region.name}`);
   }
 });
+
+test('new primary-source updates add independently dated evidence to thin profiles', () => {
+  for (const name of ['Assam', 'Goa', 'Haryana', 'Kerala', 'Meghalaya', 'Dadra and Nagar Haveli and Daman and Diu', 'West Bengal']) {
+    const sourcedFacts = STATE_PROFILES[name].facts.filter((fact) => fact.source && fact.review);
+    assert.ok(sourcedFacts.length >= 2, `Expected a second sourced fact for ${name}`);
+    assert.equal(new Set(sourcedFacts.map((fact) => fact.when)).size, sourcedFacts.length, `Fact dates should be distinct for ${name}`);
+  }
+});

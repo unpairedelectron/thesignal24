@@ -324,3 +324,70 @@ export const RECENT_STATE_FACTS: Record<string, StateProfile['facts'][number]> =
     review: { checkedOn: '2026-11-10', nextCheck: { en: 'Verify commission constitution and survey start after the announced timeline.', hi: 'घोषित समय-सीमा के बाद आयोग गठन और सर्वेक्षण शुरू होने की पुष्टि करें।' } },
   },
 };
+
+/** Additional dated primary records verified in the follow-up coverage pass. */
+export const ADDITIONAL_PRIMARY_FACTS: Record<string, StateProfile['facts'][number]> = {
+  Assam: {
+    when: '2024-12-19',
+    text: {
+      en: 'A Ministry of Tribal Affairs reply to Parliament reported Assam’s Scheduled Tribe population as 3,884,371 and ST reservation as 12.4%, citing the 2011 Census and state inputs.',
+      hi: 'जनजातीय कार्य मंत्रालय ने संसद में बताया कि 2011 की जनगणना और राज्य के आँकड़ों के आधार पर असम की अनुसूचित जनजाति आबादी 38,84,371 और ST आरक्षण 12.4% था।',
+    },
+    source: { label: 'Lok Sabha, Unstarred Question 4039, Ministry of Tribal Affairs', url: 'https://sansad.in/getFile/loksabhaquestions/annex/183/AU4039_po9j51.pdf?source=pqals' },
+    review: { checkedOn: '2026-11-10', nextCheck: { en: 'Find a newer official population or representation series; this reply relies on 2011 Census figures.', hi: 'नए आधिकारिक आबादी या प्रतिनिधित्व आँकड़े खोजें; यह जवाब 2011 की जनगणना पर आधारित है।' } },
+  },
+  Goa: {
+    when: '2025-08-13',
+    text: {
+      en: 'Parliament enacted the Goa ST constituency readjustment Act, but it requires a separate Central commencement notification before it takes effect.',
+      hi: 'संसद ने गोवा ST निर्वाचन-क्षेत्र पुनर्समायोजन अधिनियम पारित किया, लेकिन लागू होने से पहले केंद्र की अलग प्रारंभ अधिसूचना आवश्यक है।',
+    },
+    source: { label: 'The Gazette of India, Act 21 of 2025', url: 'https://egazette.gov.in/WriteReadData/2025/265409.pdf' },
+    review: { checkedOn: '2026-11-10', nextCheck: { en: 'Locate the Central commencement notification and any Election Commission readjustment proposal.', hi: 'केंद्र की प्रारंभ अधिसूचना और निर्वाचन आयोग का पुनर्समायोजन प्रस्ताव खोजें।' } },
+  },
+  Haryana: {
+    when: '2026-08-18',
+    text: {
+      en: 'A Human Resources Department instruction set horizontal reservations for Haryana-domiciled ex-Agniveers: 1% in specified Group B posts, 5% in most Group C posts and 20% in listed uniformed and field posts.',
+      hi: 'मानव संसाधन विभाग के निर्देश ने हरियाणा-निवासी पूर्व अग्निवीरों के लिए क्षैतिज आरक्षण तय किया: कुछ Group B पदों में 1%, अधिकतर Group C में 5% और सूचीबद्ध वर्दीधारी व मैदानी पदों में 20%।',
+    },
+    source: { label: 'Haryana Human Resource Department, Instruction 22/05/2025-5HR-III', url: 'https://csharyana.gov.in/WriteReadData/Circular-&-Instructions/Human-Resources-III/16171.pdf' },
+    review: { checkedOn: '2026-11-10', nextCheck: { en: 'Check whether the instruction was amended or applied in a later recruitment notice.', hi: 'जाँचें कि निर्देश में संशोधन हुआ या बाद की भर्ती सूचना में इसे लागू किया गया।' } },
+  },
+  Kerala: {
+    when: '2026-04-28',
+    text: {
+      en: 'The State Election Commission’s official reservation index listed district-level local-election reservation orders, including Kasaragod; these are ward allocations, not a statewide quota change.',
+      hi: 'राज्य निर्वाचन आयोग की आधिकारिक आरक्षण सूची में कासरगोड सहित ज़िला-स्तरीय स्थानीय चुनाव आरक्षण आदेश दर्ज थे; ये वार्ड आवंटन हैं, राज्यव्यापी कोटा बदलाव नहीं।',
+    },
+    source: { label: 'Kerala State Election Commission, reservation orders', url: 'https://sec.kerala.gov.in/public/ic/list/Reservation?page=1' },
+    review: { checkedOn: '2026-11-10', nextCheck: { en: 'Open the district order and verify the current ward roster before describing its category split.', hi: 'ज़िला आदेश खोलकर श्रेणी-बँटवारा बताने से पहले मौजूदा वार्ड रोस्टर सत्यापित करें।' } },
+  },
+  Meghalaya: {
+    when: '2023-06-14',
+    text: {
+      en: 'The state amended recruitment-roster instructions while retaining the 1972 reservation quantum; departments must submit rosters for vetting before direct-recruitment advertisements.',
+      hi: 'राज्य ने 1972 का आरक्षण अनुपात बरक़रार रखते हुए भर्ती-रोस्टर निर्देश संशोधित किए; सीधी भर्ती के विज्ञापन से पहले विभागों को रोस्टर जाँच के लिए देना है।',
+    },
+    source: { label: 'Meghalaya Personnel & A.R. Department, Office Memorandum PER(AR)25/2022/Pt/23', url: 'https://personnel.meghalaya.gov.in/notifications/2023/PER_AR_25_2022_Pt_23.pdf' },
+    review: { checkedOn: '2026-11-10', nextCheck: { en: 'Check whether a later roster memorandum changed the 2023 vetting procedure.', hi: 'जाँचें कि बाद के रोस्टर ज्ञापन ने 2023 की जाँच प्रक्रिया बदली या नहीं।' } },
+  },
+  'Dadra and Nagar Haveli and Daman and Diu': {
+    when: '2025-09-29',
+    text: {
+      en: 'The UT Election Commission published reserved ward schedules for Gram Panchayats and District Panchayats after district-level draws of lots.',
+      hi: 'केंद्रशासित प्रदेश निर्वाचन आयोग ने ज़िला-स्तरीय लॉटरी के बाद ग्राम पंचायतों और ज़िला पंचायतों के आरक्षित वार्ड कार्यक्रम प्रकाशित किए।',
+    },
+    source: { label: 'UT Official Gazette, Election Commission Order 7-11/EC/DNH&DD/2025', url: 'https://cdnbbsr.s3waas.gov.in/s371e09b16e21f7b6919bbfc43f6a5b2f0/uploads/2025/09/202509301617056389.pdf' },
+    review: { checkedOn: '2026-11-10', nextCheck: { en: 'Compare the 2025 general-election ward schedules with the later casual-vacancy by-election notice.', hi: '2025 के आम चुनाव वार्ड कार्यक्रम की बाद की आकस्मिक रिक्ति उपचुनाव सूचना से तुलना करें।' } },
+  },
+  'West Bengal': {
+    when: '2026-05-18',
+    text: {
+      en: 'The Gazette withdrew five 2025 OBC notifications and separately listed 66 unaffected OBC classes for 7% reservation in state services, following the High Court orders described in the notification.',
+      hi: 'राजपत्र ने 2025 की पाँच OBC अधिसूचनाएँ वापस लीं और हाई कोर्ट आदेशों के बाद राज्य सेवाओं में 7% आरक्षण के लिए 66 अप्रभावित OBC वर्ग अलग सूचीबद्ध किए।',
+    },
+    source: { label: 'West Bengal Backward Classes Welfare Department, Gazette Notifications 944–945', url: 'https://cdnbbsr.s3waas.gov.in/s3d2a27e83d429f0dcae6b937cf440aeb1/uploads/2026/06/2026060888964775.pdf' },
+    review: { checkedOn: '2026-11-10', nextCheck: { en: 'Check for later court orders or Gazette changes affecting the 66 listed classes or the 7% figure.', hi: '66 सूचीबद्ध वर्गों या 7% अनुपात पर असर डालने वाले बाद के अदालती आदेश या राजपत्र बदलाव खोजें।' } },
+  },
+};

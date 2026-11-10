@@ -2,6 +2,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { REGIONS, regionSlug, STATE_PROFILES } from '../src/lib/states';
+import { isPublicIndexableStory, isSafePrerenderPath } from './prerender-helpers';
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const outputDir = path.resolve(scriptDir, '../dist/public');
@@ -83,6 +84,7 @@ function htmlDocument({
 }
 
 function writeRoute(routePath: string, html: string) {
+  if (!isSafePrerenderPath(routePath)) throw new Error(`Refusing unsafe prerender route: ${routePath}`);
   const routeDir = path.join(outputDir, routePath.replace(/^\/|\/$/g, ''));
   return mkdir(routeDir, { recursive: true }).then(() => writeFile(path.join(routeDir, 'index.html'), html, 'utf8'));
 }
@@ -207,7 +209,7 @@ const archive = await archiveResponse.json() as { stories?: Array<{
   verificationStatus: string;
   hi?: { title?: string; dek?: string; body?: string; eyebrow?: string } | null;
 }> };
-const stories = (archive.stories ?? []).filter((story) => story.workflowStatus === 'published' && story.indexable && story.canonicalPath.startsWith('/'));
+const stories = (archive.stories ?? []).filter(isPublicIndexableStory);
 for (const story of stories) {
   const editions = [
     { lang: 'en' as const, path: story.canonicalPath, title: story.title, description: story.dek, body: story.body },

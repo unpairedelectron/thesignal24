@@ -3,7 +3,7 @@
  * Items whose status could not be confirmed are labeled as pending or evidence gaps.
  */
 import type { Bilingual } from './key-figures';
-import { ADDITIONAL_STATE_PROFILES, RECENT_STATE_FACTS } from './state-research-profiles';
+import { ADDITIONAL_PRIMARY_FACTS, ADDITIONAL_STATE_PROFILES, RECENT_STATE_FACTS } from './state-research-profiles';
 
 export type Region = { name: string; hi: string; kind: 'state' | 'ut' };
 export type StateFact = {
@@ -160,7 +160,11 @@ export const STATE_PROFILES: Record<string, StateProfile> = Object.fromEntries(
     name,
     {
       ...profile,
-      facts: [...profile.facts, ...(RECENT_STATE_FACTS[name] ? [RECENT_STATE_FACTS[name]] : [])],
+      facts: [
+        ...profile.facts,
+        ...(RECENT_STATE_FACTS[name] ? [RECENT_STATE_FACTS[name]] : []),
+        ...(ADDITIONAL_PRIMARY_FACTS[name] ? [ADDITIONAL_PRIMARY_FACTS[name]] : []),
+      ],
     },
   ]),
 );
