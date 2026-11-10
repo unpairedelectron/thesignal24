@@ -184,7 +184,7 @@ function FooterNewsletter() {
     subscribe.mutate({ data: { email } }, { onSuccess: () => setDone(true) });
   };
   if (done) return <p className="chrome-footer-done" role="status"><Check size={16} /> {t('You are on the list. Sources attached, spin removed.', 'आप सूची में हैं। स्रोत साथ में, लीपापोती हटाकर।')}</p>;
-  return <form className="chrome-footer-form" onSubmit={submit} data-testid="form-footer-newsletter">
+  return <form id="newsletter" className="chrome-footer-form" onSubmit={submit} data-testid="form-footer-newsletter">
     <label htmlFor="footer-email" className="sr-only">{t('Email address', 'ईमेल पता')}</label>
     <input id="footer-email" type="email" required autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" lang="en" />
     <button type="submit" disabled={subscribe.isPending}>{subscribe.isPending ? t('Sending…', 'भेज रहे हैं…') : t('Get the briefing', 'ब्रीफ़िंग पाएँ')} <Send size={14} /></button>
