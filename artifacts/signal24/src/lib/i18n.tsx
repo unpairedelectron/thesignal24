@@ -93,6 +93,11 @@ const HINDI_LABELS: Record<string, string> = {
   'Uttar Pradesh': 'उत्तर प्रदेश',
   Uttarakhand: 'उत्तराखंड',
   'West Bengal': 'पश्चिम बंगाल',
+  'Andaman and Nicobar Islands': 'अंडमान और निकोबार द्वीपसमूह',
+  Chandigarh: 'चंडीगढ़',
+  'Dadra and Nagar Haveli and Daman and Diu': 'दादरा और नगर हवेली और दमन और दीव',
+  Lakshadweep: 'लक्षद्वीप',
+  Puducherry: 'पुडुचेरी',
   // Desk bylines
   'The Signal 24 editorial board': 'द सिग्नल 24 संपादकीय बोर्ड',
   'The Signal 24 editorial desk': 'द सिग्नल 24 संपादकीय डेस्क',

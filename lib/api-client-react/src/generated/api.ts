@@ -25,6 +25,7 @@ import type {
   ArticleSourceLinkInput,
   ArticleSourceRoleResult,
   ArticleSourceRoleUpdate,
+  CommunityHelpfulResponse,
   CommunityLikeResponse,
   CommunityPost,
   CommunityPostDetail,
@@ -32,6 +33,8 @@ import type {
   CommunityPostList,
   CommunityReply,
   CommunityReplyInput,
+  CommunityReportInput,
+  CommunityReportResponse,
   ContentDiscoveryItem,
   ContentSourceInput,
   ContentSourceRecord,
@@ -440,7 +443,7 @@ export const getCreateCommunityPostUrl = () => {
 }
 
 /**
- * @summary Share a thought, article, or other piece
+ * @summary Ask a question or start a discussion, anonymously by default
  */
 export const createCommunityPost = async (communityPostInput: CommunityPostInput, options?: Parameters<typeof customFetch>[1]): Promise<CommunityPost> => {
 
@@ -473,7 +476,7 @@ return customFetch<CommunityPost>(getCreateCommunityPostUrl(),
 
 export const getCreateCommunityPostMutationKey = () => ['createCommunityPost'] as const;
 
-export const getCreateCommunityPostMutationOptions = <TError = ErrorType<unknown>,
+export const getCreateCommunityPostMutationOptions = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCommunityPost>>, TError,CreateCommunityPostMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof createCommunityPost>>, TError,CreateCommunityPostMutationVariables, TContext> => {
 
@@ -502,13 +505,13 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type CreateCommunityPostMutationResult = NonNullable<Awaited<ReturnType<typeof createCommunityPost>>>
     export type CreateCommunityPostMutationBody = BodyType<CommunityPostInput>
-    export type CreateCommunityPostMutationError = ErrorType<unknown>
+    export type CreateCommunityPostMutationError = ErrorType<void>
     export type CreateCommunityPostMutationVariables = {data: BodyType<CommunityPostInput>}
 
     /**
- * @summary Share a thought, article, or other piece
+ * @summary Ask a question or start a discussion, anonymously by default
  */
-export const useCreateCommunityPost = <TError = ErrorType<unknown>,
+export const useCreateCommunityPost = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCommunityPost>>, TError,CreateCommunityPostMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof createCommunityPost>>,
@@ -757,6 +760,258 @@ export const useToggleCommunityPostLike = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getToggleCommunityPostLikeMutationOptions(options));
+    }
+
+export const getReportCommunityPostUrl = (postId: number,) => {
+
+
+
+
+  return `/api/community/posts/${postId}/report`
+}
+
+/**
+ * @summary Report a community post; it is hidden after repeated reports
+ */
+export const reportCommunityPost = async (postId: number,
+    communityReportInput: CommunityReportInput, options?: Parameters<typeof customFetch>[1]): Promise<CommunityReportResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<CommunityReportResponse>(getReportCommunityPostUrl(postId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(communityReportInput)
+  }
+);}
+
+
+
+
+
+export const getReportCommunityPostMutationKey = () => ['reportCommunityPost'] as const;
+
+export const getReportCommunityPostMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reportCommunityPost>>, TError,ReportCommunityPostMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reportCommunityPost>>, TError,ReportCommunityPostMutationVariables, TContext> => {
+
+const mutationKey = getReportCommunityPostMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reportCommunityPost>>, ReportCommunityPostMutationVariables> = (props) => {
+          const {postId,data} = props ?? {};
+
+          return  reportCommunityPost(postId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReportCommunityPostMutationResult = NonNullable<Awaited<ReturnType<typeof reportCommunityPost>>>
+    export type ReportCommunityPostMutationBody = BodyType<CommunityReportInput>
+    export type ReportCommunityPostMutationError = ErrorType<unknown>
+    export type ReportCommunityPostMutationVariables = {postId: number;data: BodyType<CommunityReportInput>}
+
+    /**
+ * @summary Report a community post; it is hidden after repeated reports
+ */
+export const useReportCommunityPost = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reportCommunityPost>>, TError,ReportCommunityPostMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof reportCommunityPost>>,
+        TError,
+        ReportCommunityPostMutationVariables,
+        TContext
+      > => {
+      return useMutation(getReportCommunityPostMutationOptions(options));
+    }
+
+export const getToggleCommunityReplyHelpfulUrl = (replyId: number,) => {
+
+
+
+
+  return `/api/community/replies/${replyId}/helpful`
+}
+
+/**
+ * @summary Mark an answer helpful, or undo it
+ */
+export const toggleCommunityReplyHelpful = async (replyId: number, options?: Parameters<typeof customFetch>[1]): Promise<CommunityHelpfulResponse> => {
+
+  return customFetch<CommunityHelpfulResponse>(getToggleCommunityReplyHelpfulUrl(replyId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getToggleCommunityReplyHelpfulMutationKey = () => ['toggleCommunityReplyHelpful'] as const;
+
+export const getToggleCommunityReplyHelpfulMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof toggleCommunityReplyHelpful>>, TError,ToggleCommunityReplyHelpfulMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof toggleCommunityReplyHelpful>>, TError,ToggleCommunityReplyHelpfulMutationVariables, TContext> => {
+
+const mutationKey = getToggleCommunityReplyHelpfulMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof toggleCommunityReplyHelpful>>, ToggleCommunityReplyHelpfulMutationVariables> = (props) => {
+          const {replyId} = props ?? {};
+
+          return  toggleCommunityReplyHelpful(replyId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ToggleCommunityReplyHelpfulMutationResult = NonNullable<Awaited<ReturnType<typeof toggleCommunityReplyHelpful>>>
+
+    export type ToggleCommunityReplyHelpfulMutationError = ErrorType<unknown>
+    export type ToggleCommunityReplyHelpfulMutationVariables = {replyId: number}
+
+    /**
+ * @summary Mark an answer helpful, or undo it
+ */
+export const useToggleCommunityReplyHelpful = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof toggleCommunityReplyHelpful>>, TError,ToggleCommunityReplyHelpfulMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof toggleCommunityReplyHelpful>>,
+        TError,
+        ToggleCommunityReplyHelpfulMutationVariables,
+        TContext
+      > => {
+      return useMutation(getToggleCommunityReplyHelpfulMutationOptions(options));
+    }
+
+export const getReportCommunityReplyUrl = (replyId: number,) => {
+
+
+
+
+  return `/api/community/replies/${replyId}/report`
+}
+
+/**
+ * @summary Report an answer; it is hidden after repeated reports
+ */
+export const reportCommunityReply = async (replyId: number,
+    communityReportInput: CommunityReportInput, options?: Parameters<typeof customFetch>[1]): Promise<CommunityReportResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<CommunityReportResponse>(getReportCommunityReplyUrl(replyId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(communityReportInput)
+  }
+);}
+
+
+
+
+
+export const getReportCommunityReplyMutationKey = () => ['reportCommunityReply'] as const;
+
+export const getReportCommunityReplyMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reportCommunityReply>>, TError,ReportCommunityReplyMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reportCommunityReply>>, TError,ReportCommunityReplyMutationVariables, TContext> => {
+
+const mutationKey = getReportCommunityReplyMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reportCommunityReply>>, ReportCommunityReplyMutationVariables> = (props) => {
+          const {replyId,data} = props ?? {};
+
+          return  reportCommunityReply(replyId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReportCommunityReplyMutationResult = NonNullable<Awaited<ReturnType<typeof reportCommunityReply>>>
+    export type ReportCommunityReplyMutationBody = BodyType<CommunityReportInput>
+    export type ReportCommunityReplyMutationError = ErrorType<unknown>
+    export type ReportCommunityReplyMutationVariables = {replyId: number;data: BodyType<CommunityReportInput>}
+
+    /**
+ * @summary Report an answer; it is hidden after repeated reports
+ */
+export const useReportCommunityReply = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reportCommunityReply>>, TError,ReportCommunityReplyMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof reportCommunityReply>>,
+        TError,
+        ReportCommunityReplyMutationVariables,
+        TContext
+      > => {
+      return useMutation(getReportCommunityReplyMutationOptions(options));
     }
 
 export const getGetEditorialIssueUrl = () => {

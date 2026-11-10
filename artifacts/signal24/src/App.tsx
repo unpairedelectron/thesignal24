@@ -110,7 +110,11 @@ import NotFound from '@/pages/not-found';
 import { absoluteSiteUrl, basePath, getActiveLang, SITE_LANGUAGE, useSeo } from '@/lib/seo';
 import { LangProvider, LanguageSwitch, localizePolicy, localizeStory, useLabel, useLang, useLocalHref, useLocalizeStories, useT, type LocalizedStory } from '@/lib/i18n';
 import { ACCOUNTABILITY_CHECKED_ON, ACCOUNTABILITY_ITEMS } from '@/lib/accountability';
-import { RichBody, plainText } from '@/components/rich-body';
+import { RichBody, outlineOf, plainText } from '@/components/rich-body';
+import { GlobalFooter, Header } from '@/components/site-chrome';
+import { AnswerDetailPage, AnswersPage } from '@/components/answers-pages';
+import { HomeStatesSection, StateProfilePage, StatesPage } from '@/components/states-pages';
+import { CommunityDetailPage, CommunityPage } from '@/components/community-pages';
 import { HomeStage } from '@/components/home-stage';
 import { KeyFigures } from '@/components/key-figures';
 import { CeilingChart, DemandBoard } from '@/components/opinion-data';
@@ -155,99 +159,6 @@ function formatDate(value?: string | null) {
   return hindi
     ? date.toLocaleDateString('hi-IN', { day: 'numeric', month: 'long', year: 'numeric', numberingSystem: 'latn' })
     : date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
-}
-
-function BrandMark() {
-  return <span className="signal-mark shrink-0" aria-label="The Signal 24 mark"><span className="sr-only">The Signal 24</span></span>;
-}
-
-function Header({ editor = false }: { editor?: boolean }) {
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const mobileToggleRef = useRef<HTMLButtonElement>(null);
-  const t = useT();
-  const href = useLocalHref();
-  const close = () => setMobileOpen(false);
-  const publicLinks: Array<[string, string, string, string]> = [
-    ['/', t('Home', 'होम'), 'link-home', ''],
-    ['/policies', t('Policy ledger', 'नीति रजिस्टर'), 'link-policy-ledger', ''],
-    ['/events', t('Evidence', 'सबूत'), 'link-evidence-events', ''],
-    ['/timeline', t('Timeline', 'समयरेखा'), 'link-timeline', ''],
-    ['/opinion', t('Opinion', 'राय'), 'link-opinion', ''],
-    ['/data', t('Data', 'आंकड़े'), 'link-data', ''],
-    ['/archive', t('Archive', 'अभिलेखागार'), 'link-archive', ''],
-    ['/topics', t('Topics', 'विषय'), 'link-topics', ''],
-    ['/community', t('Community', 'समुदाय'), 'link-community', ''],
-    ['/about', t('About', 'परिचय'), 'link-about', ''],
-  ];
-  return (
-    <>
-      <div className="signal-topline bg-primary py-2.5 text-primary-foreground">
-        <div className="signal-container flex items-center justify-between gap-4">
-          <p className="signal-kicker flex items-center gap-2 text-[9px]"><span className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent" /> {t("We read the government’s paperwork so you don’t have to believe its press releases", "सरकार की प्रेस रिलीज़ पर भरोसा न करना पड़े, इसलिए हम उसके काग़ज़ पढ़ते हैं")}</p>
-          <p className="hidden signal-kicker text-primary-foreground/65 sm:block">{t("For the people, by the people. Someone has to be.", "जनता के लिए, जनता की ओर से। किसी को तो होना होगा।")}</p>
-        </div>
-      </div>
-      <header className="signal-site-header" onKeyDown={(event) => {
-        if (event.key === 'Escape' && (mobileOpen || searchOpen)) {
-          close();
-          setSearchOpen(false);
-          mobileToggleRef.current?.focus();
-        }
-      }}>
-        <div className="signal-container signal-site-header-inner flex items-center justify-between gap-5">
-          <Link href="/" onClick={close} className="signal-link flex shrink-0 items-center gap-3" data-testid="link-brand" lang="en">
-            <BrandMark />
-            <span className="font-display text-[1.4rem] font-semibold leading-none tracking-[-.045em]">The Signal <span className="text-accent">24</span></span>
-          </Link>
-          <nav className="signal-site-nav hidden items-center gap-5 lg:gap-6 lg:flex" aria-label={t('Main navigation', 'मुख्य नेविगेशन')}>
-            {editor ? (
-              <>
-                <Link href="/" className="signal-kicker signal-link" data-testid="link-back-publication">Back to publication</Link>
-                <Link href="/editor" className="signal-kicker signal-link" data-testid="link-editorial-desk">Editorial desk</Link>
-                <Link href="/editor/evidence" className="signal-kicker text-accent" data-testid="link-editor-evidence">Evidence graph</Link>
-              </>
-            ) : publicLinks.map(([path, label, testId]) => <Link key={path} href={path} className="signal-kicker signal-link" data-testid={testId}>{label}</Link>)}
-          </nav>
-          <div className="flex shrink-0 items-center gap-1.5">
-            {!editor && <LanguageSwitch />}
-            {!editor && <button type="button" className="grid h-10 w-10 place-items-center border border-transparent hover:border-border" aria-label={searchOpen ? t('Close search', 'खोज बंद करें') : t('Open search', 'खोज खोलें')} aria-expanded={searchOpen} aria-controls="site-search-panel" onClick={() => setSearchOpen((value) => !value)} data-testid="button-open-search">{searchOpen ? <X size={17} /> : <Search size={17} />}</button>}
-            {!editor && <a href={href('/#newsletter')} className="hidden signal-kicker text-accent hover:underline xl:inline-flex" data-testid="link-subscribe">{t('Subscribe', 'सदस्यता')}</a>}
-            <button ref={mobileToggleRef} type="button" className="grid h-10 w-10 place-items-center border border-transparent hover:border-border lg:hidden" aria-label={mobileOpen ? t('Close navigation', 'मेन्यू बंद करें') : t('Open navigation', 'मेन्यू खोलें')} aria-expanded={mobileOpen} aria-controls="mobile-navigation" onClick={() => setMobileOpen((value) => !value)} data-testid="button-mobile-navigation">
-              {mobileOpen ? <X size={20} /> : <Menu size={20} />}
-            </button>
-          </div>
-        </div>
-        {!editor && searchOpen && <form id="site-search-panel" role="search" action={href('/search')} method="get" className="signal-search-panel">
-          <div className="signal-container flex flex-col gap-3 py-4 sm:flex-row sm:items-end">
-            <label className="flex-1">
-              <span className="signal-kicker mb-1 block text-accent">{t('Search the record', 'रिकॉर्ड में खोजें')}</span>
-              <input autoFocus type="search" name="q" placeholder={t('Judgments, notifications, commissions, states…', 'फ़ैसले, अधिसूचनाएँ, आयोग, राज्य…')} className="w-full" data-testid="input-site-search" />
-            </label>
-            <button className="signal-button" type="submit">{t('Search', 'खोजें')}</button>
-          </div>
-        </form>}
-        <nav id="mobile-navigation" hidden={!mobileOpen} className="absolute left-0 right-0 top-full border-b border-foreground/20 bg-background p-5 shadow-md lg:hidden" aria-label={t('Mobile navigation', 'मोबाइल नेविगेशन')}>
-            <div className="flex flex-col gap-5">
-              {editor ? <>
-                <Link href="/" onClick={close} className="signal-kicker signal-link">Back to publication</Link>
-                <Link href="/editor" onClick={close} className="signal-kicker signal-link">Editorial desk</Link>
-                <Link href="/editor/evidence" onClick={close} className="signal-kicker signal-link">Evidence graph</Link>
-              </> : <>
-                {publicLinks.map(([path, label, testId]) => <Link key={path} href={path} onClick={close} className="signal-kicker signal-link" data-testid={`${testId}-mobile`}>{label}</Link>)}
-                <a href={href('/#live-desk')} onClick={close} className="signal-kicker signal-link">{t('Live desk', 'लाइव डेस्क')}</a>
-                <Link href="/editorial-standards" onClick={close} className="signal-kicker signal-link">{t('Editorial standards', 'संपादकीय मानक')}</Link>
-                <Link href="/methodology" onClick={close} className="signal-kicker signal-link">{t('Methodology', 'कार्यप्रणाली')}</Link>
-                <Link href="/topics/open-category-competition" onClick={close} className="signal-kicker signal-link">{t('Open-category competition', 'खुली श्रेणी की प्रतिस्पर्धा')}</Link>
-                <Link href="/search" onClick={close} className="signal-kicker signal-link">{t('Search the archive', 'अभिलेखागार में खोजें')}</Link>
-                <Link href="/evidence/search" onClick={close} className="signal-kicker signal-link">{t('Search linked evidence', 'जुड़े सबूतों में खोजें')}</Link>
-                <a href={href('/#newsletter')} onClick={close} className="signal-kicker signal-link">{t('Subscribe', 'सदस्यता लें')}</a>
-              </>}
-            </div>
-          </nav>
-      </header>
-    </>
-  );
 }
 
 function LoadingBlock({ label }: { label?: string }) {
@@ -579,26 +490,7 @@ function InfoPage({ page }: { page: 'about' | 'standards' | 'methodology' }) {
       breadcrumbNode(path, [[content.name, path]]),
     ),
   });
-  return <main className="signal-page"><Header /><section className="signal-container pt-14 sm:pt-24"><p className="signal-kicker text-accent">{content.eyebrow}</p><h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">{content.title}</h1><p className="mt-8 max-w-2xl text-lg leading-relaxed text-muted-foreground">{content.intro}</p><PageArt name={page === 'about' ? 'magnifier-hero' : page === 'standards' ? 'court-stamp' : 'census-clipboard'} className="max-w-4xl" /></section><section className="signal-container mt-16 border-t border-foreground/20 sm:mt-24"><div className="grid divide-y divide-foreground/15 lg:grid-cols-2 lg:divide-x lg:divide-y-0">{content.sections.map(([title, text], index) => <article key={title} id={page === 'standards' && index === content.sections.length - 1 ? 'corrections' : undefined} className={`py-8 lg:px-8 ${index % 2 === 0 ? 'lg:pl-0' : 'lg:pr-0'} ${index > 1 ? 'lg:border-t lg:border-foreground/15' : ''}`}><p className="signal-kicker text-accent">{String(index + 1).padStart(2, '0')}</p><h2 className="mt-3 font-display text-3xl leading-tight">{title}</h2><p className="mt-4 max-w-xl text-[.95rem] leading-[1.8] text-muted-foreground">{text}</p></article>)}</div></section><SiteFooter /></main>;
-}
-
-function SiteFooter() {
-  const t = useT();
-  return <footer className="signal-container mt-20 flex flex-col justify-between gap-8 border-t border-foreground/20 py-10 sm:flex-row sm:items-end">
-    <div><Link href="/" className="signal-link flex items-center gap-3" lang="en"><BrandMark /><span className="font-display text-xl">The Signal <span className="text-accent">24</span></span></Link><p className="mt-3 max-w-xs text-xs leading-relaxed text-muted-foreground">{t("A public-interest newsroom that reads what the government publishes and notices what it doesn’t. For the people, by the people.", "जनहित न्यूज़रूम, जो पढ़ता है कि सरकार क्या छापती है, और यह भी देखता है कि क्या नहीं छापती। जनता के लिए, जनता की ओर से।")}</p></div>
-    <div className="flex max-w-xl flex-wrap gap-x-5 gap-y-2 signal-kicker text-[9px] text-muted-foreground">
-      <Link href="/policies" className="signal-link">{t('Policy ledger', 'नीति रजिस्टर')}</Link>
-      <Link href="/archive" className="signal-link">{t('Archive', 'अभिलेखागार')}</Link>
-      <Link href="/opinion" className="signal-link">{t('Opinion', 'राय')}</Link>
-      <Link href="/events" className="signal-link">{t('Evidence', 'सबूत')}</Link>
-      <Link href="/about" className="signal-link">{t('About', 'परिचय')}</Link>
-      <Link href="/editorial-standards" className="signal-link">{t('Standards', 'मानक')}</Link>
-      <Link href="/editorial-standards#corrections" className="signal-link">{t('Corrections', 'सुधार')}</Link>
-      <Link href="/methodology" className="signal-link">{t('Methodology', 'कार्यप्रणाली')}</Link>
-      <LanguageSwitch className="!min-h-0 !border-0 !p-0" />
-      <span lang="en">© The Signal 24</span>
-    </div>
-  </footer>;
+  return <main className="signal-page"><Header /><section className="signal-container pt-14 sm:pt-24"><p className="signal-kicker text-accent">{content.eyebrow}</p><h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">{content.title}</h1><p className="mt-8 max-w-2xl text-lg leading-relaxed text-muted-foreground">{content.intro}</p><PageArt name={page === 'about' ? 'magnifier-hero' : page === 'standards' ? 'court-stamp' : 'census-clipboard'} className="max-w-4xl" /></section><section className="signal-container mt-16 border-t border-foreground/20 sm:mt-24"><div className="grid divide-y divide-foreground/15 lg:grid-cols-2 lg:divide-x lg:divide-y-0">{content.sections.map(([title, text], index) => <article key={title} id={page === 'standards' && index === content.sections.length - 1 ? 'corrections' : undefined} className={`py-8 lg:px-8 ${index % 2 === 0 ? 'lg:pl-0' : 'lg:pr-0'} ${index > 1 ? 'lg:border-t lg:border-foreground/15' : ''}`}><p className="signal-kicker text-accent">{String(index + 1).padStart(2, '0')}</p><h2 className="mt-3 font-display text-3xl leading-tight">{title}</h2><p className="mt-4 max-w-xl text-[.95rem] leading-[1.8] text-muted-foreground">{text}</p></article>)}</div></section></main>;
 }
 
 function evidenceTypeLabel(value: DecisionImpactEvidenceType) {
@@ -824,7 +716,7 @@ function Home() {
     <section className="signal-container mt-20 sm:mt-28" id="latest-stories"><div className="flex items-end justify-between gap-4 border-b-2 border-foreground pb-4"><div><p className="signal-kicker text-accent">{t('Latest reporting', 'ताज़ा रिपोर्टिंग')}</p><h2 className="mt-2 font-display text-4xl sm:text-5xl">{t("Follow the paper trail. Nobody expected you to.", "काग़ज़ों का सिरा पकड़िए। किसी को उम्मीद नहीं थी कि आप पकड़ेंगे।")}</h2></div><Link href="/timeline" className="signal-kicker text-accent hover:underline">{t('Open the timeline', 'समयरेखा खोलें')} <ArrowUpRight size={13} className="ml-1 inline" /></Link></div><div className="mt-2">{latestStories.length ? latestStories.map((story) => <StoryCard key={story.id} story={story} compact />) : <EmptyState title={t('No published reporting yet.', 'अभी कोई प्रकाशित रिपोर्टिंग नहीं।')} text={t('Published records appear here with their source and verification status.', 'प्रकाशित रिकॉर्ड यहाँ अपने स्रोत और सत्यापन स्थिति के साथ दिखेंगे।')} />}</div></section>
     {opinions.length > 0 && <section className="signal-container mt-20 sm:mt-28" id="opinion"><div className="grid gap-8 bg-primary p-7 text-primary-foreground sm:p-12 lg:grid-cols-[.7fr_1.3fr]"><div><span className="opinion-label bg-accent text-accent-foreground">{label('Opinion')}</span><h2 className="mt-4 font-display text-4xl leading-[.95] sm:text-5xl">{t("Where we stop being polite.", "जहाँ हम शिष्टाचार छोड़ देते हैं।")}</h2><p className="mt-4 text-sm leading-relaxed text-primary-foreground/70">{t("Signed, labelled, and kept away from the reporting so nobody mistakes our irritation for our evidence.", "नाम के साथ, लेबल के साथ, और रिपोर्टिंग से दूर, ताकि कोई हमारी झुँझलाहट को हमारा सबूत न समझ ले।")}</p><Link href="/opinion" className="mt-6 inline-flex items-center gap-2 signal-kicker text-accent hover:underline">{t('All opinion', 'सारी राय')} <ArrowUpRight size={13} /></Link></div><div className="divide-y divide-primary-foreground/20">{opinions.slice(0, 3).map((story) => <Link key={story.id} href={storyPath(story)} className="group block py-5 first:pt-0"><p className="signal-kicker text-primary-foreground/60">{label(story.byline) || t('Editorial board', 'संपादकीय बोर्ड')} · {formatDate(story.publishedOn)}</p><h3 lang={story.contentLang} className="mt-2 font-display text-3xl leading-tight group-hover:text-accent">{story.title}</h3><p lang={story.contentLang} className="mt-2 text-sm leading-relaxed text-primary-foreground/70">{story.dek}</p></Link>)}</div></div></section>}
     {investigation && <section className="signal-container mt-20 sm:mt-28" id="featured-investigation"><div className="grid overflow-hidden bg-primary text-primary-foreground lg:grid-cols-[1.08fr_.92fr]"><div className="min-h-[300px]"><StoryArt story={investigation} className="h-full min-h-[300px]" /></div><div className="flex flex-col justify-center p-7 sm:p-12"><p className="signal-kicker text-accent">{t('In depth', 'विस्तार से')}</p><div className="mt-3 flex flex-wrap gap-2"><span className="signal-status-badge">{verificationLabel(investigation.verificationStatus)}</span></div><h2 lang={investigation.contentLang} className="mt-4 font-display text-4xl leading-[.94] sm:text-6xl">{investigation.title}</h2><p lang={investigation.contentLang} className="mt-5 text-sm leading-relaxed text-primary-foreground/70">{investigation.dek}</p><p className="mt-5 signal-kicker text-primary-foreground/65">{t(`${investigation.sourceCount ?? 0} sources · ${investigation.eventCount ?? 0} events`, `${investigation.sourceCount ?? 0} स्रोत · ${investigation.eventCount ?? 0} घटनाएँ`)}</p><Link href={storyPath(investigation)} className="mt-7 inline-flex w-fit items-center gap-2 signal-kicker text-accent hover:underline">{t('Read the full record', 'पूरा रिकॉर्ड पढ़ें')} <ArrowUpRight size={13} /></Link></div></div></section>}
-    <IndiaFocus stories={stories} />
+    <HomeStatesSection />
     <DocumentFeature />
     <section className="signal-container mt-20 sm:mt-28" id="the-numbers"><div className="border-y-2 border-foreground py-8"><div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end"><div><p className="signal-kicker text-accent">{t('The numbers', 'आंकड़े')}</p><h2 className="mt-3 font-display text-5xl leading-[.9] sm:text-7xl">{t(<>No number<br /><em className="font-normal text-accent">without its frame.</em></>, <>कोई आंकड़ा<br /><em className="font-normal text-accent">संदर्भ के बिना नहीं।</em></>)}</h2></div><div className="max-w-md"><p className="text-sm leading-relaxed text-muted-foreground">{t("The figures this whole fight turns on, each with its unit, year, definition and source. Notice how many of them are about what the state has frozen or withheld.", "वे आंकड़े जिन पर यह पूरी लड़ाई टिकी है, हर एक अपनी इकाई, वर्ष, परिभाषा और स्रोत के साथ। ग़ौर कीजिए कि इनमें से कितने इस बारे में हैं कि सरकार ने क्या जमा रखा है या रोक रखा है।")}</p><Link href="/data" className="mt-4 inline-flex items-center gap-2 signal-kicker text-accent hover:underline" data-testid="link-home-data-room">{t('Open the data room', 'आंकड़ा कक्ष खोलें')} <ArrowUpRight size={13} /></Link></div></div>{measuredRecords.length > 0 && <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{measuredRecords.slice(0, 4).map((record) => <article key={record.id} className="border-t border-foreground/20 pt-4"><p className="signal-kicker text-accent">{record.geography} · {record.decisionArea}</p><p className="mt-3 font-display text-4xl">{record.findingValue} <span className="text-base">{record.findingUnit}</span></p><p className="mt-2 text-sm leading-relaxed text-muted-foreground" lang="en">{record.definition}</p><p className="mt-3 signal-kicker text-muted-foreground">{t('Source', 'स्रोत')}: {record.source}</p></article>)}</div>}<div className="mt-8"><KeyFigures limit={8} /></div></div></section>
     <section className="signal-container mt-20 sm:mt-28" id="timeline-preview">
@@ -842,7 +734,7 @@ function Home() {
       </Link>)}</div> : <div className="mt-2"><EmptyState title={t('No dated records yet.', 'अभी कोई तारीख़वार रिकॉर्ड नहीं।')} /></div>}
     </section>
     <section className="signal-container mt-20 sm:mt-28" id="archive-preview"><div className="flex items-end justify-between gap-4 border-b-2 border-foreground pb-4"><div><p className="signal-kicker text-accent">{t('Archive', 'अभिलेखागार')}</p><h2 className="mt-2 font-display text-4xl sm:text-5xl">{t("Keep the record. They’re counting on you not to.", "रिकॉर्ड सँभालकर रखिए। वे इसी भरोसे हैं कि आप नहीं रखेंगे।")}</h2></div><Link href="/archive" className="signal-kicker text-accent hover:underline">{t('Browse the archive', 'अभिलेखागार देखें')} <ArrowUpRight size={13} className="ml-1 inline" /></Link></div><div className="mt-2">{stories.slice(0, 4).map((story) => <StoryCard key={story.id} story={story} compact />)}</div></section>
-    <LiveDesk /><DecisionEvidenceSection records={decisionImpactQuery.data?.records ?? []} isLoading={decisionImpactQuery.isLoading} isError={decisionImpactQuery.isError} /><NewsletterSignup /><SiteFooter />
+    <LiveDesk /><DecisionEvidenceSection records={decisionImpactQuery.data?.records ?? []} isLoading={decisionImpactQuery.isLoading} isError={decisionImpactQuery.isError} /><NewsletterSignup />
   </main>;
 }
 
@@ -1012,7 +904,7 @@ function TopicIndexPage() {
         isError ? <div className="py-10"><ErrorState message={t('Topics could not be assembled from the archive.', 'अभिलेखागार से विषय तैयार नहीं हो सके।')} onRetry={() => void refetch()} /></div> :
           <TopicCabinet drawers={drawers} />}
     </section>
-    <SiteFooter />
+    
   </main>;
 }
 
@@ -1102,7 +994,7 @@ function TopicPage() {
       <p className="signal-kicker text-accent">{t('Other desks', 'दूसरे डेस्क')}</p>
       <div className="mt-4 flex flex-wrap gap-x-6 gap-y-3">{[...TOPIC_DESK_ORDER.filter((item) => item !== topic).map((item) => [topicHref(item), label(item)] as const), ['/topics/open-category-competition', t('Open-category competition', 'खुली श्रेणी की प्रतिस्पर्धा')] as const].map(([href, text]) => <Link key={href} href={href} className="signal-kicker signal-link">{text}</Link>)}</div>
     </section>
-    <SiteFooter />
+    
   </main>;
 }
 
@@ -1111,9 +1003,7 @@ function TimelinePage() {
   const label = useLabel();
   const archiveParams = useMemo(() => ({ limit: 100 }), []);
   const policyParams = useMemo<GetPoliciesParams>(() => ({ limit: 100 }), []);
-  const archiveQuery = useLocalizedArchive(archiveParams, {
-    query: { queryKey: getGetArchiveQueryKey(archiveParams) },
-  });
+  const eventsQuery = useGetEvidenceEvents(archiveParams, { query: { queryKey: getGetEvidenceEventsQueryKey(archiveParams), staleTime: 60_000 } });
   const policyQuery = useGetPolicies(policyParams, {
     query: { queryKey: getGetPoliciesQueryKey(policyParams) },
   });
@@ -1130,19 +1020,20 @@ function TimelinePage() {
       source: record.authority,
       href: record.canonicalPath,
     }));
-    const storyEntries = (archiveQuery.data?.stories ?? [])
-      .filter((story) => story.workflowStatus === 'published' && Boolean(story.publishedOn ?? story.recordDate))
-      .map((story) => ({
-        id: `story-${story.id}`,
-        date: story.publishedOn ?? story.recordDate!,
-        dateLabel: story.publishedOn ? 'Signal 24 publication date' : t("Record date / as supplied", "रिकॉर्ड तिथि / जैसी दी गई"),
+    // Evidence events carry the real dates (1951 onwards); records are reachable from each event.
+    const eventEntries = (eventsQuery.data?.events ?? [])
+      .filter((item) => Boolean(item.event.recordDate))
+      .map((item) => ({
+        id: `event-${item.event.id}`,
+        date: item.event.recordDate!,
+        dateLabel: t('Date of the event', 'घटना की तारीख़'),
         kind: 'record' as const,
-        visual: imageForStory(story),
-        label: `${label(story.kind)} / ${verificationLabel(story.verificationStatus)}`,
-        title: story.title,
-        summary: story.dek,
-        source: `${story.source} · ${story.sourceUrl ? 'Direct source available' : 'Direct source unavailable'} · ${story.sourceCount ?? 0} sources · ${story.eventCount ?? 0} events`,
-        href: storyPath(story),
+        visual: imageForText(`${item.event.title} ${item.event.summary}`) ?? illustration(TOPIC_ILLUSTRATION[item.event.topic] ?? 'magnifier-hero'),
+        label: `${label(item.event.topic)} / ${t('Evidence event', 'सबूत घटना')}`,
+        title: item.event.title,
+        summary: item.event.summary,
+        source: [...item.primarySources, ...item.secondarySources].map((source) => source.publisher).slice(0, 2).join(' · ') + ` · ${t(`${item.articleCount} linked records`, `${item.articleCount} जुड़े रिकॉर्ड`)}`,
+        href: `/events/${item.event.id}`,
       }));
     const leadEntries = FOCUS_SOURCES.map((source, index) => ({
       id: `lead-${index}`,
@@ -1156,10 +1047,10 @@ function TimelinePage() {
       source: `${source.publisher} · ${source.place}`,
       href: source.href,
     }));
-    return [...policyEntries, ...storyEntries, ...leadEntries]
+    return [...policyEntries, ...eventEntries, ...leadEntries]
       .filter((entry) => entry.date && !Number.isNaN(Date.parse(entry.date)))
       .sort((a, b) => b.date.localeCompare(a.date));
-  }, [archiveQuery.data, policyQuery.data]);
+  }, [eventsQuery.data, policyQuery.data, label, t]);
   useSeo({
     title: t("Timeline — The Signal 24", "समयरेखा — द सिग्नल 24"),
     description: t("A dated index of policy changes, court rulings and Signal 24 records, with outside leads labelled separately.", "नीतिगत बदलावों, अदालती फ़ैसलों और द सिग्नल 24 के रिकॉर्ड की तारीख़वार सूची, बाहरी सुराग अलग से चिह्नित।"),
@@ -1169,20 +1060,23 @@ function TimelinePage() {
       breadcrumbNode('/timeline', [['Timeline', '/timeline']]),
     ),
   });
-  const hasError = archiveQuery.isError || policyQuery.isError;
-  const loading = archiveQuery.isLoading || policyQuery.isLoading;
+  const hasError = eventsQuery.isError || policyQuery.isError;
+  const loading = eventsQuery.isLoading || policyQuery.isLoading;
+  const decades = [...new Set(entries.map((entry) => `${entry.date.slice(0, 3)}0`))].sort();
   return <main className="signal-page"><Header />
     <section className="signal-container pt-14 sm:pt-24">
       <p className="signal-kicker text-accent">{t("The Signal 24 / timeline", "द सिग्नल 24 / समयरेखा")}</p>
-      <h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.88] tracking-[-.06em] sm:text-8xl">{t("Dates with", "तारीख़ें,")}<br /><em className="font-normal text-accent">{t("their record type.", "रिकॉर्ड के प्रकार के साथ।")}</em></h1>
+      <h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.88] tracking-[-.06em] sm:text-8xl">{t("Seventy-five years,", "पचहत्तर साल,")}<br /><em className="font-normal text-accent">{t("in the order it happened.", "उसी क्रम में जैसे हुआ।")}</em></h1>
       <p className="mt-7 max-w-2xl text-lg leading-relaxed text-muted-foreground">{t("An index of dated records, not a complete history. Governments prefer announcements to dates; we prefer dates. Effective dates, publication dates and outside leads are labelled separately, and a headline is never treated as a court finding.", "तारीख़वार रिकॉर्ड की सूची, पूरा इतिहास नहीं। सरकारों को घोषणाएँ पसंद हैं, हमें तारीख़ें। लागू होने की तिथि, प्रकाशन तिथि और बाहरी सुराग अलग-अलग चिह्नित हैं, और किसी सुर्ख़ी को कभी अदालत का निष्कर्ष नहीं माना जाता।")}</p>
     </section>
     <section className="signal-container mt-12 pb-12 sm:mt-16 sm:pb-16">
       {hasError && <p className="signal-note mb-5 p-4 text-sm text-muted-foreground" role="status">{t("Some source lists did not load. The dates below come only from the lists that did.", "कुछ स्रोत सूचियाँ लोड नहीं हुईं। नीचे की तारीख़ें सिर्फ़ उन्हीं सूचियों से हैं जो लोड हुईं।")}</p>}
       {loading ? <LoadingBlock label={t("Assembling dated source entries…", "तारीख़वार प्रविष्टियाँ तैयार हो रही हैं…")} /> :
         !entries.length ? <EmptyState title={t("No dated entries are available.", "कोई तारीख़वार प्रविष्टि उपलब्ध नहीं।")} text={t("The timeline only uses dates attached to published records or attributed external sources.", "समयरेखा सिर्फ़ प्रकाशित रिकॉर्ड या नामित बाहरी स्रोतों से जुड़ी तारीख़ों का इस्तेमाल करती है।")} /> :
+          <>
+          <nav className="timeline-decades" aria-label={t('Jump to a decade', 'दशक पर जाएँ')}>{decades.map((decade) => <a key={decade} href={`#decade-${decade}`}>{decade}s</a>)}</nav>
           <div className="border-t-2 border-foreground">
-            {entries.map((entry) => <article key={entry.id} className="timeline-visual-entry" data-testid={`timeline-entry-${entry.id}`}>
+            {entries.map((entry, index) => <article key={entry.id} id={index === entries.findIndex((item) => item.date.slice(0, 3) === entry.date.slice(0, 3)) ? `decade-${entry.date.slice(0, 3)}0` : undefined} className="timeline-visual-entry" data-testid={`timeline-entry-${entry.id}`}>
               <time className="font-display text-2xl leading-tight" dateTime={entry.date}>{formatDate(entry.date)}<span className="mt-2 block signal-kicker text-muted-foreground">{entry.dateLabel}</span></time>
               <span className="timeline-dot hidden md:block" />
               <div className="timeline-visual-thumb">{entry.visual ? <img src={entry.visual.src} alt={entry.visual.alt} width={entry.visual.width} height={entry.visual.height} loading="lazy" /> : <div className="story-art-placeholder flex h-full min-h-[140px] items-center justify-center p-5 text-center"><p className="signal-kicker text-accent">{t("No relevant archive image available", "कोई प्रासंगिक अभिलेख चित्र उपलब्ध नहीं")}</p></div>}</div>
@@ -1194,10 +1088,10 @@ function TimelinePage() {
                 <p className="mt-3 signal-kicker text-accent">{entry.kind === 'lead' ? 'External lead / verify source' : 'View evidence →'}</p>
               </div>
             </article>)}
-          </div>}
+          </div>
+          </>}
       <p className="mt-5 signal-kicker text-muted-foreground">{t("Outside leads are not Signal 24 reporting. Check the court’s own order before relying on any reported update.", "बाहरी सुराग द सिग्नल 24 की रिपोर्टिंग नहीं हैं। किसी ख़बर पर भरोसा करने से पहले अदालत का अपना आदेश देखें।")}</p>
     </section>
-    <footer className="signal-site-footer"><div className="signal-container flex flex-wrap justify-between gap-4 py-7"><Link href="/archive" className="signal-kicker signal-link">{t("Browse the archive", "अभिलेखागार देखें")}</Link><Link href="/methodology" className="signal-kicker signal-link">{t("How dates are handled", "तारीख़ें कैसे दर्ज होती हैं")}</Link></div></footer>
   </main>;
 }
 function SearchPage() {
@@ -1289,7 +1183,6 @@ function SearchPage() {
           </article>)}
         </div>}
     </section>
-    <footer className="signal-site-footer"><div className="signal-container flex flex-wrap justify-between gap-4 py-7"><Link href="/archive" className="signal-kicker signal-link">{t("Full archive", "पूरा अभिलेखागार")} <ArrowUpRight size={13} className="ml-1 inline" /></Link><Link href="/evidence/search" className="signal-kicker signal-link">{t("Search linked evidence", "जुड़े सबूत खोजें")}</Link><Link href="/" className="signal-kicker signal-link">{t("Front page", "पहला पन्ना")}</Link></div></footer>
   </main>;
 }
 
@@ -1367,7 +1260,7 @@ function OpenCategoryTopicPage() {
         <div><h3 className="font-display text-2xl leading-tight" lang="en">{source.title}</h3><p className="mt-3 text-sm leading-relaxed text-muted-foreground" lang="en">{source.summary}</p><div className="mt-4 flex items-center justify-between gap-3 border-t border-foreground/15 pt-3"><span className="signal-kicker text-muted-foreground">{source.publisher}</span><a href={source.href} target="_blank" rel="noopener noreferrer" className="signal-kicker text-accent hover:underline">{t('Open source', 'स्रोत खोलें')} <ExternalLink size={12} className="ml-1 inline" /></a></div></div>
       </article>)}</div>
     </section>
-    <SiteFooter />
+    
   </main>;
 }
 function ArchivePage() {
@@ -1403,7 +1296,7 @@ function ArchivePage() {
   );
   return <main className="signal-page"><Header /><section className="signal-container pt-14 sm:pt-24"><div className="max-w-4xl"><p className="signal-kicker text-accent">{t("The Signal 24 / archive", "द सिग्नल 24 / अभिलेखागार")}</p><h1 className="mt-4 font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">{t("A record you", "एक रिकॉर्ड, जिस पर")}<br /><em className="font-normal text-accent">{t("can return to.", "आप बार-बार लौट सकें।")}</em></h1><p className="mt-7 max-w-2xl text-lg leading-relaxed text-muted-foreground">{t("Every published record in one place: rulings, policy changes, documents and state records. Search it, filter it, check every claim against its source. Governments rely on short memories. This is the long one.", "हर प्रकाशित रिकॉर्ड एक जगह: फ़ैसले, नीतिगत बदलाव, दस्तावेज़ और राज्यों के रिकॉर्ड। खोजिए, छाँटिए, हर दावे को उसके स्रोत से मिलाइए। सरकारें कमज़ोर याददाश्त के भरोसे चलती हैं। यह लंबी याददाश्त है।")}</p></div></section>
     <section className="signal-container archive-grid mt-16 border-y border-foreground/20 py-6 sm:mt-24"><div className="flex items-center justify-between gap-4"><div className="flex items-center gap-3"><SlidersHorizontal size={16} className="text-accent" /><p className="signal-kicker">{t("Filter the archive", "अभिलेखागार छाँटें")}</p></div><button type="button" onClick={() => setFiltersOpen((value) => !value)} className="inline-flex items-center gap-2 signal-kicker text-muted-foreground md:hidden" data-testid="button-toggle-filters">{filtersOpen ? 'Hide' : 'Show'} filters <ChevronDown size={14} /></button></div><div className={`${filtersOpen ? 'grid' : 'hidden'} mt-5 gap-3 md:grid md:grid-cols-[1.4fr_1fr_1fr_1fr_1fr_1fr_auto]`}><label className="flex items-center gap-2 border border-foreground/20 bg-card px-3 py-2"><Search size={15} className="shrink-0 text-accent" /><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("Search title, source or place", "शीर्षक, स्रोत या जगह खोजें")} className="w-full bg-transparent text-sm outline-none" data-testid="input-archive-search" /></label><SelectFilter label={t("Topic", "विषय")} value={topic} options={data.topics.length ? data.topics : TOPICS} onChange={setTopic} testId="select-archive-topic" /><SelectFilter label={t("Record type", "रिकॉर्ड का प्रकार")} value={kind} options={data.kinds.length ? data.kinds : KINDS} onChange={setKind} testId="select-archive-kind" /><SelectFilter label={t("State", "राज्य")} value={state} options={data.states.length ? ['All states', ...data.states] : INDIA_STATES} onChange={(value) => setState(value === 'All states' ? '' : value)} testId="select-archive-state" /><SelectFilter label="Organization / source" value={organization} options={organizations} onChange={setOrganization} testId="select-archive-organization" allLabel="All sources" /><SelectFilter label="Published year" value={year} options={years} onChange={setYear} testId="select-archive-year" /><button type="button" onClick={clear} className="border border-foreground/20 px-4 py-2 signal-kicker text-muted-foreground hover:border-accent hover:text-accent" data-testid="button-clear-filters">{t("Clear", "हटाएँ")}</button></div><div className="mt-5 flex items-center justify-between border-t border-foreground/15 pt-4"><p className="signal-kicker text-muted-foreground">{records.length} {records.length === 1 ? 'record' : 'records'} / source labels shown</p>{(query || topic || kind || state || year || organization) && <p className="signal-kicker text-accent">{t("Filtered view", "छाँटा हुआ दृश्य")}</p>}</div></section>
-    <section className="signal-container py-12 sm:py-16">{records.length === 0 ? <EmptyState title={t("No record found here.", "यहाँ कोई रिकॉर्ड नहीं मिला।")} text={t("Clear one of the filters and try again. The archive grows with each edition.", "कोई फ़िल्टर हटाकर फिर कोशिश करें। हर सत्यापित रिकॉर्ड के साथ अभिलेखागार बढ़ता है।")} /> : <div className="border-t border-foreground/20">{records.map((story) => <StoryCard key={story.id} story={story} />)}</div>}</section><footer className="signal-container flex justify-between gap-6 border-t border-foreground/20 py-8"><Link href="/" className="signal-kicker signal-link inline-flex items-center gap-2"><ArrowLeft size={13} /> {t("Front page", "पहला पन्ना")}</Link><p className="signal-kicker text-muted-foreground">{t("Read slowly. Check everything.", "ध्यान से पढ़ें। सब कुछ जाँचें।")}</p></footer>
+    <section className="signal-container py-12 sm:py-16">{records.length === 0 ? <EmptyState title={t("No record found here.", "यहाँ कोई रिकॉर्ड नहीं मिला।")} text={t("Clear one of the filters and try again. The archive grows with each edition.", "कोई फ़िल्टर हटाकर फिर कोशिश करें। हर सत्यापित रिकॉर्ड के साथ अभिलेखागार बढ़ता है।")} /> : <div className="border-t border-foreground/20">{records.map((story) => <StoryCard key={story.id} story={story} />)}</div>}</section>
   </main>;
 }
 function PolicySourceCard({ source }: { source: PolicySource }) {
@@ -1480,7 +1373,6 @@ function PoliciesPage() {
     <section className="signal-container py-12 sm:py-16">
       {data.records.length === 0 ? <EmptyState title={t("No policy record found here.", "यहाँ कोई नीति रिकॉर्ड नहीं मिला।")} text={t("Clear one of the filters and try again. New entries appear only when their source record is ready.", "कोई फ़िल्टर हटाकर फिर कोशिश करें। नई प्रविष्टियाँ तभी आती हैं जब उनका स्रोत रिकॉर्ड तैयार हो।")} /> : <div className="border-t border-foreground/20">{data.records.map((record) => <Link href={record.canonicalPath} key={record.id} className="group grid gap-5 border-b border-foreground/20 py-7 md:grid-cols-[.85fr_1.4fr_.8fr] md:gap-10" data-testid={`link-policy-record-${record.id}`}><div><p className="signal-kicker text-accent">{record.state ?? 'National'} / {record.sector}</p><p className="mt-2 signal-kicker text-muted-foreground">{record.status}</p></div><div><h2 className="font-display text-3xl leading-tight tracking-[-.025em] group-hover:text-accent sm:text-4xl">{record.title}</h2><p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">{record.summary}</p></div><div className="md:border-l md:border-foreground/15 md:pl-6"><p className="signal-kicker text-muted-foreground">{t("Effective date", "लागू होने की तिथि")}</p><p className="mt-2 font-display text-xl" data-testid={`text-policy-effective-date-${record.id}`}>{formatDate(record.effectiveDate)}</p><p className="mt-4 signal-kicker text-accent">{t("Authority", "प्राधिकारी")}</p><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{record.authority}</p></div></Link>)}</div>}
     </section>
-    <footer className="signal-container flex justify-between gap-6 border-t border-foreground/20 py-8"><Link href="/" className="signal-kicker signal-link inline-flex items-center gap-2" data-testid="link-policy-ledger-home"><ArrowLeft size={13} /> {t("Front page", "पहला पन्ना")}</Link><p className="signal-kicker text-muted-foreground">{t("A permanent record / not a feed", "स्थायी रिकॉर्ड / फ़ीड नहीं")}</p></footer>
   </main>;
 }
 
@@ -1629,6 +1521,8 @@ function StoryDetail() {
   const storyId = Number(params.id ?? slugId);
   const { data: rawStory, isLoading, isError, refetch } = useGetStory(storyId, { query: { enabled: Number.isFinite(storyId), queryKey: getGetStoryQueryKey(storyId) } });
   const story = useMemo(() => rawStory ? localizeStory(rawStory, lang) : undefined, [rawStory, lang]);
+  const relatedParams = useMemo(() => ({ limit: 100 }), []);
+  const relatedQuery = useLocalizedArchive(relatedParams, { query: { queryKey: getGetArchiveQueryKey(relatedParams), staleTime: 60_000 } });
   const recordPath = story ? storyPath(story) : undefined;
   const isOpinion = story?.kind === 'Opinion';
   const structuredData = useMemo(() => {
@@ -1689,54 +1583,98 @@ function StoryDetail() {
   if (!Number.isFinite(storyId)) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message={t('That record address is not valid.', 'यह रिकॉर्ड पता मान्य नहीं है।')} /></div></div>;
   if (isLoading) return <div className="signal-page"><Header /><LoadingBlock label={t("Opening the record. Unlike some, we don’t need a committee for that…", "रिकॉर्ड खुल रहा है। हमें इसके लिए किसी समिति की ज़रूरत नहीं…")} /></div>;
   if (isError || !story) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message={t('This record may have moved or is not published yet.', 'यह रिकॉर्ड शायद हट गया है या अभी प्रकाशित नहीं हुआ।')} onRetry={() => void refetch()} /></div></div>;
+  const outline = outlineOf(story.body);
+  // The single-record endpoint carries no evidence counts; the archive listing does.
+  const listed = relatedQuery.data?.stories.find((item) => item.id === story.id);
+  const eventCount = listed?.eventCount ?? story.eventCount ?? 0;
+  const sourceCount = listed?.sourceCount ?? story.sourceCount ?? 0;
+  const related = (relatedQuery.data?.stories ?? []).filter((item) => item.id !== story.id && item.topic === story.topic).slice(0, 3);
+  const moreRelated = related.length < 3 ? (relatedQuery.data?.stories ?? []).filter((item) => item.id !== story.id && item.topic !== story.topic && !related.includes(item)).slice(0, 3 - related.length) : [];
+  const keepReading = [...related, ...moreRelated];
+  const byline = label(story.byline) || (isOpinion ? t('The Signal 24 editorial board', 'द सिग्नल 24 संपादकीय बोर्ड') : t('The Signal 24 editorial desk', 'द सिग्नल 24 संपादकीय डेस्क'));
   return <main className="signal-page">
     <Header />
     <ReadingProgress />
-    <article className="signal-container py-12 sm:py-20">
-      <Link href={isOpinion ? '/opinion' : '/archive'} className="signal-kicker signal-link inline-flex items-center gap-2 text-muted-foreground" data-testid="link-back-archive"><ArrowLeft size={13} /> {isOpinion ? t('All opinion', 'सारी राय') : t('Back to the archive', 'अभिलेखागार पर लौटें')}</Link>
-      <header className="mt-10 max-w-5xl border-b border-foreground/20 pb-8 sm:mt-14 sm:pb-10">
-        {isOpinion ? <div className="flex flex-wrap items-center gap-3"><span className="opinion-label">{label('Opinion')}</span><span className="signal-kicker text-muted-foreground">{t('A signed viewpoint, separate from our reporting', 'हस्ताक्षरित राय, हमारी रिपोर्टिंग से अलग')}</span></div> : <p className="signal-kicker text-accent">{label(story.topic)} / {label(story.kind)}</p>}
-        <h1 lang={story.contentLang} className="mt-4 font-display text-5xl leading-[.94] tracking-[-.055em] sm:text-7xl lg:text-8xl" data-testid="heading-story">{story.title}</h1>
-        {isOpinion && <p className="mt-5 signal-kicker text-foreground">{t('By', 'लेखक:')} {label(story.byline) || t('The Signal 24 editorial board', 'द सिग्नल 24 संपादकीय बोर्ड')}</p>}
-        <div className="mt-3"><span className={`signal-tag ${story.verificationStatus === 'verified' ? 'signal-tag--blue' : 'signal-tag--amber'}`}>{t('Verification', 'सत्यापन')} / {verificationLabel(story.verificationStatus)}</span></div>
-        <p lang={story.contentLang} className="mt-7 max-w-3xl text-lg leading-relaxed text-muted-foreground sm:text-xl">{story.dek}</p>
-        <div className="mt-7 flex flex-wrap gap-2">
-          <span className="signal-tag">{t('Record date', 'रिकॉर्ड तिथि')} · {formatDate(story.recordDate)}</span>
-          {story.state && <span className="signal-tag">{label(story.state)}</span>}
-          <span className="signal-tag">{t(`${story.read} min read`, `${story.read} मिनट`)}</span>
+    <article className="article-shell">
+      <header className="article-head signal-container">
+        <nav className="article-crumbs" aria-label={t('Breadcrumb', 'ब्रेडक्रंब')}>
+          <Link href={isOpinion ? '/opinion' : `/topics/${encodeURIComponent(story.topic)}`} data-testid="link-back-archive">{isOpinion ? label('Opinion') : label(story.topic)}</Link>
+          <span aria-hidden="true">/</span>
+          <span>{label(story.kind)}</span>
+          {story.state && story.state !== 'National' && <><span aria-hidden="true">/</span><Link href={`/state/${slugify(story.state)}`}>{label(story.state)}</Link></>}
+        </nav>
+        <div className="article-head-grid">
+          <div>
+            {isOpinion && <div className="mb-5 flex flex-wrap items-center gap-3"><span className="opinion-label">{label('Opinion')}</span><span className="signal-kicker text-muted-foreground">{t('A signed viewpoint, separate from our reporting', 'हस्ताक्षरित राय, हमारी रिपोर्टिंग से अलग')}</span></div>}
+            <h1 lang={story.contentLang} className="article-title" data-testid="heading-story">{story.title}</h1>
+            <p lang={story.contentLang} className="article-dek">{story.dek}</p>
+            <div className="article-byline">
+              <Link href="/authors/signal-24" className="article-byline-name">{t('By', 'लेखक:')} {byline}</Link>
+              <span>{formatDate(story.publishedOn ?? story.recordDate)}</span>
+              <span>{t(`${story.read} min read`, `${story.read} मिनट`)}</span>
+              <span className={`article-verify is-${story.verificationStatus}`}><ShieldCheck size={14} /> {verificationLabel(story.verificationStatus)}</span>
+            </div>
+            <div className="mt-5"><ShareStory story={story} /></div>
+          </div>
+          <figure className="article-art">
+            <StoryArt story={story} className="aspect-[4/3] w-full" showCredit={false} />
+            <figcaption>{imageCaptionForStory(story)}</figcaption>
+          </figure>
         </div>
-        <div className="mt-6"><ShareStory story={story} /></div>
       </header>
-      {!story.isTranslated && <p className="translation-notice mx-auto mt-8 article-reading-column" role="note" data-testid="note-untranslated">हिंदी संस्करण अभी तैयार हो रहा है। नीचे मूल अंग्रेज़ी रिकॉर्ड है। <span className="text-muted-foreground">The Hindi edition of this record is being translated; the original English follows.</span></p>}
-      <figure className="mt-8 m-0 overflow-hidden bg-muted sm:mt-10">
-        <StoryArt story={story} className="aspect-[16/9] w-full" showCredit={false} />
-        <figcaption className="visual-caption px-3 py-3 signal-kicker text-muted-foreground">{imageCaptionForStory(story)}</figcaption>
-      </figure>
-      <div id="record-evidence" className="mx-auto mt-8 article-reading-column"><SourceLine story={story} detail /></div>
-      <div className="signal-container"><ArticleEvidenceSection storyId={story.id} /></div>
-      {story.aiDisclosure && <div className="signal-note mt-6 max-w-3xl px-5 py-4"><p className="signal-kicker text-accent">{t('AI-assisted drafting disclosure', 'एआई की मदद से मसौदा: सूचना')}</p><p className="mt-2 text-sm leading-relaxed text-muted-foreground" lang="en">{story.aiDisclosure}</p></div>}
-      {story.correctionNote && <div className="signal-callout mt-6 max-w-3xl px-5 py-4"><p className="signal-kicker text-accent">{t('Correction note', 'सुधार सूचना')}</p><p className="mt-2 text-sm leading-relaxed text-muted-foreground" lang="en">{story.correctionNote}</p></div>}
-      <div className="mx-auto mt-10 grid max-w-[910px] gap-10 lg:grid-cols-[720px_150px] lg:items-start">
-        <div id="record-body" lang={story.contentLang} className="story-body article-reading-column text-[1.08rem] leading-[1.85] text-foreground/85" data-testid="text-story-body">
+      {!story.isTranslated && <p className="translation-notice signal-container mt-8" role="note" data-testid="note-untranslated">हिंदी संस्करण अभी तैयार हो रहा है। नीचे मूल अंग्रेज़ी रिकॉर्ड है। <span className="text-muted-foreground">The Hindi edition of this record is being translated; the original English follows.</span></p>}
+      {story.correctionNote && <div className="signal-container mt-8"><div className="signal-callout max-w-3xl px-5 py-4"><p className="signal-kicker text-accent">{t('Correction note', 'सुधार सूचना')}</p><p className="mt-2 text-sm leading-relaxed text-muted-foreground" lang="en">{story.correctionNote}</p></div></div>}
+      <div className="article-layout signal-container">
+        <aside className="article-toc" aria-label={t('In this record', 'इस रिकॉर्ड में')}>
+          {outline.length > 1 && <nav className="article-toc-inner">
+            <p className="article-rail-heading">{t('In this record', 'इस रिकॉर्ड में')}</p>
+            <ol>{outline.map((item) => <li key={item.id} className={`is-${item.kind}`}><a href={`#${item.id}`}>{item.text}</a></li>)}</ol>
+            <a href="#record-evidence" className="article-toc-evidence">{t('The evidence', 'सबूत')} ↓</a>
+          </nav>}
+        </aside>
+        <div id="record-body" lang={story.contentLang} className="story-body article-body" data-testid="text-story-body">
           <RichBody body={story.body} dropCap={!isOpinion} />
+          <div className="article-end">
+            <p className="signal-kicker text-muted-foreground">{t('End of record', 'रिकॉर्ड समाप्त')} / <span lang="en">{story.source}</span></p>
+            <div className="flex flex-wrap items-center gap-4">
+              {story.sourceUrl && <a href={story.sourceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 signal-kicker text-accent" data-testid="link-open-source-bottom">{t('Read the source', 'स्रोत पढ़ें')} <ExternalLink size={13} /></a>}
+              <Link href="/editorial-standards#corrections" className="signal-kicker text-muted-foreground hover:text-accent" data-testid="link-report-correction">{t('Report a correction', 'सुधार बताएँ')}</Link>
+            </div>
+          </div>
         </div>
-        <aside className="article-rail hidden lg:block">
-          <p className="signal-kicker text-accent">{t('On this record', 'इस रिकॉर्ड में')}</p>
-          <a href="#record-body" className="mt-4 block signal-kicker text-muted-foreground hover:text-accent">{t('Reading', 'पढ़ना')}</a>
-          <a href="#record-evidence" className="mt-3 block signal-kicker text-muted-foreground hover:text-accent">{t('Evidence', 'सबूत')}</a>
-          <p className="mt-6 border-t border-foreground/15 pt-4 signal-kicker text-muted-foreground">{t('Dates', 'तारीख़ें')}</p>
-          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{t('The date above belongs to this record. The source’s own publication date is shown separately when known.', 'ऊपर की तारीख़ इस रिकॉर्ड की है। स्रोत की अपनी प्रकाशन तिथि पता होने पर अलग से दिखाई जाती है।')}</p>
+        <aside className="article-rail">
+          <div className="article-rail-sticky">
+            <p className="article-rail-heading">{t('At a glance', 'एक नज़र में')}</p>
+            <dl className="article-glance">
+              <div><dt>{t('Desk', 'डेस्क')}</dt><dd><Link href={`/topics/${encodeURIComponent(story.topic)}`}>{label(story.topic)}</Link></dd></div>
+              <div><dt>{t('Where', 'कहाँ')}</dt><dd>{label(story.state ?? 'National')}</dd></div>
+              <div><dt>{t('Evidence', 'सबूत')}</dt><dd><a href="#record-evidence">{t(`${eventCount} events · ${sourceCount} sources`, `${eventCount} घटनाएँ · ${sourceCount} स्रोत`)}</a></dd></div>
+              <div><dt>{t('Status', 'स्थिति')}</dt><dd>{verificationLabel(story.verificationStatus)}</dd></div>
+            </dl>
+            <div id="record-source" className="mt-5"><SourceLine story={story} /></div>
+            <Link href={`/community?ask=${encodeURIComponent(story.title)}`} className="article-rail-cta">{t('Discuss this, anonymously', 'इस पर चर्चा करें, गुमनाम रूप से')} <ArrowUpRight size={14} /></Link>
+          </div>
         </aside>
       </div>
-      <div className="mx-auto mt-12 flex article-reading-column flex-wrap items-center justify-between gap-4 border-t border-foreground/20 pt-5">
-        <p className="signal-kicker text-muted-foreground">{t('End of record', 'रिकॉर्ड समाप्त')} / <span lang="en">{story.source}</span></p>
-        <div className="flex flex-wrap items-center gap-4">
-          {story.sourceUrl && <a href={story.sourceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 signal-kicker text-accent" data-testid="link-open-source-bottom">{t('View source', 'स्रोत देखें')} <ExternalLink size={13} /></a>}
-          <Link href="/editorial-standards#corrections" className="signal-kicker text-muted-foreground hover:text-accent" data-testid="link-report-correction">{t('Report a correction', 'सुधार बताएँ')}</Link>
+      <section id="record-evidence" className="signal-container article-evidence">
+        <ArticleEvidenceSection storyId={story.id} />
+        {story.aiDisclosure && <div className="signal-note mt-8 max-w-3xl px-5 py-4"><p className="signal-kicker text-accent">{t('How this record was made', 'यह रिकॉर्ड कैसे बना')}</p><p className="mt-2 text-sm leading-relaxed text-foreground/80" lang="en">{story.aiDisclosure}</p></div>}
+      </section>
+      <section className="signal-container article-next" aria-labelledby="keep-reading-title">
+        <div className="article-next-grid">
+          <div className="article-next-cta">
+            <p className="signal-kicker text-accent">{t('Your turn', 'आपकी बारी')}</p>
+            <h2 className="mt-3 font-display text-3xl leading-tight">{t('Know something the record doesn’t?', 'कुछ ऐसा जानते हैं जो रिकॉर्ड में नहीं है?')}</h2>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{t('Ask a question or answer one in the community room. No account, no name required. Documents beat anecdotes.', 'समुदाय कक्ष में सवाल पूछिए या किसी का जवाब दीजिए। न खाता, न नाम ज़रूरी। दस्तावेज़ क़िस्सों से बेहतर हैं।')}</p>
+            <div className="mt-5 flex flex-wrap gap-3"><Link href={`/community?ask=${encodeURIComponent(story.title)}`} className="signal-button">{t('Start a discussion', 'चर्चा शुरू करें')}</Link><Link href="/answers" className="signal-button is-ghost">{t('Browse Answers', 'जवाब देखें')}</Link></div>
+          </div>
+          {keepReading.length > 0 && <div>
+            <h2 id="keep-reading-title" className="signal-kicker text-accent">{t('Keep reading', 'आगे पढ़ें')}</h2>
+            <div className="mt-4 grid gap-4">{keepReading.map((item) => <Link key={item.id} href={storyPath(item)} className="article-next-card group"><div className="article-next-thumb"><StoryArt story={item} className="h-full" showCredit={false} /></div><div><p className="signal-kicker text-muted-foreground">{label(item.topic)} / {label(item.kind)}</p><p lang={item.contentLang} className="mt-1 font-display text-xl leading-snug group-hover:text-accent">{item.title}</p></div></Link>)}</div>
+          </div>}
         </div>
-      </div>
+      </section>
     </article>
-    <SiteFooter />
   </main>;
 }
 
@@ -2050,173 +1988,13 @@ function AuthorPage() {
     ) : undefined,
   });
   if (!validAuthor) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message={t('That author page does not exist.', 'यह लेखक पेज मौजूद नहीं है।')} /></div></div>;
-  return <main className="signal-page"><Header /><section className="signal-container pt-14 sm:pt-24"><p className="signal-kicker text-accent">{t('The Signal 24 / editorial desk', 'द सिग्नल 24 / संपादकीय डेस्क')}</p><h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">{t(<>The desk<br /><em className="font-normal text-accent">that signs off.</em></>, <>वह डेस्क,<br /><em className="font-normal text-accent">जो ज़िम्मेदारी लेती है।</em></>)}</h1><p className="mt-8 max-w-2xl text-lg leading-relaxed text-muted-foreground">{description}</p></section><section className="signal-container mt-16 border-y border-foreground/20 py-10 sm:mt-24 sm:py-14"><div className="grid gap-8 lg:grid-cols-[.7fr_1.3fr]"><div><p className="signal-kicker text-accent">{t('A byline is a responsibility', 'नाम का मतलब ज़िम्मेदारी')}</p><h2 className="mt-3 font-display text-4xl leading-tight">{t('Who answers for each record.', 'हर रिकॉर्ड के लिए कौन जवाबदेह है।')}</h2></div><p className="max-w-2xl text-base leading-relaxed text-muted-foreground">{t('Records published under the desk’s name are checked by the desk, and the desk answers for them. Signed opinion pieces carry their author’s name. When we are wrong, the correction appears on the record with the date it was made.', 'डेस्क के नाम से छपे रिकॉर्ड डेस्क जाँचती है, और उनकी जवाबदेही उसी की है। हस्ताक्षरित राय पर उसके लेखक का नाम होता है। जब हम ग़लत होते हैं, तो सुधार उसी रिकॉर्ड पर तारीख़ के साथ दर्ज होता है।')}</p></div></section><SiteFooter /></main>;
+  return <main className="signal-page"><Header /><section className="signal-container pt-14 sm:pt-24"><p className="signal-kicker text-accent">{t('The Signal 24 / editorial desk', 'द सिग्नल 24 / संपादकीय डेस्क')}</p><h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">{t(<>The desk<br /><em className="font-normal text-accent">that signs off.</em></>, <>वह डेस्क,<br /><em className="font-normal text-accent">जो ज़िम्मेदारी लेती है।</em></>)}</h1><p className="mt-8 max-w-2xl text-lg leading-relaxed text-muted-foreground">{description}</p></section><section className="signal-container mt-16 border-y border-foreground/20 py-10 sm:mt-24 sm:py-14"><div className="grid gap-8 lg:grid-cols-[.7fr_1.3fr]"><div><p className="signal-kicker text-accent">{t('A byline is a responsibility', 'नाम का मतलब ज़िम्मेदारी')}</p><h2 className="mt-3 font-display text-4xl leading-tight">{t('Who answers for each record.', 'हर रिकॉर्ड के लिए कौन जवाबदेह है।')}</h2></div><p className="max-w-2xl text-base leading-relaxed text-muted-foreground">{t('Records published under the desk’s name are checked by the desk, and the desk answers for them. Signed opinion pieces carry their author’s name. When we are wrong, the correction appears on the record with the date it was made.', 'डेस्क के नाम से छपे रिकॉर्ड डेस्क जाँचती है, और उनकी जवाबदेही उसी की है। हस्ताक्षरित राय पर उसके लेखक का नाम होता है। जब हम ग़लत होते हैं, तो सुधार उसी रिकॉर्ड पर तारीख़ के साथ दर्ज होता है।')}</p></div></section></main>;
 }
 
 
 const COMMUNITY_TOPICS = ['general', 'caste', 'policy', 'representation', 'migration', 'violence', 'work', 'education', 'culture'] as CommunityTopic[];
 const COMMUNITY_KINDS = ['thought', 'article', 'piece'] as CommunityPostKind[];
 const COMMUNITY_STATES = ['Andhra Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Delhi', 'Gujarat', 'Haryana', 'Jharkhand', 'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Odisha', 'Punjab', 'Rajasthan', 'Tamil Nadu', 'Telangana', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal'];
-
-function communityDate(value: string) {
-  return formatDate(value);
-}
-
-function CommunityPostCard({ post }: { post: CommunityPost }) {
-  const queryClient = useQueryClient();
-  const likeMutation = useToggleCommunityPostLike();
-  const [likeError, setLikeError] = useState(false);
-  function toggleLike() {
-    setLikeError(false);
-    likeMutation.mutate({ postId: post.id }, {
-      onSuccess: () => {
-        void queryClient.invalidateQueries({ queryKey: getGetCommunityPostsQueryKey() });
-        void queryClient.invalidateQueries({ queryKey: getGetCommunityPostQueryKey(post.id) });
-      },
-      onError: () => setLikeError(true),
-    });
-  }
-  return <article className="community-card border border-foreground/15 bg-card p-5 sm:p-7" data-testid={`card-community-post-${post.id}`}>
-    <div className="flex flex-wrap items-center justify-between gap-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="signal-kicker text-accent">{post.kind}</span>
-        <span className="text-muted-foreground">/</span>
-        <span className="signal-kicker text-muted-foreground">{post.topic}</span>
-        {post.state && <><span className="text-muted-foreground">/</span><span className="signal-kicker text-muted-foreground">{post.state}</span></>}
-      </div>
-      <time className="signal-kicker text-[9px] text-muted-foreground" dateTime={post.createdAt}>{communityDate(post.createdAt)}</time>
-    </div>
-    <Link href={`/community/${post.id}`} className="group mt-5 block" data-testid={`link-community-post-${post.id}`}>
-      <h2 className="font-display text-3xl leading-[.98] tracking-[-.03em] group-hover:text-accent sm:text-4xl">{post.title}</h2>
-    </Link>
-    <p className="mt-4 line-clamp-4 whitespace-pre-line text-sm leading-relaxed text-muted-foreground" data-testid={`text-community-post-body-${post.id}`}>{post.body}</p>
-    <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-foreground/15 pt-4">
-      <p className="signal-kicker text-muted-foreground">Shared by <span className="text-foreground">{post.authorName}</span></p>
-      <div className="flex items-center gap-4">
-        <button type="button" onClick={toggleLike} disabled={likeMutation.isPending} className={`inline-flex items-center gap-2 signal-kicker transition-colors hover:text-accent disabled:opacity-50 ${post.likedByViewer ? 'text-accent' : 'text-muted-foreground'}`} aria-label={post.likedByViewer ? `Unlike ${post.title}` : `Like ${post.title}`} data-testid={`button-like-community-post-${post.id}`}>
-          <Heart size={15} fill={post.likedByViewer ? 'currentColor' : 'none'} /> {post.likeCount}
-        </button>
-        <Link href={`/community/${post.id}`} className="inline-flex items-center gap-2 signal-kicker text-muted-foreground hover:text-accent" data-testid={`link-replies-community-post-${post.id}`}>
-          <MessageCircle size={15} /> {post.replyCount}
-        </Link>
-      </div>
-    </div>
-    {likeError && <p className="mt-3 text-xs text-destructive" role="alert">That reaction could not be saved. Try again.</p>}
-  </article>;
-}
-
-function CommunityComposer({ onClose }: { onClose: () => void }) {
-  const queryClient = useQueryClient();
-  const createMutation = useCreateCommunityPost();
-  const initial: CommunityPostInput = { authorName: '', kind: 'thought', topic: 'general', state: null, title: '', body: '', linkUrl: null };
-  const [form, setForm] = useState<CommunityPostInput>(initial);
-  const [error, setError] = useState(false);
-  function update(field: keyof CommunityPostInput, value: string) {
-    setForm((current) => ({ ...current, [field]: value }));
-  }
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError(false);
-    const payload: CommunityPostInput = { ...form, state: form.state?.trim() || null, linkUrl: form.linkUrl?.trim() || null };
-    createMutation.mutate({ data: payload }, {
-      onSuccess: () => {
-        void queryClient.invalidateQueries({ queryKey: getGetCommunityPostsQueryKey() });
-        onClose();
-      },
-      onError: () => setError(true),
-    });
-  }
-  return <section className="community-composer border-2 border-primary bg-card p-5 sm:p-8" aria-labelledby="community-composer-title">
-    <div className="flex items-start justify-between gap-5">
-      <div><p className="signal-kicker text-accent">Share with the noticeboard</p><h2 id="community-composer-title" className="mt-2 font-display text-3xl leading-none sm:text-4xl">Put something in the room.</h2><p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">Use your name. Add context. Links are welcome. This is a public participant contribution, not an automatic The Signal 24 report.</p></div>
-      <button type="button" onClick={onClose} className="grid h-9 w-9 shrink-0 place-items-center border border-foreground/20 text-muted-foreground hover:border-accent hover:text-accent" aria-label="Close share form" data-testid="button-close-community-composer"><X size={17} /></button>
-    </div>
-    <form onSubmit={submit} className="mt-7 grid gap-5">
-      <div className="grid gap-5 sm:grid-cols-2">
-        <Field label="Your name"><input required minLength={2} maxLength={80} value={form.authorName} onChange={(event) => update('authorName', event.target.value)} className="editor-input" placeholder="Name shown with your contribution" data-testid="input-community-author" /></Field>
-        <Field label="Contribution type"><select value={form.kind} onChange={(event) => update('kind', event.target.value)} className="editor-input" data-testid="select-community-kind">{COMMUNITY_KINDS.map((kind) => <option key={kind} value={kind}>{kind}</option>)}</select></Field>
-        <Field label="Topic"><select value={form.topic} onChange={(event) => update('topic', event.target.value)} className="editor-input" data-testid="select-community-topic">{COMMUNITY_TOPICS.map((topic) => <option key={topic} value={topic}>{topic}</option>)}</select></Field>
-        <Field label="State / territory"><select value={form.state ?? ''} onChange={(event) => update('state', event.target.value)} className="editor-input" data-testid="select-community-state"><option value="">National / not specified</option>{COMMUNITY_STATES.map((state) => <option key={state} value={state}>{state}</option>)}</select></Field>
-      </div>
-      <Field label="Title"><input required minLength={4} maxLength={180} value={form.title} onChange={(event) => update('title', event.target.value)} className="editor-input text-lg" placeholder="What should people understand first?" data-testid="input-community-title" /></Field>
-      <Field label="Your contribution"><textarea required minLength={10} maxLength={10000} value={form.body} onChange={(event) => update('body', event.target.value)} className="editor-input min-h-40 resize-y leading-relaxed" placeholder="Share the experience, argument, source or creative work." data-testid="textarea-community-body" /></Field>
-      <Field label="Link, if relevant"><input type="url" value={form.linkUrl ?? ''} onChange={(event) => update('linkUrl', event.target.value)} className="editor-input" placeholder="https://" data-testid="input-community-link" /></Field>
-      {error && <p className="border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive" role="alert">Your contribution could not be shared. Check the fields and try again.</p>}
-      <div className="flex flex-wrap items-center gap-4"><button type="submit" disabled={createMutation.isPending} className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-3 signal-kicker text-primary-foreground disabled:opacity-50" data-testid="button-submit-community-post">{createMutation.isPending ? 'Sharing…' : 'Share publicly'} <Send size={14} /></button><p className="signal-kicker text-[9px] text-muted-foreground">Public participant contribution / not verified reporting</p></div>
-    </form>
-  </section>;
-}
-
-function CommunityPage() {
-  useSeo({
-    title: 'Community noticeboard — The Signal 24',
-    description: 'Public participant contributions about reservation, representation and related policy. Contributions are not The Signal 24 reporting.',
-    canonicalPath: '/community',
-    translated: false,
-    robots: 'noindex, follow',
-  });
-  const [topic, setTopic] = useState('');
-  const [state, setState] = useState('');
-  const [sort, setSort] = useState<GetCommunityPostsSort>('recent');
-  const [composerOpen, setComposerOpen] = useState(false);
-  const params = useMemo<GetCommunityPostsParams>(() => ({ topic: topic ? topic as CommunityTopic : undefined, state: state || undefined, sort, limit: 50 }), [topic, state, sort]);
-  const { data, isLoading, isError, refetch, isFetching } = useGetCommunityPosts(params, { query: { queryKey: getGetCommunityPostsQueryKey(params) } });
-  const posts = data?.posts ?? [];
-  useSeo({ title: 'Community noticeboard — The Signal 24', description: 'A public discussion space for lived thoughts, articles, links and creative pieces from across India.', canonicalPath: '/community', translated: false });
-  return <main className="signal-page"><Header /><section className="signal-container pt-12 sm:pt-20">
-    <div className="grid gap-8 border-b-2 border-primary pb-10 lg:grid-cols-[1fr_.58fr] lg:items-end">
-      <div><p className="signal-kicker text-accent">The Signal 24 / community</p><h1 className="mt-4 max-w-4xl font-display text-6xl leading-[.88] tracking-[-.065em] sm:text-8xl">The national<br /><em className="font-normal text-accent">noticeboard.</em></h1><p className="mt-7 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">A separate public room for lived thoughts, articles, links and creative pieces. Read across disagreement, geography and experience.</p></div>
-      <div className="border-l-2 border-accent pl-5"><p className="signal-kicker text-accent">Important distinction</p><p className="mt-3 text-sm leading-relaxed">These are public participant contributions. They are not automatically The Signal 24 reporting, and they do not carry the archive’s source verification.</p><button type="button" onClick={() => setComposerOpen((open) => !open)} className="mt-6 inline-flex items-center gap-2 rounded-full bg-accent px-5 py-3 signal-kicker text-accent-foreground" data-testid="button-open-community-composer">{composerOpen ? 'Close share form' : 'Share a thought'} <Plus size={14} /></button></div>
-    </div>
-    {composerOpen && <div className="mt-8"><CommunityComposer onClose={() => setComposerOpen(false)} /></div>}
-  </section>
-  <section className="signal-container py-10 sm:py-14">
-    <div className="flex flex-col justify-between gap-5 border-y border-foreground/20 py-5 sm:flex-row sm:items-end"><div><p className="signal-kicker text-accent">Browse the room</p><h2 className="mt-2 font-display text-4xl leading-none sm:text-5xl">Many voices. More context.</h2></div><button type="button" onClick={() => void refetch()} disabled={isFetching} className="inline-flex items-center gap-2 signal-kicker text-accent disabled:opacity-50" data-testid="button-refresh-community"><RefreshCw size={13} className={isFetching ? 'animate-spin' : ''} /> {isFetching ? 'Refreshing' : 'Refresh posts'}</button></div>
-    <div className="mt-6 grid gap-3 border border-foreground/15 bg-card p-3 sm:grid-cols-[1fr_1fr_auto] sm:p-4"><label className="border-b border-foreground/15 px-2 py-2 sm:border-b-0 sm:border-r"><span className="signal-kicker block text-[9px] text-muted-foreground">Topic</span><select value={topic} onChange={(event) => setTopic(event.target.value)} className="w-full bg-transparent pt-1 text-sm outline-none" data-testid="select-community-filter-topic"><option value="">All topics</option>{COMMUNITY_TOPICS.map((item) => <option key={item} value={item}>{item}</option>)}</select></label><label className="border-b border-foreground/15 px-2 py-2 sm:border-b-0 sm:border-r"><span className="signal-kicker block text-[9px] text-muted-foreground">State</span><select value={state} onChange={(event) => setState(event.target.value)} className="w-full bg-transparent pt-1 text-sm outline-none" data-testid="select-community-filter-state"><option value="">All states</option>{(data?.states?.length ? data.states : COMMUNITY_STATES).map((item) => <option key={item} value={item}>{item}</option>)}</select></label><label className="px-2 py-2"><span className="signal-kicker block text-[9px] text-muted-foreground">Sort by</span><select value={sort} onChange={(event) => setSort(event.target.value as GetCommunityPostsSort)} className="w-full bg-transparent pt-1 text-sm outline-none" data-testid="select-community-sort"><option value="recent">Most recent</option><option value="popular">Most liked</option></select></label></div>
-    {isLoading ? <div className="mt-8 grid gap-5 md:grid-cols-2" role="status" aria-label="Loading community posts"><div className="h-64 animate-pulse bg-muted" /><div className="h-64 animate-pulse bg-muted" /><div className="h-64 animate-pulse bg-muted" /></div> : isError ? <div className="mt-8"><ErrorState message="The community noticeboard could not be loaded." onRetry={() => void refetch()} /></div> : posts.length === 0 ? <div className="mt-8"><EmptyState title="The noticeboard is quiet here." text="Try another topic or state, or be the first person to share a contribution." /></div> : <div className="mt-8 grid gap-5 md:grid-cols-2">{posts.map((post) => <CommunityPostCard key={post.id} post={post} />)}</div>}
-  </section>
-  <footer className="signal-container border-t border-foreground/20 py-8"><div className="flex flex-wrap justify-between gap-4"><p className="signal-kicker text-muted-foreground">Community / public participant contributions</p><Link href="/editorial-standards" className="signal-kicker text-accent hover:underline" data-testid="link-community-standards">Read editorial standards</Link></div></footer>
-  </main>;
-}
-
-function CommunityDetailPage() {
-  const params = useParams<{ id?: string }>();
-  const postId = Number(params.id);
-  const queryClient = useQueryClient();
-  const { data, isLoading, isError, refetch } = useGetCommunityPost(postId, { query: { enabled: Number.isFinite(postId), queryKey: getGetCommunityPostQueryKey(postId) } });
-  const likeMutation = useToggleCommunityPostLike();
-  const replyMutation = useCreateCommunityReply();
-  const [authorName, setAuthorName] = useState('');
-  const [replyBody, setReplyBody] = useState('');
-  const [replyError, setReplyError] = useState(false);
-  useSeo({ title: data?.post ? `${data.post.title} — Community — The Signal 24` : 'Community post — The Signal 24', description: data?.post?.body.slice(0, 155) ?? 'A public participant contribution in the Signal 24 community.', robots: 'noindex, follow' });
-  function like() {
-    if (!data?.post) return;
-    likeMutation.mutate({ postId }, { onSuccess: () => { void queryClient.invalidateQueries({ queryKey: getGetCommunityPostsQueryKey() }); void queryClient.invalidateQueries({ queryKey: getGetCommunityPostQueryKey(postId) }); } });
-  }
-  function reply(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setReplyError(false);
-    replyMutation.mutate({ postId, data: { authorName, body: replyBody } }, {
-      onSuccess: () => { setAuthorName(''); setReplyBody(''); void queryClient.invalidateQueries({ queryKey: getGetCommunityPostsQueryKey() }); void queryClient.invalidateQueries({ queryKey: getGetCommunityPostQueryKey(postId) }); },
-      onError: () => setReplyError(true),
-    });
-  }
-  if (!Number.isFinite(postId)) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message="That community post address is not valid." /></div></div>;
-  if (isLoading) return <div className="signal-page"><Header /><LoadingBlock label="Opening the community contribution…" /></div>;
-  if (isError || !data?.post) return <div className="signal-page"><Header /><div className="py-20"><ErrorState message="This community contribution could not be opened." onRetry={() => void refetch()} /></div></div>;
-  const post = data.post;
-  return <main className="signal-page"><Header /><article className="signal-container py-12 sm:py-20">
-    <Link href="/community" className="signal-kicker inline-flex items-center gap-2 text-muted-foreground hover:text-accent" data-testid="link-back-community"><ArrowLeft size={13} /> Back to community</Link>
-    <div className="mt-12 grid gap-10 lg:grid-cols-[1fr_.48fr]"><div><div className="flex flex-wrap items-center gap-2"><span className="signal-kicker text-accent">{post.kind}</span><span className="text-muted-foreground">/</span><span className="signal-kicker text-muted-foreground">{post.topic}</span>{post.state && <><span className="text-muted-foreground">/</span><span className="signal-kicker text-muted-foreground">{post.state}</span></>}</div><h1 className="mt-5 max-w-4xl font-display text-5xl leading-[.92] tracking-[-.055em] sm:text-7xl" data-testid="heading-community-post">{post.title}</h1><p className="mt-6 signal-kicker text-muted-foreground">Shared by {post.authorName} · {communityDate(post.createdAt)}</p></div><aside className="border-l-2 border-accent pl-5"><p className="signal-kicker text-accent">Community record</p><p className="mt-3 text-sm leading-relaxed text-muted-foreground">A public participant contribution. It is not automatically The Signal 24 reporting or a verified archive record.</p><button type="button" onClick={like} disabled={likeMutation.isPending} className={`mt-6 inline-flex items-center gap-2 rounded-full border px-4 py-2 signal-kicker hover:border-accent hover:text-accent disabled:opacity-50 ${post.likedByViewer ? 'border-accent text-accent' : 'border-foreground/25'}`} data-testid="button-like-community-detail"><Heart size={14} fill={post.likedByViewer ? 'currentColor' : 'none'} /> {post.likedByViewer ? 'Liked' : 'Like'} · {post.likeCount}</button></aside></div>
-    <div className="story-body mt-12 max-w-3xl whitespace-pre-line text-[1.08rem] leading-[1.85] text-foreground/85" data-testid="text-community-detail-body">{post.body}</div>
-    {post.linkUrl && <a href={post.linkUrl} target="_blank" rel="noopener noreferrer" className="mt-8 inline-flex items-center gap-2 border-b border-accent pb-1 signal-kicker text-accent hover:border-primary hover:text-primary" data-testid="link-community-external"><Link2 size={14} /> Open shared link <ExternalLink size={13} /></a>}
-    <section className="mt-16 border-t-2 border-primary pt-8" aria-labelledby="community-replies-title"><div className="flex items-end justify-between gap-4"><div><p className="signal-kicker text-accent">Responses</p><h2 id="community-replies-title" className="mt-2 font-display text-4xl">The reply line.</h2></div><span className="signal-kicker text-muted-foreground">{data.replies.length} replies</span></div>
-      {data.replies.length ? <div className="mt-7 divide-y divide-foreground/15 border-y border-foreground/15">{data.replies.map((item: CommunityReply) => <article key={item.id} className="py-5" data-testid={`card-community-reply-${item.id}`}><div className="flex flex-wrap justify-between gap-3"><p className="signal-kicker text-accent">{item.authorName}</p><time className="signal-kicker text-[9px] text-muted-foreground" dateTime={item.createdAt}>{communityDate(item.createdAt)}</time></div><p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{item.body}</p></article>)}</div> : <p className="mt-7 border border-dashed border-foreground/25 px-5 py-8 text-sm text-muted-foreground">No replies yet. Disagreement is welcome when it brings context.</p>}
-      <form onSubmit={reply} className="mt-8 grid gap-4 border border-foreground/15 bg-card p-5 sm:p-7"><p className="font-display text-2xl">Add your context.</p><div className="grid gap-4 sm:grid-cols-2"><Field label="Your name"><input required minLength={2} maxLength={80} value={authorName} onChange={(event) => setAuthorName(event.target.value)} className="editor-input" data-testid="input-community-reply-author" /></Field><Field label="Your reply"><textarea required minLength={2} maxLength={5000} value={replyBody} onChange={(event) => setReplyBody(event.target.value)} className="editor-input min-h-24 resize-y" data-testid="textarea-community-reply" /></Field></div>{replyError && <p className="text-sm text-destructive" role="alert">Your reply could not be posted. Please try again.</p>}<button type="submit" disabled={replyMutation.isPending} className="w-fit rounded-full bg-primary px-5 py-3 signal-kicker text-primary-foreground disabled:opacity-50" data-testid="button-submit-community-reply">{replyMutation.isPending ? 'Posting…' : 'Post reply'}</button></form>
-    </section>
-  </article></main>;
-}
 
 function SignInPage() {
   useSeo({ title: 'Editor sign in — The Signal 24', description: 'Sign in to access the private editorial desk of The Signal 24.', robots: 'noindex, nofollow' });
@@ -2246,7 +2024,7 @@ function EditorEvidenceAccessRoute() {
 }
 
 function AppRoutes() {
-  return <Switch>
+  return <><Switch>
     <Route path="/" component={Home} />
     <Route path="/sign-in/*?" component={SignInPage} />
     <Route path="/sign-up/*?" component={SignUpPage} />
@@ -2267,6 +2045,10 @@ function AppRoutes() {
     <Route path="/authors/:slug" component={AuthorPage} />
     <Route path="/data" component={DataIndexPage} />
     <Route path="/opinion" component={OpinionPage} />
+    <Route path="/answers" component={AnswersPage} />
+    <Route path="/states" component={StatesPage} />
+    <Route path="/state/:slug" component={StateProfilePage} />
+    <Route path="/answers/:id" component={AnswerDetailPage} />
     <Route path="/stories/:id" component={StoryDetail} />
     <Route path="/editor/evidence" component={EditorEvidenceAccessRoute} />
     <Route path="/editor" component={EditorAccessRoute} />
@@ -2275,7 +2057,7 @@ function AppRoutes() {
     <Route path="/methodology" component={MethodologyPage} />
     <Route path="/:family/:slug" component={StoryDetail} />
     <Route component={NotFound} />
-  </Switch>;
+  </Switch><GlobalFooter /></>;
 }
 
 function ClerkProviderWithRouting() {
@@ -2426,7 +2208,7 @@ function DataIndexPage() {
           records.length === 0 ? <p className="mt-6 max-w-2xl text-sm leading-relaxed text-muted-foreground">{t('No source-linked data record is published yet.', 'अभी कोई स्रोत-आधारित आंकड़ा रिकॉर्ड प्रकाशित नहीं हुआ है।')}</p> :
             <div>{records.map((story) => <StoryCard key={story.id} story={story} compact />)}</div>}
     </section>
-    <SiteFooter />
+    
   </main>;
 }
 
@@ -2527,7 +2309,7 @@ function OpinionPage() {
       </ol>
       <Link href="/editorial-standards" className="mt-5 inline-flex items-center gap-2 signal-kicker text-accent hover:underline">{t('Read the full editorial standards', 'पूरे संपादकीय मानक पढ़ें')} <ArrowUpRight size={13} /></Link>
     </section>
-    <SiteFooter />
+    
   </main>;
 }
 

@@ -123,11 +123,11 @@ export const getCommunityPostsQueryLimitMax = 50;
 export const GetCommunityPostsQueryParams = zod.object({
   "topic": zod.enum(['general', 'caste', 'policy', 'representation', 'migration', 'violence', 'work', 'education', 'culture']).optional(),
   "state": zod.coerce.string().optional(),
-  "sort": zod.enum(['recent', 'popular']).default(getCommunityPostsQuerySortDefault),
+  "kind": zod.enum(['question', 'thought', 'article', 'piece']).optional(),
+  "sort": zod.enum(['recent', 'popular', 'trending', 'unanswered']).default(getCommunityPostsQuerySortDefault),
   "limit": zod.coerce.number().int().min(1).max(getCommunityPostsQueryLimitMax).default(getCommunityPostsQueryLimitDefault)
 })
 
-export const getCommunityPostsResponsePostsItemOneAuthorNameMin = 2;
 export const getCommunityPostsResponsePostsItemOneAuthorNameMax = 80;
 
 export const getCommunityPostsResponsePostsItemOneStateMax = 80;
@@ -143,8 +143,8 @@ export const getCommunityPostsResponsePostsItemOneLinkUrlRegExp = new RegExp('^(
 
 export const GetCommunityPostsResponse = zod.object({
   "posts": zod.array(zod.object({
-  "authorName": zod.string().min(getCommunityPostsResponsePostsItemOneAuthorNameMin).max(getCommunityPostsResponsePostsItemOneAuthorNameMax),
-  "kind": zod.enum(['thought', 'article', 'piece']),
+  "authorName": zod.string().max(getCommunityPostsResponsePostsItemOneAuthorNameMax).describe('Optional display name; when omitted the participant\'s anonymous handle is used.'),
+  "kind": zod.enum(['question', 'thought', 'article', 'piece']),
   "topic": zod.enum(['general', 'caste', 'policy', 'representation', 'migration', 'violence', 'work', 'education', 'culture']),
   "state": zod.string().max(getCommunityPostsResponsePostsItemOneStateMax).nullish(),
   "title": zod.string().min(getCommunityPostsResponsePostsItemOneTitleMin).max(getCommunityPostsResponsePostsItemOneTitleMax),
@@ -155,17 +155,18 @@ export const GetCommunityPostsResponse = zod.object({
   "likeCount": zod.number().int(),
   "replyCount": zod.number().int(),
   "likedByViewer": zod.boolean(),
+  "ownedByViewer": zod.boolean(),
   "createdAt": zod.coerce.date()
 }))),
   "topics": zod.array(zod.enum(['general', 'caste', 'policy', 'representation', 'migration', 'violence', 'work', 'education', 'culture'])),
-  "states": zod.array(zod.string())
+  "states": zod.array(zod.string()),
+  "viewerHandle": zod.string().describe('The anonymous handle this browser posts under unless a name is given.')
 })
 
 
 /**
- * @summary Share a thought, article, or other piece
+ * @summary Ask a question or start a discussion, anonymously by default
  */
-export const createCommunityPostBodyAuthorNameMin = 2;
 export const createCommunityPostBodyAuthorNameMax = 80;
 
 export const createCommunityPostBodyStateMax = 80;
@@ -180,8 +181,8 @@ export const createCommunityPostBodyLinkUrlRegExp = new RegExp('^(http|https):[/
 
 
 export const CreateCommunityPostBody = zod.object({
-  "authorName": zod.string().min(createCommunityPostBodyAuthorNameMin).max(createCommunityPostBodyAuthorNameMax),
-  "kind": zod.enum(['thought', 'article', 'piece']),
+  "authorName": zod.string().max(createCommunityPostBodyAuthorNameMax).optional().describe('Optional display name; when omitted the participant\'s anonymous handle is used.'),
+  "kind": zod.enum(['question', 'thought', 'article', 'piece']),
   "topic": zod.enum(['general', 'caste', 'policy', 'representation', 'migration', 'violence', 'work', 'education', 'culture']),
   "state": zod.string().max(createCommunityPostBodyStateMax).nullish(),
   "title": zod.string().min(createCommunityPostBodyTitleMin).max(createCommunityPostBodyTitleMax),
@@ -189,7 +190,6 @@ export const CreateCommunityPostBody = zod.object({
   "linkUrl": zod.string().url().regex(createCommunityPostBodyLinkUrlRegExp).nullish()
 })
 
-export const createCommunityPostResponseOneAuthorNameMin = 2;
 export const createCommunityPostResponseOneAuthorNameMax = 80;
 
 export const createCommunityPostResponseOneStateMax = 80;
@@ -204,8 +204,8 @@ export const createCommunityPostResponseOneLinkUrlRegExp = new RegExp('^(http|ht
 
 
 export const CreateCommunityPostResponse = zod.object({
-  "authorName": zod.string().min(createCommunityPostResponseOneAuthorNameMin).max(createCommunityPostResponseOneAuthorNameMax),
-  "kind": zod.enum(['thought', 'article', 'piece']),
+  "authorName": zod.string().max(createCommunityPostResponseOneAuthorNameMax).describe('Optional display name; when omitted the participant\'s anonymous handle is used.'),
+  "kind": zod.enum(['question', 'thought', 'article', 'piece']),
   "topic": zod.enum(['general', 'caste', 'policy', 'representation', 'migration', 'violence', 'work', 'education', 'culture']),
   "state": zod.string().max(createCommunityPostResponseOneStateMax).nullish(),
   "title": zod.string().min(createCommunityPostResponseOneTitleMin).max(createCommunityPostResponseOneTitleMax),
@@ -216,6 +216,7 @@ export const CreateCommunityPostResponse = zod.object({
   "likeCount": zod.number().int(),
   "replyCount": zod.number().int(),
   "likedByViewer": zod.boolean(),
+  "ownedByViewer": zod.boolean(),
   "createdAt": zod.coerce.date()
 }))
 
@@ -227,7 +228,6 @@ export const GetCommunityPostParams = zod.object({
   "postId": zod.coerce.number().int()
 })
 
-export const getCommunityPostResponsePostOneAuthorNameMin = 2;
 export const getCommunityPostResponsePostOneAuthorNameMax = 80;
 
 export const getCommunityPostResponsePostOneStateMax = 80;
@@ -239,7 +239,6 @@ export const getCommunityPostResponsePostOneBodyMin = 10;
 export const getCommunityPostResponsePostOneBodyMax = 10000;
 
 export const getCommunityPostResponsePostOneLinkUrlRegExp = new RegExp('^(http|https):[/][/]');
-export const getCommunityPostResponseRepliesItemOneAuthorNameMin = 2;
 export const getCommunityPostResponseRepliesItemOneAuthorNameMax = 80;
 
 export const getCommunityPostResponseRepliesItemOneBodyMin = 2;
@@ -249,8 +248,8 @@ export const getCommunityPostResponseRepliesItemOneBodyMax = 5000;
 
 export const GetCommunityPostResponse = zod.object({
   "post": zod.object({
-  "authorName": zod.string().min(getCommunityPostResponsePostOneAuthorNameMin).max(getCommunityPostResponsePostOneAuthorNameMax),
-  "kind": zod.enum(['thought', 'article', 'piece']),
+  "authorName": zod.string().max(getCommunityPostResponsePostOneAuthorNameMax).describe('Optional display name; when omitted the participant\'s anonymous handle is used.'),
+  "kind": zod.enum(['question', 'thought', 'article', 'piece']),
   "topic": zod.enum(['general', 'caste', 'policy', 'representation', 'migration', 'violence', 'work', 'education', 'culture']),
   "state": zod.string().max(getCommunityPostResponsePostOneStateMax).nullish(),
   "title": zod.string().min(getCommunityPostResponsePostOneTitleMin).max(getCommunityPostResponsePostOneTitleMax),
@@ -261,14 +260,18 @@ export const GetCommunityPostResponse = zod.object({
   "likeCount": zod.number().int(),
   "replyCount": zod.number().int(),
   "likedByViewer": zod.boolean(),
+  "ownedByViewer": zod.boolean(),
   "createdAt": zod.coerce.date()
 })),
   "replies": zod.array(zod.object({
-  "authorName": zod.string().min(getCommunityPostResponseRepliesItemOneAuthorNameMin).max(getCommunityPostResponseRepliesItemOneAuthorNameMax),
+  "authorName": zod.string().max(getCommunityPostResponseRepliesItemOneAuthorNameMax).describe('Optional display name; when omitted the participant\'s anonymous handle is used.'),
   "body": zod.string().min(getCommunityPostResponseRepliesItemOneBodyMin).max(getCommunityPostResponseRepliesItemOneBodyMax)
 }).and(zod.object({
   "id": zod.number().int(),
   "postId": zod.number().int(),
+  "helpfulCount": zod.number().int(),
+  "helpfulByViewer": zod.boolean(),
+  "ownedByViewer": zod.boolean(),
   "createdAt": zod.coerce.date()
 })))
 })
@@ -281,7 +284,6 @@ export const CreateCommunityReplyParams = zod.object({
   "postId": zod.coerce.number().int()
 })
 
-export const createCommunityReplyBodyAuthorNameMin = 2;
 export const createCommunityReplyBodyAuthorNameMax = 80;
 
 export const createCommunityReplyBodyBodyMin = 2;
@@ -290,11 +292,10 @@ export const createCommunityReplyBodyBodyMax = 5000;
 
 
 export const CreateCommunityReplyBody = zod.object({
-  "authorName": zod.string().min(createCommunityReplyBodyAuthorNameMin).max(createCommunityReplyBodyAuthorNameMax),
+  "authorName": zod.string().max(createCommunityReplyBodyAuthorNameMax).optional().describe('Optional display name; when omitted the participant\'s anonymous handle is used.'),
   "body": zod.string().min(createCommunityReplyBodyBodyMin).max(createCommunityReplyBodyBodyMax)
 })
 
-export const createCommunityReplyResponseOneAuthorNameMin = 2;
 export const createCommunityReplyResponseOneAuthorNameMax = 80;
 
 export const createCommunityReplyResponseOneBodyMin = 2;
@@ -303,11 +304,14 @@ export const createCommunityReplyResponseOneBodyMax = 5000;
 
 
 export const CreateCommunityReplyResponse = zod.object({
-  "authorName": zod.string().min(createCommunityReplyResponseOneAuthorNameMin).max(createCommunityReplyResponseOneAuthorNameMax),
+  "authorName": zod.string().max(createCommunityReplyResponseOneAuthorNameMax).describe('Optional display name; when omitted the participant\'s anonymous handle is used.'),
   "body": zod.string().min(createCommunityReplyResponseOneBodyMin).max(createCommunityReplyResponseOneBodyMax)
 }).and(zod.object({
   "id": zod.number().int(),
   "postId": zod.number().int(),
+  "helpfulCount": zod.number().int(),
+  "helpfulByViewer": zod.boolean(),
+  "ownedByViewer": zod.boolean(),
   "createdAt": zod.coerce.date()
 }))
 
@@ -322,6 +326,53 @@ export const ToggleCommunityPostLikeParams = zod.object({
 export const ToggleCommunityPostLikeResponse = zod.object({
   "liked": zod.boolean(),
   "likeCount": zod.number().int()
+})
+
+
+/**
+ * @summary Report a community post; it is hidden after repeated reports
+ */
+export const ReportCommunityPostParams = zod.object({
+  "postId": zod.coerce.number().int()
+})
+
+export const ReportCommunityPostBody = zod.object({
+  "reason": zod.enum(['abuse', 'personal-information', 'misinformation', 'spam', 'other'])
+})
+
+export const ReportCommunityPostResponse = zod.object({
+  "reported": zod.boolean(),
+  "hidden": zod.boolean()
+})
+
+
+/**
+ * @summary Mark an answer helpful, or undo it
+ */
+export const ToggleCommunityReplyHelpfulParams = zod.object({
+  "replyId": zod.coerce.number().int()
+})
+
+export const ToggleCommunityReplyHelpfulResponse = zod.object({
+  "helpful": zod.boolean(),
+  "helpfulCount": zod.number().int()
+})
+
+
+/**
+ * @summary Report an answer; it is hidden after repeated reports
+ */
+export const ReportCommunityReplyParams = zod.object({
+  "replyId": zod.coerce.number().int()
+})
+
+export const ReportCommunityReplyBody = zod.object({
+  "reason": zod.enum(['abuse', 'personal-information', 'misinformation', 'spam', 'other'])
+})
+
+export const ReportCommunityReplyResponse = zod.object({
+  "reported": zod.boolean(),
+  "hidden": zod.boolean()
 })
 
 

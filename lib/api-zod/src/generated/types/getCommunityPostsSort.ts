@@ -12,4 +12,6 @@ export type GetCommunityPostsSort = typeof GetCommunityPostsSort[keyof typeof Ge
 export const GetCommunityPostsSort = {
   recent: 'recent',
   popular: 'popular',
+  trending: 'trending',
+  unanswered: 'unanswered',
 } as const;

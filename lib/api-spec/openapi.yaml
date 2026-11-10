@@ -75,12 +75,17 @@ paths:
           required: false
           schema:
             type: string
+        - name: kind
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/CommunityPostKind"
         - name: sort
           in: query
           required: false
           schema:
             type: string
-            enum: [recent, popular]
+            enum: [recent, popular, trending, unanswered]
             default: recent
         - name: limit
           in: query
@@ -100,7 +105,7 @@ paths:
     post:
       operationId: createCommunityPost
       tags: [community]
-      summary: Share a thought, article, or other piece
+      summary: Ask a question or start a discussion, anonymously by default
       requestBody:
         required: true
         content:
@@ -114,6 +119,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CommunityPost"
+        "400":
+          description: The post breaks the house rules
+        "429":
+          description: Too many posts from this participant in the last hour
   /community/posts/{postId}:
     get:
       operationId: getCommunityPost
@@ -164,6 +173,60 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CommunityLikeResponse"
+  /community/posts/{postId}/report:
+    post:
+      operationId: reportCommunityPost
+      tags: [community]
+      summary: Report a community post; it is hidden after repeated reports
+      parameters:
+        - $ref: "#/components/parameters/CommunityPostId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CommunityReportInput"
+      responses:
+        "200":
+          description: Report recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommunityReportResponse"
+  /community/replies/{replyId}/helpful:
+    post:
+      operationId: toggleCommunityReplyHelpful
+      tags: [community]
+      summary: Mark an answer helpful, or undo it
+      parameters:
+        - $ref: "#/components/parameters/CommunityReplyId"
+      responses:
+        "200":
+          description: Updated helpful state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommunityHelpfulResponse"
+  /community/replies/{replyId}/report:
+    post:
+      operationId: reportCommunityReply
+      tags: [community]
+      summary: Report an answer; it is hidden after repeated reports
+      parameters:
+        - $ref: "#/components/parameters/CommunityReplyId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CommunityReportInput"
+      responses:
+        "200":
+          description: Report recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommunityReportResponse"
   /editor/issues/current:
     get:
       operationId: getEditorialIssue
@@ -1525,6 +1588,13 @@ components:
       schema:
         type: integer
         format: int32
+    CommunityReplyId:
+      name: replyId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int32
     DecisionImpactId:
       name: recordId
       in: path
@@ -2582,14 +2652,14 @@ components:
       enum: [general, caste, policy, representation, migration, violence, work, education, culture]
     CommunityPostKind:
       type: string
-      enum: [thought, article, piece]
+      enum: [question, thought, article, piece]
     CommunityPostInput:
       type: object
       properties:
         authorName:
           type: string
-          minLength: 2
           maxLength: 80
+          description: Optional display name; when omitted the participant's anonymous handle is used.
         kind:
           $ref: "#/components/schemas/CommunityPostKind"
         topic:
@@ -2609,7 +2679,7 @@ components:
           type: ["string", "null"]
           format: uri
           pattern: '^(http|https):[/][/]'
-      required: [authorName, kind, topic, title, body]
+      required: [kind, topic, title, body]
     CommunityPost:
       allOf:
         - $ref: "#/components/schemas/CommunityPostInput"
@@ -2623,22 +2693,24 @@ components:
               type: integer
             likedByViewer:
               type: boolean
+            ownedByViewer:
+              type: boolean
             createdAt:
               type: string
               format: date-time
-          required: [id, likeCount, replyCount, likedByViewer, createdAt]
+          required: [id, authorName, likeCount, replyCount, likedByViewer, ownedByViewer, createdAt]
     CommunityReplyInput:
       type: object
       properties:
         authorName:
           type: string
-          minLength: 2
           maxLength: 80
+          description: Optional display name; when omitted the participant's anonymous handle is used.
         body:
           type: string
           minLength: 2
           maxLength: 5000
-      required: [authorName, body]
+      required: [body]
     CommunityReply:
       allOf:
         - $ref: "#/components/schemas/CommunityReplyInput"
@@ -2648,10 +2720,16 @@ components:
               type: integer
             postId:
               type: integer
+            helpfulCount:
+              type: integer
+            helpfulByViewer:
+              type: boolean
+            ownedByViewer:
+              type: boolean
             createdAt:
               type: string
               format: date-time
-          required: [id, postId, createdAt]
+          required: [id, postId, authorName, helpfulCount, helpfulByViewer, ownedByViewer, createdAt]
     CommunityPostList:
       type: object
       properties:
@@ -2667,7 +2745,10 @@ components:
           type: array
           items:
             type: string
-      required: [posts, topics, states]
+        viewerHandle:
+          type: string
+          description: The anonymous handle this browser posts under unless a name is given.
+      required: [posts, topics, states, viewerHandle]
     CommunityPostDetail:
       type: object
       properties:
@@ -2686,6 +2767,29 @@ components:
         likeCount:
           type: integer
       required: [liked, likeCount]
+    CommunityHelpfulResponse:
+      type: object
+      properties:
+        helpful:
+          type: boolean
+        helpfulCount:
+          type: integer
+      required: [helpful, helpfulCount]
+    CommunityReportInput:
+      type: object
+      properties:
+        reason:
+          type: string
+          enum: [abuse, personal-information, misinformation, spam, other]
+      required: [reason]
+    CommunityReportResponse:
+      type: object
+      properties:
+        reported:
+          type: boolean
+        hidden:
+          type: boolean
+      required: [reported, hidden]
     NewsletterInput:
       type: object
       properties:

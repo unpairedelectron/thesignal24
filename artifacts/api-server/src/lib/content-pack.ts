@@ -15,6 +15,27 @@ import { CONTENT_PACK_D } from "./content-pack-d";
 import { CONTENT_PACK_OPINION } from "./content-pack-opinion";
 import type { ContentPackStory } from "./content-pack-types";
 import { POLICY_LEDGER_PACK } from "./policy-ledger-pack";
+import { ADDENDA_A } from "./content-pack-addenda-a";
+import { ADDENDA_B } from "./content-pack-addenda-b";
+
+const ADDENDA = { ...ADDENDA_A, ...ADDENDA_B };
+
+/** The full published body: the original pack text plus its addendum (deeper record, hard questions, check it yourself). */
+function fullBody(story: ContentPackStory) {
+  const addendum = ADDENDA[story.key];
+  return addendum ? `${story.body}\n\n${addendum.en}` : story.body;
+}
+
+function fullHindi(story: ContentPackStory) {
+  const addendum = ADDENDA[story.key];
+  return addendum && story.hi.body ? { ...story.hi, body: `${story.hi.body}\n\n${addendum.hi}` } : story.hi;
+}
+
+/** Reading time at roughly 200 words a minute, never less than the pack's own estimate. */
+function readMinutes(story: ContentPackStory) {
+  const words = fullBody(story).split(/\s+/).filter(Boolean).length;
+  return Math.max(story.read, Math.round(words / 200));
+}
 
 /** Newest reporting first: array position becomes the story's sort order. */
 export const CONTENT_PACK: ContentPackStory[] = [
@@ -106,9 +127,9 @@ export async function ensureContentPack() {
           eyebrow: story.eyebrow,
           title: story.title,
           dek: story.dek,
-          body: story.body,
-          time: `${story.read} min`,
-          read: story.read,
+          body: fullBody(story),
+          time: `${readMinutes(story)} min`,
+          read: readMinutes(story),
           tone: story.tone,
           number: null,
           sortOrder: sortOrderByTitle.get(story.title) ?? 999,
@@ -123,7 +144,7 @@ export async function ensureContentPack() {
           aiDisclosure: AI_DISCLOSURE,
           correctionNote: null,
           byline: story.byline ?? "The Signal 24 editorial desk",
-          hi: story.hi,
+          hi: fullHindi(story),
         })),
       )
       .returning();
@@ -150,6 +171,56 @@ export async function ensureContentPack() {
     today,
   );
   await retireStarterPlaceholders();
+  await upgradeUntouchedBodies();
+}
+
+/**
+ * Bring stories inserted by an earlier release up to the current pack text. A body is
+ * replaced only while it is still exactly the original pack text, so anything an editor
+ * has changed is left alone; the Hindi edition follows the same rule independently.
+ */
+async function upgradeUntouchedBodies() {
+  const byTitle = new Map(CONTENT_PACK.map((story) => [story.title, story]));
+  const rows = await db
+    .select()
+    .from(storiesTable)
+    .where(inArray(storiesTable.title, [...byTitle.keys()]));
+  for (const row of rows) {
+    const story = byTitle.get(row.title);
+    if (!story) continue;
+    const nextBody = fullBody(story);
+    const nextHi = fullHindi(story);
+    const bodyUntouched = row.body === story.body && row.body !== nextBody;
+    const hiUntouched = Boolean(row.hi?.body) && row.hi?.body === story.hi.body && story.hi.body !== nextHi.body;
+    if (!bodyUntouched && !hiUntouched) continue;
+    const [latest] = await db
+      .select({ revisionNumber: storyRevisionsTable.revisionNumber })
+      .from(storyRevisionsTable)
+      .where(eq(storyRevisionsTable.storyId, row.id))
+      .orderBy(desc(storyRevisionsTable.revisionNumber))
+      .limit(1);
+    const [updated] = await db
+      .update(storiesTable)
+      .set({
+        ...(bodyUntouched ? { body: nextBody, read: readMinutes(story), time: `${readMinutes(story)} min` } : {}),
+        ...(hiUntouched && row.hi ? { hi: { ...row.hi, body: nextHi.body ?? row.hi.body } } : {}),
+        updatedAt: new Date(),
+      })
+      .where(eq(storiesTable.id, row.id))
+      .returning();
+    await db.insert(storyRevisionsTable).values({
+      storyId: row.id,
+      revisionNumber: (latest?.revisionNumber ?? 0) + 1,
+      changeNote: "Expanded from the content pack: the deeper record, the hard questions, and how to check it yourself",
+      snapshot: {
+        title: updated.title,
+        workflowStatus: updated.workflowStatus,
+        verificationStatus: updated.verificationStatus,
+        source: updated.source,
+        sourceUrl: updated.sourceUrl,
+      },
+    });
+  }
 }
 
 /** Promote pack records left in review by the previous release, unless an editor has revised them. */

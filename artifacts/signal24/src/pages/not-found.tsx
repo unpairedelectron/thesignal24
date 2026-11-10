@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { ArrowLeft, Radio } from 'lucide-react';
 import { useT, useLocalHref } from '@/lib/i18n';
 import { basePath } from '@/lib/seo';
+import { Header } from '@/components/site-chrome';
 
 export default function NotFound() {
   const t = useT();
@@ -25,8 +26,9 @@ export default function NotFound() {
   }, [t]);
 
   return (
-    <main className="signal-page min-h-[100dvh]">
-      <div className="signal-container flex min-h-[100dvh] items-center justify-center py-16">
+    <main className="signal-page">
+      <Header />
+      <div className="signal-container flex min-h-[60vh] items-center justify-center py-16">
         <section className="w-full max-w-xl border-y border-foreground/20 py-12 sm:py-16">
           <div className="flex items-center gap-3">
             <span className="grid h-10 w-10 place-items-center rounded-full border border-accent text-accent"><Radio size={17} /></span>
