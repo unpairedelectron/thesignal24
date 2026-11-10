@@ -1,0 +1,258 @@
+{
+  "topic": "State-by-state reservation and representation",
+  "asOf": "2026-11-10",
+  "sources": [
+    {
+      "id": "STATE-01",
+      "title": "Northeast Today",
+      "url": "https://northeasttoday.in/northeast/arunachal-pradesh/arunachal-hpc-on-8020-job-reservation-concludes-final-meeting-accepts-aapsu-recommendations",
+      "tier": "Tier 2",
+      "accessedOn": "2026-11-10"
+    },
+    {
+      "id": "STATE-02",
+      "title": "The Pioneer",
+      "url": "https://dailypioneer.com/india/assam-adopts-resolution-for-speedy-womens-quota-rollout",
+      "tier": "Tier 2",
+      "accessedOn": "2026-11-10"
+    },
+    {
+      "id": "STATE-03",
+      "title": "Times of India",
+      "url": "https://timesofindia.indiatimes.com/city/raipur/chhattisgarh-cabinet-clears-rules-to-implement-existing-10-quota-for-ex-agniveers/articleshow/134595121.cms",
+      "tier": "Tier 2",
+      "accessedOn": "2026-11-10"
+    },
+    {
+      "id": "STATE-04",
+      "title": "Digital Goa",
+      "url": "https://digitalgoa.com/high-grants-interim-stay-on-notification-of-estimated-st-population-in-goa-by-census-commissioner",
+      "tier": "Tier 2",
+      "accessedOn": "2026-11-10"
+    },
+    {
+      "id": "STATE-05",
+      "title": "Indian Express",
+      "url": "https://indianexpress.com/article/legal-news/scheduled-caste-reservation-rights-gujarat-high-court-10797900/",
+      "tier": "Tier 2",
+      "accessedOn": "2026-11-10"
+    },
+    {
+      "id": "STATE-06",
+      "title": "LiveLaw",
+      "url": "https://www.livelaw.in/high-court/punjab-and-haryana-high-court/haryana-policy-upheld-two-years-rural-service-not-mandatory-in-service-doctors-pg-quota-545004",
+      "tier": "Tier 2",
+      "accessedOn": "2026-11-10"
+    },
+    {
+      "id": "STATE-07",
+      "title": "ETV Bharat",
+      "url": "https://www.etvbharat.com/en/state/migrant-women-cannot-claim-caste-reservation-benefits-in-destination-state-post-marriage-rules-himachal-hc-enn26060307197",
+      "tier": "Tier 2",
+      "accessedOn": "2026-11-10"
+    },
+    {
+      "id": "STATE-08",
+      "title": "The Indian Express",
+      "url": "https://indianexpress.com/article/india/jharkhand-gov-sends-back-bill-to-raise-quota-in-state-govt-jobs-seeks-review-8565835",
+      "tier": "Tier 2",
+      "accessedOn": "2026-11-10"
+    },
+    {
+      "id": "STATE-09",
+      "title": "ANI",
+      "url": "https://www.aninews.in/news/national/general-news/karnataka-backward-classes-association-urges-former-cm-siddaramaiah-to-implement-caste-survey-report20261104215802",
+      "tier": "Tier 2",
+      "accessedOn": "2026-11-10"
+    },
+    {
+      "id": "STATE-10",
+      "title": "The Hindu",
+      "url": "https://www.thehindu.com/news/national/kerala/kerala-hc-seeks-report-from-state-on-socio-economic-survey-of-other-backward-classes/article71527974.ece",
+      "tier": "Tier 2",
+      "accessedOn": "2026-11-10"
+    },
+    {
+      "id": "STATE-11",
+      "title": "The New Indian Express",
+      "url": "https://www.newindianexpress.com/india/2026/Oct/16/mp-government-moves-supreme-court-against-hc-verdict-striking-down-27-obc-quota",
+      "tier": "Tier 2",
+      "accessedOn": "2026-11-10"
+    },
+    {
+      "id": "STATE-12",
+      "title": "Manipur Official Gazette",
+      "url": "http://egazettemanipur.mn.gov.in/OPENFILE1.aspx?ID=242/EG/2026-27/22-10-2026%20(E.G.)%20&etype=SPECIAL",
+      "tier": "Tier 1",
+      "accessedOn": "2026-11-10"
+    },
+    {
+      "id": "STATE-13",
+      "title": "India Today NE",
+      "url": "https://www.indiatodayne.in/meghalaya/story/meghalaya-to-table-state-reservation-policy-report-in-assembly-on-february-18-1347312-2026-02-17",
+      "tier": "Tier 2",
+      "accessedOn": "2026-11-10"
+    },
+    {
+      "id": "STATE-14",
+      "title": "Mizoram DHTE",
+      "url": "https://dhte.mizoram.gov.in/post/2nd-provisional-merit-list-neetug-2026",
+      "tier": "Tier 1",
+      "accessedOn": "2026-11-10"
+    },
+    {
+      "id": "STATE-15",
+      "title": "Mokokchung Times",
+      "url": "https://mokokchungtimes.com/five-tribes-panel-seeks-npsc-clarification-on-bt-quota-allocation/",
+      "tier": "Tier 2",
+      "accessedOn": "2026-11-10"
+    },
+    {
+      "id": "STATE-16",
+      "title": "The New Indian Express",
+      "url": "https://www.newindianexpress.com/states/odisha/2026/Oct/09/odishas-new-sebc-panel-sparks-political-row-ahead-of-2027-local-body-elections",
+      "tier": "Tier 2",
+      "accessedOn": "2026-11-10"
+    },
+    {
+      "id": "STATE-17",
+      "title": "The Statesman",
+      "url": "https://www.thestatesman.com/india/rajasthan-cabinet-accepts-obc-commission-report-on-quota-in-municipalities-and-panchayats-1503625683.html",
+      "tier": "Tier 2",
+      "accessedOn": "2026-11-10"
+    },
+    {
+      "id": "STATE-18",
+      "title": "Sikkim High Court",
+      "url": "https://hcs.gov.in/hcs/hg_orders/201100000162026_6.pdf",
+      "tier": "Tier 1",
+      "accessedOn": "2026-11-10"
+    },
+    {
+      "id": "STATE-19",
+      "title": "The New Indian Express",
+      "url": "https://www.newindianexpress.com/states/telangana/2026/Sep/12/telangana-urges-centre-to-include-bcobc-in-census",
+      "tier": "Tier 2",
+      "accessedOn": "2026-11-10"
+    },
+    {
+      "id": "STATE-20",
+      "title": "India Today NE",
+      "url": "https://www.indiatodayne.in/tripura/story/women-outnumber-men-in-tripura-village-committee-polls-turnout-crosses-81-per-cent-1459694-2026-10-06",
+      "tier": "Tier 2",
+      "accessedOn": "2026-11-10"
+    },
+    {
+      "id": "STATE-21",
+      "title": "Verdictum",
+      "url": "https://www.verdictum.in/allahabad-high-court/dashrath-yadav-v-state-of-uttar-pradesh-and-others-along-with-connected-matters-1624066",
+      "tier": "Tier 2",
+      "accessedOn": "2026-11-10"
+    },
+    {
+      "id": "STATE-22",
+      "title": "LiveLaw",
+      "url": "https://www.livelaw.in/high-court/uttarakhand-high-court/uttarakhand-high-court-upholds-reservation-women-student-union-polls-553767",
+      "tier": "Tier 2",
+      "accessedOn": "2026-11-10"
+    },
+    {
+      "id": "STATE-23",
+      "title": "The New Indian Express",
+      "url": "https://www.newindianexpress.com/states/west-bengal/2026/Jun/29/west-bengal-assembly-passes-two-bills-amending-obc-reservation-laws",
+      "tier": "Tier 2",
+      "accessedOn": "2026-11-10"
+    },
+    {
+      "id": "STATE-24",
+      "title": "Andaman and Nicobar Administration",
+      "url": "https://erecruitment.andamannicobar.gov.in/Advertisement/1055_29a155c9-680d-4586-8924-8ab13996bba7.pdf",
+      "tier": "Tier 1",
+      "accessedOn": "2026-11-10"
+    },
+    {
+      "id": "STATE-25",
+      "title": "ETV Bharat",
+      "url": "https://www.etvbharat.com/hi/state/ward-reservations-finalized-for-chandigarh-municipal-corporation-election-hrs26091200565",
+      "tier": "Tier 2",
+      "accessedOn": "2026-11-10"
+    },
+    {
+      "id": "STATE-26",
+      "title": "UT Official Gazette",
+      "url": "https://cdnbbsr.s3waas.gov.in/s371e09b16e21f7b6919bbfc43f6a5b2f0/uploads/2026/01/202601121352694865.pdf",
+      "tier": "Tier 1",
+      "accessedOn": "2026-11-10"
+    },
+    {
+      "id": "STATE-27",
+      "title": "LiveLaw",
+      "url": "https://www.livelaw.in/high-court/delhi-high-court/delhi-high-court-refuses-to-halt-town-vending-committee-elections-over-obc-reservation-dispute-543283",
+      "tier": "Tier 2",
+      "accessedOn": "2026-11-10"
+    },
+    {
+      "id": "STATE-28",
+      "title": "Kashmir News Service",
+      "url": "https://www.knskashmir.com/j-k-reservation-panel-report-awaits-competent-authority-approval-207766",
+      "tier": "Tier 2",
+      "accessedOn": "2026-11-10"
+    },
+    {
+      "id": "STATE-29",
+      "title": "Ladakh Administration",
+      "url": "https://ladakh.gov.in/draw-of-lots-conducted-in-sankoo-district-for-womens-reservation-in-lahdc-elections/",
+      "tier": "Tier 1",
+      "accessedOn": "2026-11-10"
+    },
+    {
+      "id": "STATE-30",
+      "title": "Lakshadweep Administration",
+      "url": "https://lakshadweep.gov.in/notice_category/recruitment",
+      "tier": "Tier 1",
+      "accessedOn": "2026-11-10"
+    },
+    {
+      "id": "STATE-31",
+      "title": "Madras High Court judgment",
+      "url": "https://images.assettype.com/barandbench/2026-09-01/9uyk07yt/Thelagam_vs_Union_Territory_of_Puducherry_.pdf",
+      "tier": "Tier 2",
+      "accessedOn": "2026-11-10"
+    },
+    {
+      "id": "STATE-32",
+      "title": "The Hindu",
+      "url": "https://www.thehindu.com/news/national/supreme-court-rejects-ap-government-plea-to-restore-34-quota-for-backward-classes-in-local-bodies/article71563329.ece",
+      "tier": "Tier 2",
+      "accessedOn": "2026-11-10"
+    },
+    {
+      "id": "STATE-33",
+      "title": "Patna High Court judgment",
+      "url": "https://www.livelaw.in/pdf_upload/2026/11/09/document-54c7de56-0b44-44c8-996e-cf447747d186-710543.pdf",
+      "tier": "Tier 2",
+      "accessedOn": "2026-11-10"
+    },
+    {
+      "id": "STATE-34",
+      "title": "Free Press Journal",
+      "url": "https://www.freepressjournal.in/mumbai/bombay-hc-begins-fresh-hearing-on-petitions-challenging-10-per-cent-maratha-quota",
+      "tier": "Tier 2",
+      "accessedOn": "2026-11-10"
+    },
+    {
+      "id": "STATE-35",
+      "title": "ANI / India Gazette",
+      "url": "https://www.indiagazette.com/news/279288888/ncsc-issues-notice-to-punjab-govt-over-tarun-chugh-complaint-alleging-denial-of-sc-a-in-lecturer-recruitment",
+      "tier": "Tier 2",
+      "accessedOn": "2026-11-10"
+    },
+    {
+      "id": "STATE-36",
+      "title": "The Hindu",
+      "url": "https://www.thehindu.com/news/national/tamil-nadu/how-significant-is-the-tvk-led-regimes-move-to-hold-social-justice-survey-explained/article71649252.ece",
+      "tier": "Tier 2",
+      "accessedOn": "2026-11-10"
+    }
+  ]
+}

@@ -1,9 +1,9 @@
 /**
- * Every state and Union Territory, and the sourced profiles we can stand behind.
- * A profile exists only where published records on this site establish the facts;
- * every other state says plainly that we have not yet published a sourced record.
+ * Every state and Union Territory, with bilingual profiles grounded in linked sources.
+ * Items whose status could not be confirmed are labeled as pending or evidence gaps.
  */
 import type { Bilingual } from './key-figures';
+import { ADDITIONAL_STATE_PROFILES, RECENT_STATE_FACTS } from './state-research-profiles';
 
 export type Region = { name: string; hi: string; kind: 'state' | 'ut' };
 
@@ -50,13 +50,13 @@ export type StateProfile = {
   status: Bilingual;
   tone: 'struck' | 'challenged' | 'protected' | 'history';
   summary: Bilingual;
-  facts: Array<{ when: string; text: Bilingual }>;
+  facts: Array<{ when: string; text: Bilingual; source?: { label: string; url: string } }>;
   questions: Bilingual[];
   ledger: string[];
 };
 
-/** Profiles restate facts from this site's published records and ledger entries. */
-export const STATE_PROFILES: Record<string, StateProfile> = {
+/** Existing profiles tied to the site's published archive and policy ledger. */
+const BASE_STATE_PROFILES: Record<string, StateProfile> = {
   Bihar: {
     status: { en: '65% law struck down · appeal pending', hi: '65% क़ानून रद्द · अपील लंबित' },
     tone: 'struck',
@@ -77,11 +77,11 @@ export const STATE_PROFILES: Record<string, StateProfile> = {
     ledger: ['bihar-reservation-amendments-2023'],
   },
   Maharashtra: {
-    status: { en: 'Third Maratha quota law under challenge', hi: 'तीसरा मराठा आरक्षण क़ानून चुनौती में' },
+    status: { en: '10% Maratha quota under challenge', hi: '10% मराठा आरक्षण चुनौती में' },
     tone: 'challenged',
     summary: {
-      en: 'Three Maratha quota laws in ten years, two struck down, the third waiting for a bench, and the representation data still unpublished.',
-      hi: 'दस साल में मराठा आरक्षण के तीन क़ानून, दो रद्द, तीसरा पीठ के इंतज़ार में, और प्रतिनिधित्व के आंकड़े अब भी अप्रकाशित।',
+      en: 'Two earlier laws were struck down; the 2024 10% law is now back before the Bombay High Court, while representation data remains unpublished.',
+      hi: 'पहले के दो क़ानून रद्द हुए; 2024 का 10% क़ानून अब बॉम्बे हाई कोर्ट में फिर सुनवाई के लिए है, जबकि प्रतिनिधित्व के आंकड़े अप्रकाशित हैं।',
     },
     facts: [
       { when: '1902-07-26', text: { en: 'In princely Kolhapur, now in Maharashtra, an order reserves half of state posts for backward classes.', hi: 'रियासत कोल्हापुर में, जो अब महाराष्ट्र में है, एक आदेश राज्य के आधे पद पिछड़े वर्गों के लिए आरक्षित करता है।' } },
@@ -128,11 +128,11 @@ export const STATE_PROFILES: Record<string, StateProfile> = {
     ledger: ['sc-st-sub-classification-2024'],
   },
   'Andhra Pradesh': {
-    status: { en: 'Its 2004 defeat was overruled in 2024', hi: 'इसकी 2004 की हार 2024 में पलटी' },
-    tone: 'history',
+    status: { en: 'SC sub-classification win; local BC quota struck down', hi: 'SC उप-वर्गीकरण की जीत; स्थानीय BC कोटा रद्द' },
+    tone: 'challenged',
     summary: {
-      en: 'Andhra Pradesh’s law sub-classifying Scheduled Castes was struck down in E.V. Chinnaiah (2004). Twenty years later, a seven-judge bench overruled that judgment.',
-      hi: 'अनुसूचित जातियों का उप-वर्गीकरण करने वाला आंध्र प्रदेश का क़ानून ई.वी. चिन्नैया (2004) में रद्द हुआ। बीस साल बाद सात जजों की पीठ ने वह फ़ैसला पलट दिया।',
+      en: 'The 2024 ruling reopened SC sub-classification, while the separate 34% BC local-body quota was struck down in 2026 and not restored on appeal.',
+      hi: '2024 के फ़ैसले ने SC उप-वर्गीकरण का रास्ता खोला; अलग 34% BC स्थानीय निकाय कोटा 2026 में रद्द हुआ और अपील पर बहाल नहीं हुआ।',
     },
     facts: [
       { when: '2024-08-01', text: { en: 'Davinder Singh overrules E.V. Chinnaiah, which had held the SC list to be one indivisible class.', hi: 'दविंदर सिंह ने ई.वी. चिन्नैया को पलटा, जिसने एससी सूची को एक अविभाज्य वर्ग माना था।' } },
@@ -143,6 +143,21 @@ export const STATE_PROFILES: Record<string, StateProfile> = {
     ledger: ['sc-st-sub-classification-2024'],
   },
 };
+
+const combinedProfiles: Record<string, StateProfile> = {
+  ...BASE_STATE_PROFILES,
+  ...ADDITIONAL_STATE_PROFILES,
+};
+
+export const STATE_PROFILES: Record<string, StateProfile> = Object.fromEntries(
+  Object.entries(combinedProfiles).map(([name, profile]) => [
+    name,
+    {
+      ...profile,
+      facts: [...profile.facts, ...(RECENT_STATE_FACTS[name] ? [RECENT_STATE_FACTS[name]] : [])],
+    },
+  ]),
+);
 
 export function regionSlug(name: string) {
   return name.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');

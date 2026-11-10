@@ -1,0 +1,30 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "7Fdsm0vXH6BR0fQVaD9vg"
+uri = "file://research/notes.md"
+type = "text"
+title = "Research Notes: State-by-state policy coverage"
+description = "Coverage plan and source log for the bilingual state profiles."
+logical_id = "9e88bc66-a4d6-49a9-8f59-21dcdc805307"
+content_hash = "sha256:a2756d3f87f9fd7566238b305fefb364f054981d599951e0f5c8750e64271545"
+size = 2350
+mtime_ms = 1794304029777
+storage_uri = "gcs://replit-rams-assets-sisko/rams/assets/repl:b115fae2-372d-4df6-84b5-8481ca1a24d4/9e88bc66-a4d6-49a9-8f59-21dcdc805307/0772f19e-9ae2-4b6d-b65e-3930fd9ea0c8"
+storage_version_token = "1794304045740586"
+content_type = "text/markdown"
+
+[[outputs]]
+id = "Z-2leDlbuAYqHvb6QuxQz"
+uri = "file://research/state-by-state-reservation.md"
+type = "text"
+title = "State-by-state reservation research"
+description = "Coverage and verification notes for the 36 bilingual state and UT profiles."
+logical_id = "f3dbe8f8-2c1f-4fed-b166-51c6611c2fba"
+content_hash = "sha256:5451434b881787479ca773aaa479b853bc925c27c6fea5165b391adbb647ef32"
+size = 5801
+mtime_ms = 1794304796342
+storage_uri = "gcs://replit-rams-assets-sisko/rams/assets/repl:b115fae2-372d-4df6-84b5-8481ca1a24d4/f3dbe8f8-2c1f-4fed-b166-51c6611c2fba/bdc72e98-7ffa-4d95-984b-6638869c5f5c"
+storage_version_token = "1794304814301429"
+content_type = "text/markdown"
