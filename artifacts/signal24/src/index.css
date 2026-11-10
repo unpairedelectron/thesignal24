@@ -736,7 +736,8 @@
 .stage-grain { position: absolute; inset: 0; z-index: -1; pointer-events: none; opacity: .14; mix-blend-mode: overlay;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
 
-.stage-inner { position: relative; display: grid; gap: 2rem; align-items: center; }
+.stage-inner { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: 2rem; align-items: center; }
+.stage-inner > * { min-width: 0; }
 @media (min-width: 1024px) { .stage-inner { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 3rem; } }
 .stage-copy { position: relative; z-index: 2; max-width: 40rem; }
 .stage-kicker { display: flex; flex-wrap: wrap; align-items: center; gap: .55rem; font-family: var(--app-font-mono); font-size: .66rem; letter-spacing: .16em; text-transform: uppercase; color: hsl(var(--stage-gold)); }
@@ -845,6 +846,96 @@
 .stage-word-mask:lang(hi) { padding-bottom: .22em; }
 .stage-kicker:lang(hi), .stage-cta:lang(hi), .stage-clock-unit:lang(hi), .stage-file-meta:lang(hi), .stage-file-foot:lang(hi), .stage-file-tab:lang(hi), .stage-marquee-track b:lang(hi), .figure-head:lang(hi), .figure-foot:lang(hi) { font-family: 'Noto Sans Devanagari', var(--app-font-mono); text-transform: none; font-size: .74rem; }
 .stage-file-title:lang(hi), .figure-label:lang(hi) { font-family: 'Noto Serif Devanagari', serif; line-height: 1.4; }
+
+/* ==========================================================================
+   Topic files: a compact stage, a 3D exhibit, a cabinet of hanging files,
+   and an evidence spine. Shares the stage tokens above.
+   ========================================================================== */
+.topic-stage { min-height: auto; padding: 5rem 0 4rem; }
+.topic-stage-title { font-size: clamp(2.6rem, 5.4vw, 4.9rem); line-height: .92; }
+.topic-stage-back { margin-bottom: 1.4rem; }
+.topic-stage-backlink { display: inline-flex; align-items: center; gap: .45rem; font-family: var(--app-font-mono); font-size: .62rem; letter-spacing: .14em; text-transform: uppercase; color: hsl(var(--stage-paper) / .65); }
+.topic-stage-backlink:hover { color: hsl(var(--stage-paper)); }
+.topic-stage-stats { margin-top: 2.2rem; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; max-width: 36rem; background: hsl(var(--stage-paper) / .16); border: 1px solid hsl(var(--stage-paper) / .16); }
+.topic-stage-stats > div { padding: .85rem 1rem; background: hsl(24 22% 8% / .9); }
+.topic-stage-stats dt { font-family: var(--app-font-mono); font-size: .58rem; letter-spacing: .14em; text-transform: uppercase; color: hsl(var(--stage-gold)); }
+.topic-stage-stats dd { margin: .3rem 0 0; font-family: 'Fraunces', Georgia, serif; font-weight: 600; font-size: 2.1rem; line-height: 1; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+
+.topic-exhibit-scene { position: relative; height: 24rem; perspective: 60rem; }
+.topic-exhibit { position: absolute; inset: 1.5rem 0 2.5rem; transform-style: preserve-3d; }
+.topic-exhibit-frame { position: absolute; inset: 0; margin: 0; padding: .7rem; background: linear-gradient(160deg, hsl(42 50% 96%), hsl(38 34% 84%)); border: 1px solid hsl(38 25% 68%);
+  box-shadow: 0 2.5rem 4rem -1.5rem hsl(0 0% 0% / .8); transform: translateZ(2rem); }
+.topic-exhibit-frame img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.topic-exhibit-paper { position: absolute; width: 62%; padding: .9rem 1rem; background: hsl(42 44% 93%); color: hsl(24 22% 14%); border: 1px solid hsl(38 25% 70%); box-shadow: 0 1.2rem 2rem -1rem hsl(0 0% 0% / .7);
+  transform: translateZ(calc(var(--depth) * -3.5rem)) translate(calc(var(--depth) * 2.4rem), calc(var(--depth) * -2.2rem)) rotate(calc(var(--depth) * 3deg)); right: -.5rem; top: -1rem; }
+.topic-exhibit-meta { display: block; font-family: var(--app-font-mono); font-size: .54rem; letter-spacing: .12em; text-transform: uppercase; color: hsl(var(--stage-rust)); }
+.topic-exhibit-title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: .35rem; font-family: 'Fraunces', 'Noto Serif Devanagari', Georgia, serif; font-weight: 600; font-size: .95rem; line-height: 1.2; }
+.topic-exhibit-stamp { position: absolute; left: -.6rem; bottom: -1.2rem; padding: .45rem .7rem; border: 3px solid hsl(var(--stage-rust)); color: hsl(var(--stage-rust)); background: hsl(42 44% 95% / .92); font-family: var(--app-font-mono); font-weight: 600; font-size: .7rem; letter-spacing: .18em; text-transform: uppercase; transform: translateZ(4.5rem) rotate(-8deg); }
+@media (max-width: 1023px) { .topic-exhibit-scene { height: 18rem; margin-top: 1rem; } }
+@media (max-width: 640px) { .topic-stage-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .topic-stage { padding: 3.5rem 0 3rem; } .topic-exhibit-scene { height: 13rem; } .topic-exhibit-paper { display: none; } }
+
+/* The cabinet of hanging files */
+.topic-cabinet { margin-top: 3rem; display: grid; gap: 4rem 1.5rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr)); perspective: 90rem; }
+.topic-drawer-wrap { transform-style: preserve-3d; }
+.topic-drawer { position: relative; display: block; padding-top: 1.6rem; transform-style: preserve-3d; color: inherit; }
+.topic-drawer-tab { position: absolute; top: 0; left: 1rem; z-index: 3; padding: .4rem .8rem .55rem; background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); font-family: var(--app-font-mono); font-size: .6rem; letter-spacing: .13em; text-transform: uppercase; transition: background .3s; }
+.topic-drawer-papers { position: absolute; left: 1.2rem; right: 1.2rem; top: 1.9rem; height: 6rem; transform-style: preserve-3d; pointer-events: none; }
+.topic-drawer-paper { position: absolute; inset: 0; padding: .7rem .8rem; background: hsl(var(--card)); border: 1px solid hsl(var(--foreground) / .15); font-family: 'Fraunces', 'Noto Serif Devanagari', Georgia, serif; font-size: .82rem; font-weight: 600; line-height: 1.2; overflow: hidden;
+  transform: translateZ(calc(-1rem - var(--n) * .6rem)) translateY(calc(var(--n) * -.35rem)); opacity: 0; transition: transform .55s cubic-bezier(.16,1,.3,1), opacity .35s; }
+.topic-drawer-face { position: relative; z-index: 2; display: flex; flex-direction: column; background: hsl(var(--card)); border: 1px solid hsl(var(--foreground) / .2); border-top: 4px solid hsl(var(--primary)); transform-origin: 50% 100%;
+  transform: rotateX(-4deg); box-shadow: 0 1.6rem 2.4rem -1.8rem hsl(22 30% 10% / .65); transition: transform .55s cubic-bezier(.16,1,.3,1), box-shadow .55s, border-color .3s; }
+.topic-drawer-face img { width: 100%; aspect-ratio: 16 / 8; object-fit: cover; background: hsl(var(--muted)); border-bottom: 1px solid hsl(var(--foreground) / .12); }
+.topic-drawer-body { display: flex; flex-direction: column; gap: .5rem; padding: 1.1rem 1.2rem 1.2rem; }
+.topic-drawer-count { font-family: var(--app-font-mono); font-size: .6rem; letter-spacing: .13em; text-transform: uppercase; color: hsl(var(--accent)); }
+.topic-drawer-title { font-family: 'Fraunces', 'Noto Serif Devanagari', Georgia, serif; font-weight: 600; font-size: 1.9rem; line-height: 1; letter-spacing: -.03em; }
+.topic-drawer-headline { font-size: .9rem; line-height: 1.55; color: hsl(var(--muted-foreground)); }
+.topic-drawer-open { margin-top: .4rem; display: inline-flex; align-items: center; gap: .4rem; font-family: var(--app-font-mono); font-size: .6rem; letter-spacing: .13em; text-transform: uppercase; color: hsl(var(--accent)); }
+.topic-drawer:hover .topic-drawer-face, .topic-drawer:focus-visible .topic-drawer-face { transform: rotateX(0) translateY(.6rem) translateZ(1rem); border-top-color: hsl(var(--accent)); box-shadow: 0 2.6rem 3.4rem -1.8rem hsl(22 30% 10% / .7); }
+.topic-drawer:hover .topic-drawer-tab, .topic-drawer:focus-visible .topic-drawer-tab { background: hsl(var(--accent)); }
+.topic-drawer:hover .topic-drawer-paper, .topic-drawer:focus-visible .topic-drawer-paper { opacity: 1; transform: translateZ(calc(-1rem - var(--n) * .6rem)) translateY(calc(-2.6rem - var(--n) * 1.25rem)) rotate(calc((var(--n) - 1) * 2deg)); }
+.topic-drawer:focus-visible { outline: none; }
+.topic-drawer:focus-visible .topic-drawer-face { outline: 2px solid hsl(var(--accent)); outline-offset: 3px; }
+
+/* State of play */
+.topic-play { margin: 0; padding: 0 0 0 1.4rem; list-style: none; border-left: 2px solid hsl(var(--foreground) / .2); }
+.topic-play-item { position: relative; padding: 0 0 1.4rem; }
+.topic-play-item::before { content: ''; position: absolute; left: calc(-1.4rem - 6px); top: .3rem; width: 10px; height: 10px; border-radius: 50%; background: hsl(var(--secondary)); box-shadow: 0 0 0 4px hsl(var(--background)); }
+.topic-play-item.is-pending::before { background: hsl(40 62% 50%); }
+.topic-play-item.is-withheld::before { background: hsl(var(--accent)); }
+.topic-play-status { margin-left: .6rem; padding: .15rem .4rem; border: 1px solid currentColor; font-family: var(--app-font-mono); font-size: .54rem; letter-spacing: .12em; text-transform: uppercase; color: hsl(var(--secondary)); }
+.is-pending > .topic-play-status { color: hsl(36 70% 36%); }
+.is-withheld > .topic-play-status { color: hsl(var(--accent)); }
+
+/* Policy cards on topic pages */
+.topic-policy-card { display: block; padding: 1.3rem 1.4rem; background: hsl(var(--card)); border: 1px solid hsl(var(--foreground) / .18); transition: transform .35s cubic-bezier(.16,1,.3,1), box-shadow .35s, border-color .3s; }
+.topic-policy-card:hover { transform: translateY(-4px); border-color: hsl(var(--accent)); box-shadow: 0 1.4rem 2rem -1.6rem hsl(22 30% 10% / .6); }
+.topic-policy-status { padding: .25rem .5rem; font-family: var(--app-font-mono); font-size: .58rem; letter-spacing: .13em; text-transform: uppercase; background: hsl(var(--secondary)); color: hsl(var(--secondary-foreground)); }
+.topic-policy-status.is-stayed, .topic-policy-status.is-challenged { background: hsl(40 62% 50%); color: hsl(24 22% 12%); }
+.topic-policy-status.is-struck-down { background: hsl(var(--accent)); color: hsl(var(--accent-foreground)); }
+
+/* Evidence spine */
+.evidence-spine { position: relative; margin: 2.5rem 0 0; padding: 0; list-style: none; perspective: 70rem; }
+.evidence-spine::before { content: ''; position: absolute; top: 0; bottom: 0; left: .45rem; width: 2px; background: linear-gradient(hsl(var(--accent)), hsl(var(--foreground) / .15)); }
+.evidence-spine-item { position: relative; padding: 0 0 2rem 2.2rem; transform-style: preserve-3d; }
+.evidence-spine-dot { position: absolute; left: 0; top: .2rem; width: 1rem; height: 1rem; border-radius: 50%; background: hsl(var(--background)); border: 3px solid hsl(var(--accent)); }
+.evidence-spine-date { display: block; font-family: var(--app-font-mono); font-size: .64rem; letter-spacing: .13em; text-transform: uppercase; color: hsl(var(--accent)); }
+.evidence-spine-card { margin-top: .6rem; padding: 1.1rem 1.2rem; background: hsl(var(--card)); border: 1px solid hsl(var(--foreground) / .16); box-shadow: 0 1.2rem 2rem -1.8rem hsl(22 30% 10% / .55); }
+@media (min-width: 900px) {
+  .evidence-spine::before { left: 50%; margin-left: -1px; }
+  .evidence-spine-item { width: 50%; padding: 0 2.6rem 2.4rem 0; }
+  .evidence-spine-item.is-right { margin-left: 50%; padding: 0 0 2.4rem 2.6rem; }
+  .evidence-spine-item.is-left { text-align: right; }
+  .evidence-spine-item.is-left .evidence-spine-card { text-align: left; }
+  .evidence-spine-item.is-left .evidence-spine-dot { left: auto; right: -.5rem; }
+  .evidence-spine-item.is-right .evidence-spine-dot { left: -.5rem; }
+  .evidence-spine-item:not(:first-child) { margin-top: -3.5rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .topic-drawer-face, .topic-drawer-paper, .topic-policy-card { transition: none; }
+  .topic-drawer:hover .topic-drawer-face { transform: rotateX(-4deg); }
+}
+.topic-stage-stats dt:lang(hi), .topic-stage-backlink:lang(hi), .topic-exhibit-meta:lang(hi), .topic-exhibit-stamp:lang(hi), .topic-drawer-tab:lang(hi), .topic-drawer-count:lang(hi), .topic-drawer-open:lang(hi), .topic-play-status:lang(hi), .topic-policy-status:lang(hi), .evidence-spine-date:lang(hi) { font-family: 'Noto Sans Devanagari', var(--app-font-mono); text-transform: none; font-size: .74rem; }
+.topic-drawer-title:lang(hi) { font-family: 'Noto Serif Devanagari', serif; line-height: 1.35; }
 
 /* ==========================================================================
    Devanagari typography (Hindi edition)
