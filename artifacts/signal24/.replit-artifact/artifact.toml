@@ -40,6 +40,30 @@ from = "/hi/state/*"
 to = "/hi/state/*/index.html"
 
 [[services.production.rewrites]]
+from = "/articles/*"
+to = "/articles/*/index.html"
+
+[[services.production.rewrites]]
+from = "/data/*"
+to = "/data/*/index.html"
+
+[[services.production.rewrites]]
+from = "/states/*"
+to = "/states/*/index.html"
+
+[[services.production.rewrites]]
+from = "/documents/*"
+to = "/documents/*/index.html"
+
+[[services.production.rewrites]]
+from = "/cases/*"
+to = "/cases/*/index.html"
+
+[[services.production.rewrites]]
+from = "/policies/*"
+to = "/policies/*/index.html"
+
+[[services.production.rewrites]]
 from = "/*"
 to = "/index.html"
 

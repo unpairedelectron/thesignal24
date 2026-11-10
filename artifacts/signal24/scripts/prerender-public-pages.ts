@@ -23,12 +23,25 @@ function renderArticleBody(markdown: string) {
   const blocks = markdown.split(/\n{2,}/).map((block) => block.trim()).filter(Boolean);
   return blocks.map((block) => {
     if (block.startsWith('## ')) return `<h2>${inline(block.slice(3))}</h2>`;
-    if (block.startsWith(':::')) return '';
-    const lines = block.split('\n');
+    let lines = block.split('\n');
+    if (lines[0].startsWith(':::')) {
+      const heading = lines[0].replace(/^:::\s*/, '').replace(/^\[[^\]]+\]\s*/, '').trim();
+      lines = lines.slice(1);
+      const section = heading ? `<h2>${inline(heading)}</h2>` : '';
+      if (!lines.length) return section;
+      const body = lines.every((line) => line.startsWith('- '))
+        ? `<ul>${lines.map((line) => `<li>${inline(line.slice(2))}</li>`).join('')}</ul>`
+        : `<p>${lines.map((line) => inline(line.replace(/^[?>]\s*/, ''))).join('<br />')}</p>`;
+      return `<section>${section}${body}</section>`;
+    }
     if (lines.every((line) => line.startsWith('- '))) {
       return `<ul>${lines.map((line) => `<li>${inline(line.slice(2))}</li>`).join('')}</ul>`;
     }
-    return `<p>${lines.map(inline).join('<br />')}</p>`;
+    return lines.map((line) => line.startsWith('? ')
+      ? `<blockquote>${inline(line.slice(2))}</blockquote>`
+      : line.startsWith('> ')
+        ? `<blockquote>${inline(line.slice(2))}</blockquote>`
+        : `<p>${inline(line)}</p>`).join('\n');
   }).join('\n');
 }
 
