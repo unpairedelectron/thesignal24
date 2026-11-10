@@ -13,7 +13,12 @@ function researchedProfile(
     status: { en: status[0], hi: status[1] },
     tone,
     summary: { en: summary[0], hi: summary[1] },
-    facts: [{ when: date, text: { en: fact[0], hi: fact[1] }, source }],
+    facts: [{
+      when: date,
+      text: { en: fact[0], hi: fact[1] },
+      source,
+      review: { checkedOn: '2026-11-10', nextCheck: { en: question[0], hi: question[1] } },
+    }],
     questions: [{ en: question[0], hi: question[1] }],
     ledger: [],
   };
@@ -280,6 +285,7 @@ export const RECENT_STATE_FACTS: Record<string, StateProfile['facts'][number]> =
       hi: 'सुप्रीम कोर्ट ने हाई कोर्ट द्वारा रद्द 34% BC स्थानीय निकाय कोटा बहाल करने से इनकार किया; बाद की 50% सीमा वाली व्यवस्था अलग से सत्यापित होनी है।',
     },
     source: { label: 'The Hindu', url: 'https://www.thehindu.com/news/national/supreme-court-rejects-ap-government-plea-to-restore-34-quota-for-backward-classes-in-local-bodies/article71563329.ece' },
+    review: { checkedOn: '2026-11-10', nextCheck: { en: 'Verify the later 50%-capped Government Order and current local-election roster.', hi: 'बाद का 50% सीमा वाला सरकारी आदेश और मौजूदा स्थानीय चुनाव रोस्टर सत्यापित करें।' } },
   },
   Bihar: {
     when: '2026-11-04',
@@ -288,6 +294,7 @@ export const RECENT_STATE_FACTS: Record<string, StateProfile['facts'][number]> =
       hi: 'पटना हाई कोर्ट ने भर्ती-आरक्षण पात्रता की अपील ख़ारिज की और उस मामले में घोषित प्रमाणपत्र व निवास शर्तों को बाध्यकारी माना।',
     },
     source: { label: 'Patna High Court judgment', url: 'https://www.livelaw.in/pdf_upload/2026/11/09/document-54c7de56-0b44-44c8-996e-cf447747d186-710543.pdf' },
+    review: { checkedOn: '2026-11-10', nextCheck: { en: 'Check for an appeal or a later recruitment instruction.', hi: 'अपील या बाद के भर्ती निर्देश की जाँच करें।' } },
   },
   Maharashtra: {
     when: '2026-10-09',
@@ -296,6 +303,7 @@ export const RECENT_STATE_FACTS: Record<string, StateProfile['facts'][number]> =
       hi: 'बॉम्बे हाई कोर्ट ने 2024 क़ानून के 10% मराठा आरक्षण को चुनौती देने वाली याचिकाओं पर सुनवाई फिर शुरू की; अंतिम फ़ैसला रिपोर्ट नहीं हुआ।',
     },
     source: { label: 'Free Press Journal', url: 'https://www.freepressjournal.in/mumbai/bombay-hc-begins-fresh-hearing-on-petitions-challenging-10-per-cent-maratha-quota' },
+    review: { checkedOn: '2026-11-10', nextCheck: { en: 'Check the next hearing and any final or interim order.', hi: 'अगली सुनवाई और अंतिम या अंतरिम आदेश की जाँच करें।' } },
   },
   Punjab: {
     when: '2026-09-06',
@@ -304,6 +312,7 @@ export const RECENT_STATE_FACTS: Record<string, StateProfile['facts'][number]> =
       hi: 'लेक्चरर भर्ती में SC आरक्षण न देने की शिकायत के बाद NCSC ने नोटिस जारी किया; यह जाँच है, निष्कर्ष नहीं।',
     },
     source: { label: 'ANI / India Gazette', url: 'https://www.indiagazette.com/news/279288888/ncsc-issues-notice-to-punjab-govt-over-tarun-chugh-complaint-alleging-denial-of-sc-a-in-lecturer-recruitment' },
+    review: { checkedOn: '2026-11-10', nextCheck: { en: 'Verify the state response and NCSC’s next action.', hi: 'राज्य का जवाब और NCSC की अगली कार्रवाई सत्यापित करें।' } },
   },
   'Tamil Nadu': {
     when: '2026-10-29',
@@ -312,5 +321,6 @@ export const RECENT_STATE_FACTS: Record<string, StateProfile['facts'][number]> =
       hi: 'मंत्रिमंडल ने सर्वेक्षण के लिए सामाजिक न्याय आयोग बनाने की मंज़ूरी दी; आयोग और सर्वेक्षण के शुरू होने की रिपोर्ट नहीं थी।',
     },
     source: { label: 'The Hindu', url: 'https://www.thehindu.com/news/national/tamil-nadu/how-significant-is-the-tvk-led-regimes-move-to-hold-social-justice-survey-explained/article71649252.ece' },
+    review: { checkedOn: '2026-11-10', nextCheck: { en: 'Verify commission constitution and survey start after the announced timeline.', hi: 'घोषित समय-सीमा के बाद आयोग गठन और सर्वेक्षण शुरू होने की पुष्टि करें।' } },
   },
 };

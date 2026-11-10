@@ -6,6 +6,12 @@ import type { Bilingual } from './key-figures';
 import { ADDITIONAL_STATE_PROFILES, RECENT_STATE_FACTS } from './state-research-profiles';
 
 export type Region = { name: string; hi: string; kind: 'state' | 'ut' };
+export type StateFact = {
+  when: string;
+  text: Bilingual;
+  source?: { label: string; url: string };
+  review?: { checkedOn: string; nextCheck: Bilingual };
+};
 
 export const REGIONS: Region[] = [
   { name: 'Andhra Pradesh', hi: 'आंध्र प्रदेश', kind: 'state' },
@@ -50,7 +56,7 @@ export type StateProfile = {
   status: Bilingual;
   tone: 'struck' | 'challenged' | 'protected' | 'history';
   summary: Bilingual;
-  facts: Array<{ when: string; text: Bilingual; source?: { label: string; url: string } }>;
+  facts: StateFact[];
   questions: Bilingual[];
   ledger: string[];
 };

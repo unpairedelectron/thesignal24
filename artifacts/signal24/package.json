@@ -5,10 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite --config vite.config.ts --host 0.0.0.0",
-    "build": "vite build --config vite.config.ts",
+    "build": "tsx scripts/generate-state-sitemap.ts && vite build --config vite.config.ts",
     "serve": "vite preview --config vite.config.ts --host 0.0.0.0",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "node --test src/lib/state-map.test.mjs src/lib/image-search.test.mjs",
+    "test": "node --test src/lib/state-map.test.mjs src/lib/image-search.test.mjs && tsx --test src/lib/state-profiles.test.ts",
     "test:browser": "node --test src/lib/state-map.browser.test.mjs"
   },
   "devDependencies": {

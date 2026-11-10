@@ -1,4 +1,4 @@
-import { type FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, type FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { ClerkProvider, SignIn, SignUp, useClerk, useUser } from '@clerk/react';
 import { publishableKeyFromHost } from '@clerk/react/internal';
@@ -112,9 +112,7 @@ import { LangProvider, LanguageSwitch, localizePolicy, localizeStory, useLabel, 
 import { ACCOUNTABILITY_CHECKED_ON, ACCOUNTABILITY_ITEMS } from '@/lib/accountability';
 import { RichBody, outlineOf, plainText } from '@/components/rich-body';
 import { GlobalFooter, Header } from '@/components/site-chrome';
-import { AnswerDetailPage, AnswersPage } from '@/components/answers-pages';
 import { HomeStatesSection, StateProfilePage, StatesPage } from '@/components/states-pages';
-import { CommunityDetailPage, CommunityPage } from '@/components/community-pages';
 import { HomeStage } from '@/components/home-stage';
 import { AnswersTeaser, CommunityTeaser, DeskStrip, LedgerTrio, SectionHead, TimelineStrip } from '@/components/home-sections';
 import { KeyFigures } from '@/components/key-figures';
@@ -127,6 +125,10 @@ import { TOPIC_BRIEFS, TOPIC_BRIEFS_CHECKED_ON, topicBrief, type TopicBrief, typ
 import { breadcrumbNode, collectionPageNode, EDITORIAL_DESK_PATH, editorialDeskNode, editorialDeskRef, externalDocument, imageObject, organizationRef, placeForState, siteGraph, webPageNode, websiteRef } from '@/lib/structured-data';
 
 const queryClient = new QueryClient();
+const AnswersPage = lazy(() => import('@/components/answers-pages').then((module) => ({ default: module.AnswersPage })));
+const AnswerDetailPage = lazy(() => import('@/components/answers-pages').then((module) => ({ default: module.AnswerDetailPage })));
+const CommunityPage = lazy(() => import('@/components/community-pages').then((module) => ({ default: module.CommunityPage })));
+const CommunityDetailPage = lazy(() => import('@/components/community-pages').then((module) => ({ default: module.CommunityDetailPage })));
 
 const TOPICS = ['Latest', 'Courts & Policy', 'States', 'History', 'Ground Reports', 'Data & Notes'] as Topic[];
 const KINDS = ['Article', 'Paper note', 'Archive', 'Explainer', 'Opinion'] as StoryKind[];
@@ -1813,7 +1815,7 @@ function EditorEvidenceAccessRoute() {
 }
 
 function AppRoutes() {
-  return <><Switch>
+  return <><Suspense fallback={<main className="signal-container py-16" role="status" aria-live="polite">Loading page…</main>}><Switch>
     <Route path="/" component={Home} />
     <Route path="/sign-in/*?" component={SignInPage} />
     <Route path="/sign-up/*?" component={SignUpPage} />
@@ -1846,7 +1848,7 @@ function AppRoutes() {
     <Route path="/methodology" component={MethodologyPage} />
     <Route path="/:family/:slug" component={StoryDetail} />
     <Route component={NotFound} />
-  </Switch><GlobalFooter /></>;
+  </Switch></Suspense><GlobalFooter /></>;
 }
 
 function ClerkProviderWithRouting() {

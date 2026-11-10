@@ -3,4 +3,7 @@
   <sitemap>
     <loc>https://thesignal24.com/api/sitemap.xml</loc>
   </sitemap>
+  <sitemap>
+    <loc>https://thesignal24.com/sitemap-states.xml</loc>
+  </sitemap>
 </sitemapindex>
