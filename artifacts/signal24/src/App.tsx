@@ -112,6 +112,7 @@ import { LangProvider, LanguageSwitch, localizePolicy, localizeStory, useLabel, 
 import { ACCOUNTABILITY_CHECKED_ON, ACCOUNTABILITY_ITEMS } from '@/lib/accountability';
 import { RichBody, outlineOf, plainText } from '@/components/rich-body';
 import { GlobalFooter, Header } from '@/components/site-chrome';
+import { AnswerDetailPage, AnswersPage } from '@/components/answers-pages';
 import { HomeStage } from '@/components/home-stage';
 import { KeyFigures } from '@/components/key-figures';
 import { CeilingChart, DemandBoard } from '@/components/opinion-data';
@@ -2198,6 +2199,8 @@ function AppRoutes() {
     <Route path="/authors/:slug" component={AuthorPage} />
     <Route path="/data" component={DataIndexPage} />
     <Route path="/opinion" component={OpinionPage} />
+    <Route path="/answers" component={AnswersPage} />
+    <Route path="/answers/:id" component={AnswerDetailPage} />
     <Route path="/stories/:id" component={StoryDetail} />
     <Route path="/editor/evidence" component={EditorEvidenceAccessRoute} />
     <Route path="/editor" component={EditorAccessRoute} />

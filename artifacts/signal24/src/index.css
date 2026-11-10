@@ -1209,6 +1209,54 @@ html:not(.dark) :is(.visual-hero-copy, .bg-primary) .signal-status-badge { color
 .chrome-search-form .chrome-search-submit { border-radius: 999px; }
 
 /* ==========================================================================
+   Answers hub and answer pages
+   ========================================================================== */
+.answers-toolbar { position: relative; z-index: 3; margin-top: -2.2rem; display: grid; gap: 1rem; }
+.answers-search { display: flex; align-items: center; gap: .8rem; padding: .4rem 1.2rem; border-radius: 999px; background: hsl(var(--card)); border: 1.5px solid hsl(var(--foreground) / .2); box-shadow: 0 1.6rem 3rem -1.8rem hsl(22 30% 10% / .55); }
+.answers-search:focus-within { border-color: hsl(var(--accent)); }
+.answers-search input { flex: 1; min-width: 0; border: 0; background: transparent; padding: .85rem 0; font-size: 1.08rem; outline: none; }
+.answers-chips { display: flex; flex-wrap: wrap; gap: .5rem; }
+.answers-chips button { display: inline-flex; align-items: center; gap: .45rem; padding: .5rem .95rem; border-radius: 999px; border: 1px solid hsl(var(--foreground) / .2); background: hsl(var(--card)); font-size: .86rem; font-weight: 600; color: hsl(var(--foreground) / .85); }
+.answers-chips button span { font-size: .72rem; color: hsl(var(--muted-foreground)); }
+.answers-chips button[aria-pressed='true'] { background: hsl(var(--foreground)); color: hsl(var(--background)); border-color: hsl(var(--foreground)); }
+.answers-chips button[aria-pressed='true'] span { color: hsl(var(--background) / .7); }
+.answers-group { margin-top: 3.5rem; }
+.answers-group-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .6rem 1.5rem; padding-bottom: .9rem; border-bottom: 2px solid hsl(var(--foreground)); }
+.answers-grid { margin-top: 1.4rem; display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 21rem), 1fr)); }
+.answer-card { display: flex; flex-direction: column; height: 100%; padding: 1.4rem; border-radius: 1rem; background: hsl(var(--card)); border: 1px solid hsl(var(--foreground) / .14); transition: transform .3s cubic-bezier(.16,1,.3,1), box-shadow .3s, border-color .3s; }
+.answer-card:hover, .answer-card:focus-visible { transform: translateY(-4px); border-color: hsl(var(--accent)); box-shadow: 0 1.6rem 2.4rem -1.8rem hsl(22 30% 10% / .55); }
+.answer-card-q { font-family: 'Fraunces', 'Noto Serif Devanagari', Georgia, serif; font-weight: 600; font-size: 1.32rem; line-height: 1.2; letter-spacing: -.015em; }
+.answer-card-q:lang(hi) { line-height: 1.5; }
+.answer-card-short { margin-top: .8rem; font-size: .9rem; line-height: 1.6; color: hsl(var(--foreground) / .75); display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.answer-card-truth { margin-top: .9rem; padding: .7rem .8rem; border-radius: .6rem; background: hsl(24 22% 10%); color: hsl(42 44% 92%); font-size: .82rem; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.answer-card-truth span { font-weight: 700; color: hsl(8 78% 70%); }
+.answer-card-more { margin-top: auto; padding-top: 1rem; display: inline-flex; align-items: center; gap: .35rem; font-size: .85rem; font-weight: 700; color: hsl(var(--accent)); }
+.answer-card.is-compact { min-height: 0; }
+.answers-empty { padding: 3rem 1.5rem; text-align: center; border: 1px dashed hsl(var(--foreground) / .3); border-radius: 1rem; }
+.answers-cta { display: grid; gap: 1.2rem; align-items: center; padding: 1.8rem; border-radius: 1.2rem; background: hsl(24 22% 10%); color: hsl(42 44% 95%); }
+@media (min-width: 900px) { .answers-cta { grid-template-columns: auto 1fr auto; gap: 1.8rem; padding: 2.2rem 2.4rem; } }
+.answers-cta-button { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; padding: .9rem 1.4rem; border-radius: 999px; background: hsl(8 70% 46%); color: #fff; font-weight: 700; font-size: .9rem; white-space: nowrap; }
+.answers-cta-button:hover { background: hsl(8 72% 52%); }
+.answer-detail { padding-top: 2.6rem; }
+.answer-detail-q { margin-top: 1.2rem; max-width: 56rem; font-family: 'Fraunces', 'Noto Serif Devanagari', Georgia, serif; font-weight: 600; font-size: clamp(2.2rem, 4.6vw, 4rem); line-height: 1.02; letter-spacing: -.04em; text-wrap: balance; }
+.answer-detail-q:lang(hi) { line-height: 1.35; letter-spacing: 0; }
+.answer-detail-grid { display: grid; gap: 2rem; margin-top: 2.4rem; }
+@media (min-width: 1024px) { .answer-detail-grid { grid-template-columns: minmax(0, 46rem) 18rem; justify-content: space-between; gap: 3rem; } }
+.answer-block { padding: 1.5rem 1.6rem; border-radius: 1rem; margin-bottom: 1.2rem; }
+.answer-block.is-short { background: hsl(var(--card)); border: 1px solid hsl(var(--foreground) / .14); }
+.answer-block.is-truth { background: hsl(24 22% 10%); color: hsl(42 44% 94%); }
+.answer-block-label { font-family: var(--app-font-mono); font-size: .64rem; letter-spacing: .14em; text-transform: uppercase; color: hsl(var(--accent)); }
+.is-truth .answer-block-label { color: hsl(8 78% 70%); }
+.answer-block-text { margin-top: .7rem; font-size: 1.12rem; line-height: 1.75; }
+.is-truth .answer-block-text { font-family: 'Fraunces', 'Noto Serif Devanagari', Georgia, serif; font-size: 1.25rem; line-height: 1.5; }
+.answer-detail-rail { align-self: start; position: sticky; top: 5.5rem; }
+.answer-sources { margin: .8rem 0 0; padding: 0; list-style: none; display: grid; gap: .5rem; }
+.answer-sources a { display: inline-flex; align-items: center; gap: .35rem; font-size: .9rem; font-weight: 600; color: hsl(var(--accent)); }
+.answer-sources a:hover { text-decoration: underline; }
+.answer-related { margin-top: 3.5rem; padding-top: 2rem; border-top: 2px solid hsl(var(--foreground)); }
+.answer-block-label:lang(hi) { font-family: 'Noto Sans Devanagari', var(--app-font-mono); text-transform: none; font-size: .8rem; }
+
+/* ==========================================================================
    Devanagari typography (Hindi edition)
 
    Devanagari stacks vowel signs above and below the headline bar
