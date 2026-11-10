@@ -745,6 +745,7 @@ export type CommunityPostKind = typeof CommunityPostKind[keyof typeof CommunityP
 
 
 export const CommunityPostKind = {
+  question: 'question',
   thought: 'thought',
   article: 'article',
   piece: 'piece',
@@ -752,10 +753,10 @@ export const CommunityPostKind = {
 
 export interface CommunityPostInput {
   /**
-     * @minLength 2
+     * Optional display name; when omitted the participant's anonymous handle is used.
      * @maxLength 80
      */
-  authorName: string;
+  authorName?: string;
   kind: CommunityPostKind;
   topic: CommunityTopic;
   /**
@@ -785,15 +786,23 @@ export type CommunityPost = CommunityPostInput & {
   likeCount: number;
   replyCount: number;
   likedByViewer: boolean;
+  ownedByViewer: boolean;
   createdAt: string;
-};
+} & Required<Pick<CommunityPostInput & {
+  id: number;
+  likeCount: number;
+  replyCount: number;
+  likedByViewer: boolean;
+  ownedByViewer: boolean;
+  createdAt: string;
+}, 'authorName'>>;
 
 export interface CommunityReplyInput {
   /**
-     * @minLength 2
+     * Optional display name; when omitted the participant's anonymous handle is used.
      * @maxLength 80
      */
-  authorName: string;
+  authorName?: string;
   /**
      * @minLength 2
      * @maxLength 5000
@@ -804,13 +813,25 @@ export interface CommunityReplyInput {
 export type CommunityReply = CommunityReplyInput & {
   id: number;
   postId: number;
+  helpfulCount: number;
+  helpfulByViewer: boolean;
+  ownedByViewer: boolean;
   createdAt: string;
-};
+} & Required<Pick<CommunityReplyInput & {
+  id: number;
+  postId: number;
+  helpfulCount: number;
+  helpfulByViewer: boolean;
+  ownedByViewer: boolean;
+  createdAt: string;
+}, 'authorName'>>;
 
 export interface CommunityPostList {
   posts: CommunityPost[];
   topics: CommunityTopic[];
   states: string[];
+  /** The anonymous handle this browser posts under unless a name is given. */
+  viewerHandle: string;
 }
 
 export interface CommunityPostDetail {
@@ -821,6 +842,31 @@ export interface CommunityPostDetail {
 export interface CommunityLikeResponse {
   liked: boolean;
   likeCount: number;
+}
+
+export interface CommunityHelpfulResponse {
+  helpful: boolean;
+  helpfulCount: number;
+}
+
+export type CommunityReportInputReason = typeof CommunityReportInputReason[keyof typeof CommunityReportInputReason];
+
+
+export const CommunityReportInputReason = {
+  abuse: 'abuse',
+  'personal-information': 'personal-information',
+  misinformation: 'misinformation',
+  spam: 'spam',
+  other: 'other',
+} as const;
+
+export interface CommunityReportInput {
+  reason: CommunityReportInputReason;
+}
+
+export interface CommunityReportResponse {
+  reported: boolean;
+  hidden: boolean;
 }
 
 export interface NewsletterInput {
@@ -1364,6 +1410,7 @@ export interface EditorDiscoveryItemsResponse {
 export type GetCommunityPostsParams = {
 topic?: CommunityTopic;
 state?: string;
+kind?: CommunityPostKind;
 sort?: GetCommunityPostsSort;
 /**
  * @minimum 1
@@ -1378,6 +1425,8 @@ export type GetCommunityPostsSort = typeof GetCommunityPostsSort[keyof typeof Ge
 export const GetCommunityPostsSort = {
   recent: 'recent',
   popular: 'popular',
+  trending: 'trending',
+  unanswered: 'unanswered',
 } as const;
 
 export type GetArchiveParams = {

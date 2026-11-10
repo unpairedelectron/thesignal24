@@ -10,10 +10,10 @@ import type { CommunityTopic } from './communityTopic';
 
 export interface CommunityPostInput {
   /**
-     * @minLength 2
+     * Optional display name; when omitted the participant's anonymous handle is used.
      * @maxLength 80
      */
-  authorName: string;
+  authorName?: string;
   kind: CommunityPostKind;
   topic: CommunityTopic;
   /**

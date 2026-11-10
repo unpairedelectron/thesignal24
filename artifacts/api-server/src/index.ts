@@ -3,6 +3,7 @@ import { logger } from "./lib/logger";
 import { ensureSeedData } from "./lib/seed";
 import { ensureContentPack } from "./lib/content-pack";
 import { ensureEvidencePack } from "./lib/evidence-pack";
+import { ensureCommunitySchema } from "./lib/community-schema";
 
 const rawPort = process.env["PORT"];
 
@@ -18,7 +19,8 @@ if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
-ensureSeedData()
+ensureCommunitySchema()
+  .then(() => ensureSeedData())
   .then(() => ensureContentPack())
   .then(() => ensureEvidencePack())
   .then(() => {

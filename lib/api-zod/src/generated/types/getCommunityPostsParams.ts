@@ -5,12 +5,14 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { CommunityPostKind } from './communityPostKind';
 import type { CommunityTopic } from './communityTopic';
 import type { GetCommunityPostsSort } from './getCommunityPostsSort';
 
 export type GetCommunityPostsParams = {
 topic?: CommunityTopic;
 state?: string;
+kind?: CommunityPostKind;
 sort?: GetCommunityPostsSort;
 /**
  * @minimum 1

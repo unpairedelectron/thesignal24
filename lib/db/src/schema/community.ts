@@ -24,6 +24,7 @@ export const communityPostsTable = pgTable(
     status: text("status").notNull().default("published"),
     likeCount: integer("like_count").notNull().default(0),
     replyCount: integer("reply_count").notNull().default(0),
+    reportCount: integer("report_count").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -48,10 +49,52 @@ export const communityRepliesTable = pgTable("community_replies", {
   participantKey: text("participant_key").notNull(),
   body: text("body").notNull(),
   status: text("status").notNull().default("published"),
+  helpfulCount: integer("helpful_count").notNull().default(0),
+  reportCount: integer("report_count").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
 });
+
+/** One "this answer helped" vote per participant per reply. */
+export const communityReplyVotesTable = pgTable(
+  "community_reply_votes",
+  {
+    id: serial("id").primaryKey(),
+    replyId: integer("reply_id")
+      .notNull()
+      .references(() => communityRepliesTable.id, { onDelete: "cascade" }),
+    participantKey: text("participant_key").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => ({
+    participantReplyIndex: uniqueIndex(
+      "community_reply_votes_participant_reply_idx",
+    ).on(table.replyId, table.participantKey),
+  }),
+);
+
+/** One report per participant per post or reply; repeated reports hide the item. */
+export const communityReportsTable = pgTable(
+  "community_reports",
+  {
+    id: serial("id").primaryKey(),
+    targetType: text("target_type").notNull(),
+    targetId: integer("target_id").notNull(),
+    participantKey: text("participant_key").notNull(),
+    reason: text("reason").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => ({
+    participantTargetIndex: uniqueIndex(
+      "community_reports_participant_target_idx",
+    ).on(table.targetType, table.targetId, table.participantKey),
+  }),
+);
 
 export const communityPostLikesTable = pgTable(
   "community_post_likes",

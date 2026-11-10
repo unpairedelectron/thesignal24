@@ -8,10 +8,10 @@
 
 export interface CommunityReplyInput {
   /**
-     * @minLength 2
+     * Optional display name; when omitted the participant's anonymous handle is used.
      * @maxLength 80
      */
-  authorName: string;
+  authorName?: string;
   /**
      * @minLength 2
      * @maxLength 5000
