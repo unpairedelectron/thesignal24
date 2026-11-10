@@ -22,19 +22,25 @@ type StageProps = {
   storyHref: (story: LocalizedStory) => string;
 };
 
-/** Animated integer that counts up once it scrolls into view. */
+/**
+ * A number that counts up the first time it scrolls into view. The final value is
+ * in the DOM from the first render, so anything that reads the page without
+ * scrolling (print, screenshots, crawlers, screen readers) gets the real number.
+ */
 export function CountUp({ to, decimals = 0, prefix = '', suffix = '', className = '' }: { to: number; decimals?: number; prefix?: string; suffix?: string; className?: string }) {
   const ref = useRef<HTMLSpanElement>(null);
   const inView = useInView(ref, { once: true });
   const reduce = useReducedMotion();
   const lang = useLang();
+  const played = useRef(false);
   const format = (value: number) => `${prefix}${value.toLocaleString(lang === 'hi' ? 'hi-IN' : 'en-IN', { minimumFractionDigits: decimals, maximumFractionDigits: decimals, numberingSystem: 'latn' } as Intl.NumberFormatOptions)}${suffix}`;
-  const [text, setText] = useState(() => format(reduce ? to : 0));
+  const [text, setText] = useState(() => format(to));
   useEffect(() => {
-    if (reduce) { setText(format(to)); return; }
-    if (!inView) return;
+    // Animate once, the first time a non-zero value is on screen; afterwards just show it.
+    if (reduce || !inView || played.current || to === 0) { setText(format(to)); return; }
+    played.current = true;
     const controls = animate(0, to, { duration: 1.6, ease: [0.16, 1, 0.3, 1], onUpdate: (value) => setText(format(value)) });
-    return () => controls.stop();
+    return () => { controls.stop(); setText(format(to)); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [inView, to, reduce, lang]);
   return <span ref={ref} className={className}>{text}</span>;
@@ -69,14 +75,15 @@ export function HomeStage({ stories, storyHref }: StageProps) {
 
   // Ring rotation: slow auto-turn, paused on hover/focus, steered by keyboard focus.
   const rotation = useMotionValue(0);
-  const paused = useRef(false);
+  const hovered = useRef(false);
+  const focused = useRef(false);
   useAnimationFrame((_, delta) => {
-    if (reduce || paused.current) return;
+    if (reduce || hovered.current || focused.current) return;
     rotation.set(rotation.get() - Math.min(delta, 64) * 0.0075);
   });
   const step = files.length ? 360 / files.length : 0;
   const bringToFront = (index: number) => {
-    paused.current = true;
+    focused.current = true;
     const current = rotation.get();
     const target = -index * step;
     const turns = Math.round((current - target) / 360);
@@ -128,11 +135,11 @@ export function HomeStage({ stories, storyHref }: StageProps) {
         </motion.div>
       </motion.div>
 
-      {files.length > 0 && <motion.div className="stage-scene" style={{ scale: ringScale, y: ringLift }} onPointerEnter={() => { paused.current = true; }} onPointerLeave={() => { paused.current = false; }}>
+      {files.length > 0 && <motion.div className="stage-scene" style={{ scale: ringScale, y: ringLift }} onPointerEnter={() => { hovered.current = true; }} onPointerLeave={() => { hovered.current = false; }}>
         <motion.div className="stage-tilt" style={reduce ? undefined : { rotateX: tiltX, rotateY: tiltY }}>
           <motion.ul className="stage-ring" aria-label={t('Case files on tonight’s stage', 'आज मंच पर रखी फ़ाइलें')} style={{ rotateY: rotation, ['--files' as string]: files.length }} initial={reduce ? false : { opacity: 0, scale: 0.6 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: copyDelay - 0.2, duration: 1.4, ease: [0.16, 1, 0.3, 1] }}>
             {files.map((story, index) => <li key={story.id} className="stage-file" style={{ ['--i' as string]: index }}>
-              <Link href={storyHref(story)} className="stage-file-card" onFocus={() => bringToFront(index)} onBlur={() => { paused.current = false; }} data-testid={`link-stage-file-${story.id}`}>
+              <Link href={storyHref(story)} className="stage-file-card" onFocus={() => bringToFront(index)} onBlur={() => { focused.current = false; }} data-testid={`link-stage-file-${story.id}`}>
                 <span className="stage-file-tab">{label(story.topic)}</span>
                 <span className="stage-file-meta">{story.kind === 'Opinion' ? label('Opinion') : label(story.kind)} · {label(story.state ?? 'National')}</span>
                 <span lang={story.contentLang} className="stage-file-title">{story.title}</span>

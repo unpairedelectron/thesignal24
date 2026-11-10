@@ -113,6 +113,10 @@ import { ACCOUNTABILITY_CHECKED_ON, ACCOUNTABILITY_ITEMS } from '@/lib/accountab
 import { RichBody, plainText } from '@/components/rich-body';
 import { HomeStage } from '@/components/home-stage';
 import { KeyFigures } from '@/components/key-figures';
+import { CeilingChart, DemandBoard } from '@/components/opinion-data';
+import { CountUp } from '@/components/home-stage';
+import { KEY_FIGURES, daysSince, type Bilingual } from '@/lib/key-figures';
+import { motion, useReducedMotion } from 'framer-motion';
 import { EvidenceSpine, TopicCabinet, TopicHero, type CabinetDrawer } from '@/components/topic-stage';
 import { TOPIC_BRIEFS, TOPIC_BRIEFS_CHECKED_ON, topicBrief, type TopicBrief, type TopicKey } from '@/lib/topic-briefs';
 import { breadcrumbNode, collectionPageNode, EDITORIAL_DESK_PATH, editorialDeskNode, editorialDeskRef, externalDocument, imageObject, organizationRef, placeForState, siteGraph, webPageNode, websiteRef } from '@/lib/structured-data';
@@ -764,7 +768,7 @@ function DocumentFeature() {
     <div className="grid gap-8 border-y-2 border-foreground py-8 lg:grid-cols-[.8fr_1.2fr] lg:items-center lg:gap-14">
       <div><p className="signal-kicker text-accent">{t('The document', 'दस्तावेज़')}</p><h2 id="document-title" className="mt-3 font-display text-5xl leading-[.9] tracking-[-.05em] sm:text-7xl">{t(<>Don’t trust us.<br /><em className="font-normal text-accent">Read the source.</em></>, <>हम पर भरोसा मत कीजिए।<br /><em className="font-normal text-accent">स्रोत पढ़िए।</em></>)}</h2><p className="mt-5 max-w-md text-sm leading-relaxed text-muted-foreground">{t('A primary document from the public evidence archive, with its status and publication date intact.', 'सार्वजनिक सबूत अभिलेखागार का एक मूल दस्तावेज़, उसकी स्थिति और प्रकाशन तिथि के साथ।')}</p></div>
       <article className="grid gap-6 sm:grid-cols-[.8fr_1.2fr] sm:items-center" data-testid="feature-the-document">
-        <div className="document-placeholder" aria-label={query.isLoading ? t('Loading source document preview', 'दस्तावेज़ लोड हो रहा है') : query.isError ? t('Source document request failed', 'दस्तावेज़ नहीं मिल सका') : source ? t('Source document preview unavailable', 'दस्तावेज़ का पूर्वावलोकन उपलब्ध नहीं') : t('No public source document returned', 'कोई सार्वजनिक दस्तावेज़ नहीं मिला')} />
+        <div className="document-placeholder" role="img" aria-label={query.isLoading ? t('Loading source document preview', 'दस्तावेज़ लोड हो रहा है') : query.isError ? t('Source document request failed', 'दस्तावेज़ नहीं मिल सका') : source ? t('Source document preview unavailable', 'दस्तावेज़ का पूर्वावलोकन उपलब्ध नहीं') : t('No public source document returned', 'कोई सार्वजनिक दस्तावेज़ नहीं मिला')} />
         <div>{query.isLoading ? <div role="status"><div className="h-3 w-40 animate-pulse bg-muted" /><p className="mt-4 signal-kicker text-muted-foreground">{t('Loading published documents…', 'प्रकाशित दस्तावेज़ लोड हो रहे हैं…')}</p></div> : query.isError ? <div role="alert"><p className="signal-kicker text-accent">{t('Document archive unavailable', 'दस्तावेज़ अभिलेखागार उपलब्ध नहीं')}</p><h3 className="mt-3 font-display text-3xl leading-tight">{t('The document request failed.', 'दस्तावेज़ का अनुरोध विफल रहा।')}</h3><p className="mt-3 text-sm leading-relaxed text-muted-foreground">{t('A failed request does not mean the document does not exist. Try the evidence archive.', 'अनुरोध विफल होने का मतलब यह नहीं कि दस्तावेज़ मौजूद नहीं है। सबूत अभिलेखागार देखें।')}</p><Link href="/events" className="mt-6 inline-flex items-center gap-2 signal-kicker text-accent hover:underline">{t('Open the evidence archive', 'सबूत अभिलेखागार खोलें')} <ArrowUpRight size={13} /></Link></div> : source ? <><p className="signal-kicker text-accent">{source.documentType} / {source.status}</p><h3 className="mt-3 font-display text-3xl leading-tight" lang="en">{source.title}</h3><p className="mt-3 text-sm text-muted-foreground"><span lang="en">{source.publisher}</span> · {t('Published', 'प्रकाशित')} {formatDate(source.publicationDate)}</p>{source.sourceUrl ? <a href={source.sourceUrl} target="_blank" rel="noopener noreferrer" className="mt-6 inline-flex items-center gap-2 signal-kicker text-accent hover:underline">{t('View source', 'स्रोत देखें')} <ExternalLink size={13} /></a> : <p className="mt-6 signal-kicker text-muted-foreground">{t('No direct source link', 'सीधा स्रोत लिंक नहीं')}</p>}</> : <><p className="signal-kicker text-accent">{t('No public document yet', 'अभी कोई सार्वजनिक दस्तावेज़ नहीं')}</p><h3 className="mt-3 font-display text-3xl leading-tight">{t('This panel shows a document only when one exists in the archive.', 'यह पैनल तभी दस्तावेज़ दिखाता है जब वह अभिलेखागार में मौजूद हो।')}</h3><p className="mt-3 text-sm leading-relaxed text-muted-foreground">{t('We do not simulate scans or mock up documents.', 'हम नक़ली स्कैन या दस्तावेज़ नहीं बनाते।')}</p></>}</div>
       </article>
     </div>
@@ -796,7 +800,6 @@ function Home() {
   const featured = sourcedStories[0];
   const visualStories = reporting.filter((story) => story.id !== featured?.id).slice(0, 3);
   const latestStories = reporting.slice(0, 6);
-  const latestTickerStories = stories.slice(0, 3);
   const investigation = sourcedStories.find((story) => story.id !== featured?.id && (story.kind === 'Article' || story.kind === 'Explainer'));
   const featuredImage = featured ? imageForStory(featured) : null;
   const measuredRecords = (decisionImpactQuery.data?.records ?? []).filter(isMeasuredDecisionImpact);
@@ -997,7 +1000,7 @@ function TopicIndexPage() {
         { value: sourceCount, label: t('Direct sources', 'सीधे स्रोत') },
       ]}
       illustration="archive-history"
-      illustrationAlt={t('Illustration: archival sheets linked by red thread', 'चित्रण: लाल धागे से जुड़े अभिलेख')}
+      illustrationAlt={illustration('archive-history').alt}
       exhibits={stories.slice(0, 2).map((story) => ({ title: story.title, meta: `${label(story.topic)} · ${label(story.kind)}`, lang: story.contentLang }))}
     />
     <section className="signal-container mt-16 sm:mt-24" aria-label={t('Topic files', 'विषय फ़ाइलें')}>
@@ -1059,7 +1062,7 @@ function TopicPage() {
         { value: policies.length, label: t('Ledger entries', 'रजिस्टर प्रविष्टियाँ') },
       ]}
       illustration={brief.illustration}
-      illustrationAlt={t(`Illustration for the ${topic} desk`, `${label(topic)} डेस्क का चित्रण`)}
+      illustrationAlt={illustration(brief.illustration as IllustrationName).alt}
       exhibits={records.slice(0, 2).map((story) => ({ title: story.title, meta: `${label(story.kind)} · ${label(story.state ?? 'National')}`, lang: story.contentLang }))}
     />
     <TopicBriefSection brief={brief} />
@@ -1329,7 +1332,7 @@ function OpenCategoryTopicPage() {
         { value: leads.length, label: t('External leads', 'बाहरी सुराग') },
       ]}
       illustration={brief.illustration}
-      illustrationAlt={t('Illustration: a gazette notification under a court stamp', 'चित्रण: अदालती मुहर के नीचे गज़ट अधिसूचना')}
+      illustrationAlt={illustration(TOPIC_BRIEFS['open-category-competition'].illustration as IllustrationName).alt}
       exhibits={stories.slice(0, 2).map((story) => ({ title: story.title, meta: story.source, lang: story.contentLang }))}
     />
     <section className="signal-container mt-12 sm:mt-16">
@@ -2345,64 +2348,83 @@ function recordFamilyForStory(story: Story) {
 function DataIndexPage() {
   const t = useT();
   const label = useLabel();
+  const lang = useLang();
   const path = '/data';
   const params = useMemo(() => ({ limit: 100 }), []);
   const { data, isLoading, isError, refetch } = useLocalizedArchive(params, {
     query: { queryKey: getGetArchiveQueryKey(params) },
   });
+  const { events } = useTopicEvents('Data & Notes');
   const records = data?.stories.filter((story) =>
     (story.recordFamily === 'data' || story.topic === 'Data & Notes') &&
     story.verificationStatus !== 'unverified' &&
     Boolean(story.sourceUrl),
   ) ?? [];
+  const gaps = ACCOUNTABILITY_ITEMS.filter((item) => ['secc-2011', 'rohini-commission', 'census-2027-caste', 'ews-eight-lakh'].includes(item.id));
   const title = t('Data room — The Signal 24', 'आंकड़ा कक्ष — द सिग्नल 24');
+  const description = t('Source-linked data on reservation and representation in India, every number with its frame, and an honest account of the data the state has not released.', 'भारत में आरक्षण और प्रतिनिधित्व पर स्रोत-आधारित आंकड़े, हर संख्या अपने संदर्भ के साथ, और उन आंकड़ों का ईमानदार हिसाब जो सरकार ने जारी नहीं किए।');
   useSeo({
     title,
-    description: t('Verified, source-linked data on reservation and representation in India, and an honest account of the data the state has not released.', 'भारत में आरक्षण और प्रतिनिधित्व पर सत्यापित, स्रोत-आधारित आंकड़े, और उन आंकड़ों का ईमानदार हिसाब जो सरकार ने जारी नहीं किए।'),
+    description,
     canonicalPath: path,
     // Data records are articles/notes about data (typed NewsArticle/Article on their own
     // pages), so they are listed here rather than re-typed as Dataset.
     structuredData: siteGraph(
-      collectionPageNode(path, { name: title, description: 'Published data records and methodology notes on reservation and representation in India.', publisher: organizationRef }, records.filter((story) => story.indexable).map((story) => ({ url: storyPath(story), name: story.title }))),
+      collectionPageNode(path, { name: title, description, publisher: organizationRef }, records.filter((story) => story.indexable).map((story) => ({ url: storyPath(story), name: story.title }))),
       breadcrumbNode(path, [[t('Data', 'आंकड़े'), path]]),
     ),
   });
   return <main className="signal-page">
     <Header />
-    <section className="signal-container pt-14 sm:pt-24">
-      <p className="signal-kicker text-accent">{t('The Signal 24 / data room', 'द सिग्नल 24 / आंकड़ा कक्ष')}</p>
-      <h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">{t(<>The data<br /><em className="font-normal text-accent">they won’t release.</em></>, <>वे आंकड़े,<br /><em className="font-normal text-accent">जो जारी नहीं होते।</em></>)}</h1>
-      <p className="mt-8 max-w-2xl text-lg leading-relaxed text-muted-foreground">{t("India argues about reservation without the numbers that could settle the argument, and that is not an accident. The 2011 caste data was collected, then declared unusable. The Rohini Commission’s data on how OBC benefits are shared is sitting in a government drawer. A number appears here only with its value, unit, year, geography, definition and source. We won’t invent one to fill the silence. We’ll just keep pointing at it.", "भारत आरक्षण पर बहस उन आंकड़ों के बिना करता है जो इस बहस को सुलझा सकते थे, और यह कोई संयोग नहीं है। 2011 के जाति आंकड़े जुटाए गए, फिर बेकार घोषित कर दिए गए। ओबीसी लाभ के बँटवारे पर रोहिणी आयोग के आंकड़े सरकारी दराज़ में पड़े हैं। यहाँ कोई आंकड़ा तभी दिखेगा जब उसके साथ मान, इकाई, वर्ष, भूगोल, परिभाषा और स्रोत हो। इस चुप्पी को भरने के लिए हम कोई आंकड़ा नहीं गढ़ेंगे। बस उसकी तरफ़ उँगली उठाते रहेंगे।")}</p>
-      <a href="#accountability-data" className="mt-7 inline-flex items-center gap-2 signal-kicker text-accent hover:underline">{t("See what’s been locked away", "देखिए क्या ताले में रखा गया है")} <ArrowDownRight size={13} /></a>
-      <PageArt name="chair-on-files" className="max-w-4xl" />
-    </section>
+    <TopicHero
+      kicker={t('The Signal 24 / data room', 'द सिग्नल 24 / आंकड़ा कक्ष')}
+      headline={t('The data', 'वे आंकड़े,')}
+      accent={t('they won’t release.', 'जो जारी नहीं होते।')}
+      standfirst={t('India argues about reservation without the numbers that could settle the argument, and that is not an accident. A number appears here only with its value, unit, year, definition and source. Where the state has the number and won’t publish it, we count the days.', 'भारत आरक्षण पर उन आंकड़ों के बिना बहस करता है जो बहस सुलझा सकते थे, और यह संयोग नहीं है। यहाँ कोई आंकड़ा तभी दिखता है जब उसके साथ मान, इकाई, वर्ष, परिभाषा और स्रोत हो। जहाँ सरकार के पास आंकड़ा है और वह उसे छापती नहीं, वहाँ हम दिन गिनते हैं।')}
+      stats={[
+        { value: KEY_FIGURES.length, label: t('Figures on file', 'दर्ज आंकड़े') },
+        { value: records.length, label: t('Data records', 'आंकड़ा रिकॉर्ड') },
+        { value: gaps.length, label: t('Datasets withheld', 'रोके गए डेटासेट') },
+        { value: daysSince(ACCOUNTABILITY_ITEMS.find((item) => item.id === 'secc-2011')?.since ?? '2021-12-15'), label: t('Days the SECC question is unanswered', 'SECC का सवाल अनुत्तरित, दिन') },
+      ]}
+      illustration="chair-on-files"
+      illustrationAlt={t('Illustration: an empty government chair sitting on a stack of withheld files', 'चित्रण: रोकी गई फ़ाइलों के ढेर पर ख़ाली सरकारी कुर्सी')}
+      exhibits={records.slice(0, 2).map((story) => ({ title: story.title, meta: `${label(story.kind)} · ${label(story.verificationStatus)}`, lang: story.contentLang }))}
+    />
     <section className="signal-container mt-16 sm:mt-24" aria-labelledby="data-room-figures-title">
-      <p className="signal-kicker text-accent">{t('Key figures', 'मुख्य आंकड़े')}</p>
-      <h2 id="data-room-figures-title" className="mt-3 mb-8 max-w-3xl font-display text-4xl leading-tight sm:text-5xl">{t('The numbers the argument actually turns on, with their frames attached.', 'वे आंकड़े जिन पर बहस असल में टिकी है, अपने संदर्भ के साथ।')}</h2>
+      <div className="mb-8 border-b-2 border-foreground pb-4"><p className="signal-kicker text-accent">{t('01 / Key figures', '01 / मुख्य आंकड़े')}</p>
+      <h2 id="data-room-figures-title" className="mt-2 max-w-4xl font-display text-4xl leading-tight sm:text-5xl">{t('The numbers the argument actually turns on, with their frames attached.', 'वे आंकड़े जिन पर बहस असल में टिकी है, अपने संदर्भ के साथ।')}</h2></div>
       <KeyFigures />
     </section>
-    <section className="signal-container mt-16 border-y border-foreground/20 py-10 sm:mt-24 sm:py-14" aria-labelledby="data-room-records-title">
-      <p className="signal-kicker text-accent">{t('Source-linked data records', 'स्रोत से जुड़े आंकड़ा रिकॉर्ड')}</p>
-      <h2 id="data-room-records-title" className="mt-3 font-display text-3xl leading-tight">{t('Published datasets and notes', 'प्रकाशित डेटासेट और नोट्स')}</h2>
-      {isLoading ? <div className="mt-6" role="status" aria-live="polite">{t('Loading published data records…', 'प्रकाशित आंकड़ा रिकॉर्ड लोड हो रहे हैं…')}</div> :
-        isError ? <div className="mt-6"><ErrorState message={t('Published data records could not be loaded.', 'प्रकाशित आंकड़ा रिकॉर्ड लोड नहीं हो सके।')} onRetry={() => void refetch()} /></div> :
-          records.length === 0 ? <>
-            <p className="mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground">{t('No verified, source-linked dataset is published yet, so no chart or comparison is shown.', 'अभी कोई सत्यापित, स्रोत-आधारित डेटासेट प्रकाशित नहीं हुआ है, इसलिए कोई चार्ट या तुलना नहीं दिखाई गई।')}</p>
-            <Link href="/methodology" className="mt-7 inline-flex items-center gap-2 signal-kicker text-accent hover:underline">{t('How we handle numbers', 'आंकड़ों को हम कैसे बरतते हैं')} <ArrowUpRight size={13} /></Link>
-          </> :
-            <div className="mt-7 border-t border-foreground/20">
-              {records.map((story) => <article key={story.id} className="grid gap-5 border-b border-foreground/20 py-7 md:grid-cols-[.25fr_1fr_.62fr] md:gap-10" data-testid={`data-record-${story.id}`}>
-                <div><p className="signal-kicker text-accent">{t('Record date', 'रिकॉर्ड तिथि')}</p><time className="mt-2 block font-mono-signal text-xs" dateTime={story.publishedOn ?? undefined}>{formatDate(story.publishedOn)}</time><p className="mt-2 signal-kicker text-muted-foreground">{label(story.verificationStatus)}</p></div>
-                <div><p className="signal-kicker text-muted-foreground">{label(story.kind)} / {label(story.state || 'National')}</p><Link href={storyPath(story)} className="group mt-2 block"><h3 lang={story.contentLang} className="font-display text-3xl leading-tight group-hover:text-accent">{story.title}</h3></Link><p lang={story.contentLang} className="mt-3 text-sm leading-relaxed text-muted-foreground">{story.dek}</p></div>
-                <SourceLine story={story} detail />
-              </article>)}
-            </div>}
+    <section className="signal-container mt-16 sm:mt-24">
+      <div className="mb-8 border-b-2 border-foreground pb-4"><p className="signal-kicker text-accent">{t('02 / The ceiling', '02 / सीमा')}</p><h2 className="mt-2 max-w-4xl font-display text-4xl leading-tight sm:text-5xl">{t('Who went over 50%, and what the courts did about it.', 'किसने 50% पार किया, और अदालतों ने क्या किया।')}</h2></div>
+      <CeilingChart />
     </section>
     <section id="accountability-data" className="signal-container mt-16 sm:mt-24">
-      <p className="signal-kicker text-accent">{t('Withheld or unpublished', 'रोके गए या अप्रकाशित')}</p>
-      <div className="mt-4 grid gap-px border border-foreground/20 bg-foreground/20 md:grid-cols-2">
-        {ACCOUNTABILITY_ITEMS.filter((item) => ['secc-2011', 'rohini-commission', 'census-2027-caste', 'ews-eight-lakh'].includes(item.id)).map((item) => <DataGapCard key={item.id} item={item} />)}
+      <div className="flex flex-wrap items-end justify-between gap-4 border-b-2 border-foreground pb-4">
+        <div><p className="signal-kicker text-accent">{t('03 / Withheld or unpublished', '03 / रोके गए या अप्रकाशित')}</p><h2 className="mt-2 max-w-4xl font-display text-4xl leading-tight sm:text-5xl">{t('Collected with public money. Kept from the public.', 'जनता के पैसे से जुटाए। जनता से छिपाए।')}</h2></div>
+        <a href={`${lang === 'hi' ? '/hi' : ''}/#accountability`} className="signal-kicker text-accent hover:underline">{t('Accountability watch', 'जवाबदेही पर नज़र')} <ArrowUpRight size={13} className="ml-1 inline" /></a>
       </div>
+      <div className="mt-6 grid gap-px border border-foreground/20 bg-foreground/20 md:grid-cols-2">
+        {gaps.map((item) => <DataGapCard key={item.id} item={item} />)}
+      </div>
+    </section>
+    {events.length > 0 && <section className="signal-container mt-16 sm:mt-24">
+      <div className="flex flex-wrap items-end justify-between gap-4 border-b-2 border-foreground pb-4">
+        <div><p className="signal-kicker text-accent">{t('04 / The data timeline', '04 / आंकड़ों की समयरेखा')}</p><h2 className="mt-2 font-display text-4xl sm:text-5xl">{t('Counted, claimed, withheld: in order.', 'गिना, दावा किया, रोका: क्रम से।')}</h2></div>
+        <Link href={topicHref('Data & Notes')} className="signal-kicker text-accent hover:underline">{t('The data desk', 'आंकड़ा डेस्क')} <ArrowUpRight size={13} className="ml-1 inline" /></Link>
+      </div>
+      <EvidenceSpine events={events} />
+    </section>}
+    <section className="signal-container mt-16 sm:mt-24" aria-labelledby="data-room-records-title">
+      <div className="flex flex-wrap items-end justify-between gap-4 border-b-2 border-foreground pb-4">
+        <div><p className="signal-kicker text-accent">{t('05 / Source-linked data records', '05 / स्रोत से जुड़े आंकड़ा रिकॉर्ड')}</p><h2 id="data-room-records-title" className="mt-2 font-display text-4xl sm:text-5xl">{t('The reporting behind the numbers.', 'आंकड़ों के पीछे की रिपोर्टिंग।')}</h2></div>
+        <Link href="/methodology" className="signal-kicker text-accent hover:underline">{t('How we handle numbers', 'आंकड़ों को हम कैसे बरतते हैं')} <ArrowUpRight size={13} className="ml-1 inline" /></Link>
+      </div>
+      {isLoading ? <div className="mt-6" role="status" aria-live="polite">{t('Loading published data records…', 'प्रकाशित आंकड़ा रिकॉर्ड लोड हो रहे हैं…')}</div> :
+        isError ? <div className="mt-6"><ErrorState message={t('Published data records could not be loaded.', 'प्रकाशित आंकड़ा रिकॉर्ड लोड नहीं हो सके।')} onRetry={() => void refetch()} /></div> :
+          records.length === 0 ? <p className="mt-6 max-w-2xl text-sm leading-relaxed text-muted-foreground">{t('No source-linked data record is published yet.', 'अभी कोई स्रोत-आधारित आंकड़ा रिकॉर्ड प्रकाशित नहीं हुआ है।')}</p> :
+            <div>{records.map((story) => <StoryCard key={story.id} story={story} compact />)}</div>}
     </section>
     <SiteFooter />
   </main>;
@@ -2413,19 +2435,37 @@ function DataGapCard({ item }: { item: (typeof ACCOUNTABILITY_ITEMS)[number] }) 
   const lang = useLang();
   return <article className="bg-card p-6">
     <img src={`${basePath}/illustrations/${item.illustration}.svg`} alt="" loading="lazy" decoding="async" width="1600" height="900" className="accountability-art mb-5 !max-w-none" />
-    <span className="signal-status-badge is-unverified">{item.status[lang]}</span>
+    <div className="flex flex-wrap items-center justify-between gap-3"><span className="signal-status-badge is-unverified">{item.status[lang]}</span><span className="data-gap-days"><CountUp to={daysSince(item.since)} /> <small>{t('days', 'दिन')}</small></span></div>
     <h3 className="mt-4 font-display text-2xl leading-tight">{item.question[lang]}</h3>
     <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{item.record[lang]}</p>
     <p className="mt-4 flex flex-wrap gap-x-4 gap-y-1">{item.sources.map((source) => <a key={source.url} href={source.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 signal-kicker text-accent hover:underline">{source.name} <ExternalLink size={11} /></a>)}<span className="signal-kicker text-muted-foreground">{t('Since', 'कब से')} {formatDate(item.since)}</span></p>
   </article>;
 }
 
+/** The first pull-quote line ("> …") of an opinion body, if it has one. */
+function pullQuote(body: string | null | undefined) {
+  const line = (body ?? '').split('\n').find((item) => item.trim().startsWith('> '));
+  return line ? line.trim().slice(2).trim() : null;
+}
+
+const OPINION_RULES: Array<[Bilingual, Bilingual]> = [
+  [{ en: 'Aimed at power', hi: 'निशाना सत्ता पर' }, { en: 'Governments, ministries, commissions, agencies and the decisions they make. Never caste, religion, region or any community, and never private citizens.', hi: 'सरकारें, मंत्रालय, आयोग, एजेंसियाँ और उनके फ़ैसले। जाति, धर्म, क्षेत्र या कोई समुदाय कभी नहीं, और आम नागरिक कभी नहीं।' }],
+  [{ en: 'Every jibe on a fact', hi: 'हर तंज़ एक तथ्य पर' }, { en: 'Each argument sits on a sourced record linked from the piece. If the fact falls, the joke goes with it.', hi: 'हर तर्क लेख से जुड़े किसी स्रोत-आधारित रिकॉर्ड पर टिका है। तथ्य गिरा, तो तंज़ भी जाएगा।' }],
+  [{ en: 'Signed and labelled', hi: 'हस्ताक्षरित और चिह्नित' }, { en: 'Opinion carries the editorial board’s name or an author’s, and a label that never comes off. It is never mixed into reporting.', hi: 'राय पर संपादकीय बोर्ड या लेखक का नाम और ऐसा लेबल होता है जो कभी नहीं हटता। इसे रिपोर्टिंग में नहीं मिलाया जाता।' }],
+  [{ en: 'Bipartisan contempt', hi: 'सब दलों से बराबर दूरी' }, { en: 'Withholding data and passing laws built to lose in court are habits of every party in power. We say so, whoever holds office.', hi: 'आंकड़े रोकना और अदालत में हारने वाले क़ानून बनाना हर सत्ताधारी दल की आदत है। सत्ता में जो भी हो, हम यह कहते हैं।' }],
+];
+
 function OpinionPage() {
   const t = useT();
   const label = useLabel();
+  const lang = useLang();
+  const reduce = useReducedMotion() ?? false;
   const params = useMemo(() => ({ limit: 100 }), []);
   const { data, isLoading, isError, refetch } = useLocalizedArchive(params, { query: { queryKey: getGetArchiveQueryKey(params) } });
   const pieces = (data?.stories ?? []).filter((story) => story.kind === 'Opinion' && story.workflowStatus === 'published');
+  const lead = pieces[0];
+  const leadQuote = lead ? pullQuote(lead.body) : null;
+  const sourcesCited = new Set(pieces.map((story) => story.sourceUrl).filter(Boolean)).size;
   const title = t('Opinion — The Signal 24', 'राय — द सिग्नल 24');
   const description = t('Signed opinion from The Signal 24: where the record leads us to take a position on how India’s governments and institutions handle reservation and representation.', 'द सिग्नल 24 की हस्ताक्षरित राय: जहाँ रिकॉर्ड हमें इस पर पक्ष लेने को मजबूर करता है कि भारत की सरकारें और संस्थाएँ आरक्षण और प्रतिनिधित्व को कैसे संभालती हैं।');
   useSeo({
@@ -2439,14 +2479,53 @@ function OpinionPage() {
   });
   return <main className="signal-page">
     <Header />
-    <section className="signal-container pt-14 sm:pt-24">
-      <span className="opinion-label">{label('Opinion')}</span>
-      <h1 className="mt-5 max-w-5xl font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">{t(<>Where we stop<br /><em className="font-normal text-accent">being polite.</em></>, <>जहाँ हम शिष्टाचार<br /><em className="font-normal text-accent">छोड़ देते हैं।</em></>)}</h1>
-      <p className="mt-8 max-w-2xl text-lg leading-relaxed text-muted-foreground">{t("Our reporting tells you what the documents say. Our opinion tells you what we think of the decisions behind them, without the diplomatic padding. Every piece is signed, labelled and argued from the record. The target is always governments, agencies and decisions. Never communities.", "हमारी रिपोर्टिंग बताती है कि दस्तावेज़ क्या कहते हैं। हमारी राय बताती है कि उनके पीछे के फ़ैसलों के बारे में हम क्या सोचते हैं, कूटनीतिक लिहाज़ के बिना। हर लेख हस्ताक्षरित है, चिह्नित है, और रिकॉर्ड के आधार पर तर्क करता है। निशाना हमेशा सरकारें, एजेंसियाँ और फ़ैसले होते हैं। समुदाय कभी नहीं।")}</p>
-      <PageArt name="bill-crash" className="max-w-4xl" />
+    <TopicHero
+      kicker={t('Opinion / signed by the editorial board', 'राय / संपादकीय बोर्ड के हस्ताक्षर')}
+      headline={t('Where we stop', 'जहाँ हम शिष्टाचार')}
+      accent={t('being polite.', 'छोड़ देते हैं।')}
+      standfirst={t('Our reporting tells you what the documents say. Our opinion tells you what we think of the decisions behind them, without the diplomatic padding. Every piece is signed, labelled and argued from the record. The target is always governments, agencies and decisions. Never communities.', 'हमारी रिपोर्टिंग बताती है कि दस्तावेज़ क्या कहते हैं। हमारी राय बताती है कि उनके पीछे के फ़ैसलों के बारे में हम क्या सोचते हैं, बिना कूटनीतिक लीपापोती के। हर लेख हस्ताक्षरित, चिह्नित और रिकॉर्ड पर आधारित है। निशाना हमेशा सरकारें, एजेंसियाँ और फ़ैसले होते हैं। समुदाय कभी नहीं।')}
+      stats={[
+        { value: pieces.length, label: t('Signed pieces', 'हस्ताक्षरित लेख') },
+        { value: sourcesCited, label: t('Sources cited', 'उद्धृत स्रोत') },
+        { value: ACCOUNTABILITY_ITEMS.length, label: t('Demands unmet', 'अधूरी माँगें') },
+      ]}
+      illustration="bill-crash"
+      illustrationAlt={t('Illustration: a paper plane made from a quota bill crashing into a wall marked 50%', 'चित्रण: आरक्षण विधेयक से बना काग़ज़ी जहाज़, 50% लिखी दीवार से टकराता हुआ')}
+      exhibits={pieces.slice(0, 2).map((story) => ({ title: story.title, meta: `${label('Opinion')} · ${label(story.byline) || t('Editorial board', 'संपादकीय बोर्ड')}`, lang: story.contentLang }))}
+    />
+    {isLoading ? <LoadingBlock /> : isError ? <div className="signal-container py-16"><ErrorState onRetry={() => void refetch()} /></div> : pieces.length === 0 ? <div className="signal-container py-16"><EmptyState title={t('No opinion published yet.', 'अभी कोई राय प्रकाशित नहीं हुई।')} text={t('Opinion pieces appear here once the editorial board has signed them off.', 'संपादकीय बोर्ड की मंज़ूरी के बाद राय के लेख यहाँ दिखेंगे।')} /></div> : <>
+      {lead && <section className="signal-container mt-16 sm:mt-24">
+        <motion.div className="opinion-lead" initial={reduce ? false : { opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}>
+          <div className="opinion-lead-art"><StoryArt story={lead} className="h-full" showCredit={false} /></div>
+          <div className="opinion-lead-copy">
+            <span className="opinion-label bg-accent text-accent-foreground">{t('This week’s editorial', 'इस हफ़्ते का संपादकीय')}</span>
+            {leadQuote && <blockquote lang={lead.contentLang} className="opinion-lead-quote">“{leadQuote}”</blockquote>}
+            <Link href={storyPath(lead)} className="group mt-6 block" data-testid={`link-opinion-lead-${lead.id}`}><h2 lang={lead.contentLang} className="font-display text-3xl leading-tight group-hover:text-accent sm:text-4xl">{lead.title}</h2></Link>
+            <p lang={lead.contentLang} className="mt-3 max-w-xl text-sm leading-relaxed opacity-75">{lead.dek}</p>
+            <p className="mt-5 signal-kicker opacity-70">{label(lead.byline) || t('Editorial board', 'संपादकीय बोर्ड')} · {formatDate(lead.publishedOn)} · {t(`${lead.read} min read`, `${lead.read} मिनट`)}</p>
+          </div>
+        </motion.div>
+      </section>}
+      <section className="signal-container mt-16 sm:mt-24">
+        <div className="flex flex-wrap items-end justify-between gap-4 border-b-2 border-foreground pb-4">
+          <div><p className="signal-kicker text-accent">{t(`${pieces.length} signed ${pieces.length === 1 ? 'piece' : 'pieces'}`, `${pieces.length} हस्ताक्षरित लेख`)}</p><h2 className="mt-2 font-display text-4xl sm:text-5xl">{t('The arguments, on the record.', 'तर्क, रिकॉर्ड पर।')}</h2></div>
+        </div>
+        <div>{pieces.map((story) => <StoryCard key={story.id} story={story} />)}</div>
+      </section>
+    </>}
+    <section className="signal-container mt-16 sm:mt-24" aria-labelledby="demand-board-title">
+      <div className="grid gap-6 border-b-2 border-foreground pb-4 lg:grid-cols-[1fr_.8fr] lg:items-end">
+        <div><p className="signal-kicker text-accent">{t('The demand board', 'माँगों का बोर्ड')}</p><h2 id="demand-board-title" className="mt-2 font-display text-4xl leading-tight sm:text-5xl">{t(<>What we’ve asked for. <em className="font-normal text-accent">The clock is running.</em></>, <>हमने क्या माँगा है। <em className="font-normal text-accent">घड़ी चल रही है।</em></>)}</h2></div>
+        <p className="text-sm leading-relaxed text-muted-foreground">{t('Each card counts the days since the question opened, from a sourced date. Turn one over for the specific demand. When a government answers, the card comes down.', 'हर कार्ड सवाल उठने की स्रोत-आधारित तारीख़ से दिन गिनता है। ठोस माँग देखने के लिए उसे पलटिए। जब सरकार जवाब देगी, कार्ड हट जाएगा।')}</p>
+      </div>
+      <DemandBoard demands={ACCOUNTABILITY_ITEMS} />
     </section>
-    <section className="signal-container mt-16 border-t-2 border-foreground sm:mt-24">
-      {isLoading ? <LoadingBlock /> : isError ? <ErrorState onRetry={() => void refetch()} /> : pieces.length === 0 ? <div className="py-10"><EmptyState title={t('No opinion published yet.', 'अभी कोई राय प्रकाशित नहीं हुई।')} text={t('Opinion pieces appear here once the editorial board has signed them off.', 'संपादकीय बोर्ड की मंज़ूरी के बाद राय के लेख यहाँ दिखेंगे।')} /></div> : <div className="divide-y divide-foreground/15">{pieces.map((story) => <Link key={story.id} href={storyPath(story)} className="group grid gap-4 py-8 md:grid-cols-[.3fr_1fr] md:gap-10" data-testid={`link-opinion-${story.id}`}><div><p className="signal-kicker text-accent">{label(story.byline) || t('Editorial board', 'संपादकीय बोर्ड')}</p><p className="mt-2 signal-kicker text-muted-foreground">{formatDate(story.publishedOn)}</p></div><div><h2 lang={story.contentLang} className="font-display text-4xl leading-tight group-hover:text-accent">{story.title}</h2><p lang={story.contentLang} className="mt-3 max-w-2xl text-base leading-relaxed text-muted-foreground">{story.dek}</p></div></Link>)}</div>}
+    <section className="signal-container mt-16 sm:mt-24">
+      <div className="border-b-2 border-foreground pb-4"><p className="signal-kicker text-accent">{t('House rules', 'हमारे नियम')}</p><h2 className="mt-2 font-display text-4xl sm:text-5xl">{t('Sarcasm is cheap. Being right is not.', 'व्यंग्य सस्ता है। सही होना नहीं।')}</h2></div>
+      <ol className="mt-6 grid gap-px border border-foreground/20 bg-foreground/20 md:grid-cols-2 lg:grid-cols-4">
+        {OPINION_RULES.map(([name, text], index) => <li key={name.en} className="bg-card p-6"><p className="font-display text-3xl text-accent">{String(index + 1).padStart(2, '0')}</p><h3 className="mt-3 font-display text-2xl leading-tight">{name[lang]}</h3><p className="mt-3 text-sm leading-relaxed text-muted-foreground">{text[lang]}</p></li>)}
+      </ol>
+      <Link href="/editorial-standards" className="mt-5 inline-flex items-center gap-2 signal-kicker text-accent hover:underline">{t('Read the full editorial standards', 'पूरे संपादकीय मानक पढ़ें')} <ArrowUpRight size={13} /></Link>
     </section>
     <SiteFooter />
   </main>;
