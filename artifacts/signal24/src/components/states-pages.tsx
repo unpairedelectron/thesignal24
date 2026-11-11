@@ -8,22 +8,15 @@ import NotFound from '@/pages/not-found';
 import { localizePolicy, useLabel, useLang, useLocalizeStories, useT, type LocalizedStory } from '@/lib/i18n';
 import { basePath, useSeo } from '@/lib/seo';
 import { canonicalStateName, getMapFeatureName, mapPath, parseStateMap, stateNameKey, type MapFeature } from '@/lib/state-map';
-import { REGIONS, regionBySlug, regionSlug, STATE_PROFILES, type Region } from '@/lib/states';
+import { REGIONS, regionBySlug, regionSlug, STATE_PROFILES, stateMeta, storyConcerns } from '@/lib/states';
 import { breadcrumbNode, collectionPageNode, organizationRef, placeForState, siteGraph, webPageNode } from '@/lib/structured-data';
+import { PAGE_META } from '@/lib/page-meta';
 
 type Tier = 'profiled' | 'mentioned' | 'none';
 
 function formatDay(value: string, lang: 'en' | 'hi') {
   const date = new Date(`${value}T12:00:00`);
   return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString(lang === 'hi' ? 'hi-IN' : 'en-IN', { day: 'numeric', month: 'short', year: 'numeric', numberingSystem: 'latn' } as Intl.DateTimeFormatOptions);
-}
-
-/** Does a record concern this state: tagged with it, or naming it in its title, dek or body? */
-function storyConcerns(story: Story, region: Region) {
-  if (story.state && stateNameKey(story.state) === stateNameKey(region.name)) return true;
-  // Court names are not mentions of a state ("Punjab and Haryana High Court").
-  const text = `${story.title} ${story.dek} ${story.body ?? ''}`.replace(/Punjab and Haryana High Court/gi, '');
-  return new RegExp(`\\b${region.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i').test(text);
 }
 
 function usePublishedStories() {
@@ -146,8 +139,8 @@ export function StatesPage() {
   const [kind, setKind] = useState<'all' | 'state' | 'ut' | 'covered'>('all');
   const profiled = REGIONS.filter((region) => tiers.get(region.name) === 'profiled');
   const listed = REGIONS.filter((region) => kind === 'all' || (kind === 'covered' ? tiers.get(region.name) !== 'none' : region.kind === kind));
-  const title = t('State by state — The Signal 24', 'राज्य-दर-राज्य — द सिग्नल 24');
-  const description = t('Every Indian state and Union Territory: its reservation laws, court cases and records where we have them, and an honest gap where we don’t.', 'भारत का हर राज्य और केंद्रशासित प्रदेश: जहाँ हमारे पास हैं, उसके आरक्षण क़ानून, अदालती मामले और रिकॉर्ड, और जहाँ नहीं हैं, वहाँ ईमानदार कमी।');
+  const title = t(PAGE_META.states.title.en, PAGE_META.states.title.hi);
+  const description = t(PAGE_META.states.description.en, PAGE_META.states.description.hi);
   useSeo({
     title,
     description,
@@ -233,14 +226,14 @@ export function StateProfilePage() {
   const relatedEvents = region ? (events.data?.events ?? []).filter((item) => new RegExp(`\\b${region.name}\\b`, 'i').test(`${item.event.title} ${item.event.summary}`)) : [];
   const name = region ? (lang === 'hi' ? region.hi : region.name) : '';
   const path = `/state/${params.slug ?? ''}`;
-  const title = `${name} — ${t('The Signal 24', 'द सिग्नल 24')}`;
-  const description = profile ? profile.summary[lang] : t(`Reservation laws, court cases and records on ${name}, and what is still missing from the public record.`, `${name} पर आरक्षण क़ानून, अदालती मामले और रिकॉर्ड, और सार्वजनिक रिकॉर्ड में अब भी क्या ग़ायब है।`);
+  const meta = region ? stateMeta(region, records.length > 0, lang) : undefined;
+  const title = meta?.title ?? `${name} — ${t('The Signal 24', 'द सिग्नल 24')}`;
+  const description = meta?.description ?? '';
   useSeo({
     title,
     description,
     canonicalPath: region ? path : undefined,
-    // Thin pages (no profile, no record) stay out of search until there is something to say.
-    robots: region && (profile || records.length > 0) ? 'index, follow' : 'noindex, follow',
+    robots: meta?.robots ?? 'noindex, follow',
     structuredData: region ? siteGraph(
       webPageNode(path, { name: title, description, about: placeForState(region.name), publisher: organizationRef }, 'CollectionPage'),
       breadcrumbNode(path, [[t('States', 'राज्य'), '/states'], [name, path]]),

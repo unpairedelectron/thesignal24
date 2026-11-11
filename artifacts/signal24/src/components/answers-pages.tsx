@@ -9,6 +9,7 @@ import { ANSWER_CATEGORIES, ANSWERS, ANSWERS_CHECKED_ON, answerById, type Answer
 import { useLang, useT } from '@/lib/i18n';
 import { useSeo } from '@/lib/seo';
 import { breadcrumbNode, collectionPageNode, organizationRef, siteGraph, webPageNode } from '@/lib/structured-data';
+import { PAGE_META } from '@/lib/page-meta';
 
 function checkedOn(lang: 'en' | 'hi') {
   return new Date(`${ANSWERS_CHECKED_ON}T12:00:00`).toLocaleDateString(lang === 'hi' ? 'hi-IN' : 'en-IN', { day: 'numeric', month: 'short', year: 'numeric', numberingSystem: 'latn' } as Intl.DateTimeFormatOptions);
@@ -29,8 +30,8 @@ export function AnswersPage() {
     if (!normalized) return true;
     return [answer.question.en, answer.question.hi, answer.short.en, answer.short.hi, answer.truth.en, answer.truth.hi].some((text) => text.toLowerCase().includes(normalized));
   }), [category, normalized]);
-  const title = t('Answers: ask the state — The Signal 24', 'जवाब: सरकार से पूछिए — द सिग्नल 24');
-  const description = t('Plain, sourced answers to what people actually ask about the Indian state: RTI, reservation, courts, Parliament, data and complaints. With the hard truth, and what you can do.', 'भारतीय राज्य के बारे में लोग जो असल में पूछते हैं, उसके सीधे, स्रोत-आधारित जवाब: आरटीआई, आरक्षण, अदालतें, संसद, आंकड़े और शिकायतें। कड़वे सच के साथ, और यह कि आप क्या कर सकते हैं।');
+  const title = t(PAGE_META.answers.title.en, PAGE_META.answers.title.hi);
+  const description = t(PAGE_META.answers.description.en, PAGE_META.answers.description.hi);
   useSeo({
     title,
     description,

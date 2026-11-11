@@ -26,6 +26,7 @@ import { useLabel, useLang, useT } from '@/lib/i18n';
 import { useSeo } from '@/lib/seo';
 import { REGIONS } from '@/lib/states';
 import { breadcrumbNode, collectionPageNode, organizationRef, siteGraph, webPageNode } from '@/lib/structured-data';
+import { PAGE_META } from '@/lib/page-meta';
 
 const TOPICS: Array<[CommunityTopic, string, string]> = [
   ['general', 'General', 'सामान्य'],
@@ -186,8 +187,8 @@ export function CommunityPage() {
   const posts = data?.posts ?? [];
   const everything = all.data?.posts ?? [];
   const handle = data?.viewerHandle ?? all.data?.viewerHandle ?? t('an anonymous citizen', 'एक गुमनाम नागरिक');
-  const title = t('Community: ask anything, anonymously — The Signal 24', 'समुदाय: गुमनाम रूप से कुछ भी पूछिए — द सिग्नल 24');
-  const description = t('Ask questions about the Indian government and answer others, anonymously. No account, no email. Hard on institutions, never on communities.', 'भारत सरकार के बारे में सवाल पूछिए और दूसरों के जवाब दीजिए, गुमनाम रूप से। न खाता, न ईमेल। संस्थाओं पर सख़्त, समुदायों पर कभी नहीं।');
+  const title = t(PAGE_META.community.title.en, PAGE_META.community.title.hi);
+  const description = t(PAGE_META.community.description.en, PAGE_META.community.description.hi);
   useSeo({
     title,
     description,

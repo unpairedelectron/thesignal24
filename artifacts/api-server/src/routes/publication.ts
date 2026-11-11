@@ -36,6 +36,7 @@ import {
   requireEditorForUnpublished,
 } from "../middlewares/editorAuth";
 
+import { AUTHOR_BY_TOPIC } from "../lib/authors";
 const router: IRouter = Router();
 
 const topicList = [
@@ -137,9 +138,9 @@ function slugify(value: string) {
 function getRecordFamily(story: typeof storiesTable.$inferSelect): RecordFamily {
   if (story.topic === "States") return "states";
   if (story.topic === "Data & Notes") return "data";
-  if (story.topic === "Courts & Policy") {
-    return story.kind === "Paper note" ? "cases" : "policies";
-  }
+  // Court explainers live under /articles: /policies/:slug belongs to the policy
+  // ledger, and a story there would be routed to (and 404 as) a ledger record.
+  if (story.topic === "Courts & Policy" && story.kind === "Paper note") return "cases";
   if (story.kind === "Archive") return "documents";
   return "articles";
 }
@@ -605,6 +606,17 @@ router.get("/sitemap.xml", async (_req, res, next) => {
       { path: "/editorial-standards", hi: true },
       { path: "/methodology", hi: true },
       { path: "/authors/signal-24", hi: true },
+      ...Object.values(AUTHOR_BY_TOPIC)
+        .filter((author, index, all) => all.findIndex((other) => other.slug === author.slug) === index)
+        .map((author) => ({
+          path: `/authors/${author.slug}`,
+          lastmod: latestDate(
+            indexableStories
+              .filter((story) => story.byline === author.name)
+              .map((story) => story.updatedAt),
+          ),
+          hi: true,
+        })),
       { path: "/answers", hi: true },
       ...SITEMAP_ANSWER_IDS.map((id) => ({ path: `/answers/${id}`, hi: true })),
       { path: "/states", lastmod: storiesLastmod, hi: true },

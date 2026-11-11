@@ -5,6 +5,7 @@
 // repeating them inline. Paths that start with "/" (including `@id`s) are made
 // absolute against SITE_ORIGIN by useSeo's absoluteStructuredData.
 import { DEFAULT_SHARE_IMAGE, SITE_LANGUAGE, SITE_NAME, absoluteImageUrl } from './seo';
+import { authorMeta, authorPath, type Author } from './authors';
 
 export const ORGANIZATION_ID = '/#organization';
 export const WEBSITE_ID = '/#website';
@@ -123,4 +124,30 @@ export function externalDocument({ title, url, publisher, datePublished, genre }
     ...(datePublished ? { datePublished } : {}),
     ...(genre ? { genre } : {}),
   };
+}
+
+/** A named Signal 24 author, referenced from their records and described on their profile page. */
+export function personNode(author: Author, lang: 'en' | 'hi') {
+  const path = authorPath(author);
+  return {
+    '@type': 'Person',
+    '@id': `${path}#person`,
+    name: author.name[lang],
+    alternateName: author.name[lang === 'hi' ? 'en' : 'hi'],
+    url: path,
+    jobTitle: author.role[lang],
+    worksFor: organizationRef,
+    knowsAbout: author.knowsAbout,
+  };
+}
+
+/** The ProfilePage graph for /authors/:slug. Shared by the client page and the page server. */
+export function authorPageStructuredData(author: Author, lang: 'en' | 'hi') {
+  const path = authorPath(author);
+  const meta = authorMeta(author, lang);
+  return siteGraph(
+    webPageNode(path, { name: meta.title, description: meta.description, mainEntity: { '@id': `${path}#person` } }, 'ProfilePage'),
+    { ...personNode(author, lang), description: author.bio[lang] },
+    breadcrumbNode(path, [[lang === 'hi' ? 'परिचय' : 'About', '/about'], [author.name[lang], path]]),
+  );
 }

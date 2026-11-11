@@ -15,6 +15,7 @@ import { CONTENT_PACK_D } from "./content-pack-d";
 import { CONTENT_PACK_OPINION } from "./content-pack-opinion";
 import type { ContentPackStory } from "./content-pack-types";
 import { POLICY_LEDGER_PACK } from "./policy-ledger-pack";
+import { EDITORIAL_DESK_BYLINE, packByline } from "./authors";
 import { ADDENDA_A } from "./content-pack-addenda-a";
 import { ADDENDA_B } from "./content-pack-addenda-b";
 
@@ -143,7 +144,7 @@ export async function ensureContentPack() {
           scheduledFor: null,
           aiDisclosure: AI_DISCLOSURE,
           correctionNote: null,
-          byline: story.byline ?? "The Signal 24 editorial desk",
+          byline: packByline(story),
           hi: fullHindi(story),
         })),
       )
@@ -172,6 +173,49 @@ export async function ensureContentPack() {
   );
   await retireStarterPlaceholders();
   await upgradeUntouchedBodies();
+  await assignPackBylines();
+}
+
+/**
+ * Give pack reporting a named byline. Only stories still carrying no byline or the
+ * generic desk byline are changed, so a byline an editor has set is never overwritten.
+ * Idempotent: once assigned, a story no longer matches.
+ */
+async function assignPackBylines() {
+  const byTitle = new Map(CONTENT_PACK.map((story) => [story.title, story]));
+  const rows = await db
+    .select()
+    .from(storiesTable)
+    .where(inArray(storiesTable.title, [...byTitle.keys()]));
+  for (const row of rows) {
+    const story = byTitle.get(row.title);
+    if (!story || (row.byline !== null && row.byline !== EDITORIAL_DESK_BYLINE)) continue;
+    const byline = packByline({ topic: row.topic, kind: row.kind, byline: story.byline });
+    if (byline === row.byline) continue;
+    const [latest] = await db
+      .select({ revisionNumber: storyRevisionsTable.revisionNumber })
+      .from(storyRevisionsTable)
+      .where(eq(storyRevisionsTable.storyId, row.id))
+      .orderBy(desc(storyRevisionsTable.revisionNumber))
+      .limit(1);
+    const [updated] = await db
+      .update(storiesTable)
+      .set({ byline, updatedAt: new Date() })
+      .where(and(eq(storiesTable.id, row.id), eq(storiesTable.title, row.title)))
+      .returning();
+    await db.insert(storyRevisionsTable).values({
+      storyId: row.id,
+      revisionNumber: (latest?.revisionNumber ?? 0) + 1,
+      changeNote: `Byline assigned to ${byline}`,
+      snapshot: {
+        title: updated.title,
+        workflowStatus: updated.workflowStatus,
+        verificationStatus: updated.verificationStatus,
+        source: updated.source,
+        sourceUrl: updated.sourceUrl,
+      },
+    });
+  }
 }
 
 /**

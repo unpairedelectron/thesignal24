@@ -14,14 +14,26 @@ localPort = 22481
 [services.development]
 run = "pnpm --filter @workspace/signal24 run dev"
 
+# Production runs the page server (server/index.ts, built to dist/server/index.mjs).
+# It serves dist/public and renders every page URL with its real title, canonical,
+# structured data, text and status code, so search engines can index the site
+# without running JavaScript. Unknown addresses get a real 404.
 [services.production]
-build = [ "pnpm", "--filter", "@workspace/signal24", "run", "build" ]
-serve = "static"
-publicDir = "artifacts/signal24/dist/public"
 
-[[services.production.rewrites]]
-from = "/*"
-to = "/index.html"
+[services.production.build]
+args = ["pnpm", "--filter", "@workspace/signal24", "run", "build"]
+
+[services.production.run]
+args = ["node", "--enable-source-maps", "artifacts/signal24/dist/server/index.mjs"]
+
+[services.production.run.env]
+PORT = "22481"
+NODE_ENV = "production"
+# The API service of this deployment (artifacts/api-server, localPort 8080).
+API_ORIGIN = "http://127.0.0.1:8080"
+
+[services.production.health.startup]
+path = "/healthz"
 
 [services.env]
 PORT = "22481"

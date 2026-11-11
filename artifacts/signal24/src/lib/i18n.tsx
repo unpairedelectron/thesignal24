@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, type ReactNode } from 'react';
 import type { PolicyRecord, Story } from '@workspace/api-client-react';
 import { basePath, localizePath, setActiveLang, stripLangPrefix, type Lang } from './seo';
+import { AUTHORS } from './authors';
 
 export type { Lang } from './seo';
 
@@ -101,15 +102,20 @@ const HINDI_LABELS: Record<string, string> = {
   // Desk bylines
   'The Signal 24 editorial board': 'द सिग्नल 24 संपादकीय बोर्ड',
   'The Signal 24 editorial desk': 'द सिग्नल 24 संपादकीय डेस्क',
+  // Named bylines
+  ...Object.fromEntries(AUTHORS.map((author) => [author.name.en, author.name.hi])),
 };
+
+/** Translate a fixed API value (topic, kind, status, state) outside React. Unknown values pass through. */
+export function translateLabel(value: string | null | undefined, lang: Lang) {
+  if (!value) return value ?? '';
+  return lang === 'hi' ? HINDI_LABELS[value] ?? value : value;
+}
 
 /** Translate a fixed API value (topic, kind, status, state). Unknown values pass through. */
 export function useLabel() {
   const lang = useLang();
-  return useCallback((value: string | null | undefined) => {
-    if (!value) return value ?? '';
-    return lang === 'hi' ? HINDI_LABELS[value] ?? value : value;
-  }, [lang]);
+  return useCallback((value: string | null | undefined) => translateLabel(value, lang), [lang]);
 }
 
 export type LocalizedStory = Story & { contentLang: Lang; isTranslated: boolean };

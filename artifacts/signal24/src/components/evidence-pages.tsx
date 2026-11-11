@@ -41,6 +41,7 @@ import {
   useUpdateSourceDocument,
 } from "@workspace/api-client-react";
 import { SourceDiscoveryDesk } from "./content-desk";
+import { PAGE_META } from '@/lib/page-meta';
 import type {
   EvidenceDocumentType,
   EvidenceEventDetail,
@@ -221,13 +222,13 @@ export function EvidenceEventsPage() {
     },
   });
   useSeo({
-    title: t("Events and evidence — The Signal 24", "घटनाएँ और सबूत — द सिग्नल 24"),
-    description: t("Published events connected to The Signal 24 articles and source documents.", "द सिग्नल 24 की रिपोर्टों और स्रोत दस्तावेज़ों से जुड़ी प्रकाशित घटनाएँ।"),
+    title: t(PAGE_META.events.title.en, PAGE_META.events.title.hi),
+    description: t(PAGE_META.events.description.en, PAGE_META.events.description.hi),
     canonicalPath: "/events",
     structuredData: siteGraph(
       collectionPageNode(
         "/events",
-        { name: "Events and evidence — The Signal 24", description: t("Published events connected to The Signal 24 articles and source documents.", "द सिग्नल 24 की रिपोर्टों और स्रोत दस्तावेज़ों से जुड़ी प्रकाशित घटनाएँ।"), publisher: organizationRef },
+        { name: "Events and evidence — The Signal 24", description: t(PAGE_META.events.description.en, PAGE_META.events.description.hi), publisher: organizationRef },
         (query.data?.events ?? []).map((item) => ({ url: `/events/${item.event.id}`, name: item.event.title })),
       ),
       breadcrumbNode("/events", [["Events", "/events"]]),
@@ -269,8 +270,8 @@ export function EvidenceEventsPage() {
 export function EvidenceSearchPage() {
   const t = useT();
   useSeo({
-    title: t("Search the evidence — The Signal 24", "सबूत खोजें — द सिग्नल 24"),
-    description: t("Search published articles, events, and source documents as separate record types.", "प्रकाशित रिपोर्ट, घटनाएँ और स्रोत दस्तावेज़ अलग-अलग प्रकार के रिकॉर्ड के रूप में खोजें।"),
+    title: t(PAGE_META.evidenceSearch.title.en, PAGE_META.evidenceSearch.title.hi),
+    description: t(PAGE_META.evidenceSearch.description.en, PAGE_META.evidenceSearch.description.hi),
     robots: "noindex, follow",
   });
   const [term, setTerm] = useState(
