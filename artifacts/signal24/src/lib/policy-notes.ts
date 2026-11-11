@@ -6,7 +6,9 @@
  */
 import type { Bilingual } from './key-figures';
 
-export type PolicyNote = { why: Bilingual; questions: Bilingual[] };
+/** A dated public correction to the record, shown above its analysis. */
+export type PolicyCorrection = { on: string; text: Bilingual };
+export type PolicyNote = { why: Bilingual; questions: Bilingual[]; correction?: PolicyCorrection };
 
 export const POLICY_NOTES: Record<string, PolicyNote> = {
   'census-2027-caste-enumeration': {
@@ -43,6 +45,13 @@ export const POLICY_NOTES: Record<string, PolicyNote> = {
     ],
   },
   'maharashtra-sebc-act-2024': {
+    correction: {
+      on: '2026-11-11',
+      text: {
+        en: 'This record gave the Act’s effective date as 20 February 2024, the day the legislature passed it. The Act came into force on 26 February 2024, when the Governor’s assent was published in the Maharashtra Government Gazette. The date has been corrected.',
+        hi: 'इस रिकॉर्ड में अधिनियम के लागू होने की तारीख़ 20 फ़रवरी 2024 दी गई थी, जिस दिन विधानमंडल ने इसे पारित किया। अधिनियम 26 फ़रवरी 2024 को लागू हुआ, जब राज्यपाल की स्वीकृति महाराष्ट्र सरकार राजपत्र में प्रकाशित हुई। तारीख़ सुधार दी गई है।',
+      },
+    },
     why: {
       en: 'Maharashtra has legislated a Maratha quota three times in ten years. The 2018 law was struck down by the Supreme Court in 2021 because the state could not show an extraordinary situation to cross the 50% ceiling. The 2024 Act rests on a new commission report, but it faces the same ceiling and the same test. Until the Bombay High Court decides, students and job applicants are making choices under a law whose validity is unknown.',
       hi: 'महाराष्ट्र ने दस साल में तीन बार मराठा आरक्षण का क़ानून बनाया। 2018 का क़ानून सुप्रीम कोर्ट ने 2021 में रद्द कर दिया, क्योंकि राज्य 50% की सीमा पार करने के लिए असाधारण हालात नहीं दिखा सका। 2024 का अधिनियम एक नई आयोग रिपोर्ट पर टिका है, पर उसके सामने वही सीमा और वही कसौटी है। जब तक बॉम्बे हाई कोर्ट फ़ैसला नहीं करता, छात्र और नौकरी के उम्मीदवार ऐसे क़ानून के तहत फ़ैसले ले रहे हैं जिसकी वैधता अनिश्चित है।',

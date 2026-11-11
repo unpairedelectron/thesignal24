@@ -37,6 +37,7 @@ export const ACCOUNTABILITY_ITEMS: AccountabilityItem[] = [
       hi: 'रिपोर्ट संसद में रखी जाए और जिन आंकड़ों पर वह टिकी है, वे सार्वजनिक हों।',
     },
     sources: [
+      { name: 'Press Information Bureau: term of the Commission extended for the sixth time, to 31 July 2019', url: 'https://www.pib.gov.in/Pressreleaseshare.aspx?PRID=1575533' },
       { name: 'ThePrint', url: 'https://theprint.in/india/governance/rohini-commission-report-on-obc-sub-categorisation-in-cold-storage-as-sc-gives-nod-to-sc-st-sub-quota/2202938' },
       { name: 'SCC Online', url: 'https://scconline.com/blog/?p=321457' },
     ],
@@ -81,6 +82,7 @@ export const ACCOUNTABILITY_ITEMS: AccountabilityItem[] = [
       hi: 'जाति प्रश्नावली, श्रेणियों की सूची और तालिकाएँ जारी करने की तारीख़ सार्वजनिक की जाए।',
     },
     sources: [
+      { name: 'Press Information Bureau: Cabinet approves the scheme for the Census of India 2027', url: 'https://www.pib.gov.in/PressReleasePage.aspx?PRID=2202983' },
       { name: 'The Wire', url: 'https://m.thewire.in/article/caste/census-gazette-notification-with-no-mention-of-promised-caste-enumeration-raises-questions' },
       { name: 'The Wire', url: 'https://thewire.in/government/census-2027-caste-enumeration-population-amit-shah-delay' },
     ],
@@ -103,6 +105,7 @@ export const ACCOUNTABILITY_ITEMS: AccountabilityItem[] = [
       hi: 'सीमा न बदलने के फ़ैसले के पीछे के महँगाई और आय के आंकड़े सार्वजनिक किए जाएँ।',
     },
     sources: [
+      { name: 'DoPT Office Memorandum No. 36033/1/2013-Estt.(Res), 13 September 2017 (NCBC copy)', url: 'https://www.ncbc.nic.in/Writereaddata/OM8Lakha.pdf' },
       { name: 'Business Standard', url: 'https://www.business-standard.com/india-news/need-of-the-hour-to-revise-creamy-layer-ceiling-for-obcs-parl-panel-125080800995_1.html' },
     ],
   },

@@ -156,7 +156,7 @@ export const POLICY_LEDGER_PACK: PolicyPackRecord[] = [
     legalBasis: "Maharashtra State Reservation for Socially and Educationally Backward Classes Act, 2024",
     courtStatus:
       "Under challenge before a full bench of the Bombay High Court; a fresh hearing began in October 2026. No final judgment as of 10 November 2026.",
-    effectiveDate: "2024-02-20",
+    effectiveDate: "2024-02-26",
     hi: {
       title: "महाराष्ट्र का एसईबीसी अधिनियम, 2024 मराठों को 10% देता है, दस साल में राज्य की तीसरी कोशिश",
       summary:

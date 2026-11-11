@@ -1186,6 +1186,7 @@ function PolicyDetail() {
         <div><p className="signal-kicker text-accent">{t("Legal basis", "क़ानूनी आधार")}</p><p className="mt-3 text-base leading-relaxed" data-testid="text-policy-legal-basis">{record.legalBasis}</p></div>
         <div><p className="signal-kicker text-accent">{t("Court status", "अदालत में स्थिति")}</p><p className="mt-3 text-base leading-relaxed" data-testid="text-policy-court-status">{record.courtStatus}</p></div>
       </section>
+      {note?.correction && <div className="signal-callout mt-8 max-w-3xl px-5 py-4" role="note" data-testid="note-policy-correction"><p className="signal-kicker text-accent">{t('Correction', 'सुधार')} · {formatDate(note.correction.on)}</p><p className="mt-2 text-sm leading-relaxed">{t(note.correction.text.en, note.correction.text.hi)}</p></div>}
       {note && <section className="grid gap-8 border-b border-foreground/20 py-10 sm:py-14 lg:grid-cols-[.7fr_1.3fr] lg:gap-16" data-testid="section-policy-why">
         <div><p className="signal-kicker text-accent">{t('Why it matters', 'यह क्यों मायने रखता है')}</p><h2 className="mt-3 font-display text-4xl leading-[.96]">{t('What this changed,', 'इससे क्या बदला,')}<br /><em className="font-normal text-accent">{t('and what it left open.', 'और क्या खुला छोड़ा।')}</em></h2></div>
         <div>

@@ -19,11 +19,12 @@ import { EDITORIAL_DESK_BYLINE, packByline } from "./authors";
 import { POLICY_UPDATES, STORY_UPDATES } from "./content-pack-updates";
 import { ADDENDA_A } from "./content-pack-addenda-a";
 import { ADDENDA_B } from "./content-pack-addenda-b";
+import { POLICY_CITATIONS, STORY_CITATIONS, type Citation } from "./content-pack-citations";
 
 const ADDENDA = { ...ADDENDA_A, ...ADDENDA_B };
 
 /** The full published body: the original pack text plus its addendum (deeper record, hard questions, check it yourself). */
-function fullBody(story: ContentPackStory) {
+export function fullBody(story: ContentPackStory) {
   const addendum = ADDENDA[story.key];
   return addendum ? `${story.body}\n\n${addendum.en}` : story.body;
 }
@@ -177,6 +178,8 @@ export async function ensureContentPack() {
   await assignPackBylines();
   await applyStoryUpdates();
   await applyPolicyUpdates();
+  await applyStoryCitations();
+  await applyPolicyCitations();
 }
 
 function updateDate(on: string, lang: "en" | "hi") {
@@ -187,6 +190,83 @@ function updateDate(on: string, lang: "en" | "hi") {
     timeZone: "UTC",
     numberingSystem: "latn",
   } as Intl.DateTimeFormatOptions);
+}
+
+const CITATIONS_HEADING = { en: "## Citations", hi: "## उद्धरण" };
+
+function citationList(items: Citation[], lang: "en" | "hi") {
+  return items.map((item) => `- ${item[lang]}${item.url ? ` [${lang === "hi" ? "दस्तावेज़" : "Document"}](${item.url})` : ""}`).join("\n");
+}
+
+/**
+ * Append the exact citations (content-pack-citations.ts) to published pack stories, once,
+ * and replace a story's primary source with the original document where one is given.
+ * Both are recorded as a revision; nothing already published is rewritten.
+ */
+async function applyStoryCitations() {
+  const titleByKey = new Map(CONTENT_PACK.map((story) => [story.key, story.title]));
+  for (const entry of STORY_CITATIONS) {
+    const title = titleByKey.get(entry.key);
+    if (!title) continue;
+    const [row] = await db.select().from(storiesTable).where(eq(storiesTable.title, title)).limit(1);
+    if (!row || row.body.includes(CITATIONS_HEADING.en)) continue;
+    const body = `${row.body}\n\n${CITATIONS_HEADING.en}\n\n${citationList(entry.items, "en")}`;
+    const hi = row.hi?.body && !row.hi.body.includes(CITATIONS_HEADING.hi)
+      ? { ...row.hi, body: `${row.hi.body}\n\n${CITATIONS_HEADING.hi}\n\n${citationList(entry.items, "hi")}` }
+      : row.hi;
+    const primary = entry.primary && entry.primary.sourceUrl !== row.sourceUrl ? entry.primary : undefined;
+    const [latest] = await db
+      .select({ revisionNumber: storyRevisionsTable.revisionNumber })
+      .from(storyRevisionsTable)
+      .where(eq(storyRevisionsTable.storyId, row.id))
+      .orderBy(desc(storyRevisionsTable.revisionNumber))
+      .limit(1);
+    const [updated] = await db
+      .update(storiesTable)
+      .set({
+        body,
+        hi,
+        ...(primary ? { source: primary.source, sourceUrl: primary.sourceUrl, sourcePublishedOn: primary.sourcePublishedOn } : {}),
+        updatedAt: new Date(),
+      })
+      .where(eq(storiesTable.id, row.id))
+      .returning();
+    await db.insert(storyRevisionsTable).values({
+      storyId: row.id,
+      revisionNumber: (latest?.revisionNumber ?? 0) + 1,
+      changeNote: `Citations added on ${entry.on}${primary ? `; primary source changed from ${row.sourceUrl ?? "none"} to ${primary.sourceUrl}` : ""}`,
+      snapshot: {
+        title: updated.title,
+        workflowStatus: updated.workflowStatus,
+        verificationStatus: updated.verificationStatus,
+        source: updated.source,
+        sourceUrl: updated.sourceUrl,
+      },
+    });
+  }
+}
+
+/**
+ * Add official documents to ledger records (by URL, once) and apply dated corrections.
+ * The correction text itself is shown on the record page from policy-notes.ts.
+ */
+async function applyPolicyCitations() {
+  for (const entry of POLICY_CITATIONS) {
+    const [record] = await db.select().from(policyRecordsTable).where(eq(policyRecordsTable.slug, entry.slug)).limit(1);
+    if (!record) continue;
+    if (entry.sources.length) {
+      const existing = await db.select({ url: policySourcesTable.url }).from(policySourcesTable).where(eq(policySourcesTable.policyRecordId, record.id));
+      const have = new Set(existing.map((row) => row.url));
+      const missing = entry.sources.filter((source) => !have.has(source.url));
+      if (missing.length) {
+        await db.insert(policySourcesTable).values(missing.map((source) => ({ ...source, policyRecordId: record.id, retrievedOn: entry.on })));
+      }
+    }
+    const correction = entry.correction;
+    if (correction && record[correction.field] !== correction.value) {
+      await db.update(policyRecordsTable).set({ [correction.field]: correction.value, updatedAt: new Date() }).where(eq(policyRecordsTable.id, record.id));
+    }
+  }
 }
 
 /** Append dated updates (content-pack-updates.ts) to published pack stories, once each. */

@@ -8,7 +8,7 @@ import NotFound from '@/pages/not-found';
 import { localizePolicy, useLabel, useLang, useLocalizeStories, useT, type LocalizedStory } from '@/lib/i18n';
 import { basePath, useSeo } from '@/lib/seo';
 import { canonicalStateName, getMapFeatureName, mapPath, parseStateMap, stateNameKey, type MapFeature } from '@/lib/state-map';
-import { REGIONS, regionBySlug, regionSlug, STATE_PROFILES, stateMeta, storyConcerns } from '@/lib/states';
+import { REGIONS, regionBySlug, regionSlug, STATE_PROFILES, stateMeta, storyConcerns, sourceKindLabel } from '@/lib/states';
 import { breadcrumbNode, collectionPageNode, organizationRef, placeForState, siteGraph, webPageNode } from '@/lib/structured-data';
 import { PAGE_META } from '@/lib/page-meta';
 
@@ -266,7 +266,7 @@ export function StateProfilePage() {
       <div className="grid gap-10 border-y-2 border-foreground py-8 lg:grid-cols-[1.2fr_.8fr] lg:gap-16">
         <div>
           <p className="signal-kicker text-accent">{t('Where it stands, in dates', 'मामला कहाँ है, तारीख़ों में')}</p>
-          <ol className="topic-play mt-5">{profile.facts.map((fact) => <li key={fact.when + fact.text.en} className="topic-play-item is-decided"><time dateTime={fact.when} className="signal-kicker text-muted-foreground">{formatDay(fact.when, lang)}</time><p className="mt-1 text-[.95rem] leading-relaxed">{fact.text[lang]}</p>{fact.source && <a className="mt-2 inline-flex text-xs underline underline-offset-4 text-muted-foreground hover:text-foreground" href={fact.source.url} target="_blank" rel="noopener noreferrer">{t(`Source: ${fact.source.label}`, `स्रोत: ${fact.source.label}`)} <ArrowUpRight size={12} className="ml-1" aria-hidden="true" /></a>}{fact.review && <p className="mt-1 text-xs text-muted-foreground" data-testid={`state-review-${regionSlug(region.name)}-${fact.when}`}>{t(`Status checked ${formatDay(fact.review.checkedOn, lang)} · Next check: ${fact.review.nextCheck.en}`, `${formatDay(fact.review.checkedOn, lang)} को स्थिति जाँची · अगली जाँच: ${fact.review.nextCheck.hi}`)}</p>}</li>)}</ol>
+          <ol className="topic-play mt-5">{profile.facts.map((fact) => <li key={fact.when + fact.text.en} className="topic-play-item is-decided"><time dateTime={fact.when} className="signal-kicker text-muted-foreground">{formatDay(fact.when, lang)}</time><p className="mt-1 text-[.95rem] leading-relaxed">{fact.text[lang]}</p>{fact.source && <a className="mt-2 inline-flex text-xs underline underline-offset-4 text-muted-foreground hover:text-foreground" href={fact.source.url} target="_blank" rel="noopener noreferrer">{t(`${sourceKindLabel(fact.source.url).en}: ${fact.source.label}`, `${sourceKindLabel(fact.source.url).hi}: ${fact.source.label}`)} <ArrowUpRight size={12} className="ml-1" aria-hidden="true" /></a>}{fact.review && <p className="mt-1 text-xs text-muted-foreground" data-testid={`state-review-${regionSlug(region.name)}-${fact.when}`}>{t(`Status checked ${formatDay(fact.review.checkedOn, lang)} · Next check: ${fact.review.nextCheck.en}`, `${formatDay(fact.review.checkedOn, lang)} को स्थिति जाँची · अगली जाँच: ${fact.review.nextCheck.hi}`)}</p>}</li>)}</ol>
         </div>
         <div>
           <p className="signal-kicker text-accent">{t('The questions they won’t answer', 'वे सवाल, जिनका जवाब वे नहीं देंगे')}</p>
