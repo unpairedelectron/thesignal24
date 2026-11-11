@@ -28,7 +28,7 @@ import { POLICY_NOTES } from '../src/lib/policy-notes';
 import { localizePath, setActiveLang, stripLangPrefix, type Lang, type SeoConfig } from '../src/lib/seo';
 import { REGIONS, regionBySlug, regionSlug, STATE_PROFILES, stateMeta, storyConcerns } from '../src/lib/states';
 import { storyPath, storySeo } from '../src/lib/stories';
-import { authorPageStructuredData } from '../src/lib/structured-data';
+import { answerPageStructuredData, authorPageStructuredData } from '../src/lib/structured-data';
 import { TOPIC_BRIEFS, topicBrief, type TopicBrief } from '../src/lib/topic-briefs';
 import { ApiReader } from './api';
 import { buildHead, esc, type PageHtml } from './html';
@@ -386,7 +386,7 @@ function answerPage(ctx: Ctx, id: string): Page | RenderResult {
   const depth = answerDepth(id);
   const related = (answer.related ?? []).map(answerById).filter((item): item is NonNullable<typeof item> => Boolean(item));
   return {
-    seo: { title: name, description: answer.short[lang], canonicalPath: path, robots: 'index, follow' },
+    seo: { title: name, description: answer.short[lang], canonicalPath: path, robots: 'index, follow', structuredData: answerPageStructuredData(answer, lang) },
     body: `<article class="ssr-article"><nav class="ssr-crumbs">${link('/answers', tr(lang, 'Answers', 'जवाब'), lang)}</nav><h1>${esc(answer.question[lang])}</h1><p class="ssr-lede">${esc(answer.short[lang])}</p><h2>${esc(tr(lang, 'The hard truth', 'कड़वा सच'))}</h2><p>${esc(answer.truth[lang])}</p>${depth ? `<h2>${esc(tr(lang, 'What the law actually says', 'क़ानून असल में क्या कहता है'))}</h2><p>${esc(depth.law[lang])}</p>` : ''}<h2>${esc(tr(lang, 'What you can do', 'आप क्या कर सकते हैं'))}</h2><ol>${answer.steps[lang].map((step) => `<li>${esc(step)}</li>`).join('')}</ol>${depth ? `<h2>${esc(tr(lang, 'Where people get caught out', 'लोग कहाँ चूक जाते हैं'))}</h2><ul>${depth.mistakes[lang].map((item) => `<li>${esc(item)}</li>`).join('')}</ul>` : ''}<h2>${esc(tr(lang, 'Official sources', 'आधिकारिक स्रोत'))}</h2><ul>${answer.sources.map((source) => `<li><a href="${esc(source.url)}" rel="noopener noreferrer">${esc(source.name)}</a></li>`).join('')}</ul>${related.length ? `<h2>${esc(tr(lang, 'Related answers', 'जुड़े जवाब'))}</h2><ul>${related.map((item) => `<li>${link(`/answers/${item.id}`, item.question[lang], lang)}</li>`).join('')}</ul>` : ''}</article>`,
   };
 }

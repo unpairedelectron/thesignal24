@@ -8,7 +8,7 @@ import NotFound from '@/pages/not-found';
 import { ANSWER_CATEGORIES, ANSWERS, ANSWERS_CHECKED_ON, answerById, type AnswerCategory } from '@/lib/answers';
 import { useLang, useT } from '@/lib/i18n';
 import { useSeo } from '@/lib/seo';
-import { breadcrumbNode, collectionPageNode, organizationRef, siteGraph, webPageNode } from '@/lib/structured-data';
+import { answerPageStructuredData, breadcrumbNode, collectionPageNode, organizationRef, siteGraph, webPageNode } from '@/lib/structured-data';
 import { PAGE_META } from '@/lib/page-meta';
 import { answerDepth } from '@/lib/answers-depth';
 
@@ -117,11 +117,7 @@ export function AnswerDetailPage() {
     description: answer?.short[lang] ?? '',
     canonicalPath: answer ? path : undefined,
     robots: answer ? 'index, follow' : 'noindex, follow',
-    structuredData: answer ? siteGraph(
-      webPageNode(path, { name, description: answer.short[lang], publisher: organizationRef }, 'QAPage'),
-      { '@type': 'Question', '@id': `${path}#question`, name: answer.question[lang], answerCount: 1, acceptedAnswer: { '@type': 'Answer', text: `${answer.short[lang]} ${answer.truth[lang]}`, author: organizationRef } },
-      breadcrumbNode(path, [[t('Answers', 'जवाब'), '/answers'], [answer.question[lang], path]]),
-    ) : undefined,
+    structuredData: answer ? answerPageStructuredData(answer, lang) : undefined,
   });
   if (!answer || !category) return <NotFound />;
   const depth = answerDepth(answer.id);

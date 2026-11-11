@@ -279,7 +279,7 @@ export function CommunityDetailPage() {
     canonicalPath: post ? path : undefined,
     // Participant posts are visible to readers but kept out of search indexes.
     robots: 'noindex, follow',
-    structuredData: post ? siteGraph(webPageNode(path, { name: post.title, publisher: organizationRef }, 'DiscussionForumPosting'), breadcrumbNode(path, [[t('Community', 'समुदाय'), '/community'], [post.title, path]])) : undefined,
+    structuredData: post ? siteGraph(webPageNode(path, { name: post.title, publisher: organizationRef }), breadcrumbNode(path, [[t('Community', 'समुदाय'), '/community'], [post.title, path]])) : undefined,
   });
   const submitReply = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

@@ -6,6 +6,7 @@
 // absolute against SITE_ORIGIN by useSeo's absoluteStructuredData.
 import { DEFAULT_SHARE_IMAGE, SITE_LANGUAGE, SITE_NAME, absoluteImageUrl } from './seo';
 import { authorMeta, authorPath, PEN_NAME_NOTE, type Author } from './authors';
+import type { Answer } from './answers';
 
 export const ORGANIZATION_ID = '/#organization';
 export const WEBSITE_ID = '/#website';
@@ -149,5 +150,29 @@ export function authorPageStructuredData(author: Author, lang: 'en' | 'hi') {
     webPageNode(path, { name: meta.title, description: meta.description, mainEntity: { '@id': `${path}#person` } }, 'ProfilePage'),
     { ...personNode(author, lang), description: `${author.bio[lang]} ${PEN_NAME_NOTE[lang]}` },
     breadcrumbNode(path, [[lang === 'hi' ? 'परिचय' : 'About', '/about'], [author.name[lang], path]]),
+  );
+}
+
+/**
+ * FAQPage graph for /answers/:id. The site writes the answer itself (users cannot post
+ * competing answers), which Google maps to FAQPage, not QAPage; mainEntity carries the
+ * Question inline. Shared by the client page and the page server.
+ */
+export function answerPageStructuredData(answer: Answer, lang: 'en' | 'hi') {
+  const path = `/answers/${answer.id}`;
+  const name = `${answer.question[lang]} — ${lang === 'hi' ? 'द सिग्नल 24' : 'The Signal 24'}`;
+  return siteGraph(
+    webPageNode(path, {
+      name,
+      description: answer.short[lang],
+      publisher: organizationRef,
+      mainEntity: [{
+        '@type': 'Question',
+        '@id': `${path}#question`,
+        name: answer.question[lang],
+        acceptedAnswer: { '@type': 'Answer', text: `${answer.short[lang]} ${answer.truth[lang]}` },
+      }],
+    }, 'FAQPage'),
+    breadcrumbNode(path, [[lang === 'hi' ? 'जवाब' : 'Answers', '/answers'], [answer.question[lang], path]]),
   );
 }
