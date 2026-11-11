@@ -25,7 +25,7 @@ A source-first public-interest publication and research archive covering UGC equ
 - `artifacts/signal24/src/App.tsx` — public routes, editorial desk, and route-aware metadata
 - `artifacts/signal24/src/components/` — reusable visual components
 - `artifacts/signal24/src/index.css` — design tokens, typography, layout, and motion
-- `artifacts/signal24/public/` — static images, icons, robots rules, and sitemap index
+- `artifacts/signal24/public/` — static images, icons and robots rules (`/sitemap.xml` is served by the page server from the API's sitemap)
 - `artifacts/api-server/src/routes/` — publication, policy, newsletter, community, and health endpoints
 - `artifacts/api-server/src/middlewares/editorAuth.ts` — editor authorization boundary
 - `lib/api-spec/openapi.yaml` — source of truth for generated API contracts
