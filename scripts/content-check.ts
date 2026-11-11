@@ -18,6 +18,8 @@ import { ANSWER_DEPTH } from '../artifacts/signal24/src/lib/answers-depth';
 import { AUTHORS } from '../artifacts/signal24/src/lib/authors';
 import { POLICY_NOTES } from '../artifacts/signal24/src/lib/policy-notes';
 import { REGIONS, regionSlug, STATE_PROFILES } from '../artifacts/signal24/src/lib/states';
+import { CERTIFICATE_TOOL, TOOL_FOR_ANSWER, TOOL_IDS, TOOLS } from '../artifacts/signal24/src/lib/tools';
+import { GLOSSARY } from '../artifacts/signal24/src/lib/glossary';
 import { existsSync, readFileSync } from 'node:fs';
 import { INDEXNOW_KEY } from '../artifacts/api-server/src/lib/indexnow-key';
 
@@ -134,8 +136,45 @@ if (!existsSync(keyFile)) fail(`IndexNow: key file public/${INDEXNOW_KEY}.txt is
 else if (readFileSync(keyFile, 'utf8').trim() !== INDEXNOW_KEY) fail('IndexNow: key file content does not match INDEXNOW_KEY');
 
 // --- Report ------------------------------------------------------------------------
+// --- Tools and glossary --------------------------------------------------------------
+const sitemapTools = new Set([...(publication.match(/SITEMAP_TOOL_IDS = \[([^\]]*)\]/)?.[1] ?? '').matchAll(/"([^"]+)"/g)].map((match) => match[1]));
+for (const id of TOOL_IDS) if (!sitemapTools.has(id)) fail(`sitemap: tool "${id}" is missing from SITEMAP_TOOL_IDS in publication.ts`);
+for (const id of sitemapTools) if (!TOOL_IDS.includes(id as (typeof TOOL_IDS)[number])) fail(`sitemap: SITEMAP_TOOL_IDS lists "${id}", which is not a tool`);
+const bilingual = (value: { en: string; hi: string }) => Boolean(value.en.trim() && value.hi.trim());
+for (const tool of TOOLS) {
+  const label = `tool "${tool.id}"`;
+  if (!tool.sources.length || !tool.sources.every((source) => isHttps(source.url))) fail(`${label}: needs https official sources`);
+  for (const id of tool.answers) if (!answerIds.has(id)) fail(`${label}: answer "${id}" does not exist`);
+  const texts = [tool.title, tool.description, tool.intro, tool.basis, ...tool.caveats];
+  if (tool.kind === 'check') {
+    if (!bilingual(tool.clear) || !bilingual(tool.excluded)) fail(`${label}: results need both languages`);
+    for (const question of tool.questions) texts.push(question.text, question.exclusion, ...(question.help ? [question.help] : []), ...(question.unsure ? [question.unsure] : []));
+  }
+  if (!texts.every(bilingual)) fail(`${label}: every text needs English and Hindi`);
+}
+for (const category of CERTIFICATE_TOOL.categories) for (const purpose of CERTIFICATE_TOOL.purposes) {
+  const advice = CERTIFICATE_TOOL.advice(category.id, purpose.id);
+  if (![advice.name, advice.issuer, ...advice.checks].every(bilingual)) fail(`tool "which-certificate" ${category.id}/${purpose.id}: every text needs English and Hindi`);
+  for (const id of advice.answers) if (!answerIds.has(id)) fail(`tool "which-certificate" ${category.id}/${purpose.id}: answer "${id}" does not exist`);
+}
+for (const [answer, tool] of Object.entries(TOOL_FOR_ANSWER)) {
+  if (!answerIds.has(answer)) fail(`TOOL_FOR_ANSWER: "${answer}" is not an answer`);
+  if (!TOOL_IDS.includes(tool)) fail(`TOOL_FOR_ANSWER: "${tool}" is not a tool`);
+}
+const glossaryIds = new Set<string>();
+for (const term of GLOSSARY) {
+  const label = `glossary "${term.id}"`;
+  if (glossaryIds.has(term.id)) fail(`${label}: duplicate id`);
+  glossaryIds.add(term.id);
+  if (!bilingual(term.term) || !bilingual(term.definition)) fail(`${label}: needs English and Hindi`);
+  if (!isHttps(term.source.url)) fail(`${label}: source must be https`);
+  if (term.answer && !answerIds.has(term.answer)) fail(`${label}: answer "${term.answer}" does not exist`);
+  if (!term.match.en.test(`${term.term.en} ${term.definition.en}`)) fail(`${label}: its English pattern does not match its own term`);
+  if (!term.match.hi.test(`${term.term.hi} ${term.definition.hi}`)) fail(`${label}: its Hindi pattern does not match its own term`);
+}
+
 if (problems.length) {
   console.error(`Content check failed (${problems.length}):\n- ${problems.join('\n- ')}`);
   process.exit(1);
 }
-console.log(`Content check passed: ${stories.length} stories, ${ANSWERS.length} answers, ${Object.keys(POLICY_NOTES).length} policy analyses, ${AUTHORS.length} authors.`);
+console.log(`Content check passed: ${stories.length} stories, ${ANSWERS.length} answers, ${Object.keys(POLICY_NOTES).length} policy analyses, ${AUTHORS.length} authors, ${TOOLS.length} tools, ${GLOSSARY.length} glossary terms.`);

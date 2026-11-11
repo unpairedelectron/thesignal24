@@ -1,5 +1,5 @@
 import { useMemo, useState, type FormEvent } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { m, useReducedMotion } from 'framer-motion';
 import { ArrowUpRight, HelpCircle, MessageCircle, Search } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
 import {
@@ -12,7 +12,6 @@ import {
   type GetCommunityPostsParams,
   type GetPoliciesParams,
 } from '@workspace/api-client-react';
-import { ANSWERS, ANSWER_CATEGORIES } from '@/lib/answers';
 import { localizePolicy, useLabel, useLang, useT, type LocalizedStory } from '@/lib/i18n';
 import { basePath } from '@/lib/seo';
 import { TOPIC_BRIEFS, type TopicKey } from '@/lib/topic-briefs';
@@ -40,7 +39,7 @@ export function DeskStrip({ stories }: { stories: LocalizedStory[] }) {
       {DESKS.map((desk, index) => {
         const records = stories.filter((story) => story.topic === desk);
         const brief = TOPIC_BRIEFS[desk];
-        return <motion.div key={desk} initial={reduce ? false : { opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: index * 0.05, duration: 0.6, ease: EASE }}>
+        return <m.div key={desk} initial={reduce ? false : { opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: index * 0.05, duration: 0.6, ease: EASE }}>
           <Link href={`/topics/${encodeURIComponent(desk)}`} className="hp-desk" data-testid={`link-home-desk-${desk.replace(/\W+/g, '-').toLowerCase()}`}>
             <img src={`${basePath}/illustrations/${brief.illustration}.svg`} alt="" width={1600} height={900} loading="lazy" decoding="async" />
             <span className="hp-desk-count">{t(`${records.length} records`, `${records.length} रिकॉर्ड`)}</span>
@@ -48,7 +47,7 @@ export function DeskStrip({ stories }: { stories: LocalizedStory[] }) {
             <span className="hp-desk-brief">{brief.headline[lang]} {brief.accent[lang]}</span>
             {records[0] && <span lang={records[0].contentLang} className="hp-desk-latest">{records[0].title}</span>}
           </Link>
-        </motion.div>;
+        </m.div>;
       })}
     </div>
   </section>;
@@ -71,39 +70,6 @@ export function LedgerTrio() {
         <h3 className="hp-ledger-title group-hover:text-accent">{record.title}</h3>
         <div className="hp-ledger-shift"><div><p className="hp-ledger-label">{t('Before', 'पहले')}</p><p>{record.previousFramework}</p></div><div><p className="hp-ledger-label is-now">{t('In court', 'अदालत में')}</p><p>{record.courtStatus}</p></div></div>
       </Link>)}
-    </div>
-  </section>;
-}
-
-/** Ask the state: a search box into the Answers hub and the most-needed answers. */
-export function AnswersTeaser() {
-  const t = useT();
-  const lang = useLang();
-  const [, setLocation] = useLocation();
-  const [query, setQuery] = useState('');
-  const picks = ['how-to-file-an-rti', 'rti-no-reply', 'creamy-layer', 'stay-vs-struck-down', 'report-caste-discrimination', 'ask-your-mp'].map((id) => ANSWERS.find((answer) => answer.id === id)).filter((answer): answer is (typeof ANSWERS)[number] => Boolean(answer));
-  const submit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const match = ANSWERS.find((answer) => [answer.question.en, answer.question.hi, answer.short.en, answer.short.hi].some((text) => text.toLowerCase().includes(query.trim().toLowerCase())));
-    setLocation(match && query.trim() ? `/answers/${match.id}` : '/answers');
-  };
-  return <section className="hp-answers" aria-labelledby="answers-title">
-    <div className="signal-container hp-answers-grid">
-      <div>
-        <p className="signal-kicker hp-answers-kicker">{t('Answers', 'जवाब')}</p>
-        <h2 id="answers-title" className="hp-answers-title">{t(<>Ask the state. <em>Here is what it won’t say plainly.</em></>, <>सरकार से पूछिए। <em>यह रहा जो वह सीधे नहीं कहती।</em></>)}</h2>
-        <p className="hp-answers-dek">{t(`${ANSWERS.length} straight answers on RTI, reservation, courts, Parliament and where to complain. Each with the hard truth, the steps, and the official source.`, `आरटीआई, आरक्षण, अदालतों, संसद और शिकायत के ${ANSWERS.length} सीधे जवाब। हर एक कड़वे सच, क़दमों और आधिकारिक स्रोत के साथ।`)}</p>
-        <form className="hp-answers-search" onSubmit={submit} role="search">
-          <Search size={18} aria-hidden="true" />
-          <label htmlFor="home-answers-search" className="sr-only">{t('Search the answers', 'जवाबों में खोजें')}</label>
-          <input id="home-answers-search" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t('“RTI appeal”, “creamy layer”, “stay order”…', '“आरटीआई अपील”, “क्रीमी लेयर”, “रोक आदेश”…')} />
-          <button type="submit">{t('Find', 'खोजें')}</button>
-        </form>
-        <div className="hp-answers-areas">{ANSWER_CATEGORIES.map((area) => <Link key={area.id} href={`/answers?area=${area.id}`}>{area.label[lang]}</Link>)}</div>
-      </div>
-      <ol className="hp-answers-list">
-        {picks.map((answer) => <li key={answer.id}><Link href={`/answers/${answer.id}`} className="hp-answer-row"><HelpCircle size={18} aria-hidden="true" /><span>{answer.question[lang]}</span><ArrowUpRight size={16} aria-hidden="true" /></Link></li>)}
-      </ol>
     </div>
   </section>;
 }

@@ -511,6 +511,7 @@ router.get("/archive", async (req, res, next) => {
  * artifacts/signal24/src/lib/answers.ts and the profiled states in lib/states.ts;
  * update both together. State pages without a profile are noindex and stay out.
  */
+const SITEMAP_TOOL_IDS = ["creamy-layer-check", "ews-check", "which-certificate"];
 const SITEMAP_ANSWER_IDS = ["get-a-caste-certificate", "how-to-file-an-rti", "rti-no-reply", "what-rti-can-refuse", "who-decides-reservation", "creamy-layer", "ews-eligibility", "fifty-percent-ceiling", "reservation-in-promotions", "stay-vs-struck-down", "file-a-pil", "read-a-judgment", "how-a-bill-becomes-law", "ordinance", "find-the-gazette", "ask-your-mp", "caste-census-when", "find-government-data", "complain-about-a-government-service", "report-caste-discrimination", "ews-certificate", "non-creamy-layer-certificate", "check-central-obc-list", "women-reservation-act", "disability-reservation", "reservation-private-sector", "sc-sub-classification", "ninth-schedule", "reserved-seats-parliament", "rohini-commission", "mandal-commission", "check-court-case-status", "free-legal-aid", "caste-certificate-other-state", "creamy-layer-sc-st"];
 const SITEMAP_STATE_SLUGS = ["andhra-pradesh", "arunachal-pradesh", "assam", "bihar", "chhattisgarh", "goa", "gujarat", "haryana", "himachal-pradesh", "jharkhand", "karnataka", "kerala", "madhya-pradesh", "maharashtra", "manipur", "meghalaya", "mizoram", "nagaland", "odisha", "punjab", "rajasthan", "sikkim", "tamil-nadu", "telangana", "tripura", "uttar-pradesh", "uttarakhand", "west-bengal", "andaman-and-nicobar-islands", "chandigarh", "dadra-and-nagar-haveli-and-daman-and-diu", "delhi", "jammu-and-kashmir", "ladakh", "lakshadweep", "puducherry"];
 
@@ -590,6 +591,9 @@ export async function sitemapEntries(): Promise<SitemapEntry[]> {
       })),
     { path: "/answers", hi: true },
     ...SITEMAP_ANSWER_IDS.map((id) => ({ path: `/answers/${id}`, hi: true })),
+    { path: "/tools", hi: true },
+    ...SITEMAP_TOOL_IDS.map((id) => ({ path: `/tools/${id}`, hi: true })),
+    { path: "/glossary", hi: true },
     { path: "/states", lastmod: storiesLastmod, hi: true },
     // State profiles ship with the web app and do not change when an unrelated story does,
     // so they carry no lastmod rather than a misleading one.

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ArrowLeft, ArrowUpRight, ExternalLink, MessageCircle, Search } from 'lucide-react';
 import { Link, useParams, useSearch } from 'wouter';
-import { motion, useReducedMotion } from 'framer-motion';
+import { m, useReducedMotion } from 'framer-motion';
 import { Header } from '@/components/site-chrome';
 import { TopicHero } from '@/components/topic-stage';
 import NotFound from '@/pages/not-found';
@@ -11,6 +11,8 @@ import { useSeo } from '@/lib/seo';
 import { answerPageStructuredData, breadcrumbNode, collectionPageNode, organizationRef, siteGraph, webPageNode } from '@/lib/structured-data';
 import { PAGE_META } from '@/lib/page-meta';
 import { answerDepth } from '@/lib/answers-depth';
+import { TOOL_FOR_ANSWER, toolById } from '@/lib/tools';
+import { WhatsAppShare } from '@/components/share';
 
 function checkedOn(lang: 'en' | 'hi') {
   return new Date(`${ANSWERS_CHECKED_ON}T12:00:00`).toLocaleDateString(lang === 'hi' ? 'hi-IN' : 'en-IN', { day: 'numeric', month: 'short', year: 'numeric', numberingSystem: 'latn' } as Intl.DateTimeFormatOptions);
@@ -81,14 +83,14 @@ export function AnswersPage() {
       </div> : ANSWER_CATEGORIES.filter((group) => results.some((answer) => answer.category === group.id)).map((group) => <div key={group.id} className="answers-group">
         <div className="answers-group-head"><h2 className="font-display text-3xl sm:text-4xl">{group.label[lang]}</h2><p className="text-sm text-muted-foreground">{group.blurb[lang]}</p></div>
         <div className="answers-grid">
-          {results.filter((answer) => answer.category === group.id).map((answer, index) => <motion.div key={answer.id} initial={reduce ? false : { opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: (index % 3) * 0.06, duration: 0.5 }}>
+          {results.filter((answer) => answer.category === group.id).map((answer, index) => <m.div key={answer.id} initial={reduce ? false : { opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: (index % 3) * 0.06, duration: 0.5 }}>
             <Link href={`/answers/${answer.id}`} className="answer-card" data-testid={`link-answer-${answer.id}`}>
               <h3 className="answer-card-q">{answer.question[lang]}</h3>
               <p className="answer-card-short">{answer.short[lang]}</p>
               <p className="answer-card-truth"><span>{t('The hard truth', 'कड़वा सच')}</span> {answer.truth[lang]}</p>
               <span className="answer-card-more">{t('Full answer and steps', 'पूरा जवाब और क़दम')} <ArrowUpRight size={14} /></span>
             </Link>
-          </motion.div>)}
+          </m.div>)}
         </div>
       </div>)}
     </section>
@@ -123,6 +125,7 @@ export function AnswerDetailPage() {
   if (!answer || !category) return <NotFound />;
   const depth = answerDepth(answer.id);
   const related = (answer.related ?? []).map(answerById).filter((item): item is NonNullable<typeof item> => Boolean(item));
+  const tool = toolById(TOOL_FOR_ANSWER[answer.id]);
   return <main className="signal-page">
     <Header />
     <article className="signal-container answer-detail">
@@ -140,6 +143,8 @@ export function AnswerDetailPage() {
           <p className="article-rail-heading">{t('Official sources', 'आधिकारिक स्रोत')}</p>
           <ul className="answer-sources">{answer.sources.map((source) => <li key={source.url}><a href={source.url} target="_blank" rel="noopener noreferrer" lang="en">{source.name} <ExternalLink size={12} /></a></li>)}</ul>
           <p className="mt-4 text-xs leading-relaxed text-muted-foreground">{t('Last checked', 'आख़िरी जाँच')} {checkedOn(lang)}. {t('Fees, deadlines and portals change; the official source is the final word.', 'शुल्क, समय-सीमाएँ और पोर्टल बदलते हैं; अंतिम शब्द आधिकारिक स्रोत का है।')}</p>
+          {tool && <Link href={`/tools/${tool.id}`} className="article-rail-cta is-tool" data-testid={`link-answer-tool-${tool.id}`}>{t('Check it yourself', 'ख़ुद जाँचिए')}: {tool.title[lang]} <ArrowUpRight size={14} /></Link>}
+          <div className="mt-4"><WhatsAppShare title={answer.question[lang]} summary={answer.short[lang]} path={path} testId={`link-share-whatsapp-${answer.id}`} /></div>
           <Link href={`/community?ask=${encodeURIComponent(answer.question[lang])}`} className="article-rail-cta">{t('Ask a follow-up, anonymously', 'आगे का सवाल पूछिए, गुमनाम रूप से')} <ArrowUpRight size={14} /></Link>
         </aside>
       </div>

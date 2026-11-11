@@ -141,8 +141,8 @@ const ANSWERS_BASE: Answer[] = [
     category: 'reservation',
     question: { en: 'Who qualifies for the EWS quota?', hi: 'ईडब्ल्यूएस कोटे के लिए कौन पात्र है?' },
     short: {
-      en: 'People not covered by SC, ST or OBC reservation whose family income from all sources was below ₹8 lakh in the previous financial year, and whose family does not own 5 acres or more of agricultural land, a residential flat of 1,000 sq ft or more, or a residential plot above the set size (100 sq yards in notified municipalities, 200 sq yards elsewhere). The certificate comes from a designated revenue officer.',
-      hi: 'वे लोग जो एससी, एसटी या ओबीसी आरक्षण में नहीं आते, जिनके परिवार की पिछले वित्त वर्ष में सभी स्रोतों से आय ₹8 लाख से कम थी, और जिनके परिवार के पास 5 एकड़ या ज़्यादा कृषि भूमि, 1,000 वर्ग फ़ुट या बड़ा आवासीय फ़्लैट, या तय आकार से बड़ा आवासीय प्लॉट (अधिसूचित नगरपालिकाओं में 100 वर्ग गज़, दूसरी जगह 200 वर्ग गज़) नहीं है। प्रमाणपत्र नामित राजस्व अधिकारी देता है।',
+      en: 'People not covered by SC, ST or OBC reservation whose family income from all sources was below ₹8 lakh in the previous financial year, and whose family does not own 5 acres or more of agricultural land, a residential flat of 1,000 sq ft or more, or a residential plot of the set size or more (100 sq yards in notified municipalities, 200 sq yards elsewhere). The certificate comes from a designated revenue officer.',
+      hi: 'वे लोग जो एससी, एसटी या ओबीसी आरक्षण में नहीं आते, जिनके परिवार की पिछले वित्त वर्ष में सभी स्रोतों से आय ₹8 लाख से कम थी, और जिनके परिवार के पास 5 एकड़ या ज़्यादा कृषि भूमि, 1,000 वर्ग फ़ुट या बड़ा आवासीय फ़्लैट, या तय आकार या उससे बड़ा आवासीय प्लॉट (अधिसूचित नगरपालिकाओं में 100 वर्ग गज़, दूसरी जगह 200 वर्ग गज़) नहीं है। प्रमाणपत्र नामित राजस्व अधिकारी देता है।',
     },
     truth: {
       en: 'The government has never published an estimate of how many families meet this test, even though the size of the quota rests on it. The Supreme Court upheld the quota 3:2; the dissent objected to excluding poor SC, ST and OBC families from it.',
