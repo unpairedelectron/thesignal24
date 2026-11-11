@@ -144,9 +144,10 @@ export function storySeo(story: LocalizedStory, lang: Lang) {
   const page = webPageNode(path, { name: title, description: story.dek, primaryImageOfPage: image, inLanguage: story.contentLang === 'hi' ? 'hi-IN' : SITE_LANGUAGE });
   const breadcrumb = breadcrumbNode(path, [[lang === 'hi' ? 'अभिलेखागार' : 'Archive', '/archive'], [story.title, path]]);
   // articlePublishedAt is the full publication timestamp; publishedOn is the edition date.
-  // The API exposes no content-modified timestamp (reviewedAt/lastVerifiedAt are source
-  // checks, not edits), so dateModified mirrors datePublished.
+  // updatedAt is the last content change (edit, dated update, byline); reviewedAt and
+  // lastVerifiedAt are source checks, not edits, so they do not count as modifications.
   const published = story.articlePublishedAt ?? story.publishedOn ?? undefined;
+  const modified = published && story.updatedAt && story.updatedAt > published ? story.updatedAt : published;
   const sourceDocument = story.sourceUrl || story.source
     ? externalDocument({ title: story.source || story.sourceUrl || 'Source', url: story.sourceUrl, publisher: story.source, datePublished: story.sourcePublishedOn })
     : null;
@@ -161,7 +162,7 @@ export function storySeo(story: LocalizedStory, lang: Lang) {
       url: path,
       mainEntityOfPage: { '@id': `${path}#webpage` },
       image: [image],
-      ...(published ? { datePublished: published, dateModified: published } : {}),
+      ...(published ? { datePublished: published, dateModified: modified } : {}),
       author: author ? personNode(author, lang) : isOpinion && story.byline ? { '@type': 'Organization', name: story.byline, parentOrganization: organizationRef } : editorialDeskRef,
       publisher: organizationRef,
       isPartOf: websiteRef,

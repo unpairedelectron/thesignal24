@@ -36,6 +36,7 @@ import {
   UpdateSourceDocumentBody,
   UpdateSourceDocumentResponse,
 } from "@workspace/api-zod";
+import { storyPublishedAt } from "../lib/story-dates";
 import { requireEditor as defaultRequireEditor } from "../middlewares/editorAuth";
 
 const topics = new Set([
@@ -122,7 +123,7 @@ function serializeArticle(
     topic: topics.has(story.topic) ? story.topic : "Latest",
     kind: storyKinds.has(story.kind) ? story.kind : "Article",
     recordDate: dateOnly(story.publishedOn),
-    articlePublishedAt: articlePublishedAt?.toISOString() ?? null,
+    articlePublishedAt: storyPublishedAt(story, articlePublishedAt ?? null)?.toISOString() ?? null,
     canonicalPath: `/stories/${story.id}`,
     verificationStatus: verificationStatuses.has(story.verificationStatus)
       ? story.verificationStatus

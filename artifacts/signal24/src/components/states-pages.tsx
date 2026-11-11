@@ -228,13 +228,14 @@ export function StateProfilePage() {
   const name = region ? (lang === 'hi' ? region.hi : region.name) : '';
   const path = `/state/${params.slug ?? ''}`;
   const meta = region ? stateMeta(region, records.length > 0, lang) : undefined;
-  const title = meta?.title ?? `${name} — ${t('The Signal 24', 'द सिग्नल 24')}`;
-  const description = meta?.description ?? '';
+  // An unknown slug renders NotFound, whose effect runs first; keep its not-found tags.
+  const title = meta?.title ?? t(PAGE_META.notFound.title.en, PAGE_META.notFound.title.hi);
+  const description = meta?.description ?? PAGE_META.notFound.description.en;
   useSeo({
     title,
     description,
     canonicalPath: region ? path : undefined,
-    robots: meta?.robots ?? 'noindex, follow',
+    robots: meta?.robots ?? 'noindex, nofollow',
     structuredData: region ? siteGraph(
       webPageNode(path, { name: title, description, about: placeForState(region.name), publisher: organizationRef }, 'CollectionPage'),
       breadcrumbNode(path, [[t('States', 'राज्य'), '/states'], [name, path]]),

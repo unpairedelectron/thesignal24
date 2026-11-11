@@ -5,6 +5,8 @@
  * official portals linked; re-check them whenever ANSWERS_CHECKED_ON changes.
  */
 import type { Bilingual } from './key-figures';
+import { ANSWERS_MORE_A } from './answers-more-a';
+import { ANSWERS_MORE_B } from './answers-more-b';
 
 export type AnswerCategory = 'rti' | 'reservation' | 'courts' | 'parliament' | 'data' | 'complaints';
 
@@ -37,7 +39,8 @@ const DOPT = { name: 'Department of Personnel and Training', url: 'https://dopt.
 const SCI = { name: 'Supreme Court of India', url: 'https://www.sci.gov.in/' };
 const SANSAD = { name: 'Digital Sansad (Parliament)', url: 'https://sansad.in/' };
 
-export const ANSWERS: Answer[] = [
+/** The original twenty answers; ANSWERS below adds the later batches. */
+const ANSWERS_BASE: Answer[] = [
   {
     id: 'how-to-file-an-rti',
     category: 'rti',
@@ -112,7 +115,7 @@ export const ANSWERS: Answer[] = [
       hi: ['एनसीबीसी की वेबसाइट पर अपने राज्य की केंद्रीय ओबीसी सूची देखिए।', 'राज्य के राजपत्र या समाज कल्याण विभाग की वेबसाइट पर उसकी अपनी सूची देखिए।', 'याद रखिए: केंद्रीय सूची केंद्र की नौकरियाँ और संस्थान तय करती है; राज्य सूची राज्य वाले।'],
     },
     sources: [CONSTITUTION, { name: 'National Commission for Backward Classes', url: 'https://ncbc.nic.in/' }],
-    related: ['creamy-layer', 'fifty-percent-ceiling'],
+    related: ['creamy-layer', 'fifty-percent-ceiling', 'check-central-obc-list', 'mandal-commission'],
   },
   {
     id: 'creamy-layer',
@@ -131,7 +134,7 @@ export const ANSWERS: Answer[] = [
       hi: ['पिछले तीन साल में हर साल की सकल आय निकालिए, वेतन और कृषि आय को छोड़कर।', 'अगर माता-पिता में कोई सरकारी कर्मचारी है, तो उनके पद को डीओपीटी कसौटियों से मिलाइए।', 'केंद्रीय पदों या संस्थानों में आवेदन के लिए केंद्रीय प्रारूप में नॉन-क्रीमी लेयर प्रमाणपत्र लीजिए।', 'प्रमाणपत्र की तारीख़ को भर्ती सूचना की कट-ऑफ़ से मिलाइए।'],
     },
     sources: [DOPT],
-    related: ['ews-eligibility', 'who-decides-reservation'],
+    related: ['ews-eligibility', 'who-decides-reservation', 'non-creamy-layer-certificate', 'creamy-layer-sc-st'],
   },
   {
     id: 'ews-eligibility',
@@ -150,7 +153,7 @@ export const ANSWERS: Answer[] = [
       hi: ['आवेदन वाले साल से पहले के वित्त वर्ष की, सभी स्रोतों से, आय देखिए।', 'परिवार की हर संपत्ति को संपत्ति बहिष्कारों से मिलाइए।', 'आय और संपत्ति के दस्तावेज़ों के साथ तहसीलदार या नामित अधिकारी को आवेदन कीजिए।', 'प्रमाणपत्र का वित्त वर्ष भर्ती सूचना में माँगे गए वित्त वर्ष से मिलाइए।'],
     },
     sources: [DOPT, SCI],
-    related: ['creamy-layer'],
+    related: ['creamy-layer', 'ews-certificate'],
   },
   {
     id: 'get-a-caste-certificate',
@@ -169,7 +172,7 @@ export const ANSWERS: Answer[] = [
       hi: ['अपने राज्य का ऑनलाइन सेवा पोर्टल ढूँढ़िए या तहसील कार्यालय जाइए।', 'निवास और परिवार की जाति का सबूत जुटाइए (माता-पिता का प्रमाणपत्र सबसे मज़बूत है)।', 'पूछिए कि कौन-सा प्रारूप चाहिए: राज्य या केंद्रीय। दोनों एक-दूसरे की जगह नहीं चलते।', 'आवेदन संख्या सँभालिए; अगर राज्य की सेवा गारंटी अवधि से ज़्यादा अटके, तो लिखित में ऊपर शिकायत कीजिए।'],
     },
     sources: [DOPT, { name: 'National Commission for Backward Classes', url: 'https://ncbc.nic.in/' }],
-    related: ['creamy-layer', 'ews-eligibility'],
+    related: ['creamy-layer', 'ews-eligibility', 'caste-certificate-other-state', 'check-central-obc-list'],
   },
   {
     id: 'fifty-percent-ceiling',
@@ -188,7 +191,7 @@ export const ANSWERS: Answer[] = [
       hi: ['सिर्फ़ घोषणा नहीं, राज्य का क़ानून और उस पर आया फ़ैसला पढ़िए।', 'पूछिए कि राज्य ने क़ानून के साथ प्रतिनिधित्व के कौन-से आंकड़े प्रकाशित किए।', 'भरोसा करने से पहले देखिए कि क़ानून लागू है, उस पर रोक है, रद्द हुआ है, या अपील लंबित है।'],
     },
     sources: [SCI, CONSTITUTION],
-    related: ['stay-vs-struck-down', 'who-decides-reservation'],
+    related: ['stay-vs-struck-down', 'who-decides-reservation', 'ninth-schedule'],
   },
   {
     id: 'reservation-in-promotions',
@@ -207,7 +210,7 @@ export const ANSWERS: Answer[] = [
       hi: ['अपने विभाग से अपने कैडर का आरक्षण रोस्टर माँगिए।', 'आरटीआई से वे कैडर-वार प्रतिनिधित्व आंकड़े माँगिए जिन पर विभाग टिका।', 'अदालतें अब क्या माँगती हैं, इसके लिए जरनैल सिंह (2022) पढ़िए।'],
     },
     sources: [CONSTITUTION, SCI],
-    related: ['fifty-percent-ceiling'],
+    related: ['fifty-percent-ceiling', 'creamy-layer-sc-st'],
   },
   {
     id: 'stay-vs-struck-down',
@@ -245,7 +248,7 @@ export const ANSWERS: Answer[] = [
       hi: ['पहले दस्तावेज़ जुटाइए: आदेश, सूचनाएँ, आरटीआई जवाब।', 'पात्र हों तो मुफ़्त क़ानूनी सहायता के लिए अपने ज़िला विधिक सेवा प्राधिकरण से संपर्क कीजिए।', 'मुद्दा राष्ट्रीय स्तर का न हो तो अपने राज्य के हाई कोर्ट से शुरू कीजिए।'],
     },
     sources: [CONSTITUTION, { name: 'National Legal Services Authority', url: 'https://nalsa.gov.in/' }],
-    related: ['stay-vs-struck-down'],
+    related: ['stay-vs-struck-down', 'free-legal-aid'],
   },
   {
     id: 'read-a-judgment',
@@ -264,7 +267,7 @@ export const ANSWERS: Answer[] = [
       hi: ['मामले के नाम और साल, या पक्षकारों के नाम से खोजिए।', 'पहले असली आदेश, फिर सार, फिर तर्क पढ़िए।', 'पीठ का आकार नोट कीजिए: बड़ी पीठ का फ़ैसला छोटी पीठ के फ़ैसले पर भारी पड़ता है।'],
     },
     sources: [SCI, { name: 'eCourts Services', url: 'https://ecourts.gov.in/' }, { name: 'Indian Kanoon', url: 'https://indiankanoon.org/' }],
-    related: ['stay-vs-struck-down'],
+    related: ['stay-vs-struck-down', 'check-court-case-status'],
   },
   {
     id: 'how-a-bill-becomes-law',
@@ -340,7 +343,7 @@ export const ANSWERS: Answer[] = [
       hi: ['पहले sansad.in पर खोजिए: शायद किसी ने पहले ही पूछा हो।', 'संख्याओं और तारीख़ों के साथ एक सटीक सवाल लिखिए।', 'उसे अपने सांसद के आधिकारिक ईमेल और क्षेत्र कार्यालय भेजिए।', 'सत्र शुरू होने पर याद दिलाइए।'],
     },
     sources: [SANSAD],
-    related: ['how-a-bill-becomes-law'],
+    related: ['how-a-bill-becomes-law', 'reserved-seats-parliament'],
   },
   {
     id: 'caste-census-when',
@@ -359,7 +362,7 @@ export const ANSWERS: Answer[] = [
       hi: ['censusindia.gov.in पर महापंजीयक की अधिसूचनाएँ देखिए।', 'महापंजीयक कार्यालय को आरटीआई भेजकर जाति कोड निर्देशिका माँगिए।', 'वादा की गई तारीख़ें सँभालिए; जो होता है, उससे मिलाइए।'],
     },
     sources: [{ name: 'Census of India', url: 'https://censusindia.gov.in/' }],
-    related: ['find-government-data'],
+    related: ['find-government-data', 'rohini-commission'],
   },
   {
     id: 'find-government-data',
@@ -419,6 +422,21 @@ export const ANSWERS: Answer[] = [
     related: ['file-a-pil', 'complain-about-a-government-service'],
   },
 ];
+
+export const ANSWERS: Answer[] = [...ANSWERS_BASE, ...ANSWERS_MORE_A, ...ANSWERS_MORE_B];
+
+/**
+ * Answers shown under articles on each desk ("Answers on this"): the practical questions
+ * a reader of that desk is most likely to have next.
+ */
+export const ANSWERS_FOR_TOPIC: Record<string, string[]> = {
+  'Courts & Policy': ['stay-vs-struck-down', 'read-a-judgment', 'check-court-case-status'],
+  States: ['fifty-percent-ceiling', 'ninth-schedule', 'caste-certificate-other-state'],
+  'Data & Notes': ['caste-census-when', 'find-government-data', 'rohini-commission'],
+  History: ['mandal-commission', 'who-decides-reservation', 'ninth-schedule'],
+  Latest: ['how-to-file-an-rti', 'report-caste-discrimination', 'free-legal-aid'],
+  'Ground Reports': ['get-a-caste-certificate', 'non-creamy-layer-certificate', 'ews-certificate'],
+};
 
 export function answerById(id: string | undefined) {
   return ANSWERS.find((answer) => answer.id === id);

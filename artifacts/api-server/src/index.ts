@@ -4,6 +4,7 @@ import { ensureSeedData } from "./lib/seed";
 import { ensureContentPack } from "./lib/content-pack";
 import { ensureEvidencePack } from "./lib/evidence-pack";
 import { ensureCommunitySchema } from "./lib/community-schema";
+import { ensureIndexNowSchema, submitChangedUrls } from "./lib/indexnow";
 
 const rawPort = process.env["PORT"];
 
@@ -29,11 +30,16 @@ server.on("error", (error) => {
 });
 
 ensureCommunitySchema()
+  .then(() => ensureIndexNowSchema())
   .then(() => ensureSeedData())
   .then(() => ensureContentPack())
   .then(() => ensureEvidencePack())
   .then(() => {
     logger.info("Publication data initialized");
+    // Announce new and changed pages to search engines. Never blocks or fails startup.
+    submitChangedUrls().catch((error) => {
+      logger.warn({ err: error }, "IndexNow: submission failed; will retry on next start");
+    });
   })
   .catch((error) => {
     logger.error({ error }, "Unable to initialize publication data");

@@ -1745,6 +1745,10 @@ components:
         articlePublishedAt:
           type: ["string", "null"]
           format: date-time
+        updatedAt:
+          type: ["string", "null"]
+          format: date-time
+          description: When the record's content last changed (an edit, a dated update or a byline change). Feeds dateModified and sitemap lastmod.
         eventCount:
           type: integer
           minimum: 0

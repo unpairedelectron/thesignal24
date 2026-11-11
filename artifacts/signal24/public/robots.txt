@@ -116,3 +116,4 @@ Disallow: /api/editor
 Disallow: /api/__clerk
 
 Sitemap: https://thesignal24.com/sitemap.xml
+Sitemap: https://thesignal24.com/news-sitemap.xml

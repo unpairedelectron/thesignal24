@@ -167,10 +167,11 @@ const server = createServer((req, res) => {
     const { pathname, search } = url;
     // The full URL list lives at the site root, where every search engine accepts it for
     // the whole site (a sitemap under /api/ is, by the protocol, only trusted for /api/).
-    if (pathname === '/sitemap.xml') {
+    // /news-sitemap.xml is the Google News sitemap (records from the last 48 hours).
+    if (pathname === '/sitemap.xml' || pathname === '/news-sitemap.xml') {
       try {
-        const xml = await getApiText('/api/sitemap.xml');
-        send(req, res, 200, { 'Content-Type': 'application/xml; charset=utf-8', 'Cache-Control': 'public, max-age=3600' }, Buffer.from(xml), 9);
+        const xml = await getApiText(`/api${pathname}`);
+        send(req, res, 200, { 'Content-Type': 'application/xml; charset=utf-8', 'Cache-Control': pathname === '/news-sitemap.xml' ? 'public, max-age=600' : 'public, max-age=3600' }, Buffer.from(xml), 9);
       } catch (error) {
         console.warn(`sitemap unavailable: ${(error as Error).message}`);
         send(req, res, 503, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store', 'Retry-After': '120' }, Buffer.from('Sitemap temporarily unavailable'));

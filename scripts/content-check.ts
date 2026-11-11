@@ -18,7 +18,8 @@ import { ANSWER_DEPTH } from '../artifacts/signal24/src/lib/answers-depth';
 import { AUTHORS } from '../artifacts/signal24/src/lib/authors';
 import { POLICY_NOTES } from '../artifacts/signal24/src/lib/policy-notes';
 import { REGIONS, regionSlug, STATE_PROFILES } from '../artifacts/signal24/src/lib/states';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
+import { INDEXNOW_KEY } from '../artifacts/api-server/src/lib/indexnow-key';
 
 /**
  * Floors that catch stubs and half-finished drafts. They are not a quality target:
@@ -126,6 +127,11 @@ for (const update of POLICY_UPDATES) {
   if (!isHttps(update.sourceUrl)) fail(`${label}: needs an https primary source`);
   if (!update.courtStatus.trim() || !update.courtStatusHi.trim()) fail(`${label}: court status missing in English or Hindi`);
 }
+
+// --- IndexNow: engines verify the key by fetching /<key>.txt, which must hold exactly the key.
+const keyFile = new URL(`../artifacts/signal24/public/${INDEXNOW_KEY}.txt`, import.meta.url);
+if (!existsSync(keyFile)) fail(`IndexNow: key file public/${INDEXNOW_KEY}.txt is missing`);
+else if (readFileSync(keyFile, 'utf8').trim() !== INDEXNOW_KEY) fail('IndexNow: key file content does not match INDEXNOW_KEY');
 
 // --- Report ------------------------------------------------------------------------
 if (problems.length) {

@@ -18,7 +18,7 @@ import type {
   Story,
 } from '@workspace/api-client-react';
 import { RichBody, plainText } from '../src/components/rich-body';
-import { ANSWERS, ANSWER_CATEGORIES, answerById } from '../src/lib/answers';
+import { ANSWERS, ANSWERS_FOR_TOPIC, ANSWER_CATEGORIES, answerById } from '../src/lib/answers';
 import { answerDepth } from '../src/lib/answers-depth';
 import { AUTHORS, authorByName, authorBySlug, authorMeta, authorPath, PEN_NAME_NOTE, type Author } from '../src/lib/authors';
 import { INFO_PAGES } from '../src/lib/info-pages';
@@ -188,6 +188,7 @@ async function storyPage(ctx: Ctx, storyId: number, requestedPath: string): Prom
     ? link(authorPath(author), author.name[lang], lang, ' rel="author"')
     : esc(translateLabel(story.byline, lang) || (story.kind === 'Opinion' ? tr(lang, 'The Signal 24 editorial board', 'द सिग्नल 24 संपादकीय बोर्ड') : tr(lang, 'The Signal 24 editorial desk', 'द सिग्नल 24 संपादकीय डेस्क')));
   const related = newestFirst(await publishedStories(ctx)).filter((item) => item.id !== story.id && item.topic === story.topic).slice(0, 3);
+  const topicAnswers = (ANSWERS_FOR_TOPIC[story.topic] ?? []).map(answerById).filter((item): item is NonNullable<ReturnType<typeof answerById>> => Boolean(item));
   const body = renderToStaticMarkup(<RichBody body={story.body} />);
   const source = story.sourceUrl
     ? `<p class="ssr-source">${esc(tr(lang, 'Primary source', 'मूल स्रोत'))}: <a href="${esc(story.sourceUrl)}" rel="noopener noreferrer">${esc(story.source || story.sourceUrl)}</a>${story.sourcePublishedOn ? ` (${time(story.sourcePublishedOn, lang)})` : ''}</p>`
@@ -204,6 +205,7 @@ ${source}
 ${story.correctionNote ? `<p class="ssr-note"><strong>${esc(tr(lang, 'Correction', 'सुधार'))}:</strong> ${esc(story.correctionNote)}</p>` : ''}
 ${story.aiDisclosure ? `<p class="ssr-note">${esc(story.aiDisclosure)}</p>` : ''}
 </article>
+${topicAnswers.length ? `<section><h2>${esc(tr(lang, 'Answers on this', 'इस पर जवाब'))}</h2><ul class="ssr-list">${topicAnswers.map((item) => `<li class="ssr-item"><h3>${link(`/answers/${item.id}`, item.question[lang], lang)}</h3><p>${esc(item.short[lang])}</p></li>`).join('')}</ul></section>` : ''}
 ${related.length ? `<section><h2>${esc(tr(lang, 'Keep reading', 'आगे पढ़िए'))}</h2>${storyList(related, lang)}</section>` : ''}`,
   };
 }
