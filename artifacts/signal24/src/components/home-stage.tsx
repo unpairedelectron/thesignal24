@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import {
   animate,
-  motion,
+  m,
   useAnimationFrame,
   useInView,
   useMotionTemplate,
@@ -111,33 +111,33 @@ export function HomeStage({ stories, storyHref }: StageProps) {
 
   return <section ref={sectionRef} className="stage" aria-labelledby="stage-title" onPointerMove={onPointerMove} data-testid="home-stage">
     <div className="stage-backdrop" aria-hidden="true" />
-    <motion.div className="stage-spotlight" aria-hidden="true" style={{ backgroundImage: spotlight }} />
+    <m.div className="stage-spotlight" aria-hidden="true" style={{ backgroundImage: spotlight }} />
     <div className="stage-floor" aria-hidden="true" />
     <div className="stage-grain" aria-hidden="true" />
 
     <div className="stage-inner signal-container">
-      <motion.div className="stage-copy" style={{ y: copyY, opacity: copyOpacity }}>
-        <motion.p className="stage-kicker" initial={reduce ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: copyDelay, duration: 0.6 }}>
+      <m.div className="stage-copy" style={{ y: copyY, opacity: copyOpacity }}>
+        <m.p className="stage-kicker" initial={reduce ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: copyDelay, duration: 0.6 }}>
           <span className="stage-live-dot" /> {t('Tonight’s hearing', 'आज की सुनवाई')} · <time dateTime={new Date().toISOString().slice(0, 10)}>{today}</time>
-        </motion.p>
+        </m.p>
         <h1 id="stage-title" className="stage-title">
           {headline.map((word, index) => <span key={`${word}-${index}`} className="stage-word-mask">
-            <motion.span className={`stage-word ${index === headline.length - 1 || (lang === 'en' && index > 0) ? 'is-accent' : ''}`} initial={reduce ? false : { y: '115%', rotateX: -70 }} animate={{ y: '0%', rotateX: 0 }} transition={{ delay: copyDelay + 0.12 + index * 0.09, duration: 0.9, ease: [0.16, 1, 0.3, 1] }}>{word}</motion.span>
+            <m.span className={`stage-word ${index === headline.length - 1 || (lang === 'en' && index > 0) ? 'is-accent' : ''}`} initial={reduce ? false : { y: '115%', rotateX: -70 }} animate={{ y: '0%', rotateX: 0 }} transition={{ delay: copyDelay + 0.12 + index * 0.09, duration: 0.9, ease: [0.16, 1, 0.3, 1] }}>{word}</m.span>
           </span>)}
         </h1>
-        <motion.p className="stage-dek" initial={reduce ? false : { opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: copyDelay + 0.55, duration: 0.7 }}>
+        <m.p className="stage-dek" initial={reduce ? false : { opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: copyDelay + 0.55, duration: 0.7 }}>
           {t('Governments promise. Courts rule. Commissions report, eventually. We put every document on the stage, under the light, with its source attached, so nobody gets to perform in the dark.', 'सरकारें वादे करती हैं। अदालतें फ़ैसले देती हैं। आयोग रिपोर्ट देते हैं, देर-सबेर। हम हर दस्तावेज़ को मंच पर, रोशनी में, उसके स्रोत के साथ रखते हैं, ताकि कोई अँधेरे में अभिनय न कर सके।')}
-        </motion.p>
-        <motion.div className="stage-actions" initial={reduce ? false : { opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: copyDelay + 0.7, duration: 0.7 }}>
+        </m.p>
+        <m.div className="stage-actions" initial={reduce ? false : { opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: copyDelay + 0.7, duration: 0.7 }}>
           {lead && <Link href={storyHref(lead)} className="stage-cta is-primary" data-testid="link-stage-lead">{t('Read tonight’s lead', 'आज की मुख्य ख़बर पढ़ें')} <ArrowUpRight size={15} /></Link>}
           <Link href="/policies" className="stage-cta" data-testid="link-stage-ledger">{t('Open the policy ledger', 'नीति रजिस्टर खोलें')}</Link>
           <a href="#accountability" className="stage-cta is-quiet">{t('What they’re withholding', 'वे क्या छिपा रहे हैं')} <ArrowDownRight size={15} /></a>
-        </motion.div>
-      </motion.div>
+        </m.div>
+      </m.div>
 
-      {files.length > 0 && <motion.div className="stage-scene" style={{ scale: ringScale, y: ringLift }} onPointerEnter={() => { hovered.current = true; }} onPointerLeave={() => { hovered.current = false; }}>
-        <motion.div className="stage-tilt" style={reduce ? undefined : { rotateX: tiltX, rotateY: tiltY }}>
-          <motion.ul className="stage-ring" aria-label={t('Case files on tonight’s stage', 'आज मंच पर रखी फ़ाइलें')} style={{ rotateY: rotation, ['--files' as string]: files.length }} initial={reduce ? false : { opacity: 0, scale: 0.6 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: copyDelay - 0.2, duration: 1.4, ease: [0.16, 1, 0.3, 1] }}>
+      {files.length > 0 && <m.div className="stage-scene" style={{ scale: ringScale, y: ringLift }} onPointerEnter={() => { hovered.current = true; }} onPointerLeave={() => { hovered.current = false; }}>
+        <m.div className="stage-tilt" style={reduce ? undefined : { rotateX: tiltX, rotateY: tiltY }}>
+          <m.ul className="stage-ring" aria-label={t('Case files on tonight’s stage', 'आज मंच पर रखी फ़ाइलें')} style={{ rotateY: rotation, ['--files' as string]: files.length }} initial={reduce ? false : { opacity: 0, scale: 0.6 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: copyDelay - 0.2, duration: 1.4, ease: [0.16, 1, 0.3, 1] }}>
             {files.map((story, index) => <li key={story.id} className="stage-file" style={{ ['--i' as string]: index }}>
               <Link href={storyHref(story)} className="stage-file-card" onFocus={() => bringToFront(index)} onBlur={() => { focused.current = false; }} data-testid={`link-stage-file-${story.id}`}>
                 <span className="stage-file-tab">{label(story.topic)}</span>
@@ -146,10 +146,10 @@ export function HomeStage({ stories, storyHref }: StageProps) {
                 <span className="stage-file-foot"><span>{t(`${story.sourceCount ?? 0} sources`, `${story.sourceCount ?? 0} स्रोत`)}</span><span className={`stage-stamp ${story.kind === 'Opinion' ? 'is-opinion' : ''}`}>{story.kind === 'Opinion' ? label('Opinion') : label(story.verificationStatus)}</span></span>
               </Link>
             </li>)}
-          </motion.ul>
-        </motion.div>
+          </m.ul>
+        </m.div>
         <div className="stage-pedestal" aria-hidden="true" />
-      </motion.div>}
+      </m.div>}
     </div>
 
     <div className="stage-clocks signal-container" aria-label={t('Running clocks', 'चलती घड़ियाँ')}>
@@ -159,11 +159,11 @@ export function HomeStage({ stories, storyHref }: StageProps) {
           <span className="stage-clock-unit">{clock.unit[lang]}</span>
           <span className="stage-clock-label">{clock.label[lang]}</span>
         </>;
-        return <motion.div key={clock.id} initial={reduce ? false : { opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: copyDelay + 0.9 + index * 0.12, duration: 0.7 }}>
+        return <m.div key={clock.id} initial={reduce ? false : { opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: copyDelay + 0.9 + index * 0.12, duration: 0.7 }}>
           {clock.href.startsWith('/#')
             ? <a href={localHref(clock.href)} className="stage-clock" data-testid={`link-stage-clock-${clock.id}`}>{body}</a>
             : <Link href={clock.href} className="stage-clock" data-testid={`link-stage-clock-${clock.id}`}>{body}</Link>}
-        </motion.div>;
+        </m.div>;
       })}
     </div>
 
@@ -173,8 +173,8 @@ export function HomeStage({ stories, storyHref }: StageProps) {
       </div>
     </div>}
 
-    <motion.div className="stage-curtain is-left" aria-hidden="true" initial={reduce ? { x: '-101%' } : { x: '0%' }} animate={{ x: '-101%' }} transition={{ delay: curtainDelay, duration: reduce ? 0 : 1.5, ease: [0.7, 0, 0.2, 1] }} />
-    <motion.div className="stage-curtain is-right" aria-hidden="true" initial={reduce ? { x: '101%' } : { x: '0%' }} animate={{ x: '101%' }} transition={{ delay: curtainDelay, duration: reduce ? 0 : 1.5, ease: [0.7, 0, 0.2, 1] }} />
+    <m.div className="stage-curtain is-left" aria-hidden="true" initial={reduce ? { x: '-101%' } : { x: '0%' }} animate={{ x: '-101%' }} transition={{ delay: curtainDelay, duration: reduce ? 0 : 1.5, ease: [0.7, 0, 0.2, 1] }} />
+    <m.div className="stage-curtain is-right" aria-hidden="true" initial={reduce ? { x: '101%' } : { x: '0%' }} animate={{ x: '101%' }} transition={{ delay: curtainDelay, duration: reduce ? 0 : 1.5, ease: [0.7, 0, 0.2, 1] }} />
     <div className="stage-valance" aria-hidden="true" />
   </section>;
 }

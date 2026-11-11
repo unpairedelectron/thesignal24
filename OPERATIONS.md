@@ -25,6 +25,8 @@ A bilingual (English and Hindi) public-interest newsroom on how India’s govern
 | Court-status changes on ledger records | `POLICY_UPDATES` in `content-pack-updates.ts` | Applied once; the newest update per record wins. |
 | New policy-ledger records | `policy-ledger-pack.ts` (+ analysis in `artifacts/signal24/src/lib/policy-notes.ts`) | Inserted on API start by slug. |
 | Answers | `artifacts/signal24/src/lib/answers.ts` (original 20) and `answers-more-a.ts` / `answers-more-b.ts` (later batches, each with its depth entry); add a new batch file the same way. Add the id to `SITEMAP_ANSWER_IDS` in `artifacts/api-server/src/routes/publication.ts`, and consider listing it in `ANSWERS_FOR_TOPIC` so articles link to it | Shipped with the web app. |
+| Self-check tools (creamy layer, EWS, which certificate) | `artifacts/signal24/src/lib/tools.ts`; a new tool also goes in `SITEMAP_TOOL_IDS` in `publication.ts`. Re-check the rules against the DoPT memoranda and update `TOOLS_CHECKED_ON` | Shipped with the web app. |
+| Glossary terms | `artifacts/signal24/src/lib/glossary.ts` (definition in both languages, official source, `match` patterns) | Shipped with the web app; articles list the terms they use. |
 | Dated evidence events | `artifacts/api-server/src/lib/evidence-pack.ts` | Inserted on API start. |
 | Key figures and running clocks | `artifacts/signal24/src/lib/key-figures.ts` | Shipped with the web app. |
 | State and UT profiles (facts with sources, open questions) | `artifacts/signal24/src/lib/states.ts` and `state-research-profiles.ts`; a profiled state must be listed in `SITEMAP_STATE_SLUGS` in `publication.ts` (the content check enforces it) | Shipped with the web app. |
@@ -39,7 +41,7 @@ A new article needs: a unique `key` and `title`; `topic` and `kind`; `source`, a
 3. If nothing moved, publish nothing new. Do not manufacture news.
 
 **Thursday: the maintenance run.**
-1. Freshness: find the oldest “Last checked” dates in ledger court statuses, topic briefs (`TOPIC_BRIEFS_CHECKED_ON`), answers (`ANSWERS_CHECKED_ON`) and key figures. Re-check the oldest few against their sources. Update what changed with a dated entry; refresh the date only on what you actually re-checked.
+1. Freshness: find the oldest “Last checked” dates in ledger court statuses, topic briefs (`TOPIC_BRIEFS_CHECKED_ON`), answers (`ANSWERS_CHECKED_ON`), tools (`TOOLS_CHECKED_ON`), the glossary (`GLOSSARY_CHECKED_ON`) and key figures. If a creamy-layer or EWS limit changes, update the tools, the answers and the glossary together. Re-check the oldest few against their sources. Update what changed with a dated entry; refresh the date only on what you actually re-checked.
 2. Depth: pick the thinnest indexable page (the content check prints counts; event and source pages are deliberately `noindex`) and make it more useful, for example a new answer to a question people search for, or a deeper analysis. Do not pad.
 3. Health: run `pnpm run check:site`. Fix what fails. Look for broken outbound links in the files you touched.
 4. Community: the API hides posts reported three times. Nothing to do unless the check or a test shows a problem; there is no moderator access from a scheduled run.

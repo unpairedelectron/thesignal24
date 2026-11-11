@@ -20,6 +20,8 @@ import type {
 import { RichBody, plainText } from '../src/components/rich-body';
 import { ANSWERS, ANSWERS_FOR_TOPIC, ANSWER_CATEGORIES, answerById } from '../src/lib/answers';
 import { answerDepth } from '../src/lib/answers-depth';
+import { GLOSSARY_CHECKED_ON, glossarySorted, termsIn } from '../src/lib/glossary';
+import { citationDate, TOOL_FOR_ANSWER, TOOLS, TOOLS_CHECKED_ON, toolById, toolTitle, type Tool } from '../src/lib/tools';
 import { AUTHORS, authorByName, authorBySlug, authorMeta, authorPath, PEN_NAME_NOTE, type Author } from '../src/lib/authors';
 import { INFO_PAGES } from '../src/lib/info-pages';
 import { localizePolicy, localizeStory, translateLabel, type LocalizedStory } from '../src/lib/i18n';
@@ -28,7 +30,7 @@ import { POLICY_NOTES } from '../src/lib/policy-notes';
 import { localizePath, setActiveLang, stripLangPrefix, type Lang, type SeoConfig } from '../src/lib/seo';
 import { REGIONS, regionBySlug, regionSlug, STATE_PROFILES, stateMeta, storyConcerns } from '../src/lib/states';
 import { storyPath, storySeo } from '../src/lib/stories';
-import { answerPageStructuredData, authorPageStructuredData } from '../src/lib/structured-data';
+import { answerPageStructuredData, authorPageStructuredData, glossaryStructuredData, toolPageStructuredData, toolsHubStructuredData } from '../src/lib/structured-data';
 import { TOPIC_BRIEFS, topicBrief, type TopicBrief } from '../src/lib/topic-briefs';
 import { ApiReader } from './api';
 import { buildHead, esc, type PageHtml } from './html';
@@ -79,6 +81,7 @@ const NAV: Array<[string, string, string]> = [
   ['/data', 'Data', 'आंकड़े'],
   ['/opinion', 'Opinion', 'राय'],
   ['/answers', 'Answers', 'जवाब'],
+  ['/tools', 'Tools', 'टूल'],
   ['/community', 'Community', 'समुदाय'],
 ];
 
@@ -86,6 +89,7 @@ const FOOTER: Array<[string, string, string]> = [
   ['/archive', 'Archive', 'अभिलेखागार'],
   ['/timeline', 'Timeline', 'समयरेखा'],
   ['/events', 'Evidence events', 'सबूत और घटनाएँ'],
+  ['/glossary', 'Glossary', 'शब्दावली'],
   ['/about', 'About us', 'हमारे बारे में'],
   ['/editorial-standards', 'Editorial standards', 'संपादकीय मानक'],
   ['/methodology', 'Methodology', 'कार्यप्रणाली'],
@@ -189,6 +193,7 @@ async function storyPage(ctx: Ctx, storyId: number, requestedPath: string): Prom
     : esc(translateLabel(story.byline, lang) || (story.kind === 'Opinion' ? tr(lang, 'The Signal 24 editorial board', 'द सिग्नल 24 संपादकीय बोर्ड') : tr(lang, 'The Signal 24 editorial desk', 'द सिग्नल 24 संपादकीय डेस्क')));
   const related = newestFirst(await publishedStories(ctx)).filter((item) => item.id !== story.id && item.topic === story.topic).slice(0, 3);
   const topicAnswers = (ANSWERS_FOR_TOPIC[story.topic] ?? []).map(answerById).filter((item): item is NonNullable<ReturnType<typeof answerById>> => Boolean(item));
+  const terms = termsIn(`${story.title} ${story.dek} ${story.body ?? ''}`, lang);
   const body = renderToStaticMarkup(<RichBody body={story.body} />);
   const source = story.sourceUrl
     ? `<p class="ssr-source">${esc(tr(lang, 'Primary source', 'मूल स्रोत'))}: <a href="${esc(story.sourceUrl)}" rel="noopener noreferrer">${esc(story.source || story.sourceUrl)}</a>${story.sourcePublishedOn ? ` (${time(story.sourcePublishedOn, lang)})` : ''}</p>`
@@ -205,6 +210,7 @@ ${source}
 ${story.correctionNote ? `<p class="ssr-note"><strong>${esc(tr(lang, 'Correction', 'सुधार'))}:</strong> ${esc(story.correctionNote)}</p>` : ''}
 ${story.aiDisclosure ? `<p class="ssr-note">${esc(story.aiDisclosure)}</p>` : ''}
 </article>
+${terms.length ? `<section><h2>${esc(tr(lang, 'Terms in this record', 'इस रिकॉर्ड के शब्द'))}</h2><dl>${terms.map((item) => `<dt>${link(`/glossary#${item.id}`, item.term[lang], lang)}</dt><dd>${esc(item.definition[lang])}</dd>`).join('')}</dl></section>` : ''}
 ${topicAnswers.length ? `<section><h2>${esc(tr(lang, 'Answers on this', 'इस पर जवाब'))}</h2><ul class="ssr-list">${topicAnswers.map((item) => `<li class="ssr-item"><h3>${link(`/answers/${item.id}`, item.question[lang], lang)}</h3><p>${esc(item.short[lang])}</p></li>`).join('')}</ul></section>` : ''}
 ${related.length ? `<section><h2>${esc(tr(lang, 'Keep reading', 'आगे पढ़िए'))}</h2>${storyList(related, lang)}</section>` : ''}`,
   };
@@ -387,9 +393,54 @@ function answerPage(ctx: Ctx, id: string): Page | RenderResult {
   const name = `${answer.question[lang]} — ${tr(lang, 'The Signal 24', 'द सिग्नल 24')}`;
   const depth = answerDepth(id);
   const related = (answer.related ?? []).map(answerById).filter((item): item is NonNullable<typeof item> => Boolean(item));
+  const tool = toolById(TOOL_FOR_ANSWER[id]);
   return {
     seo: { title: name, description: answer.short[lang], canonicalPath: path, robots: 'index, follow', structuredData: answerPageStructuredData(answer, lang) },
-    body: `<article class="ssr-article"><nav class="ssr-crumbs">${link('/answers', tr(lang, 'Answers', 'जवाब'), lang)}</nav><h1>${esc(answer.question[lang])}</h1><p class="ssr-lede">${esc(answer.short[lang])}</p><h2>${esc(tr(lang, 'The hard truth', 'कड़वा सच'))}</h2><p>${esc(answer.truth[lang])}</p>${depth ? `<h2>${esc(tr(lang, 'What the law actually says', 'क़ानून असल में क्या कहता है'))}</h2><p>${esc(depth.law[lang])}</p>` : ''}<h2>${esc(tr(lang, 'What you can do', 'आप क्या कर सकते हैं'))}</h2><ol>${answer.steps[lang].map((step) => `<li>${esc(step)}</li>`).join('')}</ol>${depth ? `<h2>${esc(tr(lang, 'Where people get caught out', 'लोग कहाँ चूक जाते हैं'))}</h2><ul>${depth.mistakes[lang].map((item) => `<li>${esc(item)}</li>`).join('')}</ul>` : ''}<h2>${esc(tr(lang, 'Official sources', 'आधिकारिक स्रोत'))}</h2><ul>${answer.sources.map((source) => `<li><a href="${esc(source.url)}" rel="noopener noreferrer">${esc(source.name)}</a></li>`).join('')}</ul>${related.length ? `<h2>${esc(tr(lang, 'Related answers', 'जुड़े जवाब'))}</h2><ul>${related.map((item) => `<li>${link(`/answers/${item.id}`, item.question[lang], lang)}</li>`).join('')}</ul>` : ''}</article>`,
+    body: `<article class="ssr-article"><nav class="ssr-crumbs">${link('/answers', tr(lang, 'Answers', 'जवाब'), lang)}</nav><h1>${esc(answer.question[lang])}</h1><p class="ssr-lede">${esc(answer.short[lang])}</p><h2>${esc(tr(lang, 'The hard truth', 'कड़वा सच'))}</h2><p>${esc(answer.truth[lang])}</p>${depth ? `<h2>${esc(tr(lang, 'What the law actually says', 'क़ानून असल में क्या कहता है'))}</h2><p>${esc(depth.law[lang])}</p>` : ''}<h2>${esc(tr(lang, 'What you can do', 'आप क्या कर सकते हैं'))}</h2><ol>${answer.steps[lang].map((step) => `<li>${esc(step)}</li>`).join('')}</ol>${depth ? `<h2>${esc(tr(lang, 'Where people get caught out', 'लोग कहाँ चूक जाते हैं'))}</h2><ul>${depth.mistakes[lang].map((item) => `<li>${esc(item)}</li>`).join('')}</ul>` : ''}<h2>${esc(tr(lang, 'Official sources', 'आधिकारिक स्रोत'))}</h2><ul>${answer.sources.map((source) => `<li><a href="${esc(source.url)}" rel="noopener noreferrer">${esc(source.name)}</a></li>`).join('')}</ul>${tool ? `<p>${link(`/tools/${tool.id}`, `${tr(lang, 'Check it yourself', 'ख़ुद जाँचिए')}: ${tool.title[lang]}`, lang)}</p>` : ''}${related.length ? `<h2>${esc(tr(lang, 'Related answers', 'जुड़े जवाब'))}</h2><ul>${related.map((item) => `<li>${link(`/answers/${item.id}`, item.question[lang], lang)}</li>`).join('')}</ul>` : ''}</article>`,
+  };
+}
+
+function toolsPage(ctx: Ctx): Page {
+  const { lang } = ctx;
+  const m = meta('tools', lang);
+  const items = TOOLS.map((tool) => `<li class="ssr-item"><h3>${link(`/tools/${tool.id}`, tool.title[lang], lang)}</h3><p>${esc(tool.description[lang])}</p></li>`).join('');
+  return {
+    seo: { title: m.title, description: m.description, canonicalPath: '/tools', structuredData: toolsHubStructuredData(lang, m, TOOLS.map((tool) => ({ url: `/tools/${tool.id}`, name: tool.title[lang] }))) },
+    body: `${head(lang, tr(lang, 'Check it yourself', 'ख़ुद जाँचिए'), m.title, m.description)}<ul class="ssr-list">${items}</ul><p>${link('/glossary', tr(lang, 'Glossary of terms', 'शब्दावली'), lang)}</p>`,
+  };
+}
+
+function toolRules(tool: Tool, lang: Lang) {
+  if (tool.kind === 'check') {
+    return `<h2>${esc(tr(lang, 'The questions', 'सवाल'))}</h2><ol>${tool.questions.map((question) => `<li><p>${esc(question.text[lang])}</p>${question.help ? `<p>${esc(question.help[lang])}</p>` : ''}<p>${esc(question.exclusion[lang])}</p></li>`).join('')}</ol><h2>${esc(tr(lang, 'If none of these applies', 'अगर इनमें से कुछ भी लागू नहीं होता'))}</h2><p>${esc(tool.clear[lang])}</p>`;
+  }
+  const blocks = tool.categories.flatMap((category) => tool.purposes.map((purpose) => {
+    const advice = tool.advice(category.id, purpose.id);
+    return `<section><h3>${esc(category.label[lang])}: ${esc(purpose.label[lang])}</h3><p><strong>${esc(advice.name[lang])}</strong></p><p>${esc(advice.issuer[lang])}</p><ul>${advice.checks.map((item) => `<li>${esc(item[lang])}</li>`).join('')}</ul></section>`;
+  })).join('');
+  return `<h2>${esc(tr(lang, 'Which certificate, by category', 'श्रेणी के हिसाब से कौन-सा प्रमाणपत्र'))}</h2>${blocks}`;
+}
+
+function toolPage(ctx: Ctx, id: string): Page | RenderResult {
+  const { lang } = ctx;
+  const tool = toolById(id);
+  if (!tool) return notFound(ctx);
+  const path = `/tools/${tool.id}`;
+  const answers = tool.answers.map(answerById).filter((item): item is NonNullable<typeof item> => Boolean(item));
+  return {
+    seo: { title: toolTitle(tool, lang), description: tool.description[lang], canonicalPath: path, robots: 'index, follow', structuredData: toolPageStructuredData(path, lang, toolTitle(tool, lang), tool.description[lang], tool.title[lang]) },
+    body: `<article class="ssr-article"><nav class="ssr-crumbs">${link('/tools', tr(lang, 'Tools', 'टूल'), lang)}</nav><h1>${esc(tool.title[lang])}</h1><p class="ssr-lede">${esc(tool.description[lang])}</p><p>${esc(tool.intro[lang])}</p>${toolRules(tool, lang)}<h2>${esc(tr(lang, 'What the rules say', 'नियम क्या कहते हैं'))}</h2><p>${esc(tool.basis[lang])}</p><ul>${tool.caveats.map((item) => `<li>${esc(item[lang])}</li>`).join('')}</ul><h2>${esc(tr(lang, 'The orders and judgments behind it', 'इसके पीछे के आदेश और फ़ैसले'))}</h2><ul>${tool.citations.map((item) => `<li>${esc(item.title[lang])}: ${esc(item.reference)}, ${esc(citationDate(item.date, lang))}</li>`).join('')}</ul><h2>${esc(tr(lang, 'Official sources', 'आधिकारिक स्रोत'))}</h2><ul>${tool.sources.map((source) => `<li><a href="${esc(source.url)}" rel="noopener noreferrer">${esc(source.name)}</a></li>`).join('')}</ul><p>${esc(tr(lang, 'Rules last checked', 'नियमों की आख़िरी जाँच'))} ${time(TOOLS_CHECKED_ON, lang)}</p>${answers.length ? `<h2>${esc(tr(lang, 'Read the full answers', 'पूरे जवाब पढ़िए'))}</h2><ul>${answers.map((item) => `<li>${link(`/answers/${item.id}`, item.question[lang], lang)}</li>`).join('')}</ul>` : ''}</article>`,
+  };
+}
+
+function glossaryPage(ctx: Ctx): Page {
+  const { lang } = ctx;
+  const m = meta('glossary', lang);
+  const terms = glossarySorted(lang);
+  const items = terms.map((item) => `<div id="${esc(item.id)}"><dt>${esc(item.term[lang])}</dt><dd><p>${esc(item.definition[lang])}</p><p><a href="${esc(item.source.url)}" rel="noopener noreferrer">${esc(item.source.name)}</a>${item.answer && answerById(item.answer) ? ` · ${link(`/answers/${item.answer}`, answerById(item.answer)!.question[lang], lang)}` : ''}</p></dd></div>`).join('');
+  return {
+    seo: { title: m.title, description: m.description, canonicalPath: '/glossary', structuredData: glossaryStructuredData(lang, m, terms.map((item) => ({ id: item.id, name: item.term[lang], description: item.definition[lang] }))) },
+    body: `${head(lang, tr(lang, 'Glossary', 'शब्दावली'), m.title, m.description)}<dl>${items}</dl><p>${esc(tr(lang, 'Last checked', 'आख़िरी जाँच'))} ${time(GLOSSARY_CHECKED_ON, lang)}</p>`,
   };
 }
 
@@ -505,6 +556,8 @@ async function route(ctx: Ctx): Promise<Page | RenderResult> {
     case '/timeline': return eventsPage(ctx, 'timeline');
     case '/events': return eventsPage(ctx, 'events');
     case '/answers': return answersPage(ctx);
+    case '/tools': return toolsPage(ctx);
+    case '/glossary': return glossaryPage(ctx);
     case '/states': return statesPage(ctx);
     case '/community': return communityPage(ctx);
     case '/about': return infoPage(ctx, 'about', '/about');
@@ -524,6 +577,7 @@ async function route(ctx: Ctx): Promise<Page | RenderResult> {
   switch (section) {
     case 'topics': return topicPage(ctx, slug);
     case 'answers': return answerPage(ctx, slug);
+    case 'tools': return toolPage(ctx, slug);
     case 'state': return statePage(ctx, slug);
     case 'policies': return policyPage(ctx, slug, path);
     case 'events': return Number.isFinite(id(slug)) && id(slug) > 0 ? eventPage(ctx, id(slug)) : notFound(ctx);

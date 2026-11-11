@@ -176,3 +176,33 @@ export function answerPageStructuredData(answer: Answer, lang: 'en' | 'hi') {
     breadcrumbNode(path, [[lang === 'hi' ? 'जवाब' : 'Answers', '/answers'], [answer.question[lang], path]]),
   );
 }
+
+/** CollectionPage graph for /tools. Shared by the client page and the page server. */
+export function toolsHubStructuredData(lang: 'en' | 'hi', meta: { title: string; description: string }, items: Array<{ url: string; name: string }>) {
+  return siteGraph(
+    collectionPageNode('/tools', { name: meta.title, description: meta.description, publisher: organizationRef }, items),
+    breadcrumbNode('/tools', [[lang === 'hi' ? 'टूल' : 'Tools', '/tools']]),
+  );
+}
+
+/** WebPage graph for /tools/:id: an interactive check with no rich-result type of its own. */
+export function toolPageStructuredData(path: string, lang: 'en' | 'hi', name: string, description: string, title: string) {
+  return siteGraph(
+    webPageNode(path, { name, description, publisher: organizationRef, isAccessibleForFree: true }),
+    breadcrumbNode(path, [[lang === 'hi' ? 'टूल' : 'Tools', '/tools'], [title, path]]),
+  );
+}
+
+/** DefinedTermSet graph for /glossary. */
+export function glossaryStructuredData(lang: 'en' | 'hi', meta: { title: string; description: string }, terms: Array<{ id: string; name: string; description: string }>) {
+  return siteGraph(
+    webPageNode('/glossary', { name: meta.title, description: meta.description, publisher: organizationRef, mainEntity: { '@id': '/glossary#terms' } }),
+    {
+      '@type': 'DefinedTermSet',
+      '@id': '/glossary#terms',
+      name: lang === 'hi' ? 'द सिग्नल 24 शब्दावली' : 'The Signal 24 glossary',
+      hasDefinedTerm: terms.map((term) => ({ '@type': 'DefinedTerm', '@id': `/glossary#${term.id}`, name: term.name, description: term.description, inDefinedTermSet: { '@id': '/glossary#terms' } })),
+    },
+    breadcrumbNode('/glossary', [[lang === 'hi' ? 'शब्दावली' : 'Glossary', '/glossary']]),
+  );
+}

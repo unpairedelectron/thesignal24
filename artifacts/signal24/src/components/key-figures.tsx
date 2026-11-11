@@ -1,5 +1,5 @@
 import { useRef, type PointerEvent as ReactPointerEvent } from 'react';
-import { motion, useMotionValue, useReducedMotion, useSpring, useTransform } from 'framer-motion';
+import { m, useMotionValue, useReducedMotion, useSpring, useTransform } from 'framer-motion';
 import { ExternalLink } from 'lucide-react';
 import { CountUp } from '@/components/home-stage';
 import { useLang, useT } from '@/lib/i18n';
@@ -22,7 +22,7 @@ function FigureCard({ figure, index }: { figure: KeyFigure; index: number }) {
     my.set((event.clientY - rect.top) / rect.height);
   };
   const reset = () => { mx.set(0.5); my.set(0.5); };
-  return <motion.article
+  return <m.article
     ref={ref}
     className={`figure-card is-${figure.tone}`}
     style={reduce ? undefined : { rotateX: rx, rotateY: ry }}
@@ -34,7 +34,7 @@ function FigureCard({ figure, index }: { figure: KeyFigure; index: number }) {
     transition={{ duration: 0.8, delay: (index % 4) * 0.08, ease: [0.16, 1, 0.3, 1] }}
     data-testid={`key-figure-${figure.id}`}
   >
-    {!reduce && <motion.span className="figure-glare" aria-hidden="true" style={{ backgroundImage: glare }} />}
+    {!reduce && <m.span className="figure-glare" aria-hidden="true" style={{ backgroundImage: glare }} />}
     <div className="figure-head"><span className="figure-status">{figure.status[lang]}</span><span className="figure-year">{figure.year}</span></div>
     <p className="figure-value">{figure.numeric !== undefined
       ? <CountUp to={figure.numeric} decimals={figure.decimals} prefix={figure.prefix} suffix={lang === 'hi' && figure.suffix === ' lakh' ? ' लाख' : figure.suffix} />
@@ -42,7 +42,7 @@ function FigureCard({ figure, index }: { figure: KeyFigure; index: number }) {
     <h3 className="figure-label">{figure.label[lang]}</h3>
     <p className="figure-definition">{figure.definition[lang]}</p>
     <p className="figure-foot"><span>{figure.geography[lang]}</span><a href={figure.source.url} target="_blank" rel="noopener noreferrer">{t('Source', 'स्रोत')}: {figure.source.name} <ExternalLink size={10} /></a></p>
-  </motion.article>;
+  </m.article>;
 }
 
 /** The numbers the reservation debate turns on, each with its frame attached. */

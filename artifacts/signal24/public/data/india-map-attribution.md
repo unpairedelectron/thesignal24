@@ -9,7 +9,7 @@ India state and union-territory boundary data: DataMeet India community and the 
 Changes for this map:
 
 - Source `shapeName` values are retained in each feature; `NAME_1` uses unaccented English administrative names for matching records.
-- Geometry is simplified with a 0.01-degree tolerance and coordinates are rounded to five decimal places for editorial map display.
+- Geometry is simplified with a 0.01-degree tolerance and coordinates are rounded to three decimal places (about 100 metres) for editorial map display.
 - The previous map's legacy labels resolve to current names: Orissa → Odisha, Uttaranchal → Uttarakhand, and Andaman and Nicobar → Andaman and Nicobar Islands.
 - The former Dadra and Nagar Haveli and Daman and Diu features are represented together as the current Dadra and Nagar Haveli and Daman and Diu union territory.
 

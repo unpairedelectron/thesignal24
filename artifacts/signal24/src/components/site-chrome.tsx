@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'rea
 import { ArrowUp, ArrowUpRight, Check, ChevronDown, Menu, Search, Send, X } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
 import { useSubscribeToNewsletter } from '@workspace/api-client-react';
+import { WhatsAppFollow } from '@/components/share';
 import { LanguageSwitch, useLang, useLocalHref, useT } from '@/lib/i18n';
 import { daysSince, RUNNING_CLOCKS } from '@/lib/key-figures';
 import { TOPIC_BRIEFS, type TopicKey } from '@/lib/topic-briefs';
@@ -27,6 +28,8 @@ const PRIMARY: NavItem[] = [
 
 const EXPLORE: NavItem[] = [
   { href: '/events', en: 'Evidence', hi: 'सबूत', testId: 'link-evidence-events' },
+  { href: '/tools', en: 'Tools: check it yourself', hi: 'टूल: ख़ुद जाँचिए', testId: 'link-tools' },
+  { href: '/glossary', en: 'Glossary', hi: 'शब्दावली', testId: 'link-glossary' },
   { href: '/timeline', en: 'Timeline', hi: 'समयरेखा', testId: 'link-timeline' },
   { href: '/archive', en: 'Archive', hi: 'अभिलेखागार', testId: 'link-archive' },
   { href: '/evidence/search', en: 'Search the evidence', hi: 'सबूतों में खोजें', testId: 'link-evidence-search' },
@@ -198,7 +201,7 @@ export function SiteFooter() {
   const columns: Array<{ heading: string; links: Array<[string, string]> }> = [
     { heading: t('Topic files', 'विषय फ़ाइलें'), links: [...DESKS.map((desk) => [`/topics/${encodeURIComponent(desk)}`, t(desk, DESK_HI[desk])] as [string, string]), ['/topics/open-category-competition', t('Open-category competition', 'खुली श्रेणी की प्रतिस्पर्धा')]] },
     { heading: t('Read', 'पढ़ें'), links: [['/', t('Latest reporting', 'ताज़ा रिपोर्टिंग')], ['/opinion', t('Opinion', 'राय')], ['/policies', t('Policy ledger', 'नीति रजिस्टर')], ['/data', t('Data room', 'आंकड़ा कक्ष')], ['/timeline', t('Timeline', 'समयरेखा')], ['/archive', t('Archive', 'अभिलेखागार')]] },
-    { heading: t('Use it', 'इस्तेमाल करें'), links: [['/answers', t('Answers: ask the state', 'जवाब: सरकार से पूछिए')], ['/states', t('State by state', 'राज्य-दर-राज्य')], ['/community', t('Community questions', 'समुदाय के सवाल')], ['/events', t('Evidence events', 'सबूत घटनाएँ')], ['/evidence/search', t('Search the evidence', 'सबूतों में खोजें')], ['/search', t('Search everything', 'सब कुछ खोजें')]] },
+    { heading: t('Use it', 'इस्तेमाल करें'), links: [['/answers', t('Answers: ask the state', 'जवाब: सरकार से पूछिए')], ['/tools', t('Check it yourself: tools', 'ख़ुद जाँचिए: टूल')], ['/glossary', t('Glossary', 'शब्दावली')], ['/states', t('State by state', 'राज्य-दर-राज्य')], ['/community', t('Community questions', 'समुदाय के सवाल')], ['/events', t('Evidence events', 'सबूत घटनाएँ')], ['/evidence/search', t('Search the evidence', 'सबूतों में खोजें')], ['/search', t('Search everything', 'सब कुछ खोजें')]] },
     { heading: t('The Signal 24', 'द सिग्नल 24'), links: [['/about', t('About us', 'हमारे बारे में')], ['/editorial-standards', t('Editorial standards', 'संपादकीय मानक')], ['/editorial-standards#corrections', t('Corrections', 'सुधार')], ['/methodology', t('Methodology', 'कार्यप्रणाली')], ['/authors/signal-24', t('The editorial desk', 'संपादकीय डेस्क')]] },
   ];
   return <footer className="chrome-footer" data-testid="site-footer">
@@ -213,6 +216,7 @@ export function SiteFooter() {
           <p className="chrome-footer-heading">{t('The briefing', 'ब्रीफ़िंग')}</p>
           <p className="chrome-footer-pitch">{t('A short note when a court rules, a notification sneaks out, or a promised report goes missing again.', 'जब कोई अदालत फ़ैसला दे, कोई अधिसूचना चुपके से निकले, या कोई वादा की गई रिपोर्ट फिर ग़ायब हो जाए, तब एक छोटा नोट।')}</p>
           <FooterNewsletter />
+          <WhatsAppFollow className="chrome-footer-whatsapp" />
         </div>
       </div>
       <div className="chrome-footer-columns">

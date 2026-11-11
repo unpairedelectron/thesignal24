@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { m, useReducedMotion } from 'framer-motion';
 import { ExternalLink } from 'lucide-react';
 import { CountUp } from '@/components/home-stage';
 import { useLang, useT } from '@/lib/i18n';
@@ -26,7 +26,7 @@ export function DemandBoard({ demands }: { demands: Demand[] }) {
   const t = useT();
   const reduce = useReducedMotion() ?? false;
   return <ol className={`demand-board ${reduce ? 'is-static' : ''}`}>
-    {demands.map((demand, index) => <motion.li key={demand.id} className="demand-card" tabIndex={0} initial={reduce ? false : { opacity: 0, y: 40, rotateX: 30 }} whileInView={{ opacity: 1, y: 0, rotateX: 0 }} viewport={{ once: true, margin: '-5% 0px' }} transition={{ delay: (index % 3) * 0.08, duration: 0.8, ease: EASE }} data-testid={`demand-${demand.id}`}>
+    {demands.map((demand, index) => <m.li key={demand.id} className="demand-card" tabIndex={0} initial={reduce ? false : { opacity: 0, y: 40, rotateX: 30 }} whileInView={{ opacity: 1, y: 0, rotateX: 0 }} viewport={{ once: true, margin: '-5% 0px' }} transition={{ delay: (index % 3) * 0.08, duration: 0.8, ease: EASE }} data-testid={`demand-${demand.id}`}>
       <div className="demand-card-inner">
         <div className="demand-face is-front">
           <p className="demand-status">{demand.status[lang]}</p>
@@ -40,7 +40,7 @@ export function DemandBoard({ demands }: { demands: Demand[] }) {
           <p className="demand-sources">{demand.sources.map((source) => <a key={source.url} href={source.url} target="_blank" rel="noopener noreferrer">{source.name} <ExternalLink size={10} /></a>)}</p>
         </div>
       </div>
-    </motion.li>)}
+    </m.li>)}
   </ol>;
 }
 
@@ -83,7 +83,7 @@ export function CeilingChart() {
       {CEILING_ROWS.map((row, index) => <div key={row.id} className={`ceiling-row ${hover && hover !== row.id ? 'is-dim' : ''}`} tabIndex={0} role="group" aria-label={`${row.label[lang]}, ${row.year}: ${row.value}%, ${statusText(row.status)}. ${row.note[lang]}`} onPointerEnter={() => setHover(row.id)} onPointerLeave={() => setHover(null)} onFocus={() => setHover(row.id)} onBlur={() => setHover(null)}>
         <div className="ceiling-row-label" aria-hidden="true"><span className="ceiling-row-name">{row.label[lang]}</span><span className="ceiling-row-year">{row.year}</span></div>
         <div className="ceiling-track" aria-hidden="true">
-          <motion.span className={`ceiling-bar is-${row.status}`} initial={reduce ? false : { width: 0 }} whileInView={{ width: `${(row.value / max) * 100}%` }} style={reduce ? { width: `${(row.value / max) * 100}%` } : undefined} viewport={{ once: true }} transition={{ delay: index * 0.12, duration: 1, ease: EASE }} />
+          <m.span className={`ceiling-bar is-${row.status}`} initial={reduce ? false : { width: 0 }} whileInView={{ width: `${(row.value / max) * 100}%` }} style={reduce ? { width: `${(row.value / max) * 100}%` } : undefined} viewport={{ once: true }} transition={{ delay: index * 0.12, duration: 1, ease: EASE }} />
           <span className="ceiling-value">{row.value}% <em>{statusText(row.status)}</em></span>
           {hover === row.id && <span className="ceiling-tip" aria-hidden="true">{row.note[lang]}</span>}
         </div>

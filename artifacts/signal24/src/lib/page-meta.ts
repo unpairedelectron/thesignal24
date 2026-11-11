@@ -60,6 +60,14 @@ export const PAGE_META = {
     title: { en: "Editorial desk — The Signal 24", hi: "संपादकीय डेस्क — द सिग्नल 24" },
     description: { en: "The desk that sources, checks and publishes every Signal 24 record, and answers for the mistakes.", hi: "वह डेस्क जो द सिग्नल 24 के हर रिकॉर्ड का स्रोत खोजती है, जाँचती है, प्रकाशित करती है, और ग़लतियों की ज़िम्मेदारी लेती है।" },
   },
+  tools: {
+    title: { en: "Check it yourself: creamy layer, EWS and certificate tools — The Signal 24", hi: "ख़ुद जाँचिए: क्रीमी लेयर, ईडब्ल्यूएस और प्रमाणपत्र टूल — द सिग्नल 24" },
+    description: { en: "Free step-by-step checks built on the official rules: are you in the OBC creamy layer, do you qualify for EWS, and which certificate do you need. Every test cites its source.", hi: "आधिकारिक नियमों पर बनी मुफ़्त, क़दम-दर-क़दम जाँच: क्या आप ओबीसी क्रीमी लेयर में हैं, क्या आप ईडब्ल्यूएस के योग्य हैं, और आपको कौन-सा प्रमाणपत्र चाहिए। हर कसौटी अपने स्रोत के साथ।" },
+  },
+  glossary: {
+    title: { en: "Glossary: reservation, courts and the state, in plain words — The Signal 24", hi: "शब्दावली: आरक्षण, अदालतें और सरकार, सीधे शब्दों में — द सिग्नल 24" },
+    description: { en: "What creamy layer, Central List, EWS, stay, Ninth Schedule, sub-classification and two dozen other terms actually mean, each with its official source.", hi: "क्रीमी लेयर, केंद्रीय सूची, ईडब्ल्यूएस, रोक, नौवीं अनुसूची, उप-वर्गीकरण और दो दर्जन दूसरे शब्दों का असल मतलब, हर एक अपने आधिकारिक स्रोत के साथ।" },
+  },
   answers: {
     title: { en: "Answers: ask the state — The Signal 24", hi: "जवाब: सरकार से पूछिए — द सिग्नल 24" },
     description: { en: "Plain, sourced answers to what people actually ask about the Indian state: RTI, reservation, courts, Parliament, data and complaints. With the hard truth, and what you can do.", hi: "भारतीय राज्य के बारे में लोग जो असल में पूछते हैं, उसके सीधे, स्रोत-आधारित जवाब: आरटीआई, आरक्षण, अदालतें, संसद, आंकड़े और शिकायतें। कड़वे सच के साथ, और यह कि आप क्या कर सकते हैं।" },
