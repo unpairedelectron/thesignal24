@@ -112,11 +112,12 @@ export function AnswerDetailPage() {
   const category = ANSWER_CATEGORIES.find((item) => item.id === answer?.category);
   const path = `/answers/${params.id ?? ''}`;
   const name = answer ? `${answer.question[lang]} — ${t('The Signal 24', 'द सिग्नल 24')}` : t('Answer — The Signal 24', 'जवाब — द सिग्नल 24');
+  // An unknown id renders NotFound, whose effect runs first; keep its not-found tags.
   useSeo({
-    title: name,
-    description: answer?.short[lang] ?? '',
+    title: answer ? name : t(PAGE_META.notFound.title.en, PAGE_META.notFound.title.hi),
+    description: answer?.short[lang] ?? PAGE_META.notFound.description.en,
     canonicalPath: answer ? path : undefined,
-    robots: answer ? 'index, follow' : 'noindex, follow',
+    robots: answer ? 'index, follow' : 'noindex, nofollow',
     structuredData: answer ? answerPageStructuredData(answer, lang) : undefined,
   });
   if (!answer || !category) return <NotFound />;

@@ -35,6 +35,7 @@ import {
 } from "../middlewares/editorAuth";
 
 import { AUTHOR_BY_TOPIC } from "../lib/authors";
+import { storyPublishedAt } from "../lib/story-dates";
 const router: IRouter = Router();
 
 const topicList = [
@@ -184,7 +185,8 @@ function serializeStory(
     sourceUrl: story.sourceUrl,
     publishedOn: story.publishedOn,
     recordDate: dateOnly(story.publishedOn),
-    articlePublishedAt: articlePublishedAt?.toISOString() ?? null,
+    articlePublishedAt: storyPublishedAt(story, articlePublishedAt)?.toISOString() ?? null,
+    updatedAt: story.updatedAt?.toISOString() ?? null,
     eyebrow: story.eyebrow,
     title: story.title,
     dek: story.dek,
@@ -356,7 +358,7 @@ const SITE_ORIGIN = (process.env.SITE_URL || "https://thesignal24.com").replace(
 );
 
 /** `hi: true` when the page exists as a reviewed Hindi edition at /hi{path}. */
-type SitemapEntry = { path: string; lastmod?: Date | null; hi?: boolean };
+export type SitemapEntry = { path: string; lastmod?: Date | null; hi?: boolean };
 
 function hindiPath(path: string) {
   return path === "/" ? "/hi" : `/hi${path}`;
@@ -509,106 +511,169 @@ router.get("/archive", async (req, res, next) => {
  * artifacts/signal24/src/lib/answers.ts and the profiled states in lib/states.ts;
  * update both together. State pages without a profile are noindex and stay out.
  */
-const SITEMAP_ANSWER_IDS = ["get-a-caste-certificate", "how-to-file-an-rti", "rti-no-reply", "what-rti-can-refuse", "who-decides-reservation", "creamy-layer", "ews-eligibility", "fifty-percent-ceiling", "reservation-in-promotions", "stay-vs-struck-down", "file-a-pil", "read-a-judgment", "how-a-bill-becomes-law", "ordinance", "find-the-gazette", "ask-your-mp", "caste-census-when", "find-government-data", "complain-about-a-government-service", "report-caste-discrimination"];
+const SITEMAP_ANSWER_IDS = ["get-a-caste-certificate", "how-to-file-an-rti", "rti-no-reply", "what-rti-can-refuse", "who-decides-reservation", "creamy-layer", "ews-eligibility", "fifty-percent-ceiling", "reservation-in-promotions", "stay-vs-struck-down", "file-a-pil", "read-a-judgment", "how-a-bill-becomes-law", "ordinance", "find-the-gazette", "ask-your-mp", "caste-census-when", "find-government-data", "complain-about-a-government-service", "report-caste-discrimination", "ews-certificate", "non-creamy-layer-certificate", "check-central-obc-list", "women-reservation-act", "disability-reservation", "reservation-private-sector", "sc-sub-classification", "ninth-schedule", "reserved-seats-parliament", "rohini-commission", "mandal-commission", "check-court-case-status", "free-legal-aid", "caste-certificate-other-state", "creamy-layer-sc-st"];
 const SITEMAP_STATE_SLUGS = ["andhra-pradesh", "arunachal-pradesh", "assam", "bihar", "chhattisgarh", "goa", "gujarat", "haryana", "himachal-pradesh", "jharkhand", "karnataka", "kerala", "madhya-pradesh", "maharashtra", "manipur", "meghalaya", "mizoram", "nagaland", "odisha", "punjab", "rajasthan", "sikkim", "tamil-nadu", "telangana", "tripura", "uttar-pradesh", "uttarakhand", "west-bengal", "andaman-and-nicobar-islands", "chandigarh", "dadra-and-nagar-haveli-and-daman-and-diu", "delhi", "jammu-and-kashmir", "ladakh", "lakshadweep", "puducherry"];
+
+/**
+ * Every indexable public URL with its last change, in both editions where one
+ * exists. The XML sitemap and the IndexNow submitter (lib/indexnow.ts) share it, so
+ * search engines are told about exactly the pages the sitemap lists.
+ */
+export async function sitemapEntries(): Promise<SitemapEntry[]> {
+  const [results, policyResults, eventResults] =
+    await Promise.all([
+      db
+        .select({ story: storiesTable })
+        .from(storiesTable)
+        .innerJoin(issuesTable, eq(storiesTable.issueId, issuesTable.id))
+        .where(
+          and(
+            eq(issuesTable.status, "published"),
+            eq(storiesTable.workflowStatus, "published"),
+          ),
+        )
+        .orderBy(desc(storiesTable.updatedAt), asc(storiesTable.id)),
+      db
+        .select()
+        .from(policyRecordsTable)
+        .where(eq(policyRecordsTable.workflowStatus, "published"))
+        .orderBy(desc(policyRecordsTable.updatedAt), asc(policyRecordsTable.id)),
+      db
+        .select()
+        .from(evidenceEventsTable)
+        .where(eq(evidenceEventsTable.workflowStatus, "published"))
+        .orderBy(desc(evidenceEventsTable.updatedAt), asc(evidenceEventsTable.id)),
+    ]);
+
+  const indexableStories = results
+    .map(({ story }) => story)
+    .filter(isIndexableStory);
+  const storiesLastmod = latestDate(indexableStories.map((story) => story.updatedAt));
+  const policiesLastmod = latestDate(policyResults.map((policy) => policy.updatedAt));
+  const eventsLastmod = latestDate(eventResults.map((event) => event.updatedAt));
+
+  const topicLastmod = new Map<string, Date>();
+  for (const story of indexableStories) {
+    const current = topicLastmod.get(story.topic);
+    if (!current || story.updatedAt > current) topicLastmod.set(story.topic, story.updatedAt);
+  }
+
+  const opinionLastmod = latestDate(
+    indexableStories.filter((story) => story.kind === "Opinion").map((story) => story.updatedAt),
+  );
+  // Site pages are fully bilingual. Records get a Hindi URL only once they carry a Hindi edition;
+  // event and source pages show English database text and stay English-only.
+  const entries: SitemapEntry[] = [
+    { path: "/", lastmod: latestDate([storiesLastmod, policiesLastmod]), hi: true },
+    { path: "/archive", lastmod: storiesLastmod, hi: true },
+    { path: "/policies", lastmod: policiesLastmod, hi: true },
+    { path: "/opinion", lastmod: opinionLastmod, hi: true },
+    { path: "/topics", lastmod: storiesLastmod, hi: true },
+    { path: "/topics/open-category-competition", hi: true },
+    { path: "/timeline", lastmod: latestDate([storiesLastmod, policiesLastmod]), hi: true },
+    { path: "/events", lastmod: eventsLastmod, hi: true },
+    { path: "/data", hi: true },
+    { path: "/about", hi: true },
+    { path: "/editorial-standards", hi: true },
+    { path: "/methodology", hi: true },
+    { path: "/authors/signal-24", hi: true },
+    ...Object.values(AUTHOR_BY_TOPIC)
+      .filter((author, index, all) => all.findIndex((other) => other.slug === author.slug) === index)
+      .map((author) => ({
+        path: `/authors/${author.slug}`,
+        lastmod: latestDate(
+          indexableStories
+            .filter((story) => story.byline === author.name)
+            .map((story) => story.updatedAt),
+        ),
+        hi: true,
+      })),
+    { path: "/answers", hi: true },
+    ...SITEMAP_ANSWER_IDS.map((id) => ({ path: `/answers/${id}`, hi: true })),
+    { path: "/states", lastmod: storiesLastmod, hi: true },
+    // State profiles ship with the web app and do not change when an unrelated story does,
+    // so they carry no lastmod rather than a misleading one.
+    ...SITEMAP_STATE_SLUGS.map((slug) => ({ path: `/state/${slug}`, hi: true })),
+    { path: "/community", hi: true },
+    ...Array.from(topicLastmod, ([topic, lastmod]) => ({
+      path: `/topics/${encodeURIComponent(topic)}`,
+      lastmod,
+      hi: true,
+    })),
+    ...indexableStories.map((story) => ({
+      path: getCanonicalPath(story),
+      lastmod: story.updatedAt,
+      hi: hasStoryTranslation(story),
+    })),
+    ...policyResults.map((policy) => ({
+      path: `/policies/${policy.slug}`,
+      lastmod: policy.updatedAt,
+      hi: Boolean(policy.hi?.title && policy.hi.summary),
+    })),
+    // Single event and source pages are short reference entries served with
+    // noindex (their links are crawled from /events and the records that cite them),
+    // so they are not listed here.
+  ];
+  return entries;
+}
+
+/** Absolute URLs for sitemap entries, with the Hindi URL where the page has one. */
+export function sitemapAbsoluteUrls(entries: SitemapEntry[]) {
+  return entries.flatMap(({ path, lastmod, hi }) => [
+    { url: `${SITE_ORIGIN}${path}`, lastmod: lastmod ?? null },
+    ...(hi ? [{ url: `${SITE_ORIGIN}${hindiPath(path)}`, lastmod: lastmod ?? null }] : []),
+  ]);
+}
 
 router.get("/sitemap.xml", async (_req, res, next) => {
   try {
-    const [results, policyResults, eventResults] =
-      await Promise.all([
-        db
-          .select({ story: storiesTable })
-          .from(storiesTable)
-          .innerJoin(issuesTable, eq(storiesTable.issueId, issuesTable.id))
-          .where(
-            and(
-              eq(issuesTable.status, "published"),
-              eq(storiesTable.workflowStatus, "published"),
-            ),
-          )
-          .orderBy(desc(storiesTable.updatedAt), asc(storiesTable.id)),
-        db
-          .select()
-          .from(policyRecordsTable)
-          .where(eq(policyRecordsTable.workflowStatus, "published"))
-          .orderBy(desc(policyRecordsTable.updatedAt), asc(policyRecordsTable.id)),
-        db
-          .select()
-          .from(evidenceEventsTable)
-          .where(eq(evidenceEventsTable.workflowStatus, "published"))
-          .orderBy(desc(evidenceEventsTable.updatedAt), asc(evidenceEventsTable.id)),
-      ]);
-
-    const indexableStories = results
-      .map(({ story }) => story)
-      .filter(isIndexableStory);
-    const storiesLastmod = latestDate(indexableStories.map((story) => story.updatedAt));
-    const policiesLastmod = latestDate(policyResults.map((policy) => policy.updatedAt));
-    const eventsLastmod = latestDate(eventResults.map((event) => event.updatedAt));
-
-    const topicLastmod = new Map<string, Date>();
-    for (const story of indexableStories) {
-      const current = topicLastmod.get(story.topic);
-      if (!current || story.updatedAt > current) topicLastmod.set(story.topic, story.updatedAt);
-    }
-
-    const opinionLastmod = latestDate(
-      indexableStories.filter((story) => story.kind === "Opinion").map((story) => story.updatedAt),
-    );
-    // Site pages are fully bilingual. Records get a Hindi URL only once they carry a Hindi edition;
-    // event and source pages show English database text and stay English-only.
-    const entries: SitemapEntry[] = [
-      { path: "/", lastmod: latestDate([storiesLastmod, policiesLastmod]), hi: true },
-      { path: "/archive", lastmod: storiesLastmod, hi: true },
-      { path: "/policies", lastmod: policiesLastmod, hi: true },
-      { path: "/opinion", lastmod: opinionLastmod, hi: true },
-      { path: "/topics", lastmod: storiesLastmod, hi: true },
-      { path: "/topics/open-category-competition", hi: true },
-      { path: "/timeline", lastmod: latestDate([storiesLastmod, policiesLastmod]), hi: true },
-      { path: "/events", lastmod: eventsLastmod, hi: true },
-      { path: "/data", hi: true },
-      { path: "/about", hi: true },
-      { path: "/editorial-standards", hi: true },
-      { path: "/methodology", hi: true },
-      { path: "/authors/signal-24", hi: true },
-      ...Object.values(AUTHOR_BY_TOPIC)
-        .filter((author, index, all) => all.findIndex((other) => other.slug === author.slug) === index)
-        .map((author) => ({
-          path: `/authors/${author.slug}`,
-          lastmod: latestDate(
-            indexableStories
-              .filter((story) => story.byline === author.name)
-              .map((story) => story.updatedAt),
-          ),
-          hi: true,
-        })),
-      { path: "/answers", hi: true },
-      ...SITEMAP_ANSWER_IDS.map((id) => ({ path: `/answers/${id}`, hi: true })),
-      { path: "/states", lastmod: storiesLastmod, hi: true },
-      ...SITEMAP_STATE_SLUGS.map((slug) => ({ path: `/state/${slug}`, lastmod: storiesLastmod, hi: true })),
-      { path: "/community", hi: true },
-      ...Array.from(topicLastmod, ([topic, lastmod]) => ({
-        path: `/topics/${encodeURIComponent(topic)}`,
-        lastmod,
-        hi: true,
-      })),
-      ...indexableStories.map((story) => ({
-        path: getCanonicalPath(story),
-        lastmod: story.updatedAt,
-        hi: hasStoryTranslation(story),
-      })),
-      ...policyResults.map((policy) => ({
-        path: `/policies/${policy.slug}`,
-        lastmod: policy.updatedAt,
-        hi: Boolean(policy.hi?.title && policy.hi.summary),
-      })),
-      // Single event and source pages are short reference entries served with
-      // noindex (their links are crawled from /events and the records that cite them),
-      // so they are not listed here.
-    ];
-
+    const entries = await sitemapEntries();
     res.type("application/xml").send(
       `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">${entries.map(sitemapUrl).join("")}</urlset>`,
+    );
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * Google News sitemap: records first published in the last 48 hours (the window Google
+ * News reads), with their Hindi edition where one exists. Served at /news-sitemap.xml
+ * by the page server. Empty when nothing new was published, which is valid.
+ */
+const NEWS_WINDOW_MS = 48 * 60 * 60 * 1000;
+
+router.get("/news-sitemap.xml", async (_req, res, next) => {
+  try {
+    const rows = await db
+      .select({ story: storiesTable, issuePublishedAt: issuesTable.publishedAt })
+      .from(storiesTable)
+      .innerJoin(issuesTable, eq(storiesTable.issueId, issuesTable.id))
+      .where(
+        and(
+          eq(issuesTable.status, "published"),
+          eq(storiesTable.workflowStatus, "published"),
+        ),
+      );
+    const since = Date.now() - NEWS_WINDOW_MS;
+    const entries = rows
+      .map(({ story, issuePublishedAt }) => ({ story, publishedAt: storyPublishedAt(story, issuePublishedAt) }))
+      .filter(
+        (row): row is { story: typeof row.story; publishedAt: Date } =>
+          row.publishedAt !== null && row.publishedAt.getTime() >= since && isIndexableStory(row.story),
+      )
+      .sort((a, b) => b.publishedAt.getTime() - a.publishedAt.getTime())
+      .slice(0, 1000);
+    const newsUrl = (path: string, language: "en" | "hi", title: string, publishedAt: Date) =>
+      `<url><loc>${xmlEscape(`${SITE_ORIGIN}${path}`)}</loc><news:news><news:publication><news:name>The Signal 24</news:name><news:language>${language}</news:language></news:publication><news:publication_date>${publishedAt.toISOString()}</news:publication_date><news:title>${xmlEscape(title)}</news:title></news:news></url>`;
+    const urls = entries.flatMap(({ story, publishedAt }) => [
+      newsUrl(getCanonicalPath(story), "en", story.title, publishedAt),
+      ...(hasStoryTranslation(story) && story.hi?.title
+        ? [newsUrl(hindiPath(getCanonicalPath(story)), "hi", story.hi.title, publishedAt)]
+        : []),
+    ]);
+    res.type("application/xml").send(
+      `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">${urls.join("")}</urlset>`,
     );
   } catch (error) {
     next(error);

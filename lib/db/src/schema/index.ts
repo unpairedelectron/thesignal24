@@ -5,3 +5,4 @@ export * from "./publication";
 export * from "./evidence";
 export * from "./content-desk";
 export * from "./content-image-candidates";
+export * from "./indexnow";

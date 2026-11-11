@@ -28,6 +28,11 @@ export interface Story {
   recordDate: string | null;
   /** @nullable */
   articlePublishedAt: Date | null;
+  /**
+     * When the record's content last changed (an edit, a dated update or a byline change). Feeds dateModified and sitemap lastmod.
+     * @nullable
+     */
+  updatedAt?: Date | null;
   /** @minimum 0 */
   eventCount?: number;
   /** @minimum 0 */

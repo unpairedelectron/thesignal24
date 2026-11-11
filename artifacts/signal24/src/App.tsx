@@ -116,6 +116,7 @@ import { authorPageStructuredData, breadcrumbNode, collectionPageNode, EDITORIAL
 import { AUTHORS, authorByName, authorBySlug, authorMeta, authorPath, PEN_NAME_NOTE, type Author } from '@/lib/authors';
 import { PAGE_META } from '@/lib/page-meta';
 import { INFO_PAGES } from '@/lib/info-pages';
+import { ANSWERS_FOR_TOPIC, answerById } from '@/lib/answers';
 import { POLICY_NOTES } from '@/lib/policy-notes';
 import { illustration, imageCaptionForStory, imageForStory, imageForText, slugify, storyPath, storySeo, TOPIC_ILLUSTRATION, type IllustrationName } from '@/lib/stories';
 
@@ -1255,6 +1256,7 @@ function StoryDetail() {
   const related = (relatedQuery.data?.stories ?? []).filter((item) => item.id !== story.id && item.topic === story.topic).slice(0, 3);
   const moreRelated = related.length < 3 ? (relatedQuery.data?.stories ?? []).filter((item) => item.id !== story.id && item.topic !== story.topic && !related.includes(item)).slice(0, 3 - related.length) : [];
   const keepReading = [...related, ...moreRelated];
+  const topicAnswers = (ANSWERS_FOR_TOPIC[story.topic] ?? []).map(answerById).filter((item): item is NonNullable<ReturnType<typeof answerById>> => Boolean(item));
   const byline = label(story.byline) || (isOpinion ? t('The Signal 24 editorial board', 'द सिग्नल 24 संपादकीय बोर्ड') : t('The Signal 24 editorial desk', 'द सिग्नल 24 संपादकीय डेस्क'));
   return <main className="signal-page">
     <Header />
@@ -1324,6 +1326,10 @@ function StoryDetail() {
         <ArticleEvidenceSection storyId={story.id} />
         {story.aiDisclosure && <div className="signal-note mt-8 max-w-3xl px-5 py-4"><p className="signal-kicker text-accent">{t('How this record was made', 'यह रिकॉर्ड कैसे बना')}</p><p className="mt-2 text-sm leading-relaxed text-foreground/80" lang="en">{story.aiDisclosure}</p></div>}
       </section>
+      {topicAnswers.length > 0 && <section className="signal-container answer-related article-answers" aria-labelledby="article-answers-title">
+        <p id="article-answers-title" className="signal-kicker text-accent">{t('Answers on this', 'इस पर जवाब')}</p>
+        <div className="answers-grid mt-4">{topicAnswers.map((item) => <Link key={item.id} href={`/answers/${item.id}`} className="answer-card is-compact" data-testid={`link-article-answer-${item.id}`}><h3 className="answer-card-q">{item.question[lang]}</h3><p className="answer-card-short">{item.short[lang]}</p><span className="answer-card-more">{t('Read the answer', 'जवाब पढ़िए')} <ArrowUpRight size={14} /></span></Link>)}</div>
+      </section>}
       <section className="signal-container article-next" aria-labelledby="keep-reading-title">
         <div className="article-next-grid">
           <div className="article-next-cta">

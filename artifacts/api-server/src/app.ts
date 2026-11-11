@@ -42,7 +42,7 @@ app.get(["/api", "/api/healthz"], (_req, res) => {
 // Crawlers may fetch the public API (pages render from it), but the JSON itself
 // should never be indexed. The sitemap is the one API document meant for them.
 app.use("/api", (req, res, next) => {
-  if (req.path !== "/sitemap.xml") res.setHeader("X-Robots-Tag", "noindex");
+  if (req.path !== "/sitemap.xml" && req.path !== "/news-sitemap.xml") res.setHeader("X-Robots-Tag", "noindex");
   next();
 });
 app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());

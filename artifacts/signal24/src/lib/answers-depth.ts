@@ -5,13 +5,15 @@
  * named; re-check them whenever ANSWERS_CHECKED_ON changes.
  */
 import type { Bilingual } from './key-figures';
+import { DEPTH_MORE_A } from './answers-more-a';
+import { DEPTH_MORE_B } from './answers-more-b';
 
 export type AnswerDepth = {
   law: Bilingual;
   mistakes: { en: string[]; hi: string[] };
 };
 
-export const ANSWER_DEPTH: Record<string, AnswerDepth> = {
+const DEPTH_BASE: Record<string, AnswerDepth> = {
   'how-to-file-an-rti': {
     law: {
       en: 'The Right to Information Act, 2005 gives every citizen the right to information held by a public authority (Section 3). Under Section 6(1) a request can be made in writing or electronically, in English, Hindi or the official language of the area, and Section 6(2) says you need give no reason and no personal details beyond what is needed to contact you. If you send it to the wrong office, Section 6(3) requires that office to transfer it to the right one within five days and tell you. The Public Information Officer must reply within 30 days (Section 7(1)), or within 48 hours where the information concerns a person’s life or liberty. Applicants below the poverty line pay no fee (Section 7(5)), and if the deadline is missed the information must be supplied free of charge (Section 7(6)).',
@@ -373,6 +375,8 @@ export const ANSWER_DEPTH: Record<string, AnswerDepth> = {
     },
   },
 };
+
+export const ANSWER_DEPTH: Record<string, AnswerDepth> = { ...DEPTH_BASE, ...DEPTH_MORE_A, ...DEPTH_MORE_B };
 
 export function answerDepth(id: string | undefined) {
   return id ? ANSWER_DEPTH[id] : undefined;
