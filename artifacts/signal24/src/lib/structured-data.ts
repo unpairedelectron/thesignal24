@@ -5,7 +5,7 @@
 // repeating them inline. Paths that start with "/" (including `@id`s) are made
 // absolute against SITE_ORIGIN by useSeo's absoluteStructuredData.
 import { DEFAULT_SHARE_IMAGE, SITE_LANGUAGE, SITE_NAME, absoluteImageUrl } from './seo';
-import { authorMeta, authorPath, type Author } from './authors';
+import { authorMeta, authorPath, PEN_NAME_NOTE, type Author } from './authors';
 
 export const ORGANIZATION_ID = '/#organization';
 export const WEBSITE_ID = '/#website';
@@ -147,7 +147,7 @@ export function authorPageStructuredData(author: Author, lang: 'en' | 'hi') {
   const meta = authorMeta(author, lang);
   return siteGraph(
     webPageNode(path, { name: meta.title, description: meta.description, mainEntity: { '@id': `${path}#person` } }, 'ProfilePage'),
-    { ...personNode(author, lang), description: author.bio[lang] },
+    { ...personNode(author, lang), description: `${author.bio[lang]} ${PEN_NAME_NOTE[lang]}` },
     breadcrumbNode(path, [[lang === 'hi' ? 'परिचय' : 'About', '/about'], [author.name[lang], path]]),
   );
 }

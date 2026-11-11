@@ -125,8 +125,10 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { EvidenceSpine, TopicCabinet, TopicHero, type CabinetDrawer } from '@/components/topic-stage';
 import { TOPIC_BRIEFS, TOPIC_BRIEFS_CHECKED_ON, topicBrief, type TopicBrief, type TopicKey } from '@/lib/topic-briefs';
 import { authorPageStructuredData, breadcrumbNode, collectionPageNode, EDITORIAL_DESK_PATH, editorialDeskNode, editorialDeskRef, externalDocument, imageObject, organizationRef, placeForState, siteGraph, webPageNode, websiteRef } from '@/lib/structured-data';
-import { AUTHORS, authorByName, authorBySlug, authorMeta, authorPath, type Author } from '@/lib/authors';
+import { AUTHORS, authorByName, authorBySlug, authorMeta, authorPath, PEN_NAME_NOTE, type Author } from '@/lib/authors';
 import { PAGE_META } from '@/lib/page-meta';
+import { INFO_PAGES } from '@/lib/info-pages';
+import { POLICY_NOTES } from '@/lib/policy-notes';
 import { illustration, imageCaptionForStory, imageForStory, imageForText, slugify, storyPath, storySeo, TOPIC_ILLUSTRATION, type IllustrationName } from '@/lib/stories';
 
 const queryClient = new QueryClient();
@@ -311,45 +313,23 @@ function InfoPage({ page }: { page: 'about' | 'standards' | 'methodology' }) {
   const content = {
     about: {
       name: t('About', 'परिचय'),
-      eyebrow: t('The Signal 24 / about', 'द सिग्नल 24 / परिचय'),
       title: t(<>We read the fine print.<br /><em className="font-normal text-accent">Someone has to.</em></>, <>हम बारीक अक्षर पढ़ते हैं।<br /><em className="font-normal text-accent">किसी को तो पढ़ने हैं।</em></>),
       intro: t(PAGE_META.about.description.en, PAGE_META.about.description.hi),
-      sections: [
-        [t('Who we answer to', 'हम किसके प्रति जवाबदेह हैं'), t('Readers. Not a party, a government, a caste organisation or an advertiser. Every story carries its source so you can check us, and every correction is logged in public.', 'पाठकों के प्रति। किसी पार्टी, सरकार, जातीय संगठन या विज्ञापनदाता के प्रति नहीं। हर ख़बर के साथ उसका स्रोत है, ताकि आप हमें जाँच सकें, और हर सुधार सार्वजनिक रूप से दर्ज होता है।')],
-        [t('What we go after', 'हम किसका पीछा करते हैं'), t("Promises with deadlines that quietly expire. Reports commissioned with fanfare and buried without any. Data collected with public money and then withheld for the public’s own good, apparently. Laws passed in election season and struck down in the off-season. The gap between what the state says at a press conference and what it files in court.", "ऐसे वादे जिनकी समय-सीमा चुपचाप ख़त्म हो जाती है। धूमधाम से बनवाई गईं और बिना किसी शोर के दफ़नाई गईं रिपोर्टें। जनता के पैसे से जुटाए गए और फिर, लगता है, जनता की भलाई के लिए ही रोके गए आंकड़े। चुनावी मौसम में पास हुए और उसके बाद अदालत में रद्द हुए क़ानून। प्रेस कॉन्फ़्रेंस में कही गई बात और अदालत में दाख़िल काग़ज़ के बीच का फ़ासला।")],
-        [t('What we refuse to do', 'हम क्या नहीं करेंगे'), t("We do not target communities, rank castes or trade in outrage. There is more than enough to say about the people in charge without punching down at the people living under their decisions. Our sarcasm has a fixed address: institutions and office-holders.", "हम किसी समुदाय को निशाना नहीं बनाते, जातियों की रैंकिंग नहीं करते और ग़ुस्से का कारोबार नहीं करते। सत्ता में बैठे लोगों के बारे में कहने को इतना कुछ है कि उनके फ़ैसलों के तले जी रहे लोगों पर वार करने की ज़रूरत ही नहीं। हमारे व्यंग्य का पता तय है: संस्थाएँ और पदाधिकारी।")],
-        [t('English and Hindi', 'अंग्रेज़ी और हिंदी'), t('The Signal 24 publishes in English and Hindi. When a record’s Hindi edition is not ready, the page says so and shows the English text. We do not publish unreviewed machine translation as reporting.', 'द सिग्नल 24 अंग्रेज़ी और हिंदी दोनों में प्रकाशित होता है। जब किसी रिकॉर्ड का हिंदी संस्करण तैयार न हो, तो पेज यह साफ़ बताता है और अंग्रेज़ी पाठ दिखाता है। बिना जाँचे मशीनी अनुवाद को हम रिपोर्टिंग के तौर पर नहीं छापते।')],
-      ],
     },
     standards: {
       name: t('Editorial standards', 'संपादकीय मानक'),
-      eyebrow: t('The Signal 24 / editorial standards', 'द सिग्नल 24 / संपादकीय मानक'),
       title: t(<>Hard on power.<br /><em className="font-normal text-accent">Harder on ourselves.</em></>, <>सत्ता पर सख़्त।<br /><em className="font-normal text-accent">ख़ुद पर और सख़्त।</em></>),
       intro: t(PAGE_META.standards.description.en, PAGE_META.standards.description.hi),
-      sections: [
-        [t('Reporting', 'रिपोर्टिंग'), t('What happened, who did it and when, with the document that proves it. Allegations stay allegations until the record establishes them. We name the ministry, department or office that acted, not just “the government”.', 'क्या हुआ, किसने किया और कब, उस दस्तावेज़ के साथ जो इसे साबित करता है। आरोप तब तक आरोप ही रहता है, जब तक रिकॉर्ड उसे साबित न कर दे। हम उस मंत्रालय, विभाग या दफ़्तर का नाम लेते हैं जिसने कार्रवाई की, सिर्फ़ “सरकार” कहकर नहीं छोड़ते।')],
-        [t('Documents', 'दस्तावेज़'), t('Judgments, gazette notifications, commission reports, parliamentary answers and RTI replies are linked or identified. If a primary source is unavailable, the record says so.', 'फ़ैसले, गज़ट अधिसूचनाएँ, आयोगों की रिपोर्टें, संसद में दिए जवाब और आरटीआई के उत्तर लिंक किए जाते हैं या उनकी पहचान दी जाती है। अगर मूल स्रोत उपलब्ध नहीं है, तो रिकॉर्ड यह साफ़ कहता है।')],
-        [t('Right of reply', 'जवाब का अधिकार'), t('Before we publish a finding against a named office or official, we ask for their response and record whether they gave one. Silence is reported as silence.', 'किसी नामित दफ़्तर या अधिकारी के ख़िलाफ़ कोई निष्कर्ष छापने से पहले हम उनसे जवाब माँगते हैं और दर्ज करते हैं कि जवाब आया या नहीं। चुप्पी को चुप्पी ही लिखा जाता है।')],
-        [t('Analysis', 'विश्लेषण'), t('What the evidence supports, with the method shown. If the data cannot carry a conclusion, we do not draw it.', 'सबूत जिस बात का समर्थन करते हैं, तरीक़ा दिखाते हुए। अगर आंकड़े किसी निष्कर्ष का बोझ नहीं उठा सकते, तो हम वह निष्कर्ष नहीं निकालते।')],
-        [t('Opinion', 'राय'), t('Opinion is labelled, carries a named author or the editorial board, and is never mixed into reporting. Our opinion pieces criticise institutions and decisions, not communities.', 'राय पर साफ़ लेबल होता है, उसके साथ लेखक या संपादकीय बोर्ड का नाम होता है, और उसे रिपोर्टिंग में नहीं मिलाया जाता। हमारी राय संस्थाओं और फ़ैसलों की आलोचना करती है, समुदायों की नहीं।')],
-        [t('Tone', 'लहजा'), t('Yes, we are sarcastic. The sarcasm is aimed at power: governments, ministries, commissions, agencies and the decisions they make. Never at caste, religion, region or any community, and never at private citizens. Every jibe sits on a sourced fact; if the fact falls, the joke goes with it.', 'हाँ, हम व्यंग्य करते हैं। यह व्यंग्य सत्ता पर है: सरकारें, मंत्रालय, आयोग, एजेंसियाँ और उनके फ़ैसले। जाति, धर्म, क्षेत्र या किसी समुदाय पर कभी नहीं, और आम नागरिकों पर कभी नहीं। हर तंज़ किसी स्रोत-आधारित तथ्य पर टिका है; तथ्य गिरा, तो तंज़ भी जाएगा।')],
-        [t('Corrections and AI', 'सुधार और एआई'), t('Mistakes are corrected in public: the record says what changed and when. AI tools may help with translation, organisation or first drafts; nothing is published until an editor has checked it against the source.', 'ग़लतियाँ सार्वजनिक रूप से सुधारी जाती हैं: रिकॉर्ड बताता है कि क्या बदला और कब। अनुवाद, व्यवस्था या पहले मसौदे में एआई की मदद ली जा सकती है; लेकिन कोई भी चीज़ तब तक प्रकाशित नहीं होती, जब तक संपादक उसे स्रोत से मिलाकर जाँच न ले।')],
-      ],
     },
     methodology: {
       name: t('Methodology', 'कार्यप्रणाली'),
-      eyebrow: t('The Signal 24 / methodology', 'द सिग्नल 24 / कार्यप्रणाली'),
       title: t(<>How we check<br /><em className="font-normal text-accent">the state’s paperwork.</em></>, <>सरकारी काग़ज़ों की<br /><em className="font-normal text-accent">जाँच हम कैसे करते हैं।</em></>),
       intro: t(PAGE_META.methodology.description.en, PAGE_META.methodology.description.hi),
-      sections: [
-        [t('Source hierarchy', 'स्रोतों का क्रम'), t('Constitutional and statutory text, court judgments, gazette notifications, parliamentary records, commission reports and official statistics come first. Reporting by other outlets is used for context and is always attributed.', 'संविधान और क़ानून का पाठ, अदालती फ़ैसले, गज़ट अधिसूचनाएँ, संसदीय रिकॉर्ड, आयोगों की रिपोर्टें और आधिकारिक आंकड़े सबसे पहले आते हैं। दूसरे मीडिया संस्थानों की रिपोर्टिंग संदर्भ के लिए इस्तेमाल होती है और हमेशा उनके नाम के साथ।')],
-        [t('Verification labels', 'सत्यापन के लेबल'), t('Unverified: not yet checked against a primary source. Source-linked: tied to a named, linked source. Verified: checked line by line by the desk. The label is shown on every record.', 'असत्यापित: अभी मूल स्रोत से नहीं मिलाया गया। स्रोत से जुड़ा: किसी नामित, लिंक किए गए स्रोत से जुड़ा। सत्यापित: डेस्क ने पंक्ति-दर-पंक्ति जाँचा। यह लेबल हर रिकॉर्ड पर दिखता है।')],
-        [t('Data integrity', 'आंकड़ों की ईमानदारी'), t('Every important number carries its unit, year, geography, definition and source. Population share, reserved seats and actual representation are different quantities, and we never substitute one for another.', 'हर अहम आंकड़े के साथ उसकी इकाई, वर्ष, भूगोल, परिभाषा और स्रोत होता है। आबादी में हिस्सा, आरक्षित सीटें और वास्तविक प्रतिनिधित्व तीन अलग चीज़ें हैं, और हम एक की जगह दूसरी का इस्तेमाल कभी नहीं करते।')],
-        [t('Legal status', 'क़ानूनी स्थिति'), t('Records are marked current, proposed, challenged, stayed or struck down. A law a court has stayed is never reported as being in force.', 'रिकॉर्ड पर लिखा होता है कि नियम लागू है, प्रस्तावित है, चुनौती में है, उस पर रोक है या वह रद्द हो चुका है। जिस क़ानून पर अदालत ने रोक लगाई हो, उसे हम कभी लागू नहीं बताते।')],
-        [t('The Hindi edition', 'हिंदी संस्करण'), t('Hindi pages are translations of the same record, not separate stories. Where a Hindi edition is not ready, the page says so and shows the English text, and search engines are told not to index it as Hindi.', 'हिंदी पेज उसी रिकॉर्ड का अनुवाद हैं, अलग ख़बरें नहीं। जहाँ हिंदी संस्करण तैयार नहीं है, वहाँ पेज यह बताता है और अंग्रेज़ी पाठ दिखाता है, और सर्च इंजनों को कहा जाता है कि उसे हिंदी पेज के तौर पर इंडेक्स न करें।')],
-      ],
     },
   }[page];
+  const info = INFO_PAGES[page];
+  const eyebrow = t(info.eyebrow.en, info.eyebrow.hi);
+  const sections = info.sections.map(({ title, text }) => [t(title.en, title.hi), t(text.en, text.hi)] as const);
   const path = `/${page === 'standards' ? 'editorial-standards' : page}`;
 
   useSeo({
@@ -361,7 +341,7 @@ function InfoPage({ page }: { page: 'about' | 'standards' | 'methodology' }) {
       breadcrumbNode(path, [[content.name, path]]),
     ),
   });
-  return <main className="signal-page"><Header /><section className="signal-container pt-14 sm:pt-24"><p className="signal-kicker text-accent">{content.eyebrow}</p><h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">{content.title}</h1><p className="mt-8 max-w-2xl text-lg leading-relaxed text-muted-foreground">{content.intro}</p><PageArt name={page === 'about' ? 'magnifier-hero' : page === 'standards' ? 'court-stamp' : 'census-clipboard'} className="max-w-4xl" /></section><section className="signal-container mt-16 border-t border-foreground/20 sm:mt-24"><div className="grid divide-y divide-foreground/15 lg:grid-cols-2 lg:divide-x lg:divide-y-0">{content.sections.map(([title, text], index) => <article key={title} id={page === 'standards' && index === content.sections.length - 1 ? 'corrections' : undefined} className={`py-8 lg:px-8 ${index % 2 === 0 ? 'lg:pl-0' : 'lg:pr-0'} ${index > 1 ? 'lg:border-t lg:border-foreground/15' : ''}`}><p className="signal-kicker text-accent">{String(index + 1).padStart(2, '0')}</p><h2 className="mt-3 font-display text-3xl leading-tight">{title}</h2><p className="mt-4 max-w-xl text-[.95rem] leading-[1.8] text-muted-foreground">{text}</p></article>)}</div></section>{page === 'about' && <AuthorsSection />}</main>;
+  return <main className="signal-page"><Header /><section className="signal-container pt-14 sm:pt-24"><p className="signal-kicker text-accent">{eyebrow}</p><h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">{content.title}</h1><p className="mt-8 max-w-2xl text-lg leading-relaxed text-muted-foreground">{content.intro}</p><PageArt name={page === 'about' ? 'magnifier-hero' : page === 'standards' ? 'court-stamp' : 'census-clipboard'} className="max-w-4xl" /></section><section className="signal-container mt-16 border-t border-foreground/20 sm:mt-24"><div className="grid divide-y divide-foreground/15 lg:grid-cols-2 lg:divide-x lg:divide-y-0">{sections.map(([title, text], index) => <article key={title} id={page === 'standards' && index === sections.length - 1 ? 'corrections' : undefined} className={`py-8 lg:px-8 ${index % 2 === 0 ? 'lg:pl-0' : 'lg:pr-0'} ${index > 1 ? 'lg:border-t lg:border-foreground/15' : ''}`}><p className="signal-kicker text-accent">{String(index + 1).padStart(2, '0')}</p><h2 className="mt-3 font-display text-3xl leading-tight">{title}</h2><p className="mt-4 max-w-xl text-[.95rem] leading-[1.8] text-muted-foreground">{text}</p></article>)}</div></section>{page === 'about' && <AuthorsSection />}</main>;
 }
 
 function evidenceTypeLabel(value: DecisionImpactEvidenceType) {
@@ -1102,6 +1082,7 @@ function PolicyDetail() {
   const { data: rawRecord, isLoading, isError, refetch } = useGetPolicy(slug, { query: { enabled: Boolean(slug), queryKey: getGetPolicyQueryKey(slug) } });
   const lang = useLang();
   const record = useMemo(() => rawRecord ? localizePolicy(rawRecord, lang) : undefined, [rawRecord, lang]);
+  const note = record ? POLICY_NOTES[record.slug] : undefined;
   const structuredData = useMemo(() => {
     if (!record) return null;
     const path = record.canonicalPath;
@@ -1170,6 +1151,13 @@ function PolicyDetail() {
         <div><p className="signal-kicker text-accent">{t("Legal basis", "क़ानूनी आधार")}</p><p className="mt-3 text-base leading-relaxed" data-testid="text-policy-legal-basis">{record.legalBasis}</p></div>
         <div><p className="signal-kicker text-accent">{t("Court status", "अदालत में स्थिति")}</p><p className="mt-3 text-base leading-relaxed" data-testid="text-policy-court-status">{record.courtStatus}</p></div>
       </section>
+      {note && <section className="grid gap-8 border-b border-foreground/20 py-10 sm:py-14 lg:grid-cols-[.7fr_1.3fr] lg:gap-16" data-testid="section-policy-why">
+        <div><p className="signal-kicker text-accent">{t('Why it matters', 'यह क्यों मायने रखता है')}</p><h2 className="mt-3 font-display text-4xl leading-[.96]">{t('What this changed,', 'इससे क्या बदला,')}<br /><em className="font-normal text-accent">{t('and what it left open.', 'और क्या खुला छोड़ा।')}</em></h2></div>
+        <div>
+          <p className="text-lg leading-[1.75]">{t(note.why.en, note.why.hi)}</p>
+          <div className="record-panel is-questions mt-8"><p className="record-panel-title">{t('Questions still unanswered', 'जिन सवालों का जवाब अब तक नहीं')}</p><ol>{note.questions.map((question, index) => <li key={question.en}><span className="record-panel-number" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span><span>{t(question.en, question.hi)}</span></li>)}</ol></div>
+        </div>
+      </section>}
       <section className="pt-10 sm:pt-14">
         <div className="flex flex-col justify-between gap-4 border-b border-foreground/20 pb-5 sm:flex-row sm:items-end"><div><p className="signal-kicker text-accent">{t("02 / Primary sources", "02 / मूल स्रोत")}</p><h2 className="mt-3 font-display text-4xl leading-none">{t("Read the documents.", "दस्तावेज़ पढ़िए।")}</h2></div><p className="max-w-sm text-sm leading-relaxed text-muted-foreground">{t("Publication and retrieval dates stay attached to every source, so the record can be rechecked at any time.", "हर स्रोत के साथ उसके प्रकाशन और प्राप्ति की तारीख़ जुड़ी रहती है, ताकि रिकॉर्ड कभी भी दोबारा जाँचा जा सके।")}</p></div>
         {record.sources.length === 0 ? <div className="pt-8"><EmptyState title={t("No sources are attached to this record.", "इस रिकॉर्ड से कोई स्रोत नहीं जुड़ा है।")} text={t("This policy record is not ready to carry a source claim.", "यह नीति रिकॉर्ड अभी किसी स्रोत-आधारित दावे के लिए तैयार नहीं है।")} /></div> : <div className="grid gap-4 py-8 md:grid-cols-2">{record.sources.map((source) => <PolicySourceCard key={source.id} source={source} />)}</div>}
@@ -1656,6 +1644,7 @@ function AuthorsSection({ exclude }: { exclude?: string }) {
   const people = AUTHORS.filter((author) => author.slug !== exclude);
   return <section className="signal-container hp-section" aria-labelledby="authors-title">
     <SectionHead id="authors-title" kicker={t('Who writes here', 'यहाँ कौन लिखता है')} title={exclude ? t(<>The rest of <em>the desk.</em></>, <>डेस्क के <em>बाक़ी लोग।</em></>) : t(<>Names on the record. <em>Answerable for it.</em></>, <>रिकॉर्ड पर नाम। <em>उसकी जवाबदेही के साथ।</em></>)} />
+    <p className="mt-5 max-w-3xl text-[.95rem] leading-relaxed text-muted-foreground">{t('These are pen names of The Signal 24 desk, one for each beat, not the names of individual journalists. Records are drafted with AI assistance from the sources they cite and corrected in public.', 'ये द सिग्नल 24 डेस्क के उपनाम हैं, हर बीट के लिए एक, अलग-अलग पत्रकारों के नाम नहीं। रिकॉर्ड उन स्रोतों से एआई की मदद से लिखे जाते हैं जिनका वे हवाला देते हैं, और सुधार सार्वजनिक रूप से किए जाते हैं।')} <Link href="/editorial-standards" className="text-accent underline underline-offset-2">{t('How bylines work', 'नाम कैसे तय होते हैं')}</Link></p>
     <ul className="author-grid">
       {people.map((author) => <li key={author.slug}><Link href={authorPath(author)} className="author-card group" data-testid={`link-author-${author.slug}`}>
         <span className="author-monogram is-small" aria-hidden="true">{authorInitials(author)}</span>
@@ -1688,6 +1677,7 @@ function AuthorProfilePage({ author }: { author: Author }) {
           <p className="signal-kicker text-accent">{author.role[lang]} · {t('The Signal 24', 'द सिग्नल 24')}</p>
           <h1 className="author-name" data-testid="heading-author">{author.name[lang]}</h1>
           <p className="author-beat">{author.beat[lang]}</p>
+          <p className="author-pen-note" data-testid="text-pen-name-note">{PEN_NAME_NOTE[lang]}</p>
         </div>
       </div>
     </section>
@@ -1730,7 +1720,7 @@ function EditorialDeskPage() {
       breadcrumbNode(EDITORIAL_DESK_PATH, [[t('Editorial desk', 'संपादकीय डेस्क'), EDITORIAL_DESK_PATH]]),
     ),
   });
-  return <main className="signal-page"><Header /><section className="signal-container pt-14 sm:pt-24"><p className="signal-kicker text-accent">{t('The Signal 24 / editorial desk', 'द सिग्नल 24 / संपादकीय डेस्क')}</p><h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">{t(<>The desk<br /><em className="font-normal text-accent">that signs off.</em></>, <>वह डेस्क,<br /><em className="font-normal text-accent">जो ज़िम्मेदारी लेती है।</em></>)}</h1><p className="mt-8 max-w-2xl text-lg leading-relaxed text-muted-foreground">{description}</p></section><section className="signal-container mt-16 border-y border-foreground/20 py-10 sm:mt-24 sm:py-14"><div className="grid gap-8 lg:grid-cols-[.7fr_1.3fr]"><div><p className="signal-kicker text-accent">{t('A byline is a responsibility', 'नाम का मतलब ज़िम्मेदारी')}</p><h2 className="mt-3 font-display text-4xl leading-tight">{t('Who answers for each record.', 'हर रिकॉर्ड के लिए कौन जवाबदेह है।')}</h2></div><p className="max-w-2xl text-base leading-relaxed text-muted-foreground">{t('Every record carries the name of the correspondent who wrote it, and the desk checks it before it goes out. Editorials are signed by the editorial board. When we are wrong, the correction appears on the record with the date it was made.', 'हर रिकॉर्ड पर उसे लिखने वाले संवाददाता का नाम होता है, और छपने से पहले डेस्क उसे जाँचती है। संपादकीय पर संपादकीय बोर्ड के हस्ताक्षर होते हैं। जब हम ग़लत होते हैं, तो सुधार उसी रिकॉर्ड पर तारीख़ के साथ दर्ज होता है।')}</p></div></section><AuthorsSection /></main>;
+  return <main className="signal-page"><Header /><section className="signal-container pt-14 sm:pt-24"><p className="signal-kicker text-accent">{t('The Signal 24 / editorial desk', 'द सिग्नल 24 / संपादकीय डेस्क')}</p><h1 className="mt-4 max-w-5xl font-display text-6xl leading-[.9] tracking-[-.06em] sm:text-8xl">{t(<>The desk<br /><em className="font-normal text-accent">that signs off.</em></>, <>वह डेस्क,<br /><em className="font-normal text-accent">जो ज़िम्मेदारी लेती है।</em></>)}</h1><p className="mt-8 max-w-2xl text-lg leading-relaxed text-muted-foreground">{description}</p></section><section className="signal-container mt-16 border-y border-foreground/20 py-10 sm:mt-24 sm:py-14"><div className="grid gap-8 lg:grid-cols-[.7fr_1.3fr]"><div><p className="signal-kicker text-accent">{t('A byline is a responsibility', 'नाम का मतलब ज़िम्मेदारी')}</p><h2 className="mt-3 font-display text-4xl leading-tight">{t('Who answers for each record.', 'हर रिकॉर्ड के लिए कौन जवाबदेह है।')}</h2></div><p className="max-w-2xl text-base leading-relaxed text-muted-foreground">{t('Every record carries the pen name of the desk that answers for it, a linked primary source and a verification label. Editorials are signed by the editorial board. When we are wrong, the correction appears on the record with the date it was made.', 'हर रिकॉर्ड पर उस डेस्क का उपनाम होता है जो उसके लिए जवाबदेह है, साथ में मूल स्रोत का लिंक और सत्यापन का लेबल। संपादकीय पर संपादकीय बोर्ड के हस्ताक्षर होते हैं। जब हम ग़लत होते हैं, तो सुधार उसी रिकॉर्ड पर तारीख़ के साथ दर्ज होता है।')}</p></div></section><AuthorsSection /></main>;
 }
 
 

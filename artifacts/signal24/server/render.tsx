@@ -19,14 +19,17 @@ import type {
 } from '@workspace/api-client-react';
 import { RichBody, plainText } from '../src/components/rich-body';
 import { ANSWERS, ANSWER_CATEGORIES, answerById } from '../src/lib/answers';
-import { AUTHORS, authorByName, authorBySlug, authorMeta, authorPath, type Author } from '../src/lib/authors';
+import { answerDepth } from '../src/lib/answers-depth';
+import { AUTHORS, authorByName, authorBySlug, authorMeta, authorPath, PEN_NAME_NOTE, type Author } from '../src/lib/authors';
+import { INFO_PAGES } from '../src/lib/info-pages';
 import { localizePolicy, localizeStory, translateLabel, type LocalizedStory } from '../src/lib/i18n';
 import { PAGE_META, type PageKey } from '../src/lib/page-meta';
+import { POLICY_NOTES } from '../src/lib/policy-notes';
 import { localizePath, setActiveLang, stripLangPrefix, type Lang, type SeoConfig } from '../src/lib/seo';
 import { REGIONS, regionBySlug, regionSlug, STATE_PROFILES, stateMeta, storyConcerns } from '../src/lib/states';
 import { storyPath, storySeo } from '../src/lib/stories';
 import { authorPageStructuredData } from '../src/lib/structured-data';
-import { TOPIC_BRIEFS, topicBrief } from '../src/lib/topic-briefs';
+import { TOPIC_BRIEFS, topicBrief, type TopicBrief } from '../src/lib/topic-briefs';
 import { ApiReader } from './api';
 import { buildHead, esc, type PageHtml } from './html';
 
@@ -159,7 +162,7 @@ ${authorsSection(lang)}`,
 
 function authorsSection(lang: Lang, exclude?: string) {
   const people = AUTHORS.filter((author) => author.slug !== exclude);
-  return `<section><h2>${esc(tr(lang, 'Who writes here', 'यहाँ कौन लिखता है'))}</h2><ul class="ssr-list">${people.map((author) => `<li class="ssr-item"><h3>${link(authorPath(author), author.name[lang], lang)}</h3><p class="ssr-kicker">${esc(author.role[lang])}</p><p>${esc(author.beat[lang])}</p></li>`).join('')}</ul></section>`;
+  return `<section><h2>${esc(tr(lang, 'Who writes here', 'यहाँ कौन लिखता है'))}</h2><p>${esc(tr(lang, 'These are pen names of The Signal 24 desk, one for each beat, not the names of individual journalists. Records are drafted with AI assistance from the sources they cite and corrected in public.', 'ये द सिग्नल 24 डेस्क के उपनाम हैं, हर बीट के लिए एक, अलग-अलग पत्रकारों के नाम नहीं। रिकॉर्ड उन स्रोतों से एआई की मदद से लिखे जाते हैं जिनका वे हवाला देते हैं, और सुधार सार्वजनिक रूप से किए जाते हैं।'))} ${link('/editorial-standards', tr(lang, 'How bylines work', 'नाम कैसे तय होते हैं'), lang)}</p><ul class="ssr-list">${people.map((author) => `<li class="ssr-item"><h3>${link(authorPath(author), author.name[lang], lang)}</h3><p class="ssr-kicker">${esc(author.role[lang])}</p><p>${esc(author.beat[lang])}</p></li>`).join('')}</ul></section>`;
 }
 
 async function listingPage(ctx: Ctx, key: PageKey, path: string, pick: (stories: LocalizedStory[]) => LocalizedStory[]): Promise<Page> {
@@ -229,6 +232,7 @@ async function policyPage(ctx: Ctx, slug: string, requestedPath: string): Promis
     return notFound(ctx);
   }
   const record = localizePolicy(raw, lang);
+  const note = POLICY_NOTES[record.slug];
   const rows: Array<[string, string, string | null | undefined]> = [
     ['Authority', 'प्राधिकरण', record.authority],
     ['Sector', 'क्षेत्र', record.sector],
@@ -254,6 +258,7 @@ async function policyPage(ctx: Ctx, slug: string, requestedPath: string): Promis
 <h1>${esc(record.title)}</h1>
 <p class="ssr-lede">${esc(record.summary)}</p>
 <dl class="ssr-facts">${rows.filter(([, , value]) => value).map(([en, hi, value]) => `<dt>${esc(tr(lang, en, hi))}</dt><dd>${esc(value)}</dd>`).join('')}</dl>
+${note ? `<h2>${esc(tr(lang, 'Why it matters', 'यह क्यों मायने रखता है'))}</h2><p>${esc(note.why[lang])}</p><h2>${esc(tr(lang, 'Questions still unanswered', 'जिन सवालों का जवाब अब तक नहीं'))}</h2><ul>${note.questions.map((question) => `<li>${esc(question[lang])}</li>`).join('')}</ul>` : ''}
 ${sources ? `<h2>${esc(tr(lang, 'Sources', 'स्रोत'))}</h2><ul>${sources}</ul>` : ''}
 </article>`,
   };
@@ -272,6 +277,13 @@ async function topicsPage(ctx: Ctx): Promise<Page> {
   };
 }
 
+/** The brief that opens a topic file: the state of play and the questions still unanswered. */
+function briefBody(brief: TopicBrief, lang: Lang) {
+  const play = brief.stateOfPlay.map((item) => `<li><strong>${esc(item.when)}</strong> — ${esc(item.text[lang])}</li>`).join('');
+  const questions = brief.questions.map((question) => `<li>${esc(question[lang])}</li>`).join('');
+  return `<p class="ssr-lede"><strong>${esc(brief.headline[lang])}</strong> ${esc(brief.accent[lang])}</p>${play ? `<h2>${esc(tr(lang, 'The state of play', 'अभी की स्थिति'))}</h2><ul>${play}</ul>` : ''}${questions ? `<h2>${esc(tr(lang, 'Questions still unanswered', 'जिन सवालों का जवाब अब तक नहीं'))}</h2><ul>${questions}</ul>` : ''}`;
+}
+
 async function topicPage(ctx: Ctx, slug: string): Promise<Page | RenderResult> {
   const { lang } = ctx;
   let topic: string;
@@ -286,7 +298,7 @@ async function topicPage(ctx: Ctx, slug: string): Promise<Page | RenderResult> {
   const name = `${translateLabel(topic, lang) || tr(lang, 'Topic', 'विषय')} — ${tr(lang, 'The Signal 24', 'द सिग्नल 24')}`;
   return {
     seo: { title: name, description: brief.standfirst[lang], canonicalPath: `/topics/${slug}` },
-    body: `${head(lang, tr(lang, 'Topic file', 'विषय फ़ाइल'), translateLabel(topic, lang), brief.standfirst[lang])}${storyList(records, lang)}`,
+    body: `${head(lang, tr(lang, 'Topic file', 'विषय फ़ाइल'), translateLabel(topic, lang), brief.standfirst[lang])}${briefBody(brief, lang)}<h2>${esc(tr(lang, 'Records', 'रिकॉर्ड'))}</h2>${storyList(records, lang)}`,
   };
 }
 
@@ -297,7 +309,7 @@ async function openCategoryPage(ctx: Ctx): Promise<Page> {
   const records = newestFirst(await publishedStories(ctx)).filter((story) => story.verificationStatus !== 'unverified' && /\b(open|unreserved|general.?category|ugc|ews|economically weaker sections)\b/i.test(`${story.title} ${story.dek} ${story.source}`));
   return {
     seo: { title: m.title, description: m.description, canonicalPath: '/topics/open-category-competition' },
-    body: `${head(lang, tr(lang, 'Topic file', 'विषय फ़ाइल'), m.title, brief.standfirst[lang])}${storyList(records, lang)}`,
+    body: `${head(lang, tr(lang, 'Topic file', 'विषय फ़ाइल'), m.title, brief.standfirst[lang])}${briefBody(brief, lang)}<h2>${esc(tr(lang, 'Records', 'रिकॉर्ड'))}</h2>${storyList(records, lang)}`,
   };
 }
 
@@ -331,7 +343,7 @@ async function eventPage(ctx: Ctx, id: number): Promise<Page | RenderResult> {
       description: detail.event.summary || 'A published event record with explicitly linked articles and source documents.',
       canonicalPath: `/events/${id}`,
       translated: false,
-      robots: 'index, follow',
+      robots: 'noindex, follow',
     },
     body: `<article class="ssr-article" lang="en"><nav class="ssr-crumbs">${link('/events', tr(lang, 'Events and evidence', 'घटनाएँ और सबूत'), lang)}</nav><p class="ssr-meta">${time(detail.event.recordDate, lang)}</p><h1>${esc(detail.event.title)}</h1><p class="ssr-lede">${esc(detail.event.summary)}</p>${sources ? `<h2>${esc(tr(lang, 'Sources', 'स्रोत'))}</h2><ul>${sources}</ul>` : ''}${articles ? `<h2>${esc(tr(lang, 'Reporting', 'रिपोर्टिंग'))}</h2><ul>${articles}</ul>` : ''}</article>`,
   };
@@ -349,7 +361,7 @@ async function sourcePage(ctx: Ctx, id: number): Promise<Page | RenderResult> {
       description: `${source.publisher} source document record with publication metadata and explicit event/article links.`,
       canonicalPath: `/sources/${id}`,
       translated: false,
-      robots: 'index, follow',
+      robots: 'noindex, follow',
     },
     body: `<article class="ssr-article" lang="en"><p class="ssr-kicker">${esc(source.publisher)}${source.publicationDate ? ` · ${time(source.publicationDate, lang)}` : ''}</p><h1>${esc(source.title)}</h1>${source.sourceUrl ? `<p><a href="${esc(source.sourceUrl)}" rel="noopener noreferrer">${esc(source.sourceUrl)}</a></p>` : ''}${events ? `<h2>${esc(tr(lang, 'Events this source supports', 'घटनाएँ जिनका यह स्रोत समर्थन करता है'))}</h2><ul>${events}</ul>` : ''}</article>`,
   };
@@ -371,10 +383,11 @@ function answerPage(ctx: Ctx, id: string): Page | RenderResult {
   if (!answer || !ANSWER_CATEGORIES.some((item) => item.id === answer.category)) return notFound(ctx);
   const path = `/answers/${id}`;
   const name = `${answer.question[lang]} — ${tr(lang, 'The Signal 24', 'द सिग्नल 24')}`;
+  const depth = answerDepth(id);
   const related = (answer.related ?? []).map(answerById).filter((item): item is NonNullable<typeof item> => Boolean(item));
   return {
     seo: { title: name, description: answer.short[lang], canonicalPath: path, robots: 'index, follow' },
-    body: `<article class="ssr-article"><nav class="ssr-crumbs">${link('/answers', tr(lang, 'Answers', 'जवाब'), lang)}</nav><h1>${esc(answer.question[lang])}</h1><p class="ssr-lede">${esc(answer.short[lang])}</p><h2>${esc(tr(lang, 'The hard truth', 'कड़वा सच'))}</h2><p>${esc(answer.truth[lang])}</p><h2>${esc(tr(lang, 'What you can do', 'आप क्या कर सकते हैं'))}</h2><ol>${answer.steps[lang].map((step) => `<li>${esc(step)}</li>`).join('')}</ol><h2>${esc(tr(lang, 'Official sources', 'आधिकारिक स्रोत'))}</h2><ul>${answer.sources.map((source) => `<li><a href="${esc(source.url)}" rel="noopener noreferrer">${esc(source.name)}</a></li>`).join('')}</ul>${related.length ? `<h2>${esc(tr(lang, 'Related answers', 'जुड़े जवाब'))}</h2><ul>${related.map((item) => `<li>${link(`/answers/${item.id}`, item.question[lang], lang)}</li>`).join('')}</ul>` : ''}</article>`,
+    body: `<article class="ssr-article"><nav class="ssr-crumbs">${link('/answers', tr(lang, 'Answers', 'जवाब'), lang)}</nav><h1>${esc(answer.question[lang])}</h1><p class="ssr-lede">${esc(answer.short[lang])}</p><h2>${esc(tr(lang, 'The hard truth', 'कड़वा सच'))}</h2><p>${esc(answer.truth[lang])}</p>${depth ? `<h2>${esc(tr(lang, 'What the law actually says', 'क़ानून असल में क्या कहता है'))}</h2><p>${esc(depth.law[lang])}</p>` : ''}<h2>${esc(tr(lang, 'What you can do', 'आप क्या कर सकते हैं'))}</h2><ol>${answer.steps[lang].map((step) => `<li>${esc(step)}</li>`).join('')}</ol>${depth ? `<h2>${esc(tr(lang, 'Where people get caught out', 'लोग कहाँ चूक जाते हैं'))}</h2><ul>${depth.mistakes[lang].map((item) => `<li>${esc(item)}</li>`).join('')}</ul>` : ''}<h2>${esc(tr(lang, 'Official sources', 'आधिकारिक स्रोत'))}</h2><ul>${answer.sources.map((source) => `<li><a href="${esc(source.url)}" rel="noopener noreferrer">${esc(source.name)}</a></li>`).join('')}</ul>${related.length ? `<h2>${esc(tr(lang, 'Related answers', 'जुड़े जवाब'))}</h2><ul>${related.map((item) => `<li>${link(`/answers/${item.id}`, item.question[lang], lang)}</li>`).join('')}</ul>` : ''}</article>`,
   };
 }
 
@@ -437,14 +450,16 @@ async function authorPage(ctx: Ctx, author: Author): Promise<Page> {
   const am = authorMeta(author, lang);
   return {
     seo: { title: am.title, description: am.description, canonicalPath: authorPath(author), type: 'profile', structuredData: authorPageStructuredData(author, lang) },
-    body: `<nav class="ssr-crumbs">${link('/about', tr(lang, 'About', 'परिचय'), lang)}</nav>${head(lang, author.role[lang], author.name[lang], author.beat[lang])}<section><h2>${esc(tr(lang, 'About', 'परिचय'))}</h2><p>${esc(author.bio[lang])}</p><h2>${esc(tr(lang, 'Before a record goes out under this name', 'इस नाम से रिकॉर्ड छपने से पहले'))}</h2><p>${esc(author.method[lang])}</p></section><section><h2>${esc(tr(lang, 'On the record', 'रिकॉर्ड पर'))}</h2>${storyList(records, lang)}</section>${authorsSection(lang, author.slug)}`,
+    body: `<nav class="ssr-crumbs">${link('/about', tr(lang, 'About', 'परिचय'), lang)}</nav>${head(lang, author.role[lang], author.name[lang], author.beat[lang])}<p class="ssr-note">${esc(PEN_NAME_NOTE[lang])}</p><section><h2>${esc(tr(lang, 'About', 'परिचय'))}</h2><p>${esc(author.bio[lang])}</p><h2>${esc(tr(lang, 'Before a record goes out under this name', 'इस नाम से रिकॉर्ड छपने से पहले'))}</h2><p>${esc(author.method[lang])}</p></section><section><h2>${esc(tr(lang, 'On the record', 'रिकॉर्ड पर'))}</h2>${storyList(records, lang)}</section>${authorsSection(lang, author.slug)}`,
   };
 }
 
 function infoPage(ctx: Ctx, key: 'about' | 'standards' | 'methodology', path: string): Page {
   const { lang } = ctx;
   const m = meta(key, lang);
-  return { seo: { title: m.title, description: m.description, canonicalPath: path }, body: `${head(lang, 'The Signal 24', m.title, m.description)}${key === 'about' ? authorsSection(lang) : ''}` };
+  const info = INFO_PAGES[key];
+  const sections = info.sections.map((section, index) => `<section${key === 'standards' && index === info.sections.length - 1 ? ' id="corrections"' : ''}><h2>${esc(section.title[lang])}</h2><p>${esc(section.text[lang])}</p></section>`).join('');
+  return { seo: { title: m.title, description: m.description, canonicalPath: path }, body: `${head(lang, info.eyebrow[lang], m.title, m.description)}${sections}${key === 'about' ? authorsSection(lang) : ''}` };
 }
 
 function utilityPage(ctx: Ctx, key: 'search' | 'evidenceSearch'): Page {

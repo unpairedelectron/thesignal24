@@ -466,7 +466,9 @@ export function EvidenceEventDetailPage() {
     description: event?.event.summary || "A published event record with explicitly linked articles and source documents.",
     canonicalPath: event ? `/events/${eventId}` : undefined,
     translated: false,
-    robots: event ? "index, follow" : "noindex, follow",
+    // Single events and source records are short reference entries: crawlable for
+    // their links, kept out of the index. /events and /timeline carry them in context.
+    robots: "noindex, follow",
     structuredData: event ? eventStructuredData(eventId, event) : undefined,
   });
 
@@ -561,7 +563,8 @@ export function EvidenceSourceDetailPage() {
       : "A source document record and its explicitly linked published events and articles.",
     canonicalPath: source ? `/sources/${sourceId}` : undefined,
     translated: false,
-    robots: source ? "index, follow" : "noindex, follow",
+    // Reference entry: crawlable for its links, kept out of the index (see the event page).
+    robots: "noindex, follow",
     structuredData: data && source ? sourceStructuredData(sourceId, data) : undefined,
   });
 
