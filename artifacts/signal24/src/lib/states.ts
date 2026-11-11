@@ -4,6 +4,7 @@
  * every other state says plainly that we have not yet published a sourced record.
  */
 import type { Bilingual } from './key-figures';
+import { stateNameKey } from './state-map';
 
 export type Region = { name: string; hi: string; kind: 'state' | 'ut' };
 
@@ -151,3 +152,31 @@ export function regionSlug(name: string) {
 export function regionBySlug(slug: string | undefined) {
   return REGIONS.find((region) => regionSlug(region.name) === slug);
 }
+
+/** Does a record concern this state: tagged with it, or naming it in its title, dek or body? */
+export function storyConcerns(story: { state?: string | null; title: string; dek: string; body?: string | null }, region: Region) {
+  if (story.state && stateNameKey(story.state) === stateNameKey(region.name)) return true;
+  // Court names are not mentions of a state ("Punjab and Haryana High Court").
+  const text = `${story.title} ${story.dek} ${story.body ?? ''}`.replace(/Punjab and Haryana High Court/gi, '');
+  return new RegExp(`\\b${region.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i').test(text);
+}
+
+/**
+ * Title, description and robots for /state/:slug. Shared by the page and the page server.
+ * Thin pages (no profile, no record) stay out of search until there is something to say.
+ */
+export function stateMeta(region: Region, hasRecords: boolean, lang: 'en' | 'hi') {
+  const profile = STATE_PROFILES[region.name];
+  const name = lang === 'hi' ? region.hi : region.name;
+  return {
+    name,
+    title: `${name} — ${lang === 'hi' ? 'द सिग्नल 24' : 'The Signal 24'}`,
+    description: profile
+      ? profile.summary[lang]
+      : lang === 'hi'
+        ? `${name} पर आरक्षण क़ानून, अदालती मामले और रिकॉर्ड, और सार्वजनिक रिकॉर्ड में अब भी क्या ग़ायब है।`
+        : `Reservation laws, court cases and records on ${name}, and what is still missing from the public record.`,
+    robots: profile || hasRecords ? 'index, follow' : 'noindex, follow',
+  };
+}
+

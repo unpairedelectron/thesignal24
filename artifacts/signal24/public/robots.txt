@@ -2,8 +2,12 @@
 #
 # Public reporting, records, sources and policy pages are open to search engines
 # and AI answer engines so readers can find and cite the original record.
-# The private editorial desk (/editor) and the JSON API (/api/) are not for
-# crawling, except the API-generated sitemap.
+# The private editorial desk (/editor, /api/editor) is not for crawling.
+#
+# The public JSON API (/api/) stays crawlable on purpose: every page loads its
+# records from it, and Googlebot obeys robots.txt for those requests too. A
+# blocked /api/ means search engines render empty pages. The API answers with
+# "X-Robots-Tag: noindex", so the JSON itself never appears in results.
 #
 # Crawlers obey only the most specific group that names them, so every named
 # group below repeats the same rules as the default group.
@@ -11,59 +15,59 @@
 # --- Default: all crawlers (Googlebot, Bingbot, Applebot, DuckDuckBot, etc.) ---
 User-agent: *
 Allow: /
-Allow: /api/sitemap.xml
 Disallow: /editor
-Disallow: /api/
+Disallow: /api/editor
+Disallow: /api/__clerk
 
 # --- AI search / answer engines (index pages so answers can cite and link them) ---
 User-agent: OAI-SearchBot
 Allow: /
-Allow: /api/sitemap.xml
 Disallow: /editor
-Disallow: /api/
+Disallow: /api/editor
+Disallow: /api/__clerk
 
 User-agent: Claude-SearchBot
 Allow: /
-Allow: /api/sitemap.xml
 Disallow: /editor
-Disallow: /api/
+Disallow: /api/editor
+Disallow: /api/__clerk
 
 User-agent: PerplexityBot
 Allow: /
-Allow: /api/sitemap.xml
 Disallow: /editor
-Disallow: /api/
+Disallow: /api/editor
+Disallow: /api/__clerk
 
 User-agent: DuckAssistBot
 Allow: /
-Allow: /api/sitemap.xml
 Disallow: /editor
-Disallow: /api/
+Disallow: /api/editor
+Disallow: /api/__clerk
 
 # --- AI user-initiated fetches (a reader asked an assistant to open a page) ---
 User-agent: ChatGPT-User
 Allow: /
-Allow: /api/sitemap.xml
 Disallow: /editor
-Disallow: /api/
+Disallow: /api/editor
+Disallow: /api/__clerk
 
 User-agent: Claude-User
 Allow: /
-Allow: /api/sitemap.xml
 Disallow: /editor
-Disallow: /api/
+Disallow: /api/editor
+Disallow: /api/__clerk
 
 User-agent: Perplexity-User
 Allow: /
-Allow: /api/sitemap.xml
 Disallow: /editor
-Disallow: /api/
+Disallow: /api/editor
+Disallow: /api/__clerk
 
 User-agent: MistralAI-User
 Allow: /
-Allow: /api/sitemap.xml
 Disallow: /editor
-Disallow: /api/
+Disallow: /api/editor
+Disallow: /api/__clerk
 
 # --- AI model training crawlers and opt-out tokens ---
 # Allowed by default. This is a publisher policy choice: to opt out of model
@@ -71,44 +75,44 @@ Disallow: /api/
 # "Disallow: /" in the groups below only.
 User-agent: GPTBot
 Allow: /
-Allow: /api/sitemap.xml
 Disallow: /editor
-Disallow: /api/
+Disallow: /api/editor
+Disallow: /api/__clerk
 
 User-agent: ClaudeBot
 Allow: /
-Allow: /api/sitemap.xml
 Disallow: /editor
-Disallow: /api/
+Disallow: /api/editor
+Disallow: /api/__clerk
 
 User-agent: Google-Extended
 Allow: /
-Allow: /api/sitemap.xml
 Disallow: /editor
-Disallow: /api/
+Disallow: /api/editor
+Disallow: /api/__clerk
 
 User-agent: Applebot-Extended
 Allow: /
-Allow: /api/sitemap.xml
 Disallow: /editor
-Disallow: /api/
+Disallow: /api/editor
+Disallow: /api/__clerk
 
 User-agent: CCBot
 Allow: /
-Allow: /api/sitemap.xml
 Disallow: /editor
-Disallow: /api/
+Disallow: /api/editor
+Disallow: /api/__clerk
 
 User-agent: Meta-ExternalAgent
 Allow: /
-Allow: /api/sitemap.xml
 Disallow: /editor
-Disallow: /api/
+Disallow: /api/editor
+Disallow: /api/__clerk
 
 User-agent: Amazonbot
 Allow: /
-Allow: /api/sitemap.xml
 Disallow: /editor
-Disallow: /api/
+Disallow: /api/editor
+Disallow: /api/__clerk
 
 Sitemap: https://thesignal24.com/sitemap.xml

@@ -38,6 +38,15 @@ A source-first public-interest publication and research archive covering UGC equ
 - Production web and API requests share one origin; the browser calls `/api` rather than a hard-coded API host.
 - Canonical metadata is generated at runtime because a literal root canonical in the Vite HTML entry can break production builds. Canonicals, `og:url`, share images and sitemap URLs always use the fixed site origin (`artifacts/signal24/src/lib/seo.ts`, `SITE_ORIGIN` in `artifacts/api-server/src/routes/publication.ts`), never the request host, so mirror hosts such as `*.replit.app` don't create duplicate content.
 
+## Search engines: server-rendered pages
+
+- Production does not serve the app as static files. The web artifact runs `artifacts/signal24/server/index.ts` (built by `vite.server.config.ts` to `dist/server/index.mjs`, one self-contained file). It serves `dist/public` and renders every page URL with its real status (404 for unknown addresses, 301 for `/stories/:id`, non-canonical slugs and trailing slashes), the same `<head>` tags the app sets, and the page's text, so crawlers can index pages without running JavaScript. If the API cannot answer it serves the plain app shell with a 503.
+- The server and the app compute titles, descriptions, canonicals and structured data from the same modules: `src/lib/page-meta.ts` (fixed pages), `src/lib/stories.ts` (story visuals, paths, `storySeo`), `src/lib/states.ts` (`stateMeta`), `src/lib/authors.ts`, `src/lib/structured-data.ts`. `server/html.ts` `buildHead` mirrors `useSeo` rule for rule; change them together.
+- The server reads the API at `API_ORIGIN` (default `http://127.0.0.1:8080`, falling back to the public site origin) with a 30-second cache, and embeds the responses it rendered from in `<script id="signal-data">`; `primeFromServer` in `App.tsx` seeds React Query with them so the first render needs no fetch. Community responses are never embedded (they are per visitor).
+- `robots.txt` must not block `/api/`: pages load their records from it and Googlebot obeys robots.txt for those requests. The API sends `X-Robots-Tag: noindex` on everything except `/api/sitemap.xml`.
+- Court explainers (`Courts & Policy`, not paper notes) live under `/articles/`; `/policies/:slug` belongs to the policy ledger. Old `/policies/<title>-<id>` story URLs redirect to the article.
+- Named authors: profiles in `src/lib/authors.ts`, pages at `/authors/:slug`, listed on About and in the sitemap. Pack reporting is bylined by desk (`artifacts/api-server/src/lib/authors.ts`); a byline an editor set is never overwritten. Bios state beat and method only — add credentials only if they are true.
+
 ## Bilingual edition (English and Hindi)
 
 - English lives at `/`, Hindi at `/hi/...` (wouter nested route in `artifacts/signal24/src/App.tsx`). Language context, labels and the switch are in `src/lib/i18n.tsx`; URL localization, canonicals and hreflang are in `src/lib/seo.ts`.

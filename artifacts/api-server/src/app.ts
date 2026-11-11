@@ -39,6 +39,12 @@ app.use(
 app.get(["/api", "/api/healthz"], (_req, res) => {
   res.json({ status: "ok" });
 });
+// Crawlers may fetch the public API (pages render from it), but the JSON itself
+// should never be indexed. The sitemap is the one API document meant for them.
+app.use("/api", (req, res, next) => {
+  if (req.path !== "/sitemap.xml") res.setHeader("X-Robots-Tag", "noindex");
+  next();
+});
 app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
 // The web app and API are published under the same origin. Do not reflect
 // arbitrary origins; same-origin browser requests do not require CORS headers.

@@ -3,12 +3,13 @@ import { ArrowLeft, Radio } from 'lucide-react';
 import { useT, useLocalHref } from '@/lib/i18n';
 import { basePath } from '@/lib/seo';
 import { Header } from '@/components/site-chrome';
+import { PAGE_META } from '@/lib/page-meta';
 
 export default function NotFound() {
   const t = useT();
   const href = useLocalHref();
   useEffect(() => {
-    document.title = t('Page not found — The Signal 24', 'पेज नहीं मिला — द सिग्नल 24');
+    document.title = t(PAGE_META.notFound.title.en, PAGE_META.notFound.title.hi);
     const updateMeta = (selector: string, attribute: 'name' | 'property', key: string, content: string) => {
       let meta = document.head.querySelector<HTMLMetaElement>(selector);
       if (!meta) {

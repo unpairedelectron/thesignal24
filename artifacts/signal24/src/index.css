@@ -1538,6 +1538,69 @@ html:not(.dark) :is(.visual-hero-copy, .bg-primary) .signal-status-badge { color
 }
 
 /* ==========================================================================
+   Authors (author-*)
+   ========================================================================== */
+.author-head { padding-top: 3rem; }
+@media (min-width: 640px) { .author-head { padding-top: 5rem; } }
+.author-head-grid { margin-top: 1.6rem; display: grid; gap: 1.6rem; align-items: center; }
+@media (min-width: 640px) { .author-head-grid { grid-template-columns: auto 1fr; gap: 2.4rem; } }
+.author-monogram { display: inline-grid; place-items: center; width: 7.5rem; height: 7.5rem; border-radius: 999px; border: 2px solid hsl(var(--accent)); background: hsl(var(--card)); color: hsl(var(--foreground)); font-family: var(--app-font-serif); font-size: 2.6rem; letter-spacing: -.02em; box-shadow: 0 0 0 8px hsl(var(--accent) / .08); }
+.author-monogram.is-small { width: 3.4rem; height: 3.4rem; font-size: 1.15rem; box-shadow: none; border-width: 1.5px; flex: none; }
+.author-name { margin-top: .5rem; font-family: var(--app-font-serif); font-size: clamp(2.8rem, 7vw, 5.6rem); line-height: .92; letter-spacing: -.05em; }
+.author-beat { margin-top: 1rem; max-width: 40rem; font-size: 1.1rem; line-height: 1.6; color: hsl(var(--muted-foreground)); }
+.author-body { margin-top: 3rem; display: grid; gap: 2.5rem; padding-top: 2.5rem; border-top: 2px solid hsl(var(--foreground)); }
+@media (min-width: 1024px) { .author-body { grid-template-columns: 1.4fr .6fr; gap: 4rem; } }
+.author-bio { display: grid; gap: .9rem; max-width: 44rem; }
+.author-bio p { font-size: 1.08rem; line-height: 1.75; }
+.author-bio p + h2 { margin-top: 1.2rem; }
+.author-facts dl { display: grid; gap: 0; border-top: 1px solid hsl(var(--foreground) / .2); }
+.author-facts dl > div { display: grid; gap: .25rem; padding: .9rem 0; border-bottom: 1px solid hsl(var(--foreground) / .15); }
+.author-facts dt { font-family: var(--app-font-mono); font-size: .6rem; letter-spacing: .12em; text-transform: uppercase; color: hsl(var(--muted-foreground)); }
+.author-facts dd { font-size: .98rem; }
+.author-facts dd a { color: hsl(var(--accent)); text-decoration: underline; text-underline-offset: 3px; }
+.author-grid { margin: 1.6rem 0 0; padding: 0; list-style: none; display: grid; gap: 1rem; }
+@media (min-width: 640px) { .author-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1024px) { .author-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.author-card { display: flex; gap: 1rem; height: 100%; padding: 1.2rem; border: 1px solid hsl(var(--foreground) / .16); background: hsl(var(--card)); transition: transform .3s cubic-bezier(.16,1,.3,1), box-shadow .3s, border-color .2s; }
+.author-card:hover, .author-card:focus-visible { transform: translateY(-3px); border-color: hsl(var(--accent)); box-shadow: 0 16px 36px -24px hsl(var(--foreground) / .45); }
+.author-card-body { display: grid; gap: .3rem; align-content: start; }
+.author-card-name { font-family: var(--app-font-serif); font-size: 1.35rem; line-height: 1.1; letter-spacing: -.02em; transition: color .2s; }
+.author-card-role { font-family: var(--app-font-mono); font-size: .6rem; letter-spacing: .12em; text-transform: uppercase; color: hsl(var(--accent)); }
+.author-card-beat { font-size: .88rem; line-height: 1.5; color: hsl(var(--muted-foreground)); }
+.author-facts dt:lang(hi), .author-card-role:lang(hi) { font-family: 'Noto Sans Devanagari', var(--app-font-mono); text-transform: none; letter-spacing: .02em; font-size: .74rem; }
+@media (prefers-reduced-motion: reduce) { .author-card { transition: none; } .author-card:hover { transform: none; } }
+
+/* ==========================================================================
+   Server-rendered page (ssr-*): what crawlers and no-JavaScript readers get, and
+   what shows for a moment before the app starts. The app replaces it on load.
+   ========================================================================== */
+.ssr-page { min-height: 100vh; background: hsl(var(--background)); color: hsl(var(--foreground)); }
+.ssr-header { display: flex; flex-wrap: wrap; align-items: center; gap: .8rem 1.6rem; padding: 1rem max(16px, calc((100% - 1320px) / 2)); border-bottom: 1px solid hsl(var(--foreground) / .15); }
+.ssr-brand { font-family: var(--app-font-serif); font-size: 1.5rem; letter-spacing: -.03em; }
+.ssr-header nav ul { display: flex; flex-wrap: wrap; gap: .4rem 1.1rem; margin: 0; padding: 0; list-style: none; font-size: .92rem; }
+.ssr-lang { margin-left: auto; font-size: .9rem; }
+.ssr-main { width: min(860px, calc(100% - 32px)); margin: 0 auto; padding: 3rem 0 4rem; }
+.ssr-main h1 { margin: .4rem 0 0; font-family: var(--app-font-serif); font-size: clamp(2.2rem, 6vw, 4rem); line-height: 1; letter-spacing: -.04em; }
+.ssr-main h2 { margin: 2.4rem 0 .8rem; font-family: var(--app-font-serif); font-size: 1.7rem; line-height: 1.1; }
+.ssr-main h3 { margin: .3rem 0; font-family: var(--app-font-serif); font-size: 1.3rem; line-height: 1.2; }
+.ssr-main a { color: inherit; text-decoration: underline; text-decoration-color: hsl(var(--accent) / .5); text-underline-offset: 3px; }
+.ssr-main p, .ssr-main li { line-height: 1.7; }
+.ssr-main ul, .ssr-main ol { padding-left: 1.2rem; }
+.ssr-kicker { font-family: var(--app-font-mono); font-size: .66rem; letter-spacing: .12em; text-transform: uppercase; color: hsl(var(--accent)); }
+.ssr-lede { margin-top: 1rem; font-size: 1.15rem; color: hsl(var(--muted-foreground)); }
+.ssr-meta, .ssr-crumbs { font-size: .85rem; color: hsl(var(--muted-foreground)); }
+.ssr-list { padding: 0 !important; list-style: none; border-top: 1px solid hsl(var(--foreground) / .15); }
+.ssr-item { padding: 1.1rem 0; border-bottom: 1px solid hsl(var(--foreground) / .15); }
+.ssr-links { columns: 2 16rem; }
+.ssr-article .ssr-body { margin-top: 2rem; }
+.ssr-note { margin-top: 1.5rem; padding: .9rem 1rem; background: hsl(var(--muted)); font-size: .9rem; }
+.ssr-facts { display: grid; grid-template-columns: minmax(7rem, auto) 1fr; gap: .5rem 1.2rem; margin-top: 1.6rem; }
+.ssr-facts dt { font-family: var(--app-font-mono); font-size: .66rem; letter-spacing: .1em; text-transform: uppercase; color: hsl(var(--muted-foreground)); padding-top: .3rem; }
+.ssr-footer { padding: 2rem max(16px, calc((100% - 1320px) / 2)); border-top: 1px solid hsl(var(--foreground) / .15); font-size: .9rem; color: hsl(var(--muted-foreground)); }
+.ssr-footer ul { display: flex; flex-wrap: wrap; gap: .4rem 1.2rem; padding: 0; list-style: none; }
+.ssr-kicker:lang(hi), .ssr-facts dt:lang(hi) { font-family: 'Noto Sans Devanagari', var(--app-font-mono); text-transform: none; letter-spacing: .02em; font-size: .78rem; }
+
+/* ==========================================================================
    Devanagari typography (Hindi edition)
 
    Devanagari stacks vowel signs above and below the headline bar
