@@ -408,7 +408,7 @@ async function statePage(ctx: Ctx, slug: string): Promise<Page | RenderResult> {
   const records = newestFirst(await publishedStories(ctx)).filter((story) => storyConcerns(story, region));
   const sm = stateMeta(region, records.length > 0, lang);
   const profile = STATE_PROFILES[region.name];
-  const facts = profile ? `<h2>${esc(tr(lang, 'The record', 'रिकॉर्ड'))}</h2><ul>${profile.facts.map((fact) => `<li><strong>${esc(fact.when)}</strong> — ${esc(fact.text[lang])}</li>`).join('')}</ul><h2>${esc(tr(lang, 'Questions for the state', 'राज्य से सवाल'))}</h2><ul>${profile.questions.map((question) => `<li>${esc(question[lang])}</li>`).join('')}</ul>` : '';
+  const facts = profile ? `<h2>${esc(tr(lang, 'The record', 'रिकॉर्ड'))}</h2><ul>${profile.facts.map((fact) => `<li><strong>${esc(fact.when)}</strong> — ${esc(fact.text[lang])}${fact.source ? ` (<a href="${esc(fact.source.url)}" rel="noopener noreferrer">${esc(fact.source.label)}</a>)` : ''}</li>`).join('')}</ul><h2>${esc(tr(lang, 'Questions for the state', 'राज्य से सवाल'))}</h2><ul>${profile.questions.map((question) => `<li>${esc(question[lang])}</li>`).join('')}</ul>` : '';
   return {
     seo: { title: sm.title, description: sm.description, canonicalPath: `/state/${slug}`, robots: sm.robots },
     body: `<nav class="ssr-crumbs">${link('/states', tr(lang, 'States', 'राज्य'), lang)}</nav>${head(lang, profile ? profile.status[lang] : tr(lang, 'State file', 'राज्य फ़ाइल'), sm.name, sm.description)}${facts}${records.length ? `<h2>${esc(tr(lang, 'Records', 'रिकॉर्ड'))}</h2>${storyList(records, lang)}` : ''}`,

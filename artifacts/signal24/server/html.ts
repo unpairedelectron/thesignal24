@@ -110,7 +110,8 @@ export function renderDocument(template: string, page: PageHtml) {
   html = html.replace('</head>', `    ${page.head}${data}\n  </head>`);
   // The server-rendered page replaces the generic <noscript> fallback: it already
   // carries the content and the links, with or without JavaScript.
-  html = html.replace(/\s*<noscript>[\s\S]*?<\/noscript>/, '');
+  // (Only the body fallback, which starts with <main>; the <noscript> font link in <head> stays.)
+  html = html.replace(/\s*<noscript>\s*<main[\s\S]*?<\/noscript>/, '');
   return html.replace('<div id="root"></div>', `<div id="root">${page.body}</div>`);
 }
 

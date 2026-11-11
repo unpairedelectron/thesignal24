@@ -12,3 +12,5 @@
 - [Image-rights retention](image-rights-retention.md) — archive candidate records instead of deleting them; lead deletion detaches candidates, and rights-history rows restrict hard deletion.
 - [Stale rights rechecks](stale-rights-rechecks.md) — source applies must conflict when either saved terms or review state changes during the provider lookup.
 - [Node test suite filters](node-test-suite-filters.md) — use positive suite-name prefixes for `--test-name-pattern` filtering; negative patterns did not reliably exclude the intended tests here.
+- [API readiness probe](api-readiness-probe.md) — the API artifact may be probed at `/api` as well as its configured health endpoint; keep the mount root publicly healthy before auth.
+- [Editorial voice](editorial-voice.md) — use sarcastic, slapstick, critical framing while keeping factual claims accurate and source-led.

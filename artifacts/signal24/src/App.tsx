@@ -1,4 +1,4 @@
-import { type FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, type FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { ClerkProvider, SignIn, SignUp, useClerk, useUser } from '@clerk/react';
 import { publishableKeyFromHost } from '@clerk/react/internal';
@@ -36,14 +36,6 @@ import {
 import { Link, Route, Router as WouterRouter, Switch, useLocation, useParams, useSearch } from 'wouter';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { FOCUS_SOURCES } from '@/components/focus-source-desk';
-import {
-  ArticleEvidenceSection,
-  EditorEvidenceDesk,
-  EvidenceEventDetailPage,
-  EvidenceEventsPage,
-  EvidenceSearchPage,
-  EvidenceSourceDetailPage,
-} from '@/components/evidence-pages';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import {
@@ -112,17 +104,13 @@ import { LangProvider, LanguageSwitch, localizePolicy, localizeStory, useLabel, 
 import { ACCOUNTABILITY_CHECKED_ON, ACCOUNTABILITY_ITEMS } from '@/lib/accountability';
 import { RichBody, outlineOf } from '@/components/rich-body';
 import { GlobalFooter, Header } from '@/components/site-chrome';
-import { AnswerDetailPage, AnswersPage } from '@/components/answers-pages';
-import { HomeStatesSection, StateProfilePage, StatesPage } from '@/components/states-pages';
-import { CommunityDetailPage, CommunityPage } from '@/components/community-pages';
 import { HomeStage } from '@/components/home-stage';
 import { AnswersTeaser, CommunityTeaser, DeskStrip, LedgerTrio, SectionHead, TimelineStrip } from '@/components/home-sections';
 import { KeyFigures } from '@/components/key-figures';
-import { CeilingChart, DemandBoard } from '@/components/opinion-data';
 import { CountUp } from '@/components/home-stage';
 import { KEY_FIGURES, daysSince, type Bilingual } from '@/lib/key-figures';
 import { motion, useReducedMotion } from 'framer-motion';
-import { EvidenceSpine, TopicCabinet, TopicHero, type CabinetDrawer } from '@/components/topic-stage';
+import type { CabinetDrawer } from '@/components/topic-stage';
 import { TOPIC_BRIEFS, TOPIC_BRIEFS_CHECKED_ON, topicBrief, type TopicBrief, type TopicKey } from '@/lib/topic-briefs';
 import { authorPageStructuredData, breadcrumbNode, collectionPageNode, EDITORIAL_DESK_PATH, editorialDeskNode, editorialDeskRef, externalDocument, imageObject, organizationRef, placeForState, siteGraph, webPageNode, websiteRef } from '@/lib/structured-data';
 import { AUTHORS, authorByName, authorBySlug, authorMeta, authorPath, PEN_NAME_NOTE, type Author } from '@/lib/authors';
@@ -154,6 +142,25 @@ function primeFromServer(client: QueryClient) {
   }
   element.remove();
 }
+
+const AnswersPage = lazy(() => import('@/components/answers-pages').then((module) => ({ default: module.AnswersPage })));
+const AnswerDetailPage = lazy(() => import('@/components/answers-pages').then((module) => ({ default: module.AnswerDetailPage })));
+const CommunityPage = lazy(() => import('@/components/community-pages').then((module) => ({ default: module.CommunityPage })));
+const CommunityDetailPage = lazy(() => import('@/components/community-pages').then((module) => ({ default: module.CommunityDetailPage })));
+const ArticleEvidenceSection = lazy(() => import('@/components/evidence-pages').then((module) => ({ default: module.ArticleEvidenceSection })));
+const EditorEvidenceDesk = lazy(() => import('@/components/evidence-pages').then((module) => ({ default: module.EditorEvidenceDesk })));
+const EvidenceEventDetailPage = lazy(() => import('@/components/evidence-pages').then((module) => ({ default: module.EvidenceEventDetailPage })));
+const EvidenceEventsPage = lazy(() => import('@/components/evidence-pages').then((module) => ({ default: module.EvidenceEventsPage })));
+const EvidenceSearchPage = lazy(() => import('@/components/evidence-pages').then((module) => ({ default: module.EvidenceSearchPage })));
+const EvidenceSourceDetailPage = lazy(() => import('@/components/evidence-pages').then((module) => ({ default: module.EvidenceSourceDetailPage })));
+const HomeStatesSection = lazy(() => import('@/components/states-pages').then((module) => ({ default: module.HomeStatesSection })));
+const StateProfilePage = lazy(() => import('@/components/states-pages').then((module) => ({ default: module.StateProfilePage })));
+const StatesPage = lazy(() => import('@/components/states-pages').then((module) => ({ default: module.StatesPage })));
+const CeilingChart = lazy(() => import('@/components/opinion-data').then((module) => ({ default: module.CeilingChart })));
+const DemandBoard = lazy(() => import('@/components/opinion-data').then((module) => ({ default: module.DemandBoard })));
+const EvidenceSpine = lazy(() => import('@/components/topic-stage').then((module) => ({ default: module.EvidenceSpine })));
+const TopicCabinet = lazy(() => import('@/components/topic-stage').then((module) => ({ default: module.TopicCabinet })));
+const TopicHero = lazy(() => import('@/components/topic-stage').then((module) => ({ default: module.TopicHero })));
 
 const TOPICS = ['Latest', 'Courts & Policy', 'States', 'History', 'Ground Reports', 'Data & Notes'] as Topic[];
 const KINDS = ['Article', 'Paper note', 'Archive', 'Explainer', 'Opinion'] as StoryKind[];
@@ -1756,7 +1763,7 @@ function EditorEvidenceAccessRoute() {
 }
 
 function AppRoutes() {
-  return <><Switch>
+  return <><Suspense fallback={<main className="signal-container py-16" role="status" aria-live="polite">Loading page…</main>}><Switch>
     <Route path="/" component={Home} />
     <Route path="/sign-in/*?" component={SignInPage} />
     <Route path="/sign-up/*?" component={SignUpPage} />
@@ -1789,7 +1796,7 @@ function AppRoutes() {
     <Route path="/methodology" component={MethodologyPage} />
     <Route path="/:family/:slug" component={StoryDetail} />
     <Route component={NotFound} />
-  </Switch><GlobalFooter /></>;
+  </Switch></Suspense><GlobalFooter /></>;
 }
 
 function ClerkProviderWithRouting() {

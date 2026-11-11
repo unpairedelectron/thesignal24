@@ -19,19 +19,21 @@ if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
+const server = app.listen(port, () => {
+  logger.info({ port }, "Server listening");
+});
+
+server.on("error", (error) => {
+  logger.error({ err: error }, "Error listening on port");
+  process.exit(1);
+});
+
 ensureCommunitySchema()
   .then(() => ensureSeedData())
   .then(() => ensureContentPack())
   .then(() => ensureEvidencePack())
   .then(() => {
-    app.listen(port, (err) => {
-      if (err) {
-        logger.error({ err }, "Error listening on port");
-        process.exit(1);
-      }
-
-      logger.info({ port }, "Server listening");
-    });
+    logger.info("Publication data initialized");
   })
   .catch((error) => {
     logger.error({ error }, "Unable to initialize publication data");

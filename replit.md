@@ -54,6 +54,7 @@ A source-first public-interest publication and research archive covering UGC equ
 - Published records are updated without touching the database by hand: `STORY_UPDATES` and `POLICY_UPDATES` in `artifacts/api-server/src/lib/content-pack-updates.ts` are applied once on API start (dated `## Update` sections; newest court status per ledger record, never over a later editor change).
 - Answers carry a "what the law says" section and common mistakes (`src/lib/answers-depth.ts`); ledger records carry "why it matters" and open questions (`src/lib/policy-notes.ts`); About, Editorial standards and Methodology text lives in `src/lib/info-pages.ts`. All are rendered by the app and the page server.
 - Bylines are disclosed as pen names of the desk (`PEN_NAME_NOTE` in `src/lib/authors.ts`), and the standards page says records are AI-assisted, checked automatically and labelled source-linked. Keep those statements true.
+- Search pages are rendered by the page server, not prerendered at build time: there is no build-time prerender step or per-route static rewrite, and the build does not need the API running. State pages are indexable when the state has a profile; `SITEMAP_STATE_SLUGS` in the API must list exactly those (enforced by the content check).
 - Single event and source pages are `noindex, follow` and not in the sitemap (short reference entries); `/events` and `/timeline` carry them.
 
 ## Bilingual edition (English and Hindi)

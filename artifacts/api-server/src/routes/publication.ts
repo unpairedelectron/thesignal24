@@ -510,7 +510,7 @@ router.get("/archive", async (req, res, next) => {
  * update both together. State pages without a profile are noindex and stay out.
  */
 const SITEMAP_ANSWER_IDS = ["get-a-caste-certificate", "how-to-file-an-rti", "rti-no-reply", "what-rti-can-refuse", "who-decides-reservation", "creamy-layer", "ews-eligibility", "fifty-percent-ceiling", "reservation-in-promotions", "stay-vs-struck-down", "file-a-pil", "read-a-judgment", "how-a-bill-becomes-law", "ordinance", "find-the-gazette", "ask-your-mp", "caste-census-when", "find-government-data", "complain-about-a-government-service", "report-caste-discrimination"];
-const SITEMAP_STATE_SLUGS = ["andhra-pradesh", "bihar", "maharashtra", "punjab", "tamil-nadu"];
+const SITEMAP_STATE_SLUGS = ["andhra-pradesh", "arunachal-pradesh", "assam", "bihar", "chhattisgarh", "goa", "gujarat", "haryana", "himachal-pradesh", "jharkhand", "karnataka", "kerala", "madhya-pradesh", "maharashtra", "manipur", "meghalaya", "mizoram", "nagaland", "odisha", "punjab", "rajasthan", "sikkim", "tamil-nadu", "telangana", "tripura", "uttar-pradesh", "uttarakhand", "west-bengal", "andaman-and-nicobar-islands", "chandigarh", "dadra-and-nagar-haveli-and-daman-and-diu", "delhi", "jammu-and-kashmir", "ladakh", "lakshadweep", "puducherry"];
 
 router.get("/sitemap.xml", async (_req, res, next) => {
   try {
