@@ -30,6 +30,18 @@ async function fetchApi(path: string) {
 /** The API could not answer (down, starting, timed out, 5xx). Rendered as a 503. */
 export class ApiUnavailable extends Error {}
 
+/** A text document from the API (the XML sitemap), uncached so it is always current. */
+export async function getApiText(path: string) {
+  let response: Response;
+  try {
+    response = await fetchApi(path);
+  } catch (error) {
+    throw new ApiUnavailable(`${path}: ${(error as Error).message}`);
+  }
+  if (!response.ok) throw new ApiUnavailable(`${path}: HTTP ${response.status}`);
+  return response.text();
+}
+
 type Cached = { expires: number; status: number; data: unknown };
 const cache = new Map<string, Cached>();
 const inflight = new Map<string, Promise<Cached>>();

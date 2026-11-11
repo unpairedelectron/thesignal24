@@ -12,7 +12,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { brotliCompressSync, constants as zlibConstants, gzipSync } from 'node:zlib';
-import { ApiUnavailable } from './api';
+import { ApiUnavailable, getApiText } from './api';
 import { renderDocument } from './html';
 import { renderPath } from './render';
 
@@ -165,6 +165,18 @@ const server = createServer((req, res) => {
     }
     const url = new URL(req.url ?? '/', 'http://localhost');
     const { pathname, search } = url;
+    // The full URL list lives at the site root, where every search engine accepts it for
+    // the whole site (a sitemap under /api/ is, by the protocol, only trusted for /api/).
+    if (pathname === '/sitemap.xml') {
+      try {
+        const xml = await getApiText('/api/sitemap.xml');
+        send(req, res, 200, { 'Content-Type': 'application/xml; charset=utf-8', 'Cache-Control': 'public, max-age=3600' }, Buffer.from(xml), 9);
+      } catch (error) {
+        console.warn(`sitemap unavailable: ${(error as Error).message}`);
+        send(req, res, 503, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store', 'Retry-After': '120' }, Buffer.from('Sitemap temporarily unavailable'));
+      }
+      return;
+    }
     if (pathname === '/healthz') {
       res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' });
       res.end(req.method === 'HEAD' ? undefined : 'ok');
