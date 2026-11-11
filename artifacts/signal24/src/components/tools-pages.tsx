@@ -11,7 +11,7 @@ import { useLang, useT } from '@/lib/i18n';
 import { PAGE_META } from '@/lib/page-meta';
 import { useSeo } from '@/lib/seo';
 import { glossaryStructuredData, toolPageStructuredData, toolsHubStructuredData } from '@/lib/structured-data';
-import { evaluateCheck, TOOLS, TOOLS_CHECKED_ON, toolById, toolTitle, type Category, type CheckAnswer, type CheckTool, type GuideTool, type Purpose, type ToolSource } from '@/lib/tools';
+import { citationDate, evaluateCheck, TOOLS, TOOLS_CHECKED_ON, toolById, toolTitle, type Category, type CheckAnswer, type Citation, type CheckTool, type GuideTool, type Purpose, type ToolSource } from '@/lib/tools';
 
 function formatChecked(date: string, lang: 'en' | 'hi') {
   return new Date(`${date}T12:00:00`).toLocaleDateString(lang === 'hi' ? 'hi-IN' : 'en-IN', { day: 'numeric', month: 'short', year: 'numeric', numberingSystem: 'latn' } as Intl.DateTimeFormatOptions);
@@ -19,6 +19,12 @@ function formatChecked(date: string, lang: 'en' | 'hi') {
 
 function Sources({ sources }: { sources: ToolSource[] }) {
   return <ul className="answer-sources">{sources.map((source) => <li key={source.url}><a href={source.url} target="_blank" rel="noopener noreferrer" lang="en">{source.name} <ExternalLink size={12} /></a></li>)}</ul>;
+}
+
+function Citations({ items }: { items: Citation[] }) {
+  const t = useT();
+  const lang = useLang();
+  return <><p className="article-rail-heading mt-6">{t('The orders and judgments behind it', 'इसके पीछे के आदेश और फ़ैसले')}</p><ul className="tool-citations">{items.map((item) => <li key={item.reference}><span>{item.title[lang]}</span><span className="tool-citation-ref" lang="en">{item.reference} · {citationDate(item.date, lang)}</span></li>)}</ul></>;
 }
 
 function RelatedAnswers({ ids }: { ids: string[] }) {
@@ -83,6 +89,7 @@ export function ToolPage() {
         <aside className="answer-detail-rail">
           <p className="article-rail-heading">{t('Official sources', 'आधिकारिक स्रोत')}</p>
           <Sources sources={tool.sources} />
+          <Citations items={tool.citations} />
           <p className="mt-4 text-xs leading-relaxed text-muted-foreground">{t('Rules last checked', 'नियमों की आख़िरी जाँच')} {formatChecked(TOOLS_CHECKED_ON, lang)}. {t('Nothing you enter leaves your device.', 'आप जो भी भरते हैं, वह आपके डिवाइस से बाहर नहीं जाता।')}</p>
           <div className="mt-5"><WhatsAppShare title={tool.title[lang]} summary={tool.description[lang]} path={path} testId={`link-share-whatsapp-${tool.id}`} /></div>
         </aside>
@@ -194,7 +201,8 @@ export function GlossaryPage() {
           <dt>{item.term[lang]}</dt>
           <dd>
             <p>{item.definition[lang]}</p>
-            <p className="glossary-meta"><a href={item.source.url} target="_blank" rel="noopener noreferrer" lang="en">{item.source.name} <ExternalLink size={11} /></a>{answer && <> · <Link href={`/answers/${answer.id}`}>{answer.question[lang]}</Link></>}</p>
+            <p className="glossary-meta"><span>{t('Source', 'स्रोत')}:</span> <a href={item.source.url} target="_blank" rel="noopener noreferrer" lang="en">{item.source.name}<ExternalLink size={11} aria-hidden="true" /></a></p>
+            {answer && <p className="glossary-meta"><span>{t('Answer', 'जवाब')}:</span> <Link href={`/answers/${answer.id}`}>{answer.question[lang]}</Link></p>}
           </dd>
         </div>;
       })}</dl>

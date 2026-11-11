@@ -145,7 +145,9 @@ for (const tool of TOOLS) {
   const label = `tool "${tool.id}"`;
   if (!tool.sources.length || !tool.sources.every((source) => isHttps(source.url))) fail(`${label}: needs https official sources`);
   for (const id of tool.answers) if (!answerIds.has(id)) fail(`${label}: answer "${id}" does not exist`);
-  const texts = [tool.title, tool.description, tool.intro, tool.basis, ...tool.caveats];
+  if (!tool.citations.length) fail(`${label}: cite the orders or judgments it restates`);
+  for (const citation of tool.citations) if (!citation.reference.trim() || !/^\d{4}(-\d{2}-\d{2})?$/.test(citation.date)) fail(`${label}: citation "${citation.reference}" needs a reference and a YYYY or YYYY-MM-DD date`);
+  const texts = [tool.title, tool.description, tool.intro, tool.basis, ...tool.caveats, ...tool.citations.map((citation) => citation.title)];
   if (tool.kind === 'check') {
     if (!bilingual(tool.clear) || !bilingual(tool.excluded)) fail(`${label}: results need both languages`);
     for (const question of tool.questions) texts.push(question.text, question.exclusion, ...(question.help ? [question.help] : []), ...(question.unsure ? [question.unsure] : []));

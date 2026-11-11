@@ -21,7 +21,7 @@ import { RichBody, plainText } from '../src/components/rich-body';
 import { ANSWERS, ANSWERS_FOR_TOPIC, ANSWER_CATEGORIES, answerById } from '../src/lib/answers';
 import { answerDepth } from '../src/lib/answers-depth';
 import { GLOSSARY_CHECKED_ON, glossarySorted, termsIn } from '../src/lib/glossary';
-import { TOOL_FOR_ANSWER, TOOLS, TOOLS_CHECKED_ON, toolById, toolTitle, type Tool } from '../src/lib/tools';
+import { citationDate, TOOL_FOR_ANSWER, TOOLS, TOOLS_CHECKED_ON, toolById, toolTitle, type Tool } from '../src/lib/tools';
 import { AUTHORS, authorByName, authorBySlug, authorMeta, authorPath, PEN_NAME_NOTE, type Author } from '../src/lib/authors';
 import { INFO_PAGES } from '../src/lib/info-pages';
 import { localizePolicy, localizeStory, translateLabel, type LocalizedStory } from '../src/lib/i18n';
@@ -429,7 +429,7 @@ function toolPage(ctx: Ctx, id: string): Page | RenderResult {
   const answers = tool.answers.map(answerById).filter((item): item is NonNullable<typeof item> => Boolean(item));
   return {
     seo: { title: toolTitle(tool, lang), description: tool.description[lang], canonicalPath: path, robots: 'index, follow', structuredData: toolPageStructuredData(path, lang, toolTitle(tool, lang), tool.description[lang], tool.title[lang]) },
-    body: `<article class="ssr-article"><nav class="ssr-crumbs">${link('/tools', tr(lang, 'Tools', 'टूल'), lang)}</nav><h1>${esc(tool.title[lang])}</h1><p class="ssr-lede">${esc(tool.description[lang])}</p><p>${esc(tool.intro[lang])}</p>${toolRules(tool, lang)}<h2>${esc(tr(lang, 'What the rules say', 'नियम क्या कहते हैं'))}</h2><p>${esc(tool.basis[lang])}</p><ul>${tool.caveats.map((item) => `<li>${esc(item[lang])}</li>`).join('')}</ul><h2>${esc(tr(lang, 'Official sources', 'आधिकारिक स्रोत'))}</h2><ul>${tool.sources.map((source) => `<li><a href="${esc(source.url)}" rel="noopener noreferrer">${esc(source.name)}</a></li>`).join('')}</ul><p>${esc(tr(lang, 'Rules last checked', 'नियमों की आख़िरी जाँच'))} ${time(TOOLS_CHECKED_ON, lang)}</p>${answers.length ? `<h2>${esc(tr(lang, 'Read the full answers', 'पूरे जवाब पढ़िए'))}</h2><ul>${answers.map((item) => `<li>${link(`/answers/${item.id}`, item.question[lang], lang)}</li>`).join('')}</ul>` : ''}</article>`,
+    body: `<article class="ssr-article"><nav class="ssr-crumbs">${link('/tools', tr(lang, 'Tools', 'टूल'), lang)}</nav><h1>${esc(tool.title[lang])}</h1><p class="ssr-lede">${esc(tool.description[lang])}</p><p>${esc(tool.intro[lang])}</p>${toolRules(tool, lang)}<h2>${esc(tr(lang, 'What the rules say', 'नियम क्या कहते हैं'))}</h2><p>${esc(tool.basis[lang])}</p><ul>${tool.caveats.map((item) => `<li>${esc(item[lang])}</li>`).join('')}</ul><h2>${esc(tr(lang, 'The orders and judgments behind it', 'इसके पीछे के आदेश और फ़ैसले'))}</h2><ul>${tool.citations.map((item) => `<li>${esc(item.title[lang])}: ${esc(item.reference)}, ${esc(citationDate(item.date, lang))}</li>`).join('')}</ul><h2>${esc(tr(lang, 'Official sources', 'आधिकारिक स्रोत'))}</h2><ul>${tool.sources.map((source) => `<li><a href="${esc(source.url)}" rel="noopener noreferrer">${esc(source.name)}</a></li>`).join('')}</ul><p>${esc(tr(lang, 'Rules last checked', 'नियमों की आख़िरी जाँच'))} ${time(TOOLS_CHECKED_ON, lang)}</p>${answers.length ? `<h2>${esc(tr(lang, 'Read the full answers', 'पूरे जवाब पढ़िए'))}</h2><ul>${answers.map((item) => `<li>${link(`/answers/${item.id}`, item.question[lang], lang)}</li>`).join('')}</ul>` : ''}</article>`,
   };
 }
 

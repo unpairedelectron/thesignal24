@@ -1743,6 +1743,9 @@ h1.font-display:lang(hi) { line-height: 1.28 !important; }
 .glossary-item dd { margin: 0; max-width: 48rem; font-size: 1.02rem; line-height: 1.75; }
 .glossary-meta { margin-top: .5rem; font-size: .82rem; color: hsl(var(--muted-foreground)); }
 .glossary-meta a { text-decoration: underline; text-underline-offset: 3px; }
+.glossary-meta a svg { display: inline; margin-left: .25rem; vertical-align: -1px; }
+.glossary-meta + .glossary-meta { margin-top: .2rem; }
+.glossary-meta span { font-family: var(--app-font-mono); font-size: .66rem; letter-spacing: .08em; text-transform: uppercase; }
 @media (min-width: 900px) { .glossary-item { grid-template-columns: 16rem 1fr; gap: 2rem; } }
 .article-terms { margin-top: 3rem; }
 .article-terms-list { margin-top: 1rem; display: grid; gap: .5rem; max-width: 48rem; }
@@ -1752,3 +1755,6 @@ h1.font-display:lang(hi) { line-height: 1.28 !important; }
 .share-button.is-whatsapp { border-color: hsl(142 55% 32% / .55); color: hsl(142 60% 24%); }
 .share-button.is-whatsapp:hover { background: hsl(142 55% 32%); border-color: hsl(142 55% 32%); color: #fff; }
 .chrome-footer-whatsapp { margin-top: 1rem; display: inline-flex; align-items: center; gap: .5rem; min-height: 44px; padding: .5rem 1rem; border-radius: 999px; background: hsl(142 55% 32%); color: #fff; font-weight: 700; font-size: .85rem; }
+.tool-citations { margin: .8rem 0 0; padding: 0; list-style: none; display: grid; gap: .7rem; font-size: .85rem; line-height: 1.5; }
+.tool-citations li { display: grid; gap: .15rem; padding-left: .75rem; border-left: 2px solid hsl(var(--accent) / .5); }
+.tool-citation-ref { font-family: var(--app-font-mono); font-size: .7rem; letter-spacing: .02em; color: hsl(var(--muted-foreground)); }

@@ -21,7 +21,7 @@ export type Answer = {
   related?: string[];
 };
 
-export const ANSWERS_CHECKED_ON = '2026-11-10';
+export const ANSWERS_CHECKED_ON = '2026-11-11';
 
 export const ANSWER_CATEGORIES: Array<{ id: AnswerCategory; label: Bilingual; blurb: Bilingual }> = [
   { id: 'rti', label: { en: 'Right to information', hi: 'सूचना का अधिकार' }, blurb: { en: 'Make the state show you its files.', hi: 'सरकार से उसकी फ़ाइलें दिखवाइए।' } },

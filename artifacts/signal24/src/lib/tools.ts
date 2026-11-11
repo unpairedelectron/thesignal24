@@ -12,6 +12,8 @@ import type { Bilingual } from './key-figures';
 export const TOOLS_CHECKED_ON = '2026-11-11';
 
 export type ToolSource = { name: string; url: string };
+/** An order or judgment the tool restates, cited exactly so a reader can quote it. */
+export type Citation = { title: Bilingual; reference: string; date: string };
 const DOPT = { name: 'Department of Personnel and Training (office memoranda on OBC and EWS reservation)', url: 'https://dopt.gov.in/' };
 const NCBC = { name: 'National Commission for Backward Classes (Central List of OBCs)', url: 'https://ncbc.nic.in/' };
 const SERVICES = { name: 'National Government Services Portal (state certificate services)', url: 'https://services.india.gov.in/' };
@@ -43,6 +45,7 @@ export type CheckTool = {
   excluded: Bilingual;
   caveats: Bilingual[];
   sources: ToolSource[];
+  citations: Citation[];
   answers: string[];
 };
 
@@ -62,10 +65,19 @@ export type GuideTool = {
   advice: (category: Category, purpose: Purpose) => CertificateAdvice;
   caveats: Bilingual[];
   sources: ToolSource[];
+  citations: Citation[];
   answers: string[];
 };
 
 export type Tool = CheckTool | GuideTool;
+
+const OM_1993: Citation = { title: { en: 'DoPT office memorandum setting the creamy-layer tests (the Schedule of exclusions)', hi: 'क्रीमी लेयर कसौटियाँ तय करने वाला कार्मिक विभाग का कार्यालय ज्ञापन (बहिष्करणों की अनुसूची)' }, reference: 'No. 36012/22/93-Estt.(SCT)', date: '1993-09-08' };
+const OM_2017: Citation = { title: { en: 'DoPT office memorandum raising the income limit from ₹6 lakh to ₹8 lakh, with effect from 1 September 2017', hi: 'आय सीमा ₹6 लाख से बढ़ाकर ₹8 लाख करने वाला कार्मिक विभाग का कार्यालय ज्ञापन, 1 सितंबर 2017 से प्रभावी' }, reference: 'No. 36033/1/2013-Estt.(Res)', date: '2017-09-13' };
+const OM_EWS: Citation = { title: { en: 'DoPT office memorandum on EWS reservation in central posts, for direct-recruitment vacancies notified on or after 1 February 2019', hi: 'केंद्र के पदों में ईडब्ल्यूएस आरक्षण पर कार्मिक विभाग का कार्यालय ज्ञापन, 1 फ़रवरी 2019 या उसके बाद अधिसूचित सीधी भर्ती की रिक्तियों के लिए' }, reference: 'No. 36039/1/2019-Estt.(Res)', date: '2019-01-31' };
+const INDRA_SAWHNEY: Citation = { title: { en: 'Indra Sawhney v Union of India (nine judges): creamy layer and the 50% rule', hi: 'इंद्रा साहनी बनाम भारत संघ (नौ जज): क्रीमी लेयर और 50% का नियम' }, reference: '1992 Supp (3) SCC 217', date: '1992-11-16' };
+const JANHIT_ABHIYAN: Citation = { title: { en: 'Janhit Abhiyan v Union of India: the 103rd Amendment upheld 3:2', hi: 'जनहित अभियान बनाम भारत संघ: 103वाँ संशोधन 3:2 से सही ठहराया गया' }, reference: '2022 INSC 1175', date: '2022-11-07' };
+const MADHURI_PATIL: Citation = { title: { en: 'Kumari Madhuri Patil v Additional Commissioner: how SC and ST claims are verified', hi: 'कुमारी माधुरी पाटिल बनाम अतिरिक्त आयुक्त: एससी और एसटी दावों की जाँच कैसे हो' }, reference: '(1994) 6 SCC 241', date: '1994' };
+const BIR_SINGH: Citation = { title: { en: 'Bir Singh v Delhi Jal Board (Constitution Bench): SC and ST status is tied to the state of origin', hi: 'बीर सिंह बनाम दिल्ली जल बोर्ड (संविधान पीठ): एससी और एसटी दर्जा मूल राज्य से जुड़ा है' }, reference: '2018 INSC 766', date: '2018' };
 
 const INDICATIVE: Bilingual = {
   en: 'This is an indication based on the central government’s published rules, not a certificate or legal advice. The officer who issues the certificate decides, and state governments can apply their own rules to state jobs and seats.',
@@ -85,8 +97,8 @@ export const CREAMY_LAYER_TOOL: CheckTool = {
     hi: 'क्रीमी लेयर आपके माता-पिता की स्थिति से तय होती है, आपकी अपनी या आपके जीवनसाथी की आय से नहीं। जवाब अपने माता-पिता के बारे में दीजिए। किसी एक बहिष्करण पर “हाँ” परिवार को क्रीमी लेयर में डालने के लिए काफ़ी है।',
   },
   basis: {
-    en: 'The creamy layer comes from the Supreme Court’s Indra Sawhney judgment (1992). The Department of Personnel and Training set the tests in an office memorandum of 8 September 1993, and the income limit has been ₹8 lakh a year since 2017. The tests exclude the children of people in constitutional posts, of Group A (Class I) officers, of parents who are both Group B (Class II) officers, and of officers of the rank of Colonel and above; everyone else faces an income test on income other than salary and agricultural land.',
-    hi: 'क्रीमी लेयर सुप्रीम कोर्ट के इंद्रा साहनी फ़ैसले (1992) से आई। कार्मिक एवं प्रशिक्षण विभाग ने 8 सितंबर 1993 के कार्यालय ज्ञापन में कसौटियाँ तय कीं, और 2017 से आय सीमा ₹8 लाख सालाना है। ये कसौटियाँ संवैधानिक पदों पर बैठे लोगों, ग्रुप ए (क्लास I) अधिकारियों, ऐसे माता-पिता जो दोनों ग्रुप बी (क्लास II) अधिकारी हों, और कर्नल या उससे ऊपर के अधिकारियों के बच्चों को बाहर करती हैं; बाक़ी सब पर वेतन और कृषि भूमि को छोड़कर अन्य आय की कसौटी लागू होती है।',
+    en: 'The creamy layer comes from the Supreme Court’s Indra Sawhney judgment of 16 November 1992. The Department of Personnel and Training set the tests in office memorandum No. 36012/22/93-Estt.(SCT) of 8 September 1993, and its office memorandum of 13 September 2017 raised the income limit to ₹8 lakh a year from 1 September 2017. The tests exclude the children of people in constitutional posts, of Group A (Class I) officers, of parents who are both Group B (Class II) officers, and of officers of the rank of Colonel and above; everyone else faces an income test on income other than salary and agricultural land.',
+    hi: 'क्रीमी लेयर सुप्रीम कोर्ट के 16 नवंबर 1992 के इंद्रा साहनी फ़ैसले से आई। कार्मिक एवं प्रशिक्षण विभाग ने 8 सितंबर 1993 के कार्यालय ज्ञापन सं. 36012/22/93-Estt.(SCT) में कसौटियाँ तय कीं, और 13 सितंबर 2017 के कार्यालय ज्ञापन ने 1 सितंबर 2017 से आय सीमा ₹8 लाख सालाना कर दी। ये कसौटियाँ संवैधानिक पदों पर बैठे लोगों, ग्रुप ए (क्लास I) अधिकारियों, ऐसे माता-पिता जो दोनों ग्रुप बी (क्लास II) अधिकारी हों, और कर्नल या उससे ऊपर के अधिकारियों के बच्चों को बाहर करती हैं; बाक़ी सब पर वेतन और कृषि भूमि को छोड़कर अन्य आय की कसौटी लागू होती है।',
   },
   questions: [
     {
@@ -153,6 +165,7 @@ export const CREAMY_LAYER_TOOL: CheckTool = {
     },
   ],
   sources: [DOPT, NCBC, SCI],
+  citations: [OM_1993, OM_2017, INDRA_SAWHNEY],
   answers: ['creamy-layer', 'non-creamy-layer-certificate', 'check-central-obc-list', 'creamy-layer-sc-st'],
 };
 
@@ -169,8 +182,8 @@ export const EWS_TOOL: CheckTool = {
     hi: 'इस कसौटी में “परिवार” का मतलब है आप, आपके माता-पिता, 18 साल से कम उम्र के भाई-बहन, आपका जीवनसाथी और 18 साल से कम उम्र के बच्चे। अलग-अलग जगहों पर परिवार की संपत्ति जोड़कर गिनी जाती है। किसी एक बहिष्करण पर “हाँ” आपको बाहर करने के लिए काफ़ी है।',
   },
   basis: {
-    en: 'The EWS quota rests on Articles 15(6) and 16(6), added by the Constitution (One Hundred and Third Amendment) Act, 2019, which allow up to 10% reservation for economically weaker sections not covered by the SC, ST or OBC quotas. The Department of Personnel and Training set the central criteria on 31 January 2019, and the Supreme Court upheld the amendment 3:2 in Janhit Abhiyan v Union of India (2022).',
-    hi: 'ईडब्ल्यूएस कोटा अनुच्छेद 15(6) और 16(6) पर टिका है, जो संविधान (एक सौ तीसरा संशोधन) अधिनियम, 2019 से जोड़े गए, और एससी, एसटी या ओबीसी कोटे से बाहर के आर्थिक रूप से कमज़ोर वर्गों को 10% तक आरक्षण की अनुमति देते हैं। कार्मिक एवं प्रशिक्षण विभाग ने 31 जनवरी 2019 को केंद्र की शर्तें तय कीं, और सुप्रीम कोर्ट ने जनहित अभियान बनाम भारत संघ (2022) में 3:2 से संशोधन को सही ठहराया।',
+    en: 'The EWS quota rests on Articles 15(6) and 16(6), added by the Constitution (One Hundred and Third Amendment) Act, 2019, which allow up to 10% reservation for economically weaker sections not covered by the SC, ST or OBC quotas. The Department of Personnel and Training set the central criteria in office memorandum No. 36039/1/2019-Estt.(Res) of 31 January 2019, for vacancies notified on or after 1 February 2019. The Supreme Court upheld the amendment 3:2 in Janhit Abhiyan v Union of India on 7 November 2022.',
+    hi: 'ईडब्ल्यूएस कोटा अनुच्छेद 15(6) और 16(6) पर टिका है, जो संविधान (एक सौ तीसरा संशोधन) अधिनियम, 2019 से जोड़े गए, और एससी, एसटी या ओबीसी कोटे से बाहर के आर्थिक रूप से कमज़ोर वर्गों को 10% तक आरक्षण की अनुमति देते हैं। कार्मिक एवं प्रशिक्षण विभाग ने 31 जनवरी 2019 के कार्यालय ज्ञापन सं. 36039/1/2019-Estt.(Res) में केंद्र की शर्तें तय कीं, जो 1 फ़रवरी 2019 या उसके बाद अधिसूचित रिक्तियों पर लागू हैं। सुप्रीम कोर्ट ने 7 नवंबर 2022 को जनहित अभियान बनाम भारत संघ में 3:2 से संशोधन को सही ठहराया।',
   },
   questions: [
     {
@@ -228,6 +241,7 @@ export const EWS_TOOL: CheckTool = {
     },
   ],
   sources: [DOPT, SCI, SERVICES],
+  citations: [OM_EWS, JANHIT_ABHIYAN],
   answers: ['ews-eligibility', 'ews-certificate', 'creamy-layer'],
 };
 
@@ -331,12 +345,19 @@ export const CERTIFICATE_TOOL: GuideTool = {
     },
   ],
   sources: [DOPT, NCBC, SERVICES, SCI],
+  citations: [MADHURI_PATIL, BIR_SINGH, OM_1993, OM_EWS],
   answers: ['get-a-caste-certificate', 'non-creamy-layer-certificate', 'ews-certificate'],
 };
 
 export const TOOLS: Tool[] = [CREAMY_LAYER_TOOL, EWS_TOOL, CERTIFICATE_TOOL];
 export const toolById = (id: string | undefined) => TOOLS.find((tool) => tool.id === id);
 export const TOOL_IDS = TOOLS.map((tool) => tool.id);
+
+/** "8 Sep 1993" (or a bare year) for a citation date, in either edition. */
+export function citationDate(date: string, lang: 'en' | 'hi') {
+  if (/^\d{4}$/.test(date)) return date;
+  return new Date(`${date}T12:00:00Z`).toLocaleDateString(lang === 'hi' ? 'hi-IN' : 'en-IN', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC', numberingSystem: 'latn' } as Intl.DateTimeFormatOptions);
+}
 
 /** The page title for /tools/:id, shared by the app and the page server. */
 export function toolTitle(tool: Tool, lang: 'en' | 'hi') {
