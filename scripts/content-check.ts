@@ -20,6 +20,7 @@ import { POLICY_NOTES } from '../artifacts/signal24/src/lib/policy-notes';
 import { REGIONS, regionSlug, STATE_PROFILES } from '../artifacts/signal24/src/lib/states';
 import { CERTIFICATE_TOOL, TOOL_FOR_ANSWER, TOOL_IDS, TOOLS } from '../artifacts/signal24/src/lib/tools';
 import { GLOSSARY } from '../artifacts/signal24/src/lib/glossary';
+import { POLICY_CITATIONS, STORY_CITATIONS } from '../artifacts/api-server/src/lib/content-pack-citations';
 import { existsSync, readFileSync } from 'node:fs';
 import { INDEXNOW_KEY } from '../artifacts/api-server/src/lib/indexnow-key';
 
@@ -173,6 +174,29 @@ for (const term of GLOSSARY) {
   if (term.answer && !answerIds.has(term.answer)) fail(`${label}: answer "${term.answer}" does not exist`);
   if (!term.match.en.test(`${term.term.en} ${term.definition.en}`)) fail(`${label}: its English pattern does not match its own term`);
   if (!term.match.hi.test(`${term.term.hi} ${term.definition.hi}`)) fail(`${label}: its Hindi pattern does not match its own term`);
+}
+
+// --- Citations (content-pack-citations.ts) -----------------------------------------------
+const packKeys = new Set(stories.map((story) => story.key));
+const citedKeys = new Set<string>();
+for (const entry of STORY_CITATIONS) {
+  const label = `citations for "${entry.key}"`;
+  if (!packKeys.has(entry.key)) fail(`${label}: no pack story with that key`);
+  if (citedKeys.has(entry.key)) fail(`${label}: listed twice`);
+  citedKeys.add(entry.key);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(entry.on)) fail(`${label}: "on" must be YYYY-MM-DD`);
+  if (!entry.items.length) fail(`${label}: no citations`);
+  for (const item of entry.items) {
+    if (!item.en.trim() || !item.hi.trim()) fail(`${label}: every citation needs English and Hindi`);
+    if (item.url && (!isHttps(item.url) || /[()\s]/.test(item.url))) fail(`${label}: citation link must be https with no spaces or parentheses (${item.url})`);
+  }
+  if (entry.primary && !isHttps(entry.primary.sourceUrl)) fail(`${label}: primary source must be https`);
+}
+const ledgerSlugs = new Set(POLICY_LEDGER_PACK.map((record) => record.slug));
+for (const entry of POLICY_CITATIONS) {
+  if (!ledgerSlugs.has(entry.slug)) fail(`policy citations: "${entry.slug}" is not a ledger record`);
+  for (const source of entry.sources) if (!isHttps(source.url)) fail(`policy citations "${entry.slug}": source must be https`);
+  if (entry.correction && !POLICY_NOTES[entry.slug]?.correction) fail(`policy citations "${entry.slug}": a correction must also be shown publicly in policy-notes.ts`);
 }
 
 if (problems.length) {

@@ -266,7 +266,7 @@ async function policyPage(ctx: Ctx, slug: string, requestedPath: string): Promis
 <h1>${esc(record.title)}</h1>
 <p class="ssr-lede">${esc(record.summary)}</p>
 <dl class="ssr-facts">${rows.filter(([, , value]) => value).map(([en, hi, value]) => `<dt>${esc(tr(lang, en, hi))}</dt><dd>${esc(value)}</dd>`).join('')}</dl>
-${note ? `<h2>${esc(tr(lang, 'Why it matters', 'यह क्यों मायने रखता है'))}</h2><p>${esc(note.why[lang])}</p><h2>${esc(tr(lang, 'Questions still unanswered', 'जिन सवालों का जवाब अब तक नहीं'))}</h2><ul>${note.questions.map((question) => `<li>${esc(question[lang])}</li>`).join('')}</ul>` : ''}
+${note?.correction ? `<p class="ssr-note"><strong>${esc(tr(lang, 'Correction', 'सुधार'))} (${time(note.correction.on, lang)}):</strong> ${esc(note.correction.text[lang])}</p>` : ''}${note ? `<h2>${esc(tr(lang, 'Why it matters', 'यह क्यों मायने रखता है'))}</h2><p>${esc(note.why[lang])}</p><h2>${esc(tr(lang, 'Questions still unanswered', 'जिन सवालों का जवाब अब तक नहीं'))}</h2><ul>${note.questions.map((question) => `<li>${esc(question[lang])}</li>`).join('')}</ul>` : ''}
 ${sources ? `<h2>${esc(tr(lang, 'Sources', 'स्रोत'))}</h2><ul>${sources}</ul>` : ''}
 </article>`,
   };

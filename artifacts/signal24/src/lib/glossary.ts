@@ -187,7 +187,7 @@ export const GLOSSARY: GlossaryTerm[] = [
       hi: 'संविधान में क़ानूनों की एक सूची, जिन्हें अनुच्छेद 31B मौलिक अधिकारों के उल्लंघन की चुनौती से बचाता है। 11 जनवरी 2007 को आई. आर. कोएल्हो मामले में सुप्रीम कोर्ट की नौ जजों की पीठ ने कहा कि 24 अप्रैल 1973 के बाद वहाँ रखे गए क़ानूनों को मूल ढाँचे की कसौटी पर अब भी परखा जा सकता है।',
     },
     match: { en: /Ninth Schedule/i, hi: /नौवीं अनुसूची/ },
-    source: { name: 'Supreme Court Reports: I. R. Coelho v State of Tamil Nadu (11 January 2007)', url: 'https://digiscr.sci.gov.in/admin/judgement_file/judgement_pdf/2007/volume%201/Part%20I/I.%20R.%20Coelho%20(dead)%20By%20Lrs.%20_%20State%20Of%20Tamil%20Nadu_1701772013.pdf' },
+    source: { name: 'Supreme Court Reports: I. R. Coelho v State of Tamil Nadu (11 January 2007)', url: 'https://digiscr.sci.gov.in/admin/judgement_file/judgement_pdf/2007/volume%201/Part%20I/I.%20R.%20Coelho%20%28dead%29%20By%20Lrs.%20_%20State%20Of%20Tamil%20Nadu_1701772013.pdf' },
     answer: 'ninth-schedule',
   },
   {
