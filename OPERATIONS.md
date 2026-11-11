@@ -27,6 +27,7 @@ A bilingual (English and Hindi) public-interest newsroom on how India’s govern
 | Answers | `artifacts/signal24/src/lib/answers.ts` + `answers-depth.ts`; add the id to `SITEMAP_ANSWER_IDS` in `artifacts/api-server/src/routes/publication.ts` | Shipped with the web app. |
 | Dated evidence events | `artifacts/api-server/src/lib/evidence-pack.ts` | Inserted on API start. |
 | Key figures and running clocks | `artifacts/signal24/src/lib/key-figures.ts` | Shipped with the web app. |
+| State and UT profiles (facts with sources, open questions) | `artifacts/signal24/src/lib/states.ts` and `state-research-profiles.ts`; a profiled state must be listed in `SITEMAP_STATE_SLUGS` in `publication.ts` (the content check enforces it) | Shipped with the web app. |
 
 A new article needs: a unique `key` and `title`; `topic` and `kind`; `source`, an `https` `sourceUrl` to the primary document, and `sourcePublishedOn`; a `dek` of at least 40 characters; a body of at least 550 words (use `##` subheads, a `::: [questions]` panel of the questions power has not answered, and a `::: [check]` panel telling readers how to verify it themselves); a full Hindi edition (`hi.title`, `hi.dek`, `hi.body`, `hi.eyebrow`); and `verificationNotes` saying what was checked against what.
 

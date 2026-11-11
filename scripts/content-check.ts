@@ -17,6 +17,7 @@ import { ANSWERS } from '../artifacts/signal24/src/lib/answers';
 import { ANSWER_DEPTH } from '../artifacts/signal24/src/lib/answers-depth';
 import { AUTHORS } from '../artifacts/signal24/src/lib/authors';
 import { POLICY_NOTES } from '../artifacts/signal24/src/lib/policy-notes';
+import { REGIONS, regionSlug, STATE_PROFILES } from '../artifacts/signal24/src/lib/states';
 import { readFileSync } from 'node:fs';
 
 /**
@@ -85,6 +86,16 @@ const publication = readFileSync(new URL('../artifacts/api-server/src/routes/pub
 const sitemapIds = new Set([...(publication.match(/SITEMAP_ANSWER_IDS = \[([^\]]*)\]/)?.[1] ?? '').matchAll(/"([^"]+)"/g)].map((match) => match[1]));
 for (const id of answerIds) if (!sitemapIds.has(id)) fail(`sitemap: answer "${id}" is missing from SITEMAP_ANSWER_IDS in publication.ts`);
 for (const id of sitemapIds) if (!answerIds.has(id)) fail(`sitemap: SITEMAP_ANSWER_IDS lists "${id}", which is not an answer`);
+
+// The API's sitemap lists exactly the state pages that are indexable (those with a profile).
+const sitemapStates = new Set([...(publication.match(/SITEMAP_STATE_SLUGS = \[([^\]]*)\]/)?.[1] ?? '').matchAll(/"([^"]+)"/g)].map((match) => match[1]));
+const profiledStates = new Set(REGIONS.filter((region) => STATE_PROFILES[region.name]).map((region) => regionSlug(region.name)));
+for (const slug of profiledStates) if (!sitemapStates.has(slug)) fail(`sitemap: profiled state "${slug}" is missing from SITEMAP_STATE_SLUGS in publication.ts`);
+for (const slug of sitemapStates) if (!profiledStates.has(slug)) fail(`sitemap: SITEMAP_STATE_SLUGS lists "${slug}", which has no state profile (its page is noindex)`);
+for (const [name, profile] of Object.entries(STATE_PROFILES)) {
+  // Some official gazettes (e.g. Manipur's) are served only over http, so http is accepted here.
+  for (const fact of profile.facts) if (fact.source && !/^https?:\/\/[^\s]+$/.test(fact.source.url)) fail(`state "${name}": fact source must be a full http(s) link`);
+}
 
 // --- Policy ledger ----------------------------------------------------------------
 const packSlugs = new Set(POLICY_LEDGER_PACK.map((record) => record.slug));

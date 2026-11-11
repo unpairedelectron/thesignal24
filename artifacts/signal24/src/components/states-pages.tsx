@@ -15,8 +15,9 @@ import { PAGE_META } from '@/lib/page-meta';
 type Tier = 'profiled' | 'mentioned' | 'none';
 
 function formatDay(value: string, lang: 'en' | 'hi') {
-  const date = new Date(`${value}T12:00:00`);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString(lang === 'hi' ? 'hi-IN' : 'en-IN', { day: 'numeric', month: 'short', year: 'numeric', numberingSystem: 'latn' } as Intl.DateTimeFormatOptions);
+  const monthOnly = /^\d{4}-\d{2}$/.test(value);
+  const date = new Date(`${monthOnly ? `${value}-01` : value}T12:00:00`);
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString(lang === 'hi' ? 'hi-IN' : 'en-IN', { ...(monthOnly ? {} : { day: 'numeric' }), month: 'short', year: 'numeric', numberingSystem: 'latn' } as Intl.DateTimeFormatOptions);
 }
 
 function usePublishedStories() {
@@ -156,7 +157,7 @@ export function StatesPage() {
       kicker={t('The Signal 24 / state by state', 'द सिग्नल 24 / राज्य-दर-राज्य')}
       headline={t('One Constitution, 36 jurisdictions,', 'एक संविधान, 36 क्षेत्राधिकार,')}
       accent={t('and a ceiling most of them tested.', 'और एक सीमा जिसे ज़्यादातर ने परखा।')}
-      standfirst={t('Reservation is decided as much in state capitals as in Delhi. Pick any state or Union Territory for its laws, court cases and records. Where we have not yet published a sourced record, the page says so, and shows you how to find out yourself.', 'आरक्षण जितना दिल्ली में तय होता है, उतना ही राज्यों की राजधानियों में। किसी भी राज्य या केंद्रशासित प्रदेश के क़ानून, अदालती मामले और रिकॉर्ड के लिए उसे चुनिए। जहाँ हमने अभी स्रोत-आधारित रिकॉर्ड प्रकाशित नहीं किया, पेज यह साफ़ कहता है, और बताता है कि आप ख़ुद कैसे पता करें।')}
+      standfirst={t('Reservation is decided as much in state capitals as in Delhi. Pick any state or Union Territory for its laws, court cases and records. Where the latest status could not be confirmed, the profile labels that gap and links its sources.', 'आरक्षण जितना दिल्ली में तय होता है, उतना ही राज्यों की राजधानियों में। किसी भी राज्य या केंद्रशासित प्रदेश के क़ानून, अदालती मामले और रिकॉर्ड के लिए उसे चुनिए। जहाँ नवीनतम स्थिति की पुष्टि नहीं हुई, प्रोफ़ाइल उस कमी को बताती है और स्रोतों से जोड़ती है।')}
       stats={[
         { value: REGIONS.length, label: t('States and UTs', 'राज्य और केंद्रशासित प्रदेश') },
         { value: profiled.length, label: t('Full profiles', 'पूरी प्रोफ़ाइलें') },
@@ -264,7 +265,7 @@ export function StateProfilePage() {
       <div className="grid gap-10 border-y-2 border-foreground py-8 lg:grid-cols-[1.2fr_.8fr] lg:gap-16">
         <div>
           <p className="signal-kicker text-accent">{t('Where it stands, in dates', 'मामला कहाँ है, तारीख़ों में')}</p>
-          <ol className="topic-play mt-5">{profile.facts.map((fact) => <li key={fact.when + fact.text.en} className="topic-play-item is-decided"><time dateTime={fact.when} className="signal-kicker text-muted-foreground">{formatDay(fact.when, lang)}</time><p className="mt-1 text-[.95rem] leading-relaxed">{fact.text[lang]}</p></li>)}</ol>
+          <ol className="topic-play mt-5">{profile.facts.map((fact) => <li key={fact.when + fact.text.en} className="topic-play-item is-decided"><time dateTime={fact.when} className="signal-kicker text-muted-foreground">{formatDay(fact.when, lang)}</time><p className="mt-1 text-[.95rem] leading-relaxed">{fact.text[lang]}</p>{fact.source && <a className="mt-2 inline-flex text-xs underline underline-offset-4 text-muted-foreground hover:text-foreground" href={fact.source.url} target="_blank" rel="noopener noreferrer">{t(`Source: ${fact.source.label}`, `स्रोत: ${fact.source.label}`)} <ArrowUpRight size={12} className="ml-1" aria-hidden="true" /></a>}{fact.review && <p className="mt-1 text-xs text-muted-foreground" data-testid={`state-review-${regionSlug(region.name)}-${fact.when}`}>{t(`Status checked ${formatDay(fact.review.checkedOn, lang)} · Next check: ${fact.review.nextCheck.en}`, `${formatDay(fact.review.checkedOn, lang)} को स्थिति जाँची · अगली जाँच: ${fact.review.nextCheck.hi}`)}</p>}</li>)}</ol>
         </div>
         <div>
           <p className="signal-kicker text-accent">{t('The questions they won’t answer', 'वे सवाल, जिनका जवाब वे नहीं देंगे')}</p>
