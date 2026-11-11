@@ -47,6 +47,15 @@ A source-first public-interest publication and research archive covering UGC equ
 - Court explainers (`Courts & Policy`, not paper notes) live under `/articles/`; `/policies/:slug` belongs to the policy ledger. Old `/policies/<title>-<id>` story URLs redirect to the article.
 - Named authors: profiles in `src/lib/authors.ts`, pages at `/authors/:slug`, listed on About and in the sitemap. Pack reporting is bylined by desk (`artifacts/api-server/src/lib/authors.ts`); a byline an editor set is never overwritten. Bios state beat and method only — add credentials only if they are true.
 
+## Operations and content quality
+
+- `OPERATIONS.md` is the runbook for publishing: the never-break rules (primary sources, nothing invented, honest labels, public corrections, Hindi always), where each kind of content lives, the twice-weekly scheduled runs, and how a run publishes.
+- `pnpm run check:site` (`scripts/site-check.sh`) is the gate before any publish: `scripts/content-check.ts` (sources, bylines, length floors for stubs, Hindi present, author/sitemap lists in sync, update entries valid), both typechecks, web tests, API tests when `DATABASE_URL` is set, and both production builds.
+- Published records are updated without touching the database by hand: `STORY_UPDATES` and `POLICY_UPDATES` in `artifacts/api-server/src/lib/content-pack-updates.ts` are applied once on API start (dated `## Update` sections; newest court status per ledger record, never over a later editor change).
+- Answers carry a "what the law says" section and common mistakes (`src/lib/answers-depth.ts`); ledger records carry "why it matters" and open questions (`src/lib/policy-notes.ts`); About, Editorial standards and Methodology text lives in `src/lib/info-pages.ts`. All are rendered by the app and the page server.
+- Bylines are disclosed as pen names of the desk (`PEN_NAME_NOTE` in `src/lib/authors.ts`), and the standards page says records are AI-assisted, checked automatically and labelled source-linked. Keep those statements true.
+- Single event and source pages are `noindex, follow` and not in the sitemap (short reference entries); `/events` and `/timeline` carry them.
+
 ## Bilingual edition (English and Hindi)
 
 - English lives at `/`, Hindi at `/hi/...` (wouter nested route in `artifacts/signal24/src/App.tsx`). Language context, labels and the switch are in `src/lib/i18n.tsx`; URL localization, canonicals and hreflang are in `src/lib/seo.ts`.

@@ -3,7 +3,6 @@ import { and, asc, desc, eq, gte, inArray, like, lte, or } from "drizzle-orm";
 import {
   db,
   articleEventsTable,
-  articleSourcesTable,
   decisionImpactRecordsTable,
   decisionImpactRevisionsTable,
   eventSourcesTable,
@@ -11,7 +10,6 @@ import {
   issuesTable,
   policyRecordsTable,
   policySourcesTable,
-  sourceDocumentsTable,
   storiesTable,
   storyRevisionsTable,
 } from "@workspace/db";
@@ -516,7 +514,7 @@ const SITEMAP_STATE_SLUGS = ["andhra-pradesh", "bihar", "maharashtra", "punjab",
 
 router.get("/sitemap.xml", async (_req, res, next) => {
   try {
-    const [results, policyResults, eventResults, eventSourceResults, articleSourceResults] =
+    const [results, policyResults, eventResults] =
       await Promise.all([
         db
           .select({ story: storiesTable })
@@ -539,34 +537,6 @@ router.get("/sitemap.xml", async (_req, res, next) => {
           .from(evidenceEventsTable)
           .where(eq(evidenceEventsTable.workflowStatus, "published"))
           .orderBy(desc(evidenceEventsTable.updatedAt), asc(evidenceEventsTable.id)),
-        // Source pages are only public when linked to published records.
-        db
-          .select({ source: sourceDocumentsTable })
-          .from(eventSourcesTable)
-          .innerJoin(
-            evidenceEventsTable,
-            eq(eventSourcesTable.eventId, evidenceEventsTable.id),
-          )
-          .innerJoin(
-            sourceDocumentsTable,
-            eq(eventSourcesTable.sourceDocumentId, sourceDocumentsTable.id),
-          )
-          .where(eq(evidenceEventsTable.workflowStatus, "published")),
-        db
-          .select({ source: sourceDocumentsTable })
-          .from(articleSourcesTable)
-          .innerJoin(storiesTable, eq(articleSourcesTable.articleId, storiesTable.id))
-          .innerJoin(issuesTable, eq(storiesTable.issueId, issuesTable.id))
-          .innerJoin(
-            sourceDocumentsTable,
-            eq(articleSourcesTable.sourceDocumentId, sourceDocumentsTable.id),
-          )
-          .where(
-            and(
-              eq(storiesTable.workflowStatus, "published"),
-              eq(issuesTable.status, "published"),
-            ),
-          ),
       ]);
 
     const indexableStories = results
@@ -580,11 +550,6 @@ router.get("/sitemap.xml", async (_req, res, next) => {
     for (const story of indexableStories) {
       const current = topicLastmod.get(story.topic);
       if (!current || story.updatedAt > current) topicLastmod.set(story.topic, story.updatedAt);
-    }
-
-    const sources = new Map<number, typeof sourceDocumentsTable.$inferSelect>();
-    for (const { source } of [...eventSourceResults, ...articleSourceResults]) {
-      sources.set(source.id, source);
     }
 
     const opinionLastmod = latestDate(
@@ -637,14 +602,9 @@ router.get("/sitemap.xml", async (_req, res, next) => {
         lastmod: policy.updatedAt,
         hi: Boolean(policy.hi?.title && policy.hi.summary),
       })),
-      ...eventResults.map((event) => ({
-        path: `/events/${event.id}`,
-        lastmod: event.updatedAt,
-      })),
-      ...Array.from(sources.values(), (source) => ({
-        path: `/sources/${source.id}`,
-        lastmod: source.updatedAt,
-      })),
+      // Single event and source pages are short reference entries served with
+      // noindex (their links are crawled from /events and the records that cite them),
+      // so they are not listed here.
     ];
 
     res.type("application/xml").send(

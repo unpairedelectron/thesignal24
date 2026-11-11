@@ -10,6 +10,7 @@ import { useLang, useT } from '@/lib/i18n';
 import { useSeo } from '@/lib/seo';
 import { breadcrumbNode, collectionPageNode, organizationRef, siteGraph, webPageNode } from '@/lib/structured-data';
 import { PAGE_META } from '@/lib/page-meta';
+import { answerDepth } from '@/lib/answers-depth';
 
 function checkedOn(lang: 'en' | 'hi') {
   return new Date(`${ANSWERS_CHECKED_ON}T12:00:00`).toLocaleDateString(lang === 'hi' ? 'hi-IN' : 'en-IN', { day: 'numeric', month: 'short', year: 'numeric', numberingSystem: 'latn' } as Intl.DateTimeFormatOptions);
@@ -123,6 +124,7 @@ export function AnswerDetailPage() {
     ) : undefined,
   });
   if (!answer || !category) return <NotFound />;
+  const depth = answerDepth(answer.id);
   const related = (answer.related ?? []).map(answerById).filter((item): item is NonNullable<typeof item> => Boolean(item));
   return <main className="signal-page">
     <Header />
@@ -133,7 +135,9 @@ export function AnswerDetailPage() {
         <div>
           <section className="answer-block is-short" aria-labelledby="short-answer"><p id="short-answer" className="answer-block-label">{t('The short answer', 'सीधा जवाब')}</p><p className="answer-block-text">{answer.short[lang]}</p></section>
           <section className="answer-block is-truth" aria-labelledby="hard-truth"><p id="hard-truth" className="answer-block-label">{t('The hard truth', 'कड़वा सच')}</p><p className="answer-block-text">{answer.truth[lang]}</p></section>
+          {depth && <section className="answer-block is-law" aria-labelledby="what-the-law-says"><p id="what-the-law-says" className="answer-block-label">{t('What the law actually says', 'क़ानून असल में क्या कहता है')}</p><p className="answer-block-text">{depth.law[lang]}</p></section>}
           <section className="record-panel is-check" aria-labelledby="what-you-can-do"><p id="what-you-can-do" className="record-panel-title">{t('What you can do', 'आप क्या कर सकते हैं')}</p><ol>{answer.steps[lang].map((step, index) => <li key={step}><span className="record-panel-number" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span><span>{step}</span></li>)}</ol></section>
+          {depth && <section className="record-panel is-questions" aria-labelledby="caught-out"><p id="caught-out" className="record-panel-title">{t('Where people get caught out', 'लोग कहाँ चूक जाते हैं')}</p><ol>{depth.mistakes[lang].map((item, index) => <li key={item}><span className="record-panel-number" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span><span>{item}</span></li>)}</ol></section>}
         </div>
         <aside className="answer-detail-rail">
           <p className="article-rail-heading">{t('Official sources', 'आधिकारिक स्रोत')}</p>

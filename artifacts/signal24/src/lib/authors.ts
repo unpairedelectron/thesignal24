@@ -7,8 +7,9 @@
  * stories by desk in artifacts/api-server/src/lib/authors.ts, and lists the profile
  * URLs in the sitemap; keep the names and slugs there in sync with this file.
  *
- * Bios describe each person's beat and method at The Signal 24 only. Do not add
- * degrees, past employers, awards or other claims unless they are true and checkable.
+ * These are pen names of The Signal 24 desk, not the names of individual journalists,
+ * and every page that shows them says so (PEN_NAME_NOTE). Bios describe the desk's beat
+ * and method only: never add degrees, past employers, awards or other personal claims.
  */
 import type { Bilingual } from './key-figures';
 
@@ -108,6 +109,12 @@ export const AUTHORS: Author[] = [
     knowsAbout: ['Caste certificates in India', 'Right to Information Act', 'University Grants Commission', 'Public services in India'],
   },
 ];
+
+/** Shown wherever the names appear: the truth about who signs Signal 24 records. */
+export const PEN_NAME_NOTE: Bilingual = {
+  en: 'A pen name of The Signal 24 desk, not the name of an individual journalist. Records under it are drafted with AI assistance from the public sources they cite, checked automatically before they are published, and corrected in public.',
+  hi: 'यह द सिग्नल 24 डेस्क का उपनाम है, किसी अलग पत्रकार का नाम नहीं। इस नाम से छपे रिकॉर्ड उन सार्वजनिक स्रोतों से एआई की मदद से लिखे जाते हैं जिनका वे हवाला देते हैं, प्रकाशन से पहले उनकी स्वचालित जाँच होती है, और सुधार सार्वजनिक रूप से किए जाते हैं।',
+};
 
 /** Bylines that belong to the publication rather than a person. */
 export const EDITORIAL_BOARD_BYLINE = 'The Signal 24 editorial board';

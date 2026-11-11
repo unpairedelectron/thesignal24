@@ -16,6 +16,7 @@ import { CONTENT_PACK_OPINION } from "./content-pack-opinion";
 import type { ContentPackStory } from "./content-pack-types";
 import { POLICY_LEDGER_PACK } from "./policy-ledger-pack";
 import { EDITORIAL_DESK_BYLINE, packByline } from "./authors";
+import { POLICY_UPDATES, STORY_UPDATES } from "./content-pack-updates";
 import { ADDENDA_A } from "./content-pack-addenda-a";
 import { ADDENDA_B } from "./content-pack-addenda-b";
 
@@ -174,6 +175,89 @@ export async function ensureContentPack() {
   await retireStarterPlaceholders();
   await upgradeUntouchedBodies();
   await assignPackBylines();
+  await applyStoryUpdates();
+  await applyPolicyUpdates();
+}
+
+function updateDate(on: string, lang: "en" | "hi") {
+  return new Date(`${on}T00:00:00Z`).toLocaleDateString(lang === "hi" ? "hi-IN" : "en-IN", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+    numberingSystem: "latn",
+  } as Intl.DateTimeFormatOptions);
+}
+
+/** Append dated updates (content-pack-updates.ts) to published pack stories, once each. */
+async function applyStoryUpdates() {
+  if (STORY_UPDATES.length === 0) return;
+  const titleByKey = new Map(CONTENT_PACK.map((story) => [story.key, story.title]));
+  const updates = [...STORY_UPDATES].sort((a, b) => a.on.localeCompare(b.on));
+  for (const update of updates) {
+    const title = titleByKey.get(update.key);
+    if (!title) continue;
+    const [row] = await db.select().from(storiesTable).where(eq(storiesTable.title, title)).limit(1);
+    if (!row) continue;
+    const heading = `## Update: ${updateDate(update.on, "en")}`;
+    if (row.body.includes(heading)) continue;
+    const headingHi = `## अपडेट: ${updateDate(update.on, "hi")}`;
+    const body = `${row.body}\n\n${heading}\n\n${update.en}`;
+    const hi = row.hi?.body && !row.hi.body.includes(headingHi)
+      ? { ...row.hi, body: `${row.hi.body}\n\n${headingHi}\n\n${update.hi}` }
+      : row.hi;
+    const [latest] = await db
+      .select({ revisionNumber: storyRevisionsTable.revisionNumber })
+      .from(storyRevisionsTable)
+      .where(eq(storyRevisionsTable.storyId, row.id))
+      .orderBy(desc(storyRevisionsTable.revisionNumber))
+      .limit(1);
+    const [updated] = await db
+      .update(storiesTable)
+      .set({ body, hi, updatedAt: new Date() })
+      .where(eq(storiesTable.id, row.id))
+      .returning();
+    await db.insert(storyRevisionsTable).values({
+      storyId: row.id,
+      revisionNumber: (latest?.revisionNumber ?? 0) + 1,
+      changeNote: `Update of ${update.on} added (source: ${update.sourceUrl})`,
+      snapshot: {
+        title: updated.title,
+        workflowStatus: updated.workflowStatus,
+        verificationStatus: updated.verificationStatus,
+        source: updated.source,
+        sourceUrl: updated.sourceUrl,
+      },
+    });
+  }
+}
+
+/**
+ * Apply court-status updates (content-pack-updates.ts) to policy records. An update is
+ * skipped once applied, and never overwrites a record changed after the update's date.
+ */
+async function applyPolicyUpdates() {
+  if (POLICY_UPDATES.length === 0) return;
+  // Only the newest update for each record counts: later entries supersede earlier ones.
+  const latestBySlug = new Map<string, (typeof POLICY_UPDATES)[number]>();
+  for (const update of POLICY_UPDATES) {
+    const current = latestBySlug.get(update.slug);
+    if (!current || update.on > current.on) latestBySlug.set(update.slug, update);
+  }
+  for (const update of latestBySlug.values()) {
+    const [row] = await db.select().from(policyRecordsTable).where(eq(policyRecordsTable.slug, update.slug)).limit(1);
+    if (!row || row.courtStatus === update.courtStatus) continue;
+    if (row.updatedAt > new Date(`${update.on}T23:59:59Z`)) continue;
+    await db
+      .update(policyRecordsTable)
+      .set({
+        courtStatus: update.courtStatus,
+        ...(update.status ? { status: update.status } : {}),
+        hi: row.hi ? { ...row.hi, courtStatus: update.courtStatusHi } : row.hi,
+        updatedAt: new Date(),
+      })
+      .where(eq(policyRecordsTable.id, row.id));
+  }
 }
 
 /**
