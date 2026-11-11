@@ -49,6 +49,7 @@ A new article needs: a unique `key` and `title`; `topic` and `kind`; `source`, a
 - `/sitemap.xml` lists every indexable URL; `/news-sitemap.xml` lists records first published in the last 48 hours, for Google News. Both are generated from the database on request, so nothing needs regenerating.
 - When the API starts in production it submits new and changed URLs to IndexNow (Bing, Yandex and partners) and remembers what it sent (`indexnow_submissions`). A deploy is therefore enough to announce a run's new articles and updates.
 - Article `dateModified` comes from the record's `updatedAt`, so a dated update or edit shows as a modification.
+- Addresses from the sites that used to live on this domain (`/analysis/…`, `/topic/…`, `/explained/…`, `/article/…`, `*.jsp`) answer 410 Gone, or 301 where there is a real equivalent (`artifacts/signal24/server/legacy.ts`). Never start a new section under one of those prefixes.
 
 ## Publishing a run
 

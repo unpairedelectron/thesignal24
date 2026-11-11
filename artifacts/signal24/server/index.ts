@@ -14,6 +14,7 @@ import { fileURLToPath } from 'node:url';
 import { brotliCompressSync, constants as zlibConstants, gzipSync } from 'node:zlib';
 import { ApiUnavailable, getApiText } from './api';
 import { renderDocument } from './html';
+import { legacyRoute } from './legacy';
 import { renderPath } from './render';
 
 const rawPort = process.env.PORT;
@@ -137,7 +138,7 @@ async function serveStatic(req: IncomingMessage, res: ServerResponse, file: stri
 
 const HTML_HEADERS = { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=0, must-revalidate' };
 
-async function servePage(req: IncomingMessage, res: ServerResponse, pathname: string, search: string) {
+async function servePage(req: IncomingMessage, res: ServerResponse, pathname: string, search: string, status?: number) {
   try {
     const result = await renderPath(pathname);
     if (result.kind === 'redirect') {
@@ -146,7 +147,7 @@ async function servePage(req: IncomingMessage, res: ServerResponse, pathname: st
       res.end();
       return;
     }
-    send(req, res, result.status, HTML_HEADERS, Buffer.from(renderDocument(template, result.page)));
+    send(req, res, status ?? result.status, HTML_HEADERS, Buffer.from(renderDocument(template, result.page)));
   } catch (error) {
     // The API is down or starting: serve the plain app shell, which loads its data in
     // the browser, with a 503 so crawlers come back instead of indexing an empty page.
@@ -181,6 +182,18 @@ const server = createServer((req, res) => {
     if (pathname === '/healthz') {
       res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' });
       res.end(req.method === 'HEAD' ? undefined : 'ok');
+      return;
+    }
+    // Addresses from the sites that used to live on this domain (see legacy.ts).
+    const legacy = legacyRoute(pathname.replace(/\/+$/, '') || '/');
+    if (legacy?.status === 301) {
+      res.writeHead(301, { Location: legacy.location, 'Cache-Control': 'public, max-age=86400' });
+      res.end();
+      return;
+    }
+    if (legacy?.status === 410) {
+      // The not-found page (noindex), sent as 410 Gone so it leaves the index for good.
+      await servePage(req, res, pathname, search, 410);
       return;
     }
     // One URL per page: no trailing slash, and the raw shell is never a page.
