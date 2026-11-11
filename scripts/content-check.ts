@@ -192,7 +192,9 @@ for (const entry of STORY_CITATIONS) {
   }
   if (entry.primary && !isHttps(entry.primary.sourceUrl)) fail(`${label}: primary source must be https`);
 }
-const ledgerSlugs = new Set(POLICY_LEDGER_PACK.map((record) => record.slug));
+// Ledger records come from the pack and from the original seed (seed.ts).
+const seedSource = readFileSync(new URL('../artifacts/api-server/src/lib/seed.ts', import.meta.url), 'utf8');
+const ledgerSlugs = new Set([...POLICY_LEDGER_PACK.map((record) => record.slug), ...[...seedSource.matchAll(/slug:\s*["']([a-z0-9-]+)["']/g)].map((match) => match[1])]);
 for (const entry of POLICY_CITATIONS) {
   if (!ledgerSlugs.has(entry.slug)) fail(`policy citations: "${entry.slug}" is not a ledger record`);
   for (const source of entry.sources) if (!isHttps(source.url)) fail(`policy citations "${entry.slug}": source must be https`);

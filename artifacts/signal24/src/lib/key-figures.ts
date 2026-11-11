@@ -27,7 +27,7 @@ export type KeyFigure = {
 
 export const KEY_FIGURES_CHECKED_ON = '2026-11-10';
 
-const INDRA = { name: 'Indra Sawhney v. Union of India (1992)', url: 'https://indiankanoon.org/search/?formInput=Indra%20Sawhney%20vs%20Union%20of%20India%2016%20November%201992' };
+const INDRA = { name: 'Supreme Court of India: Indra Sawhney v. Union of India, judgment of 16 November 1992 (full text)', url: 'https://indiankanoon.org/doc/1363234/' };
 
 export const KEY_FIGURES: KeyFigure[] = [
   {
@@ -59,7 +59,7 @@ export const KEY_FIGURES: KeyFigure[] = [
     year: '1990',
     geography: { en: 'Central government', hi: 'केंद्र सरकार' },
     status: { en: 'In force', hi: 'लागू' },
-    source: { name: 'Business Standard', url: 'https://business-standard.com/india-news/the-mandal-commission-decoded-how-obc-reservation-came-into-effect-123102000445_1.html' },
+    source: INDRA,
     tone: 'law',
   },
   {
@@ -75,7 +75,7 @@ export const KEY_FIGURES: KeyFigure[] = [
     year: '2019',
     geography: { en: 'All India', hi: 'पूरा भारत' },
     status: { en: 'In force', hi: 'लागू' },
-    source: { name: 'Supreme Court Observer', url: 'https://www.scobserver.in/court-case/reservations-for-economically-weaker-sections' },
+    source: { name: 'Supreme Court of India: Janhit Abhiyan v. Union of India, record of 7 November 2022', url: 'https://api.sci.gov.in/supremecourt/2019/1827/1827_2019_1_1501_39619_Order_07-Nov-2022.pdf' },
     tone: 'law',
   },
   {
@@ -92,7 +92,7 @@ export const KEY_FIGURES: KeyFigure[] = [
     year: '2017',
     geography: { en: 'Central government', hi: 'केंद्र सरकार' },
     status: { en: 'Frozen since 2017', hi: '2017 से जमी हुई' },
-    source: { name: 'Business Standard', url: 'https://www.business-standard.com/india-news/need-of-the-hour-to-revise-creamy-layer-ceiling-for-obcs-parl-panel-125080800995_1.html' },
+    source: { name: 'DoPT Office Memorandum No. 36033/1/2013-Estt.(Res), 13 September 2017 (NCBC copy)', url: 'https://www.ncbc.nic.in/Writereaddata/OM8Lakha.pdf' },
     tone: 'withheld',
   },
   {
@@ -157,7 +157,7 @@ export const KEY_FIGURES: KeyFigure[] = [
     year: '2023',
     geography: { en: 'Bihar', hi: 'बिहार' },
     status: { en: 'Struck down', hi: 'रद्द' },
-    source: { name: 'Bar & Bench', url: 'https://www.barandbench.com/news/litigation/supreme-court-refuses-stay-patna-high-court-decision-quash-bihar-reservation-law' },
+    source: { name: 'Patna High Court: Gaurav Kumar v. State of Bihar, judgment of 20 June 2024 (full text)', url: 'https://indiankanoon.org/doc/19048737/' },
     tone: 'court',
   },
   {
@@ -171,7 +171,7 @@ export const KEY_FIGURES: KeyFigure[] = [
     year: '2024',
     geography: { en: 'All India', hi: 'पूरा भारत' },
     status: { en: 'Binding precedent', hi: 'बाध्यकारी नज़ीर' },
-    source: { name: 'Supreme Court Observer', url: 'https://www.scobserver.in/court-case/scheduled-castes-preferential-treatment' },
+    source: { name: 'Supreme Court of India: State of Punjab v. Davinder Singh, judgment of 1 August 2024', url: 'https://api.sci.gov.in/supremecourt/2010/25536/25536_2010_1_1501_54462_Judgement_01-Aug-2024.pdf' },
     tone: 'court',
   },
   {
@@ -185,7 +185,7 @@ export const KEY_FIGURES: KeyFigure[] = [
     year: '1931',
     geography: { en: 'All India', hi: 'पूरा भारत' },
     status: { en: 'Count due 2027', hi: 'गणना 2027 में' },
-    source: { name: 'Business Today', url: 'https://www.businesstoday.in/india/story/initial-phase-of-census-2027-to-begin-on-april-1-houselisting-to-be-done-within-30-day-period-509920-2026-01-08' },
+    source: { name: 'Press Information Bureau: Census 2027, India’s first digital enumeration exercise', url: 'https://www.pib.gov.in/PressReleasePage.aspx?PRID=2255461' },
     tone: 'data',
   },
 ];

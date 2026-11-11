@@ -14,6 +14,23 @@ export type StateFact = {
   review?: { checkedOn: string; nextCheck: Bilingual };
 };
 
+/**
+ * Whether a fact's source is an official record (a government, legislature or court
+ * document, or the full text of a judgment) or a press report about one. Readers see
+ * which, because a report of an order is not the order.
+ */
+export function sourceKind(url: string): 'official' | 'press' {
+  let host = '';
+  try { host = new URL(url).hostname.toLowerCase(); } catch { return 'press'; }
+  return /(^|\.)(gov\.in|nic\.in|sansad\.in|indiankanoon\.org|s3waas\.gov\.in)$/.test(host) ? 'official' : 'press';
+}
+
+export function sourceKindLabel(url: string) {
+  return sourceKind(url) === 'official'
+    ? { en: 'Official record', hi: 'आधिकारिक रिकॉर्ड' }
+    : { en: 'Secondary report', hi: 'द्वितीयक रिपोर्ट' };
+}
+
 export const REGIONS: Region[] = [
   { name: 'Andhra Pradesh', hi: 'आंध्र प्रदेश', kind: 'state' },
   { name: 'Arunachal Pradesh', hi: 'अरुणाचल प्रदेश', kind: 'state' },

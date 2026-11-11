@@ -111,8 +111,9 @@ const JARNAIL_2018: Citation = {
   hi: '**जरनैल सिंह बनाम लच्छी नारायण गुप्ता**, (2018) 10 SCC 396। पाँच जज, 2018: एससी और एसटी के पिछड़ेपन के आंकड़ों की शर्त हटाई; अपर्याप्त प्रतिनिधित्व के आंकड़ों की शर्त बनी रही।',
 };
 const JARNAIL_2022: Citation = {
-  en: '**Jarnail Singh v Lachhmi Narain Gupta**, Civil Appeals 629–630 of 2022, decided 28 January 2022 (three judges): data must be collected cadre by cadre; the court declined to set a yardstick for adequacy.',
-  hi: '**जरनैल सिंह बनाम लच्छी नारायण गुप्ता**, सिविल अपील 629–630 / 2022, फ़ैसला 28 जनवरी 2022 (तीन जज): आंकड़े कैडर-दर-कैडर जुटाने होंगे; अदालत ने पर्याप्तता का पैमाना तय करने से इनकार किया।',
+  en: '**Jarnail Singh v Lachhmi Narain Gupta**, Civil Appeal No. 629 of 2022 (from SLP (C) No. 30621 of 2011), decided 28 January 2022 by Justices L. Nageswara Rao, Sanjiv Khanna and B. R. Gavai: data must be collected cadre by cadre; the court declined to set a yardstick for adequacy.',
+  hi: '**जरनैल सिंह बनाम लच्छी नारायण गुप्ता**, सिविल अपील सं. 629 / 2022 (एसएलपी (सी) सं. 30621 / 2011 से), फ़ैसला 28 जनवरी 2022, जस्टिस एल. नागेश्वर राव, संजीव खन्ना और बी. आर. गवई: आंकड़े कैडर-दर-कैडर जुटाने होंगे; अदालत ने पर्याप्तता का पैमाना तय करने से इनकार किया।',
+  url: 'https://api.sci.gov.in/supremecourt/2011/34614/34614_2011_35_1501_32956_Judgement_28-Jan-2022.pdf',
 };
 const MADHURI_PATIL: Citation = {
   en: '**Kumari Madhuri Patil v Additional Commissioner, Tribal Development**, (1994) 6 SCC 241: set out how SC and ST claims are verified, including by state scrutiny committees.',
@@ -125,6 +126,7 @@ const BIR_SINGH: Citation = {
 const BIHAR_HC: Citation = {
   en: '**Gaurav Kumar v State of Bihar**, Patna High Court, CWJC No. 16760 of 2023; 2024 SCC OnLine Pat 2308. Decided 20 June 2024: struck down the Bihar reservation amendment Acts of 2023 that raised the quota to 65%.',
   hi: '**गौरव कुमार बनाम बिहार राज्य**, पटना हाई कोर्ट, सीडब्ल्यूजेसी सं. 16760 / 2023; 2024 SCC OnLine Pat 2308। फ़ैसला 20 जून 2024: कोटा 65% करने वाले बिहार के 2023 के आरक्षण संशोधन अधिनियम रद्द किए।',
+  url: 'https://indiankanoon.org/doc/19048737/',
 };
 const BIHAR_SC: Citation = {
   en: '**Supreme Court order of 29 July 2024** in the State of Bihar’s appeals: refused to stay the Patna High Court judgment and listed the appeals for hearing.',
@@ -138,10 +140,11 @@ const SEBC_2024: Citation = {
 const UGC_2026: Citation = {
   en: '**University Grants Commission (Promotion of Equity in Higher Education Institutions) Regulations, 2026**, notified in the Gazette of India (Extraordinary, Part III, Section 4) on 13 January 2026, replacing the 2012 regulations.',
   hi: '**विश्वविद्यालय अनुदान आयोग (उच्च शिक्षा संस्थानों में समता का संवर्धन) विनियम, 2026**, 13 जनवरी 2026 को भारत के राजपत्र (असाधारण, भाग III, खंड 4) में अधिसूचित, 2012 के विनियमों की जगह।',
+  url: 'https://www.ugc.gov.in/pdfnews/1881254_UGC-Promotion-of-Equity-in-HEIs-Regulations-2026.pdf',
 };
 const UGC_STAY: Citation = {
-  en: '**Supreme Court interim order of 29 January 2026** in the Mritunjay Tiwari batch of petitions (Chief Justice Surya Kant and Justice Joymalya Bagchi): kept the 2026 regulations in abeyance and, under Article 142, continued the 2012 regulations.',
-  hi: '**29 जनवरी 2026 का सुप्रीम कोर्ट का अंतरिम आदेश**, मृत्युंजय तिवारी याचिकाओं के समूह में (मुख्य न्यायाधीश सूर्यकांत और जस्टिस जॉयमाल्य बागची): 2026 के विनियम स्थगित रखे और अनुच्छेद 142 के तहत 2012 के विनियम जारी रखे।',
+  en: '**Supreme Court interim order of 29 January 2026** in Mritunjay Tiwari v Union of India, W.P.(C) No. 101 of 2026 and connected petitions (Chief Justice Surya Kant and Justice Joymalya Bagchi): kept the 2026 regulations in abeyance and, under Article 142, continued the 2012 regulations.',
+  hi: '**29 जनवरी 2026 का सुप्रीम कोर्ट का अंतरिम आदेश**, मृत्युंजय तिवारी बनाम भारत संघ, रिट याचिका (सिविल) सं. 101 / 2026 और जुड़ी याचिकाओं में (मुख्य न्यायाधीश सूर्यकांत और जस्टिस जॉयमाल्य बागची): 2026 के विनियम स्थगित रखे और अनुच्छेद 142 के तहत 2012 के विनियम जारी रखे।',
 };
 const CENSUS_ACT: Citation = {
   en: '**Census Act, 1948**, and the notification of 16 June 2025 under its section 3 fixing 1 March 2027 as the reference date for most of India (1 October 2026 for snow-bound areas); the notification itself did not mention caste.',
@@ -151,6 +154,7 @@ const CENSUS_ACT: Citation = {
 const CCPA_2025: Citation = {
   en: '**Cabinet Committee on Political Affairs decision of 30 April 2025**: caste to be enumerated in the next census.',
   hi: '**राजनीतिक मामलों की मंत्रिमंडलीय समिति का 30 अप्रैल 2025 का फ़ैसला**: अगली जनगणना में जाति की गणना होगी।',
+  url: 'https://www.pib.gov.in/PressReleasePage.aspx?PRID=2202983',
 };
 const SECC_2021: Citation = {
   en: '**Union of India’s affidavit in the Supreme Court, September 2021**, in Maharashtra’s petition for SECC 2011 caste data: called the caste data unusable for official purposes. The court dismissed the petition on 15 December 2021.',
@@ -174,12 +178,12 @@ const CONSTITUTION: Citation = {
 const ON = '2026-11-11';
 
 export const STORY_CITATIONS: StoryCitations[] = [
-  { key: 'ugc-equity-regulations-2026', on: ON, items: [UGC_2026, UGC_STAY] },
+  { key: 'ugc-equity-regulations-2026', on: ON, primary: { source: 'University Grants Commission: UGC (Promotion of Equity in Higher Education Institutions) Regulations, 2026, Gazette of India notification of 13 January 2026', sourceUrl: 'https://www.ugc.gov.in/pdfnews/1881254_UGC-Promotion-of-Equity-in-HEIs-Regulations-2026.pdf', sourcePublishedOn: '2026-01-13' }, items: [UGC_2026, UGC_STAY] },
   { key: 'opinion-sixteen-days', on: ON, items: [UGC_2026, UGC_STAY, FIRST_AMENDMENT] },
-  { key: 'census-2027-caste-count', on: ON, items: [CENSUS_ACT, CCPA_2025, SECC_2021] },
+  { key: 'census-2027-caste-count', on: ON, primary: { source: 'Press Information Bureau: Cabinet approves the scheme for the Census of India 2027', sourceUrl: 'https://www.pib.gov.in/PressReleasePage.aspx?PRID=2202983', sourcePublishedOn: null }, items: [CENSUS_ACT, CCPA_2025, SECC_2021] },
   { key: 'counting-caste-secc-census', on: ON, items: [SECC_2021, CCPA_2025, CENSUS_ACT, ROHINI] },
-  { key: 'bihar-65-percent-law', on: ON, items: [BIHAR_HC, BIHAR_SC, INDRA_SAWHNEY] },
-  { key: 'maratha-quota-third-attempt', on: ON, items: [SEBC_2024, MARATHA_2021, INDRA_SAWHNEY] },
+  { key: 'bihar-65-percent-law', on: ON, primary: { source: 'Patna High Court: Gaurav Kumar v. State of Bihar, CWJC No. 16760 of 2023, judgment of 20 June 2024 (full text)', sourceUrl: 'https://indiankanoon.org/doc/19048737/', sourcePublishedOn: '2024-06-20' }, items: [BIHAR_HC, BIHAR_SC, INDRA_SAWHNEY] },
+  { key: 'maratha-quota-third-attempt', on: ON, primary: { source: 'Maharashtra State Reservation for Socially and Educationally Backward Classes Act, 2024 (Maharashtra Act No. XVI of 2024), text as published (copy hosted by SNDT Women’s University)', sourceUrl: 'https://www.sndt.ac.in/pdf/special-cell/admission/2024/sebc-reservation-act-2024.pdf', sourcePublishedOn: '2024-02-26' }, items: [SEBC_2024, MARATHA_2021, INDRA_SAWHNEY] },
   { key: 'states-quota-regimes', on: ON, items: [BIHAR_HC, BIHAR_SC, SEBC_2024, MARATHA_2021, COELHO, INDRA_SAWHNEY] },
   { key: 'opinion-quota-laws-built-to-fail', on: ON, items: [MARATHA_2021, BIHAR_HC, INDRA_SAWHNEY] },
   { key: 'certificate-paper-chase', on: ON, items: [OM_EWS, OM_1993, OM_2017, MADHURI_PATIL, BIR_SINGH] },
@@ -188,7 +192,7 @@ export const STORY_CITATIONS: StoryCitations[] = [
   { key: 'constitution-article-by-article', on: ON, items: [CONSTITUTION, FIRST_AMENDMENT, CHAMPAKAM, INDRA_SAWHNEY, MARATHA_2021, JANHIT_ABHIYAN] },
   { key: 'before-1950-history', on: ON, primary: { source: 'Text of the Poona Pact, 24 September 1932 (Constitution of India project, Centre for Law and Policy Research)', sourceUrl: 'https://constitutionofindia.net/historical-constitution/poona-pact-1932-b-r-ambedkar-and-m-k-gandhi', sourcePublishedOn: '1932-09-24' }, items: [KOLHAPUR_1902, POONA_PACT, CHAMPAKAM] },
   { key: 'indra-sawhney-1992', on: ON, primary: { source: 'Supreme Court of India: Indra Sawhney v. Union of India, judgment of 16 November 1992 (full text)', sourceUrl: 'https://indiankanoon.org/doc/1363234/', sourcePublishedOn: '1992-11-16' }, items: [INDRA_SAWHNEY, MANDAL_OM, OM_1993, MARATHA_2021] },
-  { key: 'promotions-quantifiable-data', on: ON, items: [NAGARAJ, JARNAIL_2018, JARNAIL_2022] },
+  { key: 'promotions-quantifiable-data', on: ON, primary: { source: 'Supreme Court of India: Jarnail Singh v. Lachhmi Narain Gupta, Civil Appeal No. 629 of 2022, judgment of 28 January 2022', sourceUrl: 'https://api.sci.gov.in/supremecourt/2011/34614/34614_2011_35_1501_32956_Judgement_28-Jan-2022.pdf', sourcePublishedOn: '2022-01-28' }, items: [NAGARAJ, JARNAIL_2018, JARNAIL_2022] },
   { key: 'sc-sub-classification-2024', on: ON, primary: { source: 'Supreme Court of India: State of Punjab v. Davinder Singh, judgment of 1 August 2024', sourceUrl: 'https://api.sci.gov.in/supremecourt/2010/25536/25536_2010_1_1501_54462_Judgement_01-Aug-2024.pdf', sourcePublishedOn: '2024-08-01' }, items: [DAVINDER_SINGH, CHINNAIAH, CABINET_2024] },
   { key: 'eight-lakh-line', on: ON, primary: { source: 'DoPT Office Memorandum No. 36033/1/2013-Estt.(Res), 13 September 2017 (copy on the National Commission for Backward Classes website)', sourceUrl: 'https://www.ncbc.nic.in/Writereaddata/OM8Lakha.pdf', sourcePublishedOn: '2017-09-13' }, items: [OM_1993, OM_2017, OM_EWS, PANDEY_2021, OBC_PANEL_2025] },
   { key: 'mandal-to-rohini', on: ON, items: [MANDAL_OM, INDRA_SAWHNEY, ROHINI] },
@@ -225,4 +229,30 @@ export const POLICY_CITATIONS: PolicyCitations[] = [
       hi: 'इस रिकॉर्ड में अधिनियम के लागू होने की तारीख़ 20 फ़रवरी 2024 दी गई थी, जिस दिन विधानमंडल ने इसे पारित किया। अधिनियम 26 फ़रवरी 2024 को लागू हुआ, जब राज्यपाल की स्वीकृति महाराष्ट्र सरकार राजपत्र में प्रकाशित हुई।',
     },
   },
+  {
+    slug: 'ugc-equity-regulations-2026',
+    on: ON,
+    sources: [{ title: 'UGC (Promotion of Equity in Higher Education Institutions) Regulations, 2026, Gazette of India notification of 13 January 2026', sourceType: 'regulation', publisher: 'University Grants Commission', url: 'https://www.ugc.gov.in/pdfnews/1881254_UGC-Promotion-of-Equity-in-HEIs-Regulations-2026.pdf', publishedOn: '2026-01-13', isPrimary: true }],
+  },
+  {
+    slug: 'census-2027-caste-enumeration',
+    on: ON,
+    sources: [{ title: 'Cabinet approves the scheme for the Census of India 2027', sourceType: 'government', publisher: 'Press Information Bureau, Government of India', url: 'https://www.pib.gov.in/PressReleasePage.aspx?PRID=2202983', publishedOn: null, isPrimary: true }],
+  },
+  {
+    slug: 'bihar-reservation-amendments-2023',
+    on: ON,
+    sources: [{ title: 'Gaurav Kumar v. State of Bihar, CWJC No. 16760 of 2023, judgment of 20 June 2024 (full text)', sourceType: 'court', publisher: 'Patna High Court, via Indian Kanoon', url: 'https://indiankanoon.org/doc/19048737/', publishedOn: '2024-06-20', isPrimary: true }],
+  },
+  {
+    slug: 'reservation-in-promotion-77th-amendment',
+    on: ON,
+    sources: [{ title: 'Jarnail Singh v. Lachhmi Narain Gupta, Civil Appeal No. 629 of 2022, judgment of 28 January 2022', sourceType: 'court', publisher: 'Supreme Court of India', url: 'https://api.sci.gov.in/supremecourt/2011/34614/34614_2011_35_1501_32956_Judgement_28-Jan-2022.pdf', publishedOn: '2022-01-28', isPrimary: true }],
+  },
+  {
+    slug: '103rd-constitutional-amendment-ews-reservation',
+    on: ON,
+    sources: [{ title: 'Janhit Abhiyan v. Union of India, record of 7 November 2022 (judgment pronounced)', sourceType: 'court', publisher: 'Supreme Court of India', url: 'https://api.sci.gov.in/supremecourt/2019/1827/1827_2019_1_1501_39619_Order_07-Nov-2022.pdf', publishedOn: '2022-11-07', isPrimary: true }],
+  },
+
 ];
