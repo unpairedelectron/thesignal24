@@ -399,7 +399,7 @@ function Home() {
   const second = investigation ?? reporting.find((story) => story.id !== featured?.id);
   const rail = reporting.filter((story) => story.id !== featured?.id && story.id !== second?.id).slice(0, 6);
   return <main className="signal-page"><Header />
-    <HomeFront lead={featured} recordCount={stories.length} />
+    <HomeFront lead={featured} recordCount={stories.length} dark />
     {(second || rail.length > 0) && <section className="signal-container hp-section" id="latest-stories" aria-labelledby="front-title">
       <SectionHead id="front-title" kicker={t('Latest reporting', 'ताज़ा रिपोर्टिंग')} title={t(<>Follow the paper trail. <em>Nobody expected you to.</em></>, <>काग़ज़ों का सिरा पकड़िए। <em>किसी को उम्मीद नहीं थी कि आप पकड़ेंगे।</em></>)} link="/archive" linkLabel={t('The full archive', 'पूरा अभिलेखागार')} />
       <div className="hp-front">

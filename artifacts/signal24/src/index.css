@@ -1857,3 +1857,36 @@ h1.font-display:lang(hi) { line-height: 1.28 !important; }
 .hp-ledger-card:hover { box-shadow: none; border-color: hsl(var(--foreground) / .45); transform: translateY(-2px); }
 /* In-page links from the front page land below the sticky header. */
 .signal-page section[id] { scroll-margin-top: 5.5rem; }
+
+/* Front page, dark edition: the same broadsheet set in ink, in the stage's colours.
+   Tokens are re-mapped inside .hf so every hf-* rule above adapts. */
+.hf.is-dark {
+  --background: 24 22% 8%;
+  --foreground: 42 44% 95%;
+  --card: 24 20% 12%;
+  --muted: 24 16% 16%;
+  --muted-foreground: 36 18% 70%;
+  --accent: 8 78% 66%;
+  --accent-foreground: 42 44% 97%;
+  --secondary: 172 32% 62%;
+  color: hsl(var(--foreground));
+  color-scheme: dark;
+  border-bottom-color: hsl(var(--accent) / .55);
+  background:
+    radial-gradient(60rem 34rem at 78% 30%, hsl(8 62% 46% / .16), transparent 65%),
+    radial-gradient(40rem 30rem at 8% 85%, hsl(40 62% 62% / .06), transparent 70%),
+    hsl(var(--background));
+}
+.hf.is-dark .hf-dateline { border-bottom-color: hsl(var(--foreground) / .35); }
+.hf.is-dark .hf-dateline time { color: hsl(40 62% 70%); }
+.hf.is-dark .hf-kicker-tag { background: hsl(8 62% 46%); color: hsl(var(--foreground)); }
+.hf.is-dark .hf-button { border-color: hsl(var(--foreground) / .45); }
+.hf.is-dark .hf-button:hover { background: hsl(var(--foreground)); border-color: hsl(var(--foreground)); color: hsl(var(--background)); }
+.hf.is-dark .hf-button.is-primary { background: hsl(8 62% 46%); border-color: hsl(8 62% 46%); color: hsl(var(--foreground)); }
+.hf.is-dark .hf-button.is-primary:hover { background: hsl(8 66% 54%); border-color: hsl(8 66% 54%); color: hsl(var(--foreground)); }
+.hf.is-dark .hf-art-frame { border-color: hsl(var(--foreground) / .14); box-shadow: 0 2.4rem 4rem -2.4rem hsl(0 0% 0% / .9); }
+.hf.is-dark .hf-art.is-illustration .hf-art-frame { background: hsl(38 30% 90%); }
+.hf.is-dark .hf-clocks { border-top-color: hsl(var(--foreground) / .35); }
+.hf.is-dark .hf-clocks > li + li { border-color: hsl(var(--foreground) / .14); }
+.hf.is-dark .hf-clock:hover { background: hsl(var(--foreground) / .05); }
+.hf.is-dark .hf-clock-unit { color: hsl(40 62% 70%); }

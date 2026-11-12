@@ -18,7 +18,7 @@ function dateLabel(value: string | null | undefined, lang: 'en' | 'hi', options:
  * art, and the running clocks along the foot. It fills the first screen on desktop
  * and enters once on load (CSS only, removed under reduced motion).
  */
-export function HomeFront({ lead, recordCount }: { lead?: LocalizedStory; recordCount: number }) {
+export function HomeFront({ lead, recordCount, dark = false }: { lead?: LocalizedStory; recordCount: number; dark?: boolean }) {
   const t = useT();
   const lang = useLang();
   const label = useLabel();
@@ -26,7 +26,7 @@ export function HomeFront({ lead, recordCount }: { lead?: LocalizedStory; record
   const today = new Date();
   const art = lead ? imageForStory(lead) : illustration('magnifier-hero');
 
-  return <section className="hf" aria-labelledby="hf-title" data-testid="home-front">
+  return <section className={`hf ${dark ? 'is-dark' : ''}`} aria-labelledby="hf-title" data-testid="home-front">
     <div className="signal-container hf-inner">
       <div className="hf-dateline hf-enter" style={{ ['--d' as string]: 0 }}>
         <time dateTime={today.toISOString().slice(0, 10)}>{dateLabel(today.toISOString(), lang, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</time>
