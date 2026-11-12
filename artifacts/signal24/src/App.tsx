@@ -2,7 +2,6 @@ import { lazy, Suspense, type FormEvent, type ReactNode, useEffect, useMemo, use
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import {
   Archive,
-  ArrowDownRight,
   ArrowLeft,
   ArrowUpRight,
   BookOpen,
@@ -102,10 +101,10 @@ import { ACCOUNTABILITY_CHECKED_ON, ACCOUNTABILITY_ITEMS } from '@/lib/accountab
 import { RichBody, outlineOf } from '@/components/rich-body';
 import { GlobalFooter, Header } from '@/components/site-chrome';
 import { WhatsAppShare } from '@/components/share';
-import { HomeStage } from '@/components/home-stage';
+import { HomeFront } from '@/components/home-front';
 import { CommunityTeaser, DeskStrip, LedgerTrio, SectionHead, TimelineStrip } from '@/components/home-sections';
 import { KeyFigures } from '@/components/key-figures';
-import { CountUp } from '@/components/home-stage';
+import { CountUp } from '@/components/count-up';
 import { KEY_FIGURES, daysSince, type Bilingual } from '@/lib/key-figures';
 import { LazyMotion, m, useReducedMotion } from 'framer-motion';
 import type { CabinetDrawer } from '@/components/topic-stage';
@@ -397,12 +396,10 @@ function Home() {
   const sourcedStories = reporting.filter((story) => story.verificationStatus !== 'unverified' && Boolean(story.sourceUrl));
   const featured = sourcedStories[0];
   const investigation = sourcedStories.find((story) => story.id !== featured?.id && (story.kind === 'Article' || story.kind === 'Explainer'));
-  const featuredImage = featured ? imageForStory(featured) : null;
   const second = investigation ?? reporting.find((story) => story.id !== featured?.id);
   const rail = reporting.filter((story) => story.id !== featured?.id && story.id !== second?.id).slice(0, 6);
   return <main className="signal-page"><Header />
-    <HomeStage stories={stories} storyHref={storyPath} />
-    {featured ? <section className={`signal-container visual-hero mt-7 ${featuredImage?.kind === 'illustration' ? 'visual-hero--illustration' : ''}`} data-testid={`card-home-hero-${featured.id}`}>{featuredImage ? <img src={featuredImage.src} alt={featuredImage.alt} width={featuredImage.width} height={featuredImage.height} fetchPriority="high" decoding="async" className="absolute inset-0 h-full w-full object-cover" /> : <div className="story-art-placeholder absolute inset-0" />}<div className="visual-hero-copy flex min-h-[440px] flex-col justify-end p-6 sm:min-h-[560px] sm:max-w-[72%] sm:p-12 lg:min-h-[680px] lg:max-w-[62%] lg:p-16"><p className="signal-kicker text-accent">{label(featured.topic)} / {label(featured.kind)}</p><Link href={storyPath(featured)} className="group mt-4 block"><h1 lang={featured.contentLang} className="max-w-4xl font-display text-5xl leading-[.91] tracking-[-.055em] group-hover:text-accent sm:text-7xl lg:text-[6.8rem]" data-testid="heading-hero">{featured.title}</h1></Link><p lang={featured.contentLang} className="mt-5 max-w-xl text-base leading-relaxed text-primary-foreground/75 sm:text-lg">{featured.dek}</p><div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 signal-kicker text-primary-foreground/70"><span>{formatDate(featured.publishedOn ?? featured.recordDate)}</span><span>{t(`${featured.read} min read`, `${featured.read} मिनट`)}</span><span>{verificationLabel(featured.verificationStatus)}</span></div><Link href={storyPath(featured)} className="mt-7 inline-flex w-fit items-center gap-2 signal-button bg-accent text-accent-foreground" data-testid="link-read-briefing">{t('Read the record', 'पूरा रिकॉर्ड पढ़ें')} <ArrowUpRight size={14} /></Link></div>{featuredImage && <p className="hero-credit">{featuredImage.credit} · {t('contextual, not evidence for this record', 'संदर्भ के लिए, इस रिकॉर्ड का सबूत नहीं')}</p>}</section> : <section className="signal-container mt-7 border-y-2 border-foreground py-0"><div className="grid min-h-[480px] items-stretch lg:grid-cols-[1fr_.72fr]"><div className="order-last flex flex-col justify-center py-16 lg:order-first lg:pr-12"><p className="signal-kicker text-accent">{t("For the people, by the people. Someone has to be.", "जनता के लिए, जनता की ओर से। किसी को तो होना होगा।")}</p><h1 className="mt-4 max-w-3xl font-display text-5xl leading-[.92] sm:text-7xl">{t("The government has plenty of explanations. We have the documents.", "सरकार के पास सफ़ाइयाँ बहुत हैं। हमारे पास दस्तावेज़ हैं।")}</h1><p className="mt-5 max-w-xl text-base leading-relaxed text-muted-foreground">{t("We track what India’s governments, courts and commissions promise on reservation and representation, then check what they actually file, publish and quietly forget. Every claim links to its source, because “trust us” is not a citation.", "आरक्षण और प्रतिनिधित्व पर भारत की सरकारें, अदालतें और आयोग क्या वादा करते हैं, हम इसका हिसाब रखते हैं, और फिर देखते हैं कि वे असल में क्या दर्ज करते हैं, क्या छापते हैं और क्या चुपचाप भूल जाते हैं। हर दावा अपने स्रोत से जुड़ा है, क्योंकि “हम पर भरोसा कीजिए” कोई हवाला नहीं होता।")}</p><div className="mt-7 flex flex-wrap gap-3"><a href="#accountability" className="inline-flex w-fit items-center gap-2 signal-button bg-accent text-accent-foreground">{t("See what they’re dodging", "देखिए वे किन सवालों से बच रहे हैं")} <ArrowDownRight size={14} /></a><Link href="/archive" className="inline-flex w-fit items-center gap-2 signal-button">{t('Browse the archive', 'अभिलेखागार देखें')} <ArrowUpRight size={14} /></Link></div></div><figure className="order-first relative m-0 min-h-[280px] overflow-hidden border-l border-foreground/15 lg:order-last"><img src={`${basePath}/illustrations/magnifier-hero.svg`} alt={illustration('magnifier-hero').alt} width="1600" height="900" fetchPriority="high" className="h-full w-full object-cover" /><figcaption className="absolute inset-x-0 bottom-0 bg-primary/85 px-3 py-3 signal-kicker text-primary-foreground/75">{t('Illustration: The Signal 24', 'चित्रण: द सिग्नल 24')}</figcaption></figure></div></section>}
+    <HomeFront lead={featured} recordCount={stories.length} />
     {(second || rail.length > 0) && <section className="signal-container hp-section" id="latest-stories" aria-labelledby="front-title">
       <SectionHead id="front-title" kicker={t('Latest reporting', 'ताज़ा रिपोर्टिंग')} title={t(<>Follow the paper trail. <em>Nobody expected you to.</em></>, <>काग़ज़ों का सिरा पकड़िए। <em>किसी को उम्मीद नहीं थी कि आप पकड़ेंगे।</em></>)} link="/archive" linkLabel={t('The full archive', 'पूरा अभिलेखागार')} />
       <div className="hp-front">
@@ -430,14 +427,14 @@ function Home() {
     </section>}
     <section className="signal-container hp-section" id="accountability" aria-labelledby="accountability-title">
       <SectionHead id="accountability-title" kicker={t('Accountability watch', 'जवाबदेही निगरानी')} title={t(<>The questions they keep not answering. <em>We are counting the days.</em></>, <>वे सवाल जिनका जवाब वे देते ही नहीं। <em>हम दिन गिन रहे हैं।</em></>)} link="/opinion" linkLabel={t('Every demand, argued', 'हर माँग, तर्क के साथ')} />
-      <DemandBoard demands={ACCOUNTABILITY_ITEMS} />
+      <DemandBoard demands={ACCOUNTABILITY_ITEMS} still />
       <p className="mt-6 signal-kicker text-muted-foreground">{t('Last checked', 'आख़िरी जाँच')} {formatDate(ACCOUNTABILITY_CHECKED_ON)} · {t('If the government has quietly answered one, tell us and we will strike it off.', 'अगर सरकार ने चुपचाप किसी का जवाब दे दिया हो, तो बताइए, हम उसे काट देंगे।')}</p>
     </section>
     <DeskStrip stories={stories} />
     <section className="signal-container hp-section" id="the-numbers" aria-labelledby="numbers-title">
       <SectionHead id="numbers-title" kicker={t('The numbers', 'आंकड़े')} title={t(<>No number <em>without its frame.</em></>, <>कोई आंकड़ा <em>संदर्भ के बिना नहीं।</em></>)} link="/data" linkLabel={t('Open the data room', 'आंकड़ा कक्ष खोलें')} />
       <p className="hp-lede">{t("The figures this whole fight turns on, each with its unit, year, definition and source. Notice how many of them are about what the state has frozen or withheld.", "वे आंकड़े जिन पर यह पूरी लड़ाई टिकी है, हर एक अपनी इकाई, वर्ष, परिभाषा और स्रोत के साथ। ग़ौर कीजिए कि इनमें से कितने इस बारे में हैं कि सरकार ने क्या जमा रखा है या रोक रखा है।")}</p>
-      <div className="mt-6 hp-figures"><KeyFigures limit={8} /></div>
+      <div className="mt-6 hp-figures"><KeyFigures limit={8} still /></div>
     </section>
     <LedgerTrio />
     <WhenNear minHeight={560}><AnswersTeaser /></WhenNear>

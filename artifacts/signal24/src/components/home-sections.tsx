@@ -1,5 +1,4 @@
 import { useMemo, useState, type FormEvent } from 'react';
-import { m, useReducedMotion } from 'framer-motion';
 import { ArrowUpRight, HelpCircle, MessageCircle, Search } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
 import {
@@ -16,7 +15,6 @@ import { localizePolicy, useLabel, useLang, useT, type LocalizedStory } from '@/
 import { basePath } from '@/lib/seo';
 import { TOPIC_BRIEFS, type TopicKey } from '@/lib/topic-briefs';
 
-const EASE = [0.16, 1, 0.3, 1] as const;
 
 export function SectionHead({ kicker, title, link, linkLabel, id }: { kicker: string; title: React.ReactNode; link?: string; linkLabel?: string; id?: string }) {
   return <div className="hp-head">
@@ -32,14 +30,13 @@ export function DeskStrip({ stories }: { stories: LocalizedStory[] }) {
   const t = useT();
   const lang = useLang();
   const label = useLabel();
-  const reduce = useReducedMotion() ?? false;
   return <section className="signal-container hp-section" aria-labelledby="desks-title">
     <SectionHead id="desks-title" kicker={t('Read by desk', 'डेस्क के हिसाब से पढ़िए')} title={t(<>Six desks. <em>One rule: show the document.</em></>, <>छह डेस्क। <em>एक नियम: दस्तावेज़ दिखाओ।</em></>)} link="/topics" linkLabel={t('All topic files', 'सभी विषय फ़ाइलें')} />
     <div className="hp-desks">
-      {DESKS.map((desk, index) => {
+      {DESKS.map((desk) => {
         const records = stories.filter((story) => story.topic === desk);
         const brief = TOPIC_BRIEFS[desk];
-        return <m.div key={desk} initial={reduce ? false : { opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: index * 0.05, duration: 0.6, ease: EASE }}>
+        return <div key={desk}>
           <Link href={`/topics/${encodeURIComponent(desk)}`} className="hp-desk" data-testid={`link-home-desk-${desk.replace(/\W+/g, '-').toLowerCase()}`}>
             <img src={`${basePath}/illustrations/${brief.illustration}.svg`} alt="" width={1600} height={900} loading="lazy" decoding="async" />
             <span className="hp-desk-count">{t(`${records.length} records`, `${records.length} रिकॉर्ड`)}</span>
@@ -47,7 +44,7 @@ export function DeskStrip({ stories }: { stories: LocalizedStory[] }) {
             <span className="hp-desk-brief">{brief.headline[lang]} {brief.accent[lang]}</span>
             {records[0] && <span lang={records[0].contentLang} className="hp-desk-latest">{records[0].title}</span>}
           </Link>
-        </m.div>;
+        </div>;
       })}
     </div>
   </section>;

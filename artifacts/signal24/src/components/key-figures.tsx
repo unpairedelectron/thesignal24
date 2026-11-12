@@ -1,14 +1,14 @@
 import { useRef, type PointerEvent as ReactPointerEvent } from 'react';
 import { m, useMotionValue, useReducedMotion, useSpring, useTransform } from 'framer-motion';
 import { ExternalLink } from 'lucide-react';
-import { CountUp } from '@/components/home-stage';
+import { CountUp } from '@/components/count-up';
 import { useLang, useT } from '@/lib/i18n';
 import { KEY_FIGURES, KEY_FIGURES_CHECKED_ON, type KeyFigure } from '@/lib/key-figures';
 
-function FigureCard({ figure, index }: { figure: KeyFigure; index: number }) {
+function FigureCard({ figure, index, still = false }: { figure: KeyFigure; index: number; still?: boolean }) {
   const lang = useLang();
   const t = useT();
-  const reduce = useReducedMotion() ?? false;
+  const reduce = (useReducedMotion() ?? false) || still;
   const ref = useRef<HTMLElement>(null);
   const mx = useMotionValue(0.5);
   const my = useMotionValue(0.5);
@@ -46,13 +46,14 @@ function FigureCard({ figure, index }: { figure: KeyFigure; index: number }) {
 }
 
 /** The numbers the reservation debate turns on, each with its frame attached. */
-export function KeyFigures({ limit, ids }: { limit?: number; ids?: string[] }) {
+/** `still` drops the pointer tilt, glare and scroll entrance (the front page keeps its motion to hover). */
+export function KeyFigures({ limit, ids, still = false }: { limit?: number; ids?: string[]; still?: boolean }) {
   const t = useT();
   const lang = useLang();
   const selected = ids ? ids.map((id) => KEY_FIGURES.find((figure) => figure.id === id)).filter((figure): figure is KeyFigure => Boolean(figure)) : KEY_FIGURES;
   const figures = limit ? selected.slice(0, limit) : selected;
   return <div>
-    <div className="figure-grid">{figures.map((figure, index) => <FigureCard key={figure.id} figure={figure} index={index} />)}</div>
+    <div className="figure-grid">{figures.map((figure, index) => <FigureCard key={figure.id} figure={figure} index={index} still={still} />)}</div>
     <p className="mt-4 signal-kicker text-muted-foreground">{t('Every figure: value, unit, year, geography, definition, source. Last checked', 'हर आंकड़ा: मान, इकाई, वर्ष, भूगोल, परिभाषा, स्रोत। आख़िरी जाँच')} {new Date(`${KEY_FIGURES_CHECKED_ON}T12:00:00`).toLocaleDateString(lang === 'hi' ? 'hi-IN' : 'en-IN', { day: 'numeric', month: 'short', year: 'numeric', numberingSystem: 'latn' } as Intl.DateTimeFormatOptions)}</p>
   </div>;
 }
