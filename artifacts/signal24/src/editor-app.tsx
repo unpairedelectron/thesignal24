@@ -106,10 +106,9 @@ import { LangProvider, LanguageSwitch, localizePolicy, localizeStory, useLabel, 
 import { ACCOUNTABILITY_CHECKED_ON, ACCOUNTABILITY_ITEMS } from '@/lib/accountability';
 import { RichBody, outlineOf } from '@/components/rich-body';
 import { GlobalFooter, Header } from '@/components/site-chrome';
-import { HomeStage } from '@/components/home-stage';
 import { CommunityTeaser, DeskStrip, LedgerTrio, SectionHead, TimelineStrip } from '@/components/home-sections';
 import { KeyFigures } from '@/components/key-figures';
-import { CountUp } from '@/components/home-stage';
+import { CountUp } from '@/components/count-up';
 import { KEY_FIGURES, daysSince, type Bilingual } from '@/lib/key-figures';
 import { m, useReducedMotion } from 'framer-motion';
 import type { CabinetDrawer } from '@/components/topic-stage';

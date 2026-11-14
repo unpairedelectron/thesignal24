@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { m, useReducedMotion } from 'framer-motion';
 import { ExternalLink } from 'lucide-react';
-import { CountUp } from '@/components/home-stage';
+import { CountUp } from '@/components/count-up';
 import { useLang, useT } from '@/lib/i18n';
 import { daysSince, type Bilingual } from '@/lib/key-figures';
 
@@ -21,10 +21,11 @@ export type Demand = {
  * what we asked for. The day count runs from the sourced date the question opened.
  * Both faces are in the DOM for screen readers; under reduced motion they stack.
  */
-export function DemandBoard({ demands }: { demands: Demand[] }) {
+/** `still` shows the cards at rest instead of rising in on scroll (the front page). */
+export function DemandBoard({ demands, still = false }: { demands: Demand[]; still?: boolean }) {
   const lang = useLang();
   const t = useT();
-  const reduce = useReducedMotion() ?? false;
+  const reduce = (useReducedMotion() ?? false) || still;
   return <ol className={`demand-board ${reduce ? 'is-static' : ''}`}>
     {demands.map((demand, index) => <m.li key={demand.id} className="demand-card" tabIndex={0} initial={reduce ? false : { opacity: 0, y: 40, rotateX: 30 }} whileInView={{ opacity: 1, y: 0, rotateX: 0 }} viewport={{ once: true, margin: '-5% 0px' }} transition={{ delay: (index % 3) * 0.08, duration: 0.8, ease: EASE }} data-testid={`demand-${demand.id}`}>
       <div className="demand-card-inner">

@@ -315,14 +315,14 @@ export function HomeStatesSection() {
       <div><p className="signal-kicker text-accent">{t('States', 'राज्य')}</p><h2 id="india-focus-title" className="mt-3 font-display text-5xl leading-[.9] tracking-[-.05em] sm:text-6xl">{t(<>One country, many quota laws,<br /><em className="font-normal text-accent">many ways to test a court’s patience.</em></>, <>एक देश, आरक्षण के कई क़ानून,<br /><em className="font-normal text-accent">अदालत के सब्र को परखने के कई तरीक़े।</em></>)}</h2></div>
       <Link href="/states" className="signal-button shrink-0" data-testid="link-home-states-hub">{t('Open all 36 states and UTs', 'सभी 36 राज्य और केंद्रशासित प्रदेश खोलें')} <ArrowUpRight size={14} className="ml-1 inline" /></Link>
     </div>
-    <div className="states-hub-grid mt-8">
+    <div className="states-hub-grid hp-states-grid mt-8">
       <IndiaMap tiers={tiers} />
-      <div className="grid content-start gap-3">
+      <ul className="hp-state-dir" aria-label={t('State and UT profiles', 'राज्य और केंद्रशासित प्रदेश प्रोफ़ाइल')}>
         {profiled.map((region) => {
           const profile = STATE_PROFILES[region.name];
-          return <Link key={region.name} href={`/state/${regionSlug(region.name)}`} className={`state-feature is-${profile.tone}`}><span className="state-feature-name">{lang === 'hi' ? region.hi : region.name}</span><span className="state-feature-status">{profile.status[lang]}</span></Link>;
+          return <li key={region.name}><Link href={`/state/${regionSlug(region.name)}`} className={`hp-state-row is-${profile.tone}`}><span className="hp-state-name">{lang === 'hi' ? region.hi : region.name}</span><span className="hp-state-status">{profile.status[lang]}</span></Link></li>;
         })}
-      </div>
+      </ul>
     </div>
   </section>;
 }

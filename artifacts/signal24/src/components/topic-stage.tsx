@@ -3,7 +3,7 @@ import { m, useMotionTemplate, useMotionValue, useReducedMotion, useSpring, useT
 import { ArrowUpRight, ExternalLink } from 'lucide-react';
 import { Link } from 'wouter';
 import type { EvidenceEventDetail } from '@workspace/api-client-react';
-import { CountUp } from '@/components/home-stage';
+import { CountUp } from '@/components/count-up';
 import { basePath } from '@/lib/seo';
 import { useLang, useT } from '@/lib/i18n';
 

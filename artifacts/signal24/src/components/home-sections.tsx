@@ -1,5 +1,4 @@
 import { useMemo, useState, type FormEvent } from 'react';
-import { m, useReducedMotion } from 'framer-motion';
 import { ArrowUpRight, HelpCircle, MessageCircle, Search } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
 import {
@@ -16,7 +15,6 @@ import { localizePolicy, useLabel, useLang, useT, type LocalizedStory } from '@/
 import { basePath } from '@/lib/seo';
 import { TOPIC_BRIEFS, type TopicKey } from '@/lib/topic-briefs';
 
-const EASE = [0.16, 1, 0.3, 1] as const;
 
 export function SectionHead({ kicker, title, link, linkLabel, id }: { kicker: string; title: React.ReactNode; link?: string; linkLabel?: string; id?: string }) {
   return <div className="hp-head">
@@ -32,14 +30,13 @@ export function DeskStrip({ stories }: { stories: LocalizedStory[] }) {
   const t = useT();
   const lang = useLang();
   const label = useLabel();
-  const reduce = useReducedMotion() ?? false;
   return <section className="signal-container hp-section" aria-labelledby="desks-title">
     <SectionHead id="desks-title" kicker={t('Read by desk', 'डेस्क के हिसाब से पढ़िए')} title={t(<>Six desks. <em>One rule: show the document.</em></>, <>छह डेस्क। <em>एक नियम: दस्तावेज़ दिखाओ।</em></>)} link="/topics" linkLabel={t('All topic files', 'सभी विषय फ़ाइलें')} />
     <div className="hp-desks">
-      {DESKS.map((desk, index) => {
+      {DESKS.map((desk) => {
         const records = stories.filter((story) => story.topic === desk);
         const brief = TOPIC_BRIEFS[desk];
-        return <m.div key={desk} initial={reduce ? false : { opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: index * 0.05, duration: 0.6, ease: EASE }}>
+        return <div key={desk}>
           <Link href={`/topics/${encodeURIComponent(desk)}`} className="hp-desk" data-testid={`link-home-desk-${desk.replace(/\W+/g, '-').toLowerCase()}`}>
             <img src={`${basePath}/illustrations/${brief.illustration}.svg`} alt="" width={1600} height={900} loading="lazy" decoding="async" />
             <span className="hp-desk-count">{t(`${records.length} records`, `${records.length} रिकॉर्ड`)}</span>
@@ -47,7 +44,7 @@ export function DeskStrip({ stories }: { stories: LocalizedStory[] }) {
             <span className="hp-desk-brief">{brief.headline[lang]} {brief.accent[lang]}</span>
             {records[0] && <span lang={records[0].contentLang} className="hp-desk-latest">{records[0].title}</span>}
           </Link>
-        </m.div>;
+        </div>;
       })}
     </div>
   </section>;
@@ -113,19 +110,19 @@ export function CommunityTeaser() {
   ];
   return <section className="signal-container hp-section" aria-labelledby="community-title">
     <div className="hp-community">
-      <div>
+      <div className="hp-community-copy">
         <p className="signal-kicker text-accent">{t('The people’s floor', 'जनता का मंच')}</p>
         <h2 id="community-title" className="hp-title">{t(<>Ask anything. <em>Name nobody.</em></>, <>कुछ भी पूछिए। <em>किसी का नाम नहीं।</em></>)}</h2>
-        <p className="mt-4 max-w-md text-[.98rem] leading-relaxed text-muted-foreground">{t('Questions about the government, answered by people who have been through it. Anonymous by default: no account, no email. Hard on institutions, never on communities.', 'सरकार के बारे में सवाल, उन लोगों के जवाबों के साथ जो इससे गुज़रे हैं। डिफ़ॉल्ट रूप से गुमनाम: न खाता, न ईमेल। संस्थाओं पर सख़्त, समुदायों पर कभी नहीं।')}</p>
-        <div className="mt-6 flex flex-wrap gap-3"><Link href="/community#ask" className="signal-button">{t('Ask anonymously', 'गुमनाम रूप से पूछिए')}</Link><Link href="/community" className="signal-button is-ghost">{t('Read the floor', 'मंच पढ़िए')}</Link></div>
+        <p className="mt-4 max-w-md text-[.98rem] leading-relaxed text-foreground/80">{t('Questions about the government, answered by people who have been through it. Anonymous by default: no account, no email. Hard on institutions, never on communities.', 'सरकार के बारे में सवाल, उन लोगों के जवाबों के साथ जो इससे गुज़रे हैं। डिफ़ॉल्ट रूप से गुमनाम: न खाता, न ईमेल। संस्थाओं पर सख़्त, समुदायों पर कभी नहीं।')}</p>
+        <div className="hf-actions"><Link href="/community#ask" className="hf-button is-primary">{t('Ask anonymously', 'गुमनाम रूप से पूछिए')} <ArrowUpRight size={15} aria-hidden="true" /></Link><Link href="/community" className="hf-button">{t('Read the floor', 'मंच पढ़िए')}</Link></div>
       </div>
-      <div className="grid gap-3">
+      <div className="hp-community-list">
         {posts.length > 0 ? posts.map((post) => <Link key={post.id} href={`/community/${post.id}`} className="hp-community-row">
           <span className={`cm-kind-badge is-${post.kind === 'question' ? 'question' : 'discussion'}`}>{post.kind === 'question' ? t('Question', 'सवाल') : t('Discussion', 'चर्चा')}</span>
           <span className="hp-community-title">{post.title}</span>
           <span className="hp-community-meta">{post.authorName} · {t(`${post.replyCount} answers`, `${post.replyCount} जवाब`)} · {t(`${post.likeCount} votes`, `${post.likeCount} वोट`)}</span>
         </Link>) : prompts.map((prompt) => <Link key={prompt.en} href={`/community?ask=${encodeURIComponent(lang === 'hi' ? prompt.hi : prompt.en)}`} className="hp-community-row is-prompt">
-          <span className="hp-community-meta"><MessageCircle size={13} className="mr-1 inline" />{t('Prompt from the desk · be the first to answer', 'डेस्क का सवाल · सबसे पहले जवाब दीजिए')}</span>
+          <span className="hp-community-meta"><MessageCircle size={13} className="mr-1 inline" aria-hidden="true" />{t('Prompt from the desk · be the first to answer', 'डेस्क का सवाल · सबसे पहले जवाब दीजिए')}</span>
           <span className="hp-community-title">{lang === 'hi' ? prompt.hi : prompt.en}</span>
         </Link>)}
       </div>
