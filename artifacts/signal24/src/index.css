@@ -1890,3 +1890,41 @@ h1.font-display:lang(hi) { line-height: 1.28 !important; }
 .hf.is-dark .hf-clocks > li + li { border-color: hsl(var(--foreground) / .14); }
 .hf.is-dark .hf-clock:hover { background: hsl(var(--foreground) / .05); }
 .hf.is-dark .hf-clock-unit { color: hsl(40 62% 70%); }
+
+/* Home: opinion as signed newspaper columns with vertical rules. */
+.hp-opinion { margin: 1.8rem 0 0; padding: 0; list-style: none; display: grid; border-top: 1px solid hsl(var(--foreground) / .2); }
+@media (min-width: 900px) { .hp-opinion { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.hp-opinion > li { display: flex; border-bottom: 1px solid hsl(var(--foreground) / .15); }
+@media (min-width: 900px) {
+  .hp-opinion > li { border-bottom: 0; }
+  .hp-opinion > li + li { border-left: 1px solid hsl(var(--foreground) / .15); }
+}
+.hp-opinion-item { flex: 1; display: grid; align-content: start; gap: .7rem; padding: 1.4rem 0; transition: background-color .25s; }
+@media (min-width: 900px) {
+  .hp-opinion-item { padding: 1.5rem 1.6rem 1.7rem; }
+  .hp-opinion > li:first-child .hp-opinion-item { padding-left: 0; }
+  .hp-opinion > li:last-child .hp-opinion-item { padding-right: 0; }
+}
+.hp-opinion-by { font-family: var(--app-font-mono); font-size: .62rem; letter-spacing: .12em; text-transform: uppercase; color: hsl(var(--accent)); }
+.hp-opinion-title { font-family: var(--app-font-serif); font-weight: 600; font-size: clamp(1.45rem, 2.1vw, 1.8rem); line-height: 1.12; letter-spacing: -.025em; text-wrap: balance; background-image: linear-gradient(currentColor, currentColor); background-size: 0% 1px; background-repeat: no-repeat; background-position: 0 100%; transition: background-size .45s cubic-bezier(.16,1,.3,1), color .2s; }
+.hp-opinion-item:hover .hp-opinion-title, .hp-opinion-item:focus-visible .hp-opinion-title { color: hsl(var(--accent)); background-size: 100% 1px; }
+.hp-opinion-dek { font-size: .95rem; line-height: 1.6; color: hsl(var(--foreground) / .8); text-wrap: pretty; }
+.hp-opinion-item:focus-visible { outline: 2px solid hsl(var(--accent)); outline-offset: 3px; }
+.hp-opinion-by:lang(hi) { font-family: 'Noto Sans Devanagari', var(--app-font-mono); letter-spacing: 0; text-transform: none; font-size: .78rem; }
+.hp-opinion-title:lang(hi) { font-family: 'Noto Serif Devanagari', serif; line-height: 1.4; letter-spacing: 0; }
+
+/* Home: the community floor on hairlines, same buttons as the front page. */
+.hp-community { padding: 0; border: 0; background: none; border-top: 2px solid hsl(var(--foreground)); padding-top: 2rem; }
+@media (min-width: 1024px) { .hp-community { padding: 2.4rem 0 0; } }
+.hp-community-list { display: grid; align-content: start; border-top: 1px solid hsl(var(--foreground) / .2); }
+.hp-community-row { padding: 1.1rem 0; background: none; border: 0; border-bottom: 1px solid hsl(var(--foreground) / .15); border-radius: 0; transition: padding-left .25s cubic-bezier(.16,1,.3,1), background-color .25s; }
+.hp-community-row.is-prompt { border-left: 0; }
+.hp-community-row:hover, .hp-community-row:focus-visible { transform: none; box-shadow: none; padding-left: .75rem; background: hsl(var(--card)); }
+.hp-community-row:hover .hp-community-title { color: hsl(var(--accent)); }
+.hp-community-row:focus-visible { outline: 2px solid hsl(var(--accent)); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .hp-opinion-item, .hp-opinion-title, .hp-community-row { transition: none; } }
+.hf:focus { outline: none; }
+.hf:focus-visible { outline: 2px solid hsl(var(--accent)); outline-offset: -2px; }
+/* The global footer renders outside .signal-page; give it the page's content edges. */
+.chrome-footer .signal-container { width: min(1400px, calc(100% - 48px)); }
+@media (min-width: 1024px) { .chrome-footer .signal-container { width: min(1400px, calc(100% - 96px)); } }

@@ -26,7 +26,7 @@ export function HomeFront({ lead, recordCount, dark = false }: { lead?: Localize
   const today = new Date();
   const art = lead ? imageForStory(lead) : illustration('magnifier-hero');
 
-  return <section className={`hf ${dark ? 'is-dark' : ''}`} aria-labelledby="hf-title" data-testid="home-front">
+  return <section id="main-content" tabIndex={-1} className={`hf ${dark ? 'is-dark' : ''}`} aria-labelledby="hf-title" data-testid="home-front">
     <div className="signal-container hf-inner">
       <div className="hf-dateline hf-enter" style={{ ['--d' as string]: 0 }}>
         <time dateTime={today.toISOString().slice(0, 10)}>{dateLabel(today.toISOString(), lang, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</time>

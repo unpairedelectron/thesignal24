@@ -440,7 +440,15 @@ function Home() {
     <WhenNear minHeight={560}><AnswersTeaser /></WhenNear>
     <WhenNear minHeight={720}><HomeStatesSection /></WhenNear>
     <TimelineStrip />
-    {opinions.length > 0 && <section className="signal-container mt-20 sm:mt-28" id="opinion"><div className="grid gap-8 bg-primary p-7 text-primary-foreground sm:p-12 lg:grid-cols-[.7fr_1.3fr]"><div><span className="opinion-label bg-accent text-accent-foreground">{label('Opinion')}</span><h2 className="mt-4 font-display text-4xl leading-[.95] sm:text-5xl">{t("Where we stop being polite.", "जहाँ हम शिष्टाचार छोड़ देते हैं।")}</h2><p className="mt-4 text-sm leading-relaxed text-primary-foreground/70">{t("Signed, labelled, and kept away from the reporting so nobody mistakes our irritation for our evidence.", "नाम के साथ, लेबल के साथ, और रिपोर्टिंग से दूर, ताकि कोई हमारी झुँझलाहट को हमारा सबूत न समझ ले।")}</p><Link href="/opinion" className="mt-6 inline-flex items-center gap-2 signal-kicker text-accent hover:underline">{t('All opinion', 'सारी राय')} <ArrowUpRight size={13} /></Link></div><div className="divide-y divide-primary-foreground/20">{opinions.slice(0, 3).map((story) => <Link key={story.id} href={storyPath(story)} className="group block py-5 first:pt-0"><p className="signal-kicker text-primary-foreground/60">{label(story.byline) || t('Editorial board', 'संपादकीय बोर्ड')} · {formatDate(story.publishedOn)}</p><h3 lang={story.contentLang} className="mt-2 font-display text-3xl leading-tight group-hover:text-accent">{story.title}</h3><p lang={story.contentLang} className="mt-2 text-sm leading-relaxed text-primary-foreground/70">{story.dek}</p></Link>)}</div></div></section>}
+    {opinions.length > 0 && <section className="signal-container hp-section" id="opinion" aria-labelledby="opinion-title">
+      <SectionHead id="opinion-title" kicker={t('Opinion · signed and labelled', 'राय · नाम और लेबल के साथ')} title={t(<>Where we stop <em>being polite.</em></>, <>जहाँ हम <em>शिष्टाचार छोड़ देते हैं।</em></>)} link="/opinion" linkLabel={t('All opinion', 'सारी राय')} />
+      <p className="hp-lede">{t("Kept away from the reporting so nobody mistakes our irritation for our evidence.", "रिपोर्टिंग से दूर, ताकि कोई हमारी झुँझलाहट को हमारा सबूत न समझ ले।")}</p>
+      <ol className="hp-opinion">{opinions.slice(0, 3).map((story) => <li key={story.id}><Link href={storyPath(story)} className="hp-opinion-item group" data-testid={`link-home-opinion-${story.id}`}>
+        <span className="hp-opinion-by">{label(story.byline) || t('Editorial board', 'संपादकीय बोर्ड')} · {formatDate(story.publishedOn)}</span>
+        <span lang={story.contentLang} className="hp-opinion-title">{story.title}</span>
+        <span lang={story.contentLang} className="hp-opinion-dek">{story.dek}</span>
+      </Link></li>)}</ol>
+    </section>}
     <CommunityTeaser />
     <LiveDesk />
   </main>;
@@ -1551,10 +1559,11 @@ function AppShell() {
           className="skip-link"
           onClick={(event) => {
             event.preventDefault();
-            const main = document.querySelector<HTMLElement>('main');
+            // A page may mark where its content starts (past its header); otherwise <main>.
+            const main = document.getElementById('main-content') ?? document.querySelector<HTMLElement>('main');
             if (main) {
               main.tabIndex = -1;
-              main.focus();
+              main.focus({ preventScroll: true });
               main.scrollIntoView({ block: 'start' });
             }
           }}
